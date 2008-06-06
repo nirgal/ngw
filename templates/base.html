@@ -1,0 +1,185 @@
+<html>
+<title>{{ title }}</title>
+<style type="text/css">
+body {
+    font-family:sans-serif;
+    margin:0px;
+/*    background-color: #f0f0f0;*/
+}
+body, table {
+    font-size: 90%;
+}
+a[href] {
+    text-decoration: none;
+}
+#banner {
+    font-weight:bold;
+    font-size: 120%;
+    padding: 1ex;
+    background-color: #008000;
+    color: #ccc;
+}
+#nav {
+    border-bottom: 1px solid #ccc;
+    padding: 0ex;
+    padding-left: 1ex;
+}
+ 
+#main {
+    padding: 1ex;
+}
+div#title {
+    font-weight:bold;
+    font-size: 120%;
+    padding-bottom: 0.5ex;
+}
+table {
+    border-collapse: collapse;
+    border: 1px solid #999;
+}
+
+table tr.rowodd {
+    background: #EDF3FE;
+}
+table tr.roweven {
+    background: white;
+}
+
+th + th ,  th + td , td + th, td + td { /* all but first line */
+    border-left: 1px solid #ccc;
+}
+
+table.objlist {
+    width: 100%;
+}
+table.objlist thead th {
+    text-align: left;
+    border-bottom: 1px solid #999;
+    padding-left: 0.5ex;
+    background: url(/media/img/admin/nav-bg.gif) bottom repeat-x;
+    background-color: #fff;
+}
+table.objlist thead th.sorted {
+    background:url(/media/img/admin/arrow-up.gif) right .4em no-repeat;
+}
+table.objlist thead th.sorted_reverse {
+    background:url(/media/img/admin/arrow-down.gif) right .4em no-repeat;
+}
+
+table.objlist td {
+    padding: 0.5ex;
+}
+
+table.objlist tr#objsummary {
+    border-top: 1px solid #999;
+    font-size: 80%;
+}
+
+
+table.objchange {
+    width: 100%;
+    padding: 0;
+}
+
+table.objchange tr + tr { /* all but first line */
+    border-top: 1px solid #999;
+}
+
+table.objchange td, table.objchange th {
+    padding: 0.5ex;
+}
+table.objchange td {
+    font-size: 80%;
+}
+table.objchange th {
+    text-align: left;
+    padding-left: 1ex;
+    font-weight: normal;
+}
+
+
+table.objchange ul.multiplechoice {
+    padding: 0;
+}
+table.objchange ul.multiplechoice li {
+    font-size: 120%;
+    display: inline;
+}
+
+ul.errorlist {
+    background-color: red;
+    padding: 0ex;
+    padding-left: 28px;
+    margin-bottom: 1ex;
+    border:1px solid black;
+    font-weight:bold;
+    color: white;
+    list-style-image: url(/media/img/admin/icon_alert.gif);
+}
+ul.errorlist li {
+/*    padding: 0;
+    margin: 0;
+    */
+}
+input[type=text], textarea {
+    border:1px solid #ccc;
+    width: 100%;
+}
+
+#submitbar {
+    width: auto;
+    display: block;
+    overflow: auto;
+    margin-top: 2ex;
+    padding: 0.5ex;
+    border: solid 1px #999;
+    text-align: center;
+}
+input[type=submit] , #submitbar a {
+    display: inline-block;
+    float: left;
+    font-size: 90%; /* needed 100%*/
+    border: 1px solid #999;
+    background: #fcd;
+    padding-top: 0.5ex;
+    padding-bottom: 0.5ex;
+    padding-left: 3ex;
+    padding-right: 3ex;
+    margin-left: 2ex;
+    margin-right: 2ex; 
+    margin-top: 0.5ex;  /* same as #submitbar/padding */ 
+    margin-bottom: 0.5ex; 
+    font-weight:bold; 
+
+    background: url(/media/img/admin/nav-bg.gif) bottom repeat-x;
+    color: black;
+}
+input[type=submit]:active , #submitbar a:active {
+    background: url(/media/img/admin/nav-bg-reverse.gif) top repeat-x;
+}
+
+input[type=submit]#default , #submitbar a#default {
+    background: #7CA0C7 url(/media/img/admin/default-bg.gif) bottom repeat-x;
+    color:white;
+    
+}
+input[type=submit]:active#default , #submitbar a:active#default {
+    background: #7CA0C7 url(/media/img/admin/default-bg-reverse.gif) top repeat-x;
+}
+</style>
+<div id=banner>
+<big>Action</big>
+... go ... go ... go ...
+</div>
+<div id=nav>
+{% block nav %}
+<a href="/">Home</a>
+{% endblock %}
+</div>
+<div id=main>
+<div id=title>{{ title }}</div>
+{% block body %}
+<p>No body.
+{% endblock %}
+</div>
+</html>

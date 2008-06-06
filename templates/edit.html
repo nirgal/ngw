@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block nav %}
+{{ block.super }}
+› <a href="/{{ objtypename }}s/">{{ objtypename }}s</a>
+› {{ id|default_if_none:"add" }}
+{% endblock %}
+
+{% block body %}
+{% comment %}{{ form.errors }}{% endcomment %}
+<form method="post">
+<table class=objchange>
+{{ form.as_table }}
+</table>
+
+    {% block submitbar %}
+    <div id=submitbar>
+    <input type=submit value="Save" id="default">
+    <!--<input type=submit value="Save and add another" name="_addanother">-->
+    <input type=submit value="Save and continue editing" name="_continue">
+    {% if id %}
+    <a href="/{{ objtypename }}s/{{ id }}/delete"><img src="/media/img/admin/icon_deletelink.gif" border=0 valign=middle> Delete</a>
+    {% endif %}
+    </div>
+    {% endblock %}
+
+</form>
+{% endblock %}

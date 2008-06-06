@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block nav %}
+{{ block.super }}
+› {{ objtypename }}s
+{% endblock %}
+
+{% block body %}
+You are about to delete the {{ objtypename }} {{ o }}. Are you sure ?
+    {% block submitbar %}
+    <div id=submitbar>
+    <a href="/{{ objtypename }}s/{{ o.id }}/delete?confirm=1">Yes I'm Sure</a>
+    <a href="/{{ objtypename }}s/{{ o.id }}/edit">Cancel</a> <!-- FIXME -->
+    </div>
+    {% endblock %}
+
+{% endblock %}

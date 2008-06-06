@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div style="border: 1px solid #999; padding:1ex;">
+Welcome!
+<br>There are {{ ncontacts }} contacts in the database.
+<p>Please select an operation bellow:
+</div>
+<div id=submitbar style="font-size:120%; padding:1ex;">
+<a href="contacts/">Contacts</a>
+<a href="contactgroups/">Contact Groups</a>
+<a href="contactfields/">Setup of optional fields</a>
+<a href="choicegroups/">Setup of choice lists</a>
+{% endblock %}

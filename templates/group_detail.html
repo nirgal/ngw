@@ -1,0 +1,16 @@
+{% extends "list.html" %}
+
+{% block nav %}
+{{ block.super }}
+› {{ cg.name }}
+{% endblock %}
+
+{% block body %}
+    {% include "query_entities.html" %}
+    {% block submitbar %}
+    <div id=submitbar>
+      <a id=default href="/{{ objtypename }}s/">Group list</a>
+      <a href="/{{ objtypename }}s/{{ cg.id }}/edit">Edit</a>
+    </div>
+    {% endblock %}
+{% endblock %}

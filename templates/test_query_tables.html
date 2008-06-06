@@ -1,0 +1,55 @@
+{% load ngwtags %}
+
+{% extends "base.html" %}
+
+{% block body %}
+<table class=objlist>
+
+{% for row in query %}
+    {% if not forloop.counter0 %}
+        <thead><tr>
+        {% for k in row.keys %}
+            <th><a href="?sc={{ forloop.counter0 }}{% ifequal forloop.counter0 sc %}{% if not sr %}&sr=1{% endif %}{% endifequal %}">
+            {{ k|name_internal2nice }}</a>
+            {% ifequal forloop.counter0 sc %}{% if sr %} ▼{% else %}▲{% endif %}{% endifequal%}
+        {% endfor %}
+        <tbody>
+    {% endif %}
+    <tr class=row{% cycle odd,even as oddity %}>
+    {% for v in row %}
+        <td>{{ v|default_if_none:"" }}
+    {% endfor %}
+{% endfor %}
+<tr class=row{% cycle oddity %} id=objsummary>
+    <td colspan={{ query.keys|length }}>
+    {% ifnotequal npages 1 %}
+        {{ npages }} pages
+        {% for i in page|pagenumber_iterator:npages %}
+            {% ifnotequal page i %}
+            <a href=?sc={{sc}}&sr={{sr}}&page={{i}} style="border: solid 1px #999">
+            {% else %}
+            <span style="border: solid 1px #999; width: auto; background:#fce">
+            {% endifnotequal %}
+            <b>{{i}}</b>
+            {% ifnotequal page i %}
+            </a>
+            {% else %}
+            </span>
+            {% endifnotequal %}&nbsp;
+        {% endfor %}
+        -
+    {% endifnotequal %}
+    {% comment %}
+    {% ifnotequal page 1 %}<a href=?sc={{sc}}&sr={{sr}}&page={{ page|add:"-1"}}>◀</a> {% endifnotequal %}
+    page {{ page }} of {{ npages }}
+    {% ifnotequal page npages %} <a href=?sc={{sc}}&sr={{sr}}&page={{ page|add:"1"}}>▶</a>{% endifnotequal %}
+    {% endcomment %}
+    {{ count }} result{{ count|pluralize }}
+    {% comment %}
+    {{ values|length }} {{ objtypename }}{{ values|length|pluralize }}
+    {% if totalcount and not values|length_is:totalcount %}
+        selected out of {{ totalcount }}
+    {% endif %}
+    {% endcomment %}
+</table>
+{% endblock %}

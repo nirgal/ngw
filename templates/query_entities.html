@@ -1,0 +1,54 @@
+{% comment %}
+That file must be included in a full template.
+Parameters:
+    q: A query yielding tuple of entities
+    cols: A list of 3-tuples: ("column name", entity number, "property or method NAME of the entity", matching table column for sort)
+    count: number of objects
+    npages: number of pages
+Optionnal parameters:
+    sc: number of the column used to sort
+    sr: 1 for reversed sort
+    page: number of the page actually printed
+{% endcomment %}
+
+{% load ngwtags %}
+
+<table class=objlist>
+{% for row in query %}
+    {% if not forloop.counter0 %}
+        <thead><tr>
+        {% for col in cols %}
+            <th>
+            {% if col|get:3 %}<a href="{{baseurl}}&amp;_sc={{ forloop.counter0 }}{% ifequal forloop.counter0 sc %}{% if not sr %}&amp;_sr=1{% endif %}{% endifequal %}">{% endif %}
+            {{col|get:0|name_internal2nice}}
+            {% if col|get:3 %}</a>{% endif %}
+            {% ifequal forloop.counter0 sc %}{% ifequal sr "1" %} ▼{% else %} ▲{% endifequal %}{% endifequal%}
+        {% endfor %}
+        <tbody>
+    {% endif %}
+    <tr class=row{% cycle odd,even as oddity %}>
+    {% for col in cols %}
+        <td>{{row|ngw_display:col}}
+    {% endfor %}
+{% endfor %}
+<tr class=row{% cycle oddity %} id=objsummary>
+    <td colspan={{ cols|length }}>
+    {% ifnotequal npages 1 %}
+        {{ npages }} pages
+        {% for i in page|pagenumber_iterator:npages %}
+            {% ifnotequal page i %}
+            <a href={{baseurl}}&amp;_sc={{sc}}&amp;_sr={{sr}}&amp;_page={{i}} style="border: solid 1px #999">
+            {% else %}
+            <span style="border: solid 1px #999; width: auto; background:#fce">
+            {% endifnotequal %}
+            <b>{{i}}</b>
+            {% ifnotequal page i %}
+            </a>
+            {% else %}
+            </span>
+            {% endifnotequal %}&nbsp;
+        {% endfor %}
+        -
+    {% endifnotequal %}
+    {{ count }} result{{ count|pluralize }}
+</table>
