@@ -6,11 +6,22 @@
 {% endblock %}
 
 {% block body %}
+    {% if cg.description %}{{ cg.description }}<br><br>{% endif %}
+    {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
+    {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
+    <br>
     {% include "query_entities.html" %}
+    {% if cg.direct_supergroups %}
+        <h1>Member groups</h1>
+        {% for sg in cg.direct_subgroups %}
+            ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includingtxt}}<br>
+        {% endfor %}
+    {% endif %}
     {% block submitbar %}
     <div id=submitbar>
       <a id=default href="/{{ objtypename }}s/">Group list</a>
       <a href="/{{ objtypename }}s/{{ cg.id }}/edit">Edit</a>
+      <a href="/{{ objtypename }}s/{{ cg.id }}/emails">Email</a>
     </div>
     {% endblock %}
 {% endblock %}

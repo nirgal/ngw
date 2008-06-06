@@ -19,10 +19,10 @@ Optionnal parameters:
         <thead><tr>
         {% for col in cols %}
             <th>
-            {% if col|get:3 %}<a href="{{baseurl}}&amp;_sc={{ forloop.counter0 }}{% ifequal forloop.counter0 sc %}{% if not sr %}&amp;_sr=1{% endif %}{% endifequal %}">{% endif %}
+            {% if col|get:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
             {{col|get:0|name_internal2nice}}
             {% if col|get:3 %}</a>{% endif %}
-            {% ifequal forloop.counter0 sc %}{% ifequal sr "1" %} ▼{% else %} ▲{% endifequal %}{% endifequal%}
+            {% if order|order_absmatch:forloop.counter0 %}{% if order|order_isreverted %} ▼{% else %} ▲{% endif %}{% endif %}
         {% endfor %}
         <tbody>
     {% endif %}
@@ -37,7 +37,7 @@ Optionnal parameters:
         {{ npages }} pages
         {% for i in page|pagenumber_iterator:npages %}
             {% ifnotequal page i %}
-            <a href={{baseurl}}&amp;_sc={{sc}}&amp;_sr={{sr}}&amp;_page={{i}} style="border: solid 1px #999">
+            <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
             {% else %}
             <span style="border: solid 1px #999; width: auto; background:#fce">
             {% endifnotequal %}

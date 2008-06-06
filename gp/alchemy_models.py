@@ -11,6 +11,7 @@ FTYPE_LONGTEXT='LONGTEXT'
 FTYPE_NUMBER='NUMBER'
 FTYPE_DATE='DATE'
 FTYPE_EMAIL='EMAIL'
+FTYPE_PHONE='PHONE'
 FTYPE_RIB='RIB'
 FTYPE_CHOICE='CHOICE'
 FTYPE_MULTIPLECHOICE='MULTIPLECHOICE'
@@ -21,6 +22,7 @@ FIELD_TYPES={
     FTYPE_NUMBER: 'Number',
     FTYPE_DATE: 'Date',
     FTYPE_EMAIL: 'E.Mail',
+    FTYPE_PHONE: 'Phone',
     FTYPE_RIB: 'Bank account',
     FTYPE_CHOICE: 'Choice',
     FTYPE_MULTIPLECHOICE: 'Multiple choice',
@@ -72,9 +74,8 @@ class Choice(object):
         self.value = value
 
 class ChoiceGroup(object):
-    #def __init__(self, ):
     def __repr__(self):
-        return self.name
+        return self.name.encode('utf-8')
 
     @property
     def ordered_choices(self):
@@ -115,6 +116,10 @@ class ChoiceGroup(object):
         
         return [(c.key, c.value) for c in q]
 
+    def get_link(self):
+        return u"/choicegroups/"+str(self.id)+"/edit"
+    get_link_name = get_link
+
 
 class Contact(object):
     def __init__(self, name):
@@ -131,6 +136,76 @@ class Contact(object):
             return "Yes"+" "+AUTOMATIC_MEMBER_INDICATOR
         else:
             return "No"
+
+    def get_link(self):
+        return u"/contacts/"+str(self.id)+"/"
+    get_link_name = get_link
+
+    def get_allgroups(self):
+        "returns the list of groups that contact is member of."
+        groups = []
+        for g in self.direct_groups:
+            if g not in groups:
+                groups.append(g)
+            g._append_supergroups(groups)
+        return groups
+
+    def get_allgroups_withfields(self):
+        "returns the list of groups with field_group ON that contact is member of."
+        return [ g for g in self.get_allgroups() if g.field_group ]
+
+    def get_allfields(self):
+        contactgroupids = [ g.id for g in self.get_allgroups_withfields()] 
+        #print "contactgroupids=", contactgroupids
+        return Query(ContactField).filter(or_(ContactField.c.contact_group_id.in_(contactgroupids),ContactField.c.contact_group_id == None)).order_by(ContactField.c.sort_weight)
+
+    def get_value_by_keyname(self, keyname):
+        cf = Query(ContactField).filter(ContactField.c.name == keyname).one()
+        if not cf:
+            return None
+        cfv = Query(ContactFieldValue).get((self.id, cf.id))
+        return cfv
+
+    def vcard(self):
+        # http://www.ietf.org/rfc/rfc2426.txt
+        vcf = u""
+        def line(key, value):
+            value = value.replace("\\", "\\\\")
+            value = value.replace("\r", "")
+            value = value.replace("\n", "\\n")
+            return key+":"+value+"\r\n"
+        vcf += line(u"BEGIN", u"VCARD")
+        vcf += line(u"VERSION", u"3.0")
+        vcf += line(u"FN", self.name)
+
+        street = self.get_value_by_keyname("street")
+        if street:
+            street = unicode(street)
+        postal_code = self.get_value_by_keyname("postal_code")
+        if postal_code:
+            postal_code = unicode(postal_code)
+        city = self.get_value_by_keyname("city")
+        if city:
+            city = unicode(city)
+        country = self.get_value_by_keyname("country")
+        if country:
+            country = unicode(country)
+        vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
+
+        for pfield in ('phone_1', 'phone_2', 'phone_3'):
+            phone = self.get_value_by_keyname(pfield)
+            if not phone:
+                continue
+            vcf += line(u"TEL", unicode(phone))
+
+        email = self.get_value_by_keyname("email")
+        if email:
+            vcf += line(u"EMAIL", unicode(email))
+
+        vcf += line(u"END", u"VCARD")
+        return vcf
+
+
 
 class ContactGroup(object):
     def __repr__(self):
@@ -191,6 +266,22 @@ class ContactGroup(object):
 
     members = property(_get_members)
 
+    def get_link(self):
+        return u"/contactgroups/"+str(self.id)+"/"
+    get_link_name = get_link
+
+    def supergroups_includingtxt(self):
+        sgs = self.supergroups
+        if not sgs:
+            return u""
+        return u" (implies "+u", ".join(['<a href="'+g.get_link()+'">'+g.name+'</a>' for g in sgs])+u")"
+
+    def subgroups_includingtxt(self):
+        sgs = self.subgroups
+        if not sgs:
+            return u""
+        return u" (implies "+u", ".join(['<a href="'+g.get_link()+'">'+g.name+'</a>' for g in sgs])+u")"
+
 
 class ContactField(object):
     def __repr__(self):
@@ -202,10 +293,17 @@ class ContactField(object):
             type += " ("+self.choice_group.name+")"
         return type
 
+    def get_link(self):
+        return u"/contactfields/"+str(self.id)+"/edit"
+    get_link_name = get_link
+
 class ContactFieldValue(object):
+    def __repr__(self):
+        return unicode(self).encode('utf-8')
+
     def __unicode__(self):
         cf = self.field
-        if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_NUMBER, FTYPE_DATE, FTYPE_EMAIL, FTYPE_RIB):
+        if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_NUMBER, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB):
             return self.value
         elif cf.type == FTYPE_CHOICE:
             chg = cf.choice_group

@@ -1,0 +1,35 @@
+{% load ngwtags %}
+
+{% extends "base.html" %}
+
+{% block body %}
+<select multiple="multiple" size=4 name="groups" id="id_groups">
+<option value="2">People</option>
+<option value="3">Companies</option>
+<option value="4">Volunteers</option>
+<option value="5" selected="selected">Activists</option>
+<option value="6">Climbers</option>
+<option value="7">Canoe</option>
+<option value="8">Admins</option>
+<option value="9">Vroum Vroum</option>
+<option value="15">Action coordinators</option>
+<option value="19" selected="selected">BAT</option>
+<option value="20">Stage Canoë</option>
+<option value="21" selected="selected">Brussels fishing wall</option>
+<option value="25">BAT</option>
+</select>
+
+<br clear=all>
+<select id="id_groups_off">
+</select>
+<select id="id_groups_on">
+</select>
+<script>
+sref=document.getElementById("id_groups");
+soff=document.getElementById("id_groups_off");
+son=document.getElementById("id_groups_on");
+for(opt in sref.options) {
+    alert(opt);
+}
+</script>
+{% endblock %}

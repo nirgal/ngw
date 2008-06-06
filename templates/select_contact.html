@@ -3,15 +3,17 @@
 {% block nav %}
 {{ block.super }}
 › <a href=/{{ objtypename }}s/>{{ objtypename }}s</a>
+› select
 {% endblock %}
 
 {% block body %}
-{% include "query_entities.html" %}
+    <form action="{{ select }}">
+    {% include "query_entities.html" %}
 
     {% block submitbar %}
     <div id=submitbar>
-    <a href="/{{ objtypename }}s/add"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a {{ objtypename }}</a>
+      <input type=submit id=default value="Add to group">
     </div>
     {% endblock %}
-
+    </form>
 {% endblock %}

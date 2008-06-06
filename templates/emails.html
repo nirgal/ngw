@@ -1,0 +1,26 @@
+{% load ngwtags %}
+{% extends "list.html" %}
+
+{% block nav %}
+{{ block.super }}
+› <a href="{{ cg.getlink }}">{{ cg.name }}</a>
+› emails
+{% endblock %}
+
+{% block body %}
+    {% for email in emails %}
+    {{ email|get:0 }} &lt;{{ email|get:1 }}&gt;<br>
+    {% endfor %}
+    {% if noemails %}
+        <p>Warning, the following people does not have any email adress:<br>
+        {% for contact in noemails %}
+        <a href="{{ contact.get_link }}">{{ contact.name }}</a><br>
+        {% endfor %}
+    {% endif %}
+    {% block submitbar %}
+    <div id=submitbar>
+      <a href="mailto:{% for email in emails %}{% if forloop.counter0 %},{% endif %}{{ email|get:1 }}{% endfor %}" id=default>Send mail To</a>
+      <a href="mailto:?bcc={% for email in emails %}{% if forloop.counter0 %},{% endif %}{{ email|get:1 }}{% endfor %}">Send mail Bcc</a>
+    </div>
+    {% endblock %}
+{% endblock %}

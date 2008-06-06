@@ -43,13 +43,31 @@ def pagenumber_iterator(page, npages):
 
 
 @register.filter
+def order_absmatch(order, column_index):
+    if not order:
+        return column_index==0
+    if order[0]!="-":
+        return int(order)==column_index
+    else:
+        return int(order[1:])==column_index
+
+@register.filter
+def order_isreverted(order):
+    return order and order[0]=="-"
+
+
+@register.filter
 def get(object, index):
     return object[index]
 
 @register.filter
 def ngw_display(row, col):
-    entity_id = col[1]
-    entity = row[entity_id]
+    if isinstance(row, tuple):
+        entity_id = col[1]
+        entity = row[entity_id]
+    else:
+        entity = row
+
     if not entity:
         return u""
 
@@ -61,5 +79,12 @@ def ngw_display(row, col):
     if inspect.ismethod(result):
         return result()
     #TODO: handle more types & errors, like method need another parameter
+    if result==None:
+        return u""
+    try:
+        flink = entity.__getattribute__("get_link_"+attribute_name)
+        result = '<a href="'+flink()+'">'+result+'</a>'
+    except AttributeError:
+        pass
     return result
 
