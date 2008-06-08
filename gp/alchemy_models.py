@@ -280,7 +280,7 @@ class ContactGroup(object):
         sgs = self.subgroups
         if not sgs:
             return u""
-        return u" (implies "+u", ".join(['<a href="'+g.get_link()+'">'+g.name+'</a>' for g in sgs])+u")"
+        return u" (including "+u", ".join(['<a href="'+g.get_link()+'">'+g.name+'</a>' for g in sgs])+u")"
 
 
 class ContactField(object):

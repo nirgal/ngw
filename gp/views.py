@@ -725,7 +725,7 @@ def contactgroup_list(request):
             if fields:
                 return u", ".join(['<a href="'+f.get_link()+'">'+f.name+"</a>" for f in fields])
             else:
-                return u"Yes (but none yes)"
+                return u"Yes (but none yet)"
         else:
             return u"No"
 
@@ -751,6 +751,7 @@ def contactgroup_list(request):
 def contactgroup_detail(request, id):
     fields = DEFAULT_INITIAL_FIELDS
     cg = Query(ContactGroup).get(id)
+    print cg.direct_subgroups
     q, cols = contact_make_query_with_fields(fields)
     q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove</a>', None))
@@ -761,6 +762,7 @@ def contactgroup_detail(request, id):
     args['cols'] = cols
     args['cg'] = cg
     return query_print_entities(request, 'group_detail.html', args)
+
 
 def contactgroup_emails(request, id):
     cg = Query(ContactGroup).get(id)

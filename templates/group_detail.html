@@ -11,7 +11,7 @@
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
     <br>
     {% include "query_entities.html" %}
-    {% if cg.direct_supergroups %}
+    {% if cg.direct_subgroups %}
         <h1>Member groups</h1>
         {% for sg in cg.direct_subgroups %}
             ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includingtxt}}<br>
