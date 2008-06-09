@@ -130,28 +130,8 @@ def query_print_entities(request, template_name, args):
     return render_to_response(template_name, args)
 
 
-
-def testquery_entities(request):
-    #q = Query(Contact).add_entity(ContactFieldValue).select_from(outerjoin(contact_table, contact_field_value_table, and_(contact_table.c.id==contact_field_value_table.c.contact_id, contact_field_value_table.c.contact_field_id==field_id)))
-
-    q = Query(Contact)
-    j = contact_table
-    cols=[ ("name", 0, "name", contact_table.c.name), ]
-
-    for field_id in (6, 29, 33, 32):
-        a = contact_field_value_table.alias()
-        q = q.add_entity(ContactFieldValue, alias=a)
-        j = outerjoin(j, a, and_(contact_table.c.id==a.c.contact_id, a.c.contact_field_id==field_id ))
-        cols.append(("field "+str(field_id), len(cols), "__unicode__", a.c.value))
-
-    q = q.select_from(j)
-
-    args={}
-    args['title'] = "test query"
-    args['query'] = q
-    args['cols'] = cols
-    return query_print_entities(request, 'test_query_entities.html', args)
-
+def test(request):
+    return HttpResponse("This is a test")
 
 #######################################################################
 #
@@ -228,6 +208,7 @@ def contact_detail(request, id):
 def contact_vcard(request, id):
     c = Query(Contact).get(id)
     return HttpResponse(c.vcard().encode("utf-8"), mimetype="text/x-vcard")
+
 
 class RibField(forms.Field):
     # TODO handle international IBAN numbers http://fr.wikipedia.org/wiki/ISO_13616
@@ -649,7 +630,7 @@ def contact_edit(request, id):
             
             # 2/ In ContactFields
             for cf in Query(ContactField):
-                if cf.contact_group_id not in contactgroupids:
+                if cf.contact_group_id and cf.contact_group_id not in contactgroupids:
                     continue
                 cfname = cf.name
                 cfid = cf.id

@@ -1,10 +1,8 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('',
-    # Example:
-    # (r'^ngw/', include('ngw.apps.foo.urls.foo')),
     (r'^$', 'ngw.gp.views.index'),
-    (r'^testquery_entities$', 'ngw.gp.views.testquery_entities'),
+    (r'^test$', 'ngw.gp.views.test'),
     (r'^contacts/$', 'ngw.gp.views.contact_list'),
     (r'^contacts/add$', 'ngw.gp.views.contact_edit', {'id': None}),
     (r'^contacts/search$', 'ngw.gp.views.contact_search'),
@@ -30,7 +28,4 @@ urlpatterns = patterns('',
     (r'^choicegroups/add$', 'ngw.gp.views.choicegroup_edit', {'id': None}),
     (r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.gp.views.choicegroup_edit'),
     (r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.gp.views.choicegroup_delete'),
-
-    # Uncomment this for admin:
-    #(r'^admin/', include('django.contrib.admin.urls')),
 )
