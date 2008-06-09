@@ -995,6 +995,16 @@ class FieldEditForm(forms.Form):
             raise forms.ValidationError("You must select a choicegroup when for types choice")
         return self.clean_data
 
+    def clean_name(self):
+        name = self.clean_data['name']
+        result = u""
+        for c in name:
+            if c==u"_" or c>=u"0" and c<=u"9" or c>=u"A" and c<=u"Z" or c>=u"a" and c<=u"z":
+                result+=c
+            else:
+                result+="_"
+        return result
+        
 
 def field_edit(request, id):
     objtypename = "contactfield"
