@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-import copy, traceback
+import copy, traceback, time
 from pprint import pprint
 from itertools import chain
 from django.http import *
@@ -13,7 +13,7 @@ from ngw.gp.alchemy_models import *
 
 GROUP_PREFIX = '_group_'
 DEFAULT_INITIAL_FIELDS=['name', 'email', 'phone_1', 'phone_2', 'region', 'GL', '_group_5']
-NB_LINES_PER_PAGE=25
+NB_LINES_PER_PAGE=100
 
 
 def name_internal2nice(txt):
@@ -515,7 +515,7 @@ def contact_search(request):
     if request.method == 'POST':
         params = request.raw_post_data
     else:
-        params = request.environ['QUERY_STRING']
+        params = request.META['QUERY_STRING'] or ''
 
     print "params=", params
     if params:
@@ -1000,10 +1000,38 @@ def field_edit(request, id):
     if request.method == 'POST':
         form = FieldEditForm(request.POST)
         if form.is_valid():
-            # TODO check new values are compatible with actual XFValues
+            data = form.clean()
             if not id:
                 cf = ContactField()
-            data = form.clean()
+            elif cf.type != data['type']:
+                deletion_details=[]
+                if data['type']==FTYPE_NUMBER:
+                    for cfv in cf.values:
+                        try:
+                            int(cfv.value)
+                        except ValueError:
+                            deletion_details.append((cfv.contact, cfv))
+                elif data['type']==FTYPE_DATE:
+                    for cfv in cf.values:
+                        try:
+                            time.strptime(cfv.value, '%Y-%m-%d')
+                        except ValueError:
+                            deletion_details.append((cfv.contact, cfv))
+                if deletion_details:
+                    if request.POST.get('confirm', None):
+                        for cfv in [ dd[1] for dd in deletion_details ]:
+                            Session.delete(cfv)
+                    else:
+                        args={}
+                        args['title'] = "Type incompatible with existing data"
+                        args['objtypename'] = "contactfield"
+                        args['id'] = id
+                        args['cf'] = cf
+                        args['deletion_details'] = deletion_details
+                        for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
+                            args[k] = data[k]
+                        return render_to_response('type_change.html', args)
+                # TODO check new values are compatible with actual XFValues
             cf.name = data['name']
             cf.hint = data['hint']
             if data['contact_group']:

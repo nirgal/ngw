@@ -75,7 +75,7 @@ class Choice(object):
 
 class ChoiceGroup(object):
     def __repr__(self):
-        return self.name.encode('utf-8')
+        return "ChoiceGroup<"+self.name.encode('utf-8')+">"
 
     @property
     def ordered_choices(self):
@@ -126,7 +126,7 @@ class Contact(object):
         self.name = name
 
     def __repr__(self):
-        return self.name
+        return self.name.encode('utf-8')
 
     def str_member_of(self, gids):
         gid = gids[0]
