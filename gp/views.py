@@ -151,7 +151,7 @@ def contact_make_query_with_fields(fields):
             groupid = int(prop[len(GROUP_PREFIX):])
             cg = Query(ContactGroup).get(groupid)
             subgroups[groupid] = [ g.id for g in cg.self_and_subgroups ]
-            print "subgroups[",groupid,"]=", subgroups[groupid]
+            #print "subgroups[",groupid,"]=", subgroups[groupid]
             cols.append( (cg.name, 0, lambda c: c.str_member_of(subgroups[groupid]), None) )
         elif prop=="name":
             cols.append( ("name", 0, "name", contact_table.c.name) )
@@ -160,7 +160,7 @@ def contact_make_query_with_fields(fields):
             a = contact_field_value_table.alias()
             q = q.add_entity(ContactFieldValue, alias=a)
             j = outerjoin(j, a, and_(contact_table.c.id==a.c.contact_id, a.c.contact_field_id==cf.id ))
-            cols.append( (cf.name, n_entities, "__unicode__", a.c.value) )
+            cols.append( (cf.name, n_entities, "str_print", a.c.value) )
             n_entities += 1
 
     q = q.select_from(j)

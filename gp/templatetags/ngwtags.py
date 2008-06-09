@@ -1,7 +1,7 @@
 # -*- encofing: utf8 -*-
 
+import inspect, traceback
 from django import template
-import inspect
 
 register = template.Library()
 
@@ -82,9 +82,11 @@ def ngw_display(row, col):
     if result==None:
         return u""
     try:
-        flink = entity.__getattribute__("get_link_"+attribute_name)
-        result = '<a href="'+flink()+'">'+result+'</a>'
-    except AttributeError:
-        pass
+        flink = entity.__getattribute__("get_link_"+attribute_name.encode('utf-8'))
+        link = flink()
+        if link:
+            result = '<a href="'+link+'">'+result+'</a>'
+    except AttributeError, e:
+        pass 
     return result
 

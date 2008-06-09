@@ -128,6 +128,9 @@ class Contact(object):
     def __repr__(self):
         return self.name.encode('utf-8')
 
+    def __unicode__(self):
+        return self.name
+
     def str_member_of(self, gids):
         gid = gids[0]
         if select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id==gid)).execute().fetchone():
@@ -285,6 +288,9 @@ class ContactGroup(object):
 
 class ContactField(object):
     def __repr__(self):
+        return "ContactField<"+self.name.encode('utf-8')+">"
+
+    def __unicode__(self):
         return self.name
 
     def repr_type(self):
@@ -297,9 +303,10 @@ class ContactField(object):
         return u"/contactfields/"+str(self.id)+"/edit"
     get_link_name = get_link
 
+
 class ContactFieldValue(object):
     def __repr__(self):
-        return unicode(self).encode('utf-8')
+        return 'ContactFieldValue<"'+unicode(self.contact).encode("utf-8")+'", "'+unicode(self.field).encode('utf-8')+'", "'+unicode(self).encode('utf-8')+'">'
 
     def __unicode__(self):
         cf = self.field
@@ -332,7 +339,20 @@ class ContactFieldValue(object):
         else:
             raise Exception("Unsuported field type "+cf.type)
  
+    def get_link_value(self):
+        t = self.field.type
+        if t==FTYPE_EMAIL:
+            return u"mailto:"+self.value
+        elif t==FTYPE_PHONE: # rfc3966
+            return u"tel:"+self.value
+        return u""
 
+    def str_print(self):
+        result = unicode(self)
+        link = self.get_link_value()
+        if link:
+            result =  u'<a href="'+link+'">'+result+'</a>'
+        return result
 
 #class ContactInGroup(object):
 #    def __repr__(self):
