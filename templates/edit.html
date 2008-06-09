@@ -16,7 +16,7 @@
     {% block submitbar %}
     <div id=submitbar>
     <input type=submit value="Save" id="default">
-    <!--<input type=submit value="Save and add another" name="_addanother">-->
+    {% if not id %}<input type=submit value="Save and add another" name="_addanother">{% endif %}
     <input type=submit value="Save and continue editing" name="_continue">
     {% if id %}
     <a href="/{{ objtypename }}s/{{ id }}/delete"><img src="/media/img/admin/icon_deletelink.gif" border=0 valign=middle> Delete</a>

@@ -674,7 +674,14 @@ def contact_edit(request, id):
                     else:
                         Session.delete(cfv)
             Session.commit()
-            if not request.POST.get("_continue", None):
+            if request.POST.get("_continue", None):
+                return HttpResponseRedirect("/contacts/"+str(contact.id)+"/edit")
+            elif request.POST.get("_addanother", None):
+                url = "/contacts/add"
+                if default_group:
+                    url+="?default_group="+str(default_group)
+                return HttpResponseRedirect(url)
+            else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.contact_list')) # args=(p.id,)))
         # else /new/ or /change/ failed validation
     else: # GET /  HEAD
@@ -868,7 +875,11 @@ def contactgroup_edit(request, id):
             cg.direct_subgroups = [ Query(ContactGroup).get(id) for id in form.clean()['direct_subgroups']]
             Session.commit()
             
-            if not request.POST.get("_continue", None):
+            if request.POST.get("_continue", None):
+                return HttpResponseRedirect("/contactgroups/"+str(cg.id)+"/edit")
+            elif request.POST.get("_addanother", None):
+                return HttpResponseRedirect("/contactgroups/add")
+            else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.contactgroup_detail', args=(cg.id,)))
 
     else: # GET
@@ -1018,7 +1029,11 @@ def field_edit(request, id):
             Session.commit()
             field_renumber()
             Session.commit()
-            if not request.POST.get("_continue", None):
+            if request.POST.get("_continue", None):
+                return HttpResponseRedirect("/contactfields/"+str(cf.id)+"/edit")
+            elif request.POST.get("_addanother", None):
+                return HttpResponseRedirect("/contactfields/add")
+            else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.field_list')) # args=(p.id,)))
         # else validation error
     else:
@@ -1212,6 +1227,7 @@ class ChoiceGroupForm(forms.Form):
             cg.choices.append(Choice(key=k, value=v))
     
         Session.commit()
+        return cg
             
         
 def choicegroup_edit(request, id=None):
@@ -1227,8 +1243,12 @@ def choicegroup_edit(request, id=None):
     if request.method == 'POST':
         form = ChoiceGroupForm(cg, MultiValueDict_unicode(request.POST))
         if form.is_valid():
-            form.save(cg)
-            if not request.POST.get("_continue", None):
+            cg = form.save(cg)
+            if request.POST.get("_continue", None):
+                return HttpResponseRedirect("/choicegroups/"+str(cg.id)+"/edit")
+            elif request.POST.get("_addanother", None):
+                return HttpResponseRedirect("/choicegroups/add")
+            else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.choicegroup_list')) # args=(p.id,)))
     else:
         form = ChoiceGroupForm(cg)
