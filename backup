@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-pg_dump -O -x -f backup.sql ngw

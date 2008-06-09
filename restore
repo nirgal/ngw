@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-set -e
-dropdb ngw
-createdb ngw -E utf-8
-psql -q -f backup.sql ngw
