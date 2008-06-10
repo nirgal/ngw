@@ -12,7 +12,7 @@ from django.shortcuts import render_to_response
 from ngw.gp.alchemy_models import *
 
 GROUP_PREFIX = '_group_'
-DEFAULT_INITIAL_FIELDS=['name', 'email', 'phone_1', 'phone_2', 'region', 'GL', '_group_5']
+DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
 NB_LINES_PER_PAGE=100
 
 
