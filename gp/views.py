@@ -139,20 +139,21 @@ def test(request):
 #
 #######################################################################
 
+def str_member_of_factory(contact_group):
+    gids = [ g.id for g in contact_group.self_and_subgroups ]
+    return lambda c: c.str_member_of(gids)
+
 def contact_make_query_with_fields(fields):
     q = Query(Contact)
     n_entities = 1
     j = contact_table
     cols=[]
     
-    subgroups = {} 
     for prop in fields:
         if prop.startswith(GROUP_PREFIX):
             groupid = int(prop[len(GROUP_PREFIX):])
             cg = Query(ContactGroup).get(groupid)
-            subgroups[groupid] = [ g.id for g in cg.self_and_subgroups ]
-            #print "subgroups[",groupid,"]=", subgroups[groupid]
-            cols.append( (cg.name, 0, lambda c: c.str_member_of(subgroups[groupid]), None) )
+            cols.append( (cg.name, 0, str_member_of_factory(cg), None) )
         elif prop=="name":
             cols.append( ("name", 0, "name", contact_table.c.name) )
         else:
@@ -190,11 +191,13 @@ def contact_detail(request, id):
     rows = []
     for cf in c.get_allfields():
         cfv = Query(ContactFieldValue).get((id, cf.id))
+        #if cfv:
+        #    nice_value = unicode(cfv)
+        #else:
+        #    nice_value = u""
+        #rows.append((cf.name, nice_value))
         if cfv:
-            nice_value = unicode(cfv)
-        else:
-            nice_value = u""
-        rows.append((cf.name, nice_value))
+            rows.append((cf.name, unicode(cfv)))
     
     args={}
     args['title'] = "Contact detail"
@@ -453,17 +456,21 @@ class ContactSearchLineGroup(ContactSearchLine):
         ContactSearchLine.__init__(self, form, GROUP_PREFIX + str(group.id), group.name, initial_check)
         self.group = group
         self.operators.append(("MEMBER", "Member", False, self.filter_MEMBER))
+        self.operators.append(("INVITED", "Invited", False, self.filter_INVITED))
         self.operators.append(("NOTMEMBER", "Not member", False, self.filter_NOTMEMBER))
         self.operators.append(("DIRECTMEMBER", "Direct member", False, self.filter_DIRECTMEMBER))
     
     def filter_MEMBER(self, query, value):
-        return query.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s))' % ",".join([str(g.id) for g in self.group.self_and_subgroups]))
+        return query.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in self.group.self_and_subgroups]))
     
     def filter_NOTMEMBER(self, query, value):
-        return query.filter('NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s))' % ",".join([str(g.id) for g in self.group.self_and_subgroups]))
+        return query.filter('NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in self.group.self_and_subgroups]))
+    
+    def filter_INVITED(self, query, value):
+        return query.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in self.group.self_and_subgroups]))
     
     def filter_DIRECTMEMBER(self, query, value):
-        return query.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%d)' % self.group.id)
+        return query.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%d  AND member=\'t\')' % self.group.id)
 
         
 class ContactSearchForm(forms.Form):
@@ -517,14 +524,14 @@ def contact_search(request):
     else:
         params = request.META['QUERY_STRING'] or ''
 
-    print "params=", params
+    #print "params=", params
     if params:
         form = ContactSearchForm(request.REQUEST)
         if form.is_valid():
             fields = []
             for kv in params.split("&"):
                 k,v = kv.split('=',1)
-                if k.startswith('_'):
+                if k.startswith('_') and not k.startswith(GROUP_PREFIX):
                     continue
                 #print k,v
                 fields.append(k)
@@ -586,8 +593,14 @@ class ContactEditForm(forms.Form):
                 self.fields[cf.name] = forms.MultipleChoiceField(required=False, help_text=cf.hint, choices=cf.choice_group.ordered_choices_no_default, widget=NgwCheckboxSelectMultiple())
         
         def contactgroupchoices():
+            result = []
             # sql "_" means "any character" and must be escaped
-            return [ (g.id, g.name) for g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))) ]
+            for g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]):
+                nice_name = g.name
+                if g.date:
+                    nice_name+=u" "+unicode(g.date)
+                result.append( (g.id, nice_name) )
+            return result
 
         self.fields['groups'] = forms.MultipleChoiceField(required=False, choices=contactgroupchoices())
         
@@ -605,6 +618,7 @@ def contact_edit(request, id):
             default_group = None
         form = ContactEditForm(id, request.POST, default_group=default_group)
         if form.is_valid():
+            data = form.clean()
             # print "saving", repr(form.data)
 
             # record the values
@@ -613,20 +627,30 @@ def contact_edit(request, id):
             if id:
                 contact = Query(Contact).get(id)
                 contactgroupids = [ g.id for g in contact.get_allgroups_withfields()]  # Need to keep a record of initial groups
-                contact.name = form.clean()['name']
+                contact.name = data['name']
             else:
-                contact = Contact(form.clean()['name'])
-                default_group = form.clean().get('default_group', "") # Direct requested group
+                contact = Contact(data['name'])
+                default_group = data.get('default_group', "") # Direct requested group
                 if default_group:
                     default_group = int(default_group)
                     contactgroupids = [ g.id for g in Query(ContactGroup).get(default_group).self_and_supergroups ]
                 else:
                     contactgroupids = [ ]
 
-            newgroups = form.clean().get('groups', [])
-            newgroups = Query(ContactGroup).filter(ContactGroup.c.id.in_(newgroups)).all()
-            print "newgroups =", newgroups
-            contact.direct_groups = newgroups
+            newgroups = data.get('groups', [])
+            registeredgroups = []
+            for gid in newgroups:
+                cig = Query(ContactInGroup).get((contact.id, gid))
+                if cig==None: # Was not a member
+                    cig = ContactInGroup(contact.id, gid)
+                    cig.member = True
+                registeredgroups.append(gid)
+            for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==id, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
+                # TODO optimize me
+                print "Deleting", cig
+                Session.delete(cig)
+            #print "newgroups =", newgroups
+            #contact.direct_groups = newgroups
             
             # 2/ In ContactFields
             for cf in Query(ContactField):
@@ -634,13 +658,13 @@ def contact_edit(request, id):
                     continue
                 cfname = cf.name
                 cfid = cf.id
-                newvalue = form.clean()[cfname]
+                newvalue = data[cfname]
                 if newvalue!=None:
                     if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB, FTYPE_CHOICE):
                         newvalue = unicode(newvalue)
                     elif cf.type == FTYPE_MULTIPLECHOICE:
                         newvalue = ",".join(newvalue)
-                        print "storing", repr(newvalue), "in", cfname
+                        #print "storing", repr(newvalue), "in", cfname
                     elif cf.type==FTYPE_NUMBER:
                         newvalue = unicode(newvalue) # store as a string for now
                 cfv = Query(ContactFieldValue).get((id, cfid))
@@ -670,7 +694,7 @@ def contact_edit(request, id):
         initialdata = {}
         if id: # modify existing
             contact = Query(Contact).get(id)
-            initialdata['groups'] = [ group.id for group in contact.direct_groups ]
+            initialdata['groups'] = [ group.id for group in contact.get_directgroups_member() ]
             initialdata['name'] = contact.name
             form = ContactEditForm(id, initialdata)
 
@@ -742,7 +766,7 @@ def contactgroup_detail(request, id):
     cg = Query(ContactGroup).get(id)
     print cg.direct_subgroups
     q, cols = contact_make_query_with_fields(fields)
-    q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove</a>', None))
     args={}
     args['title'] = "Group "+cg.name
@@ -833,24 +857,27 @@ def contactgroup_edit(request, id):
             cg.budget_code = data['budget_code']
             
             # we need to add/remove people without destroying their admin flags
-            new_member_ids = [ int(id) for id in form.clean()['direct_members']]
+            new_member_ids = [ int(id) for id in data['direct_members']]
             #print "BEFORE, members=", cg.direct_contacts
-            #print "WANTED MEMBERS=", new_member_ids
+            print "WANTED MEMBERS=", new_member_ids
             for cid in new_member_ids:
                 c = Query(Contact).get(cid)
-                if not c in cg.direct_contacts:
+                if not Query(ContactInGroup).get((c.id, cg.id)):
                     #print "ADDING", c.name, "(", c.id, ") to group"
-                    cg.direct_contacts.append(c)
+                    cig = ContactInGroup(c.id, cg.id)
+                    cig.member = True
             # Search members to remove:
-            members_to_remove = []
-            for c in cg.direct_contacts:
-                #print "Considering", c.name
+            #members_to_remove = []
+            for cig in Query(ContactInGroup).filter(ContactInGroup.c.group_id==cg.id):
+                c = cig.contact
+                print "Considering", c.name.encode('utf-8')
                 if c.id not in new_member_ids:
-                    #print "REMOVING", c.name, "(", c.id, ") from group:", c.id, "not in", new_member_ids
-                    members_to_remove.append(c)
+                    print "REMOVING", c.name.encode('utf-8'), "(", c.id, ") from group:", c.id, "not in", new_member_ids
+                    Session.delete(cig)
+                    #members_to_remove.append(c)
             # Actually remove them
-            for c in members_to_remove:
-                    cg.direct_contacts.remove(c)
+            #for c in members_to_remove:
+            #        cg.direct_contacts.remove(c)
             #print "AFTER, members=", cg.direct_contacts
 
             # subgroups have no properties: just recreate the array with brute force
@@ -872,7 +899,7 @@ def contactgroup_edit(request, id):
                 'description': cg.description,
                 'date': cg.date,
                 'budget_code': cg.budget_code,
-                'direct_members': [ c.id for c in cg.direct_contacts ],
+                'direct_members': [ c.id for c in cg.get_direct_members() ],
                 'direct_subgroups': [ g.id for g in cg.direct_subgroups ],
             }
             
@@ -884,11 +911,10 @@ def contactgroup_edit(request, id):
 
 
 def contactgroup_remove(request, gid, cid):
-    cg = Query(ContactGroup).get(gid)
-    c = Query(Contact).get(cid)
-    if not c in cg.direct_contacts:
+    cig = Query(ContactInGroup).get((cid, gid))
+    if not cig:
         return HttpResponse("Error, that contact is not a direct member. Please check subgroups")
-    cg.direct_contacts.remove(c)
+    Session.delete(cig)
     Session.commit()
     return HttpResponseRedirect(reverse('ngw.gp.views.contactgroup_detail', args=(gid,)))
 

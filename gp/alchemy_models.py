@@ -132,22 +132,49 @@ class Contact(object):
         return self.name
 
     def str_member_of(self, gids):
+        #gids = [ g.id for g in cg.self_and_subgroups ]
         gid = gids[0]
-        if select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id==gid)).execute().fetchone():
-            return "Yes"
+        cig = Query(ContactInGroup).get((self.id, gid))
+        if cig:
+            if cig.member:
+                return "Member"
+            elif cig.invited:
+                return "Invited"
+            else:
+                return "ERROR: not member and not invited"
+
         elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids))).execute().fetchone(): 
-            return "Yes"+" "+AUTOMATIC_MEMBER_INDICATOR
+            return "Member"+" "+AUTOMATIC_MEMBER_INDICATOR
         else:
-            return "No"
+            return ""
 
     def get_link(self):
         return u"/contacts/"+str(self.id)+"/"
     get_link_name = get_link
 
-    def get_allgroups(self):
+    def get_directgroups_member(self):
+        "returns the list of groups that contact is direct member of."
+        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.member==True)
+        groupids = [cig.group_id for cig in q]
+        return Query(ContactGroup).filter(ContactGroup.c.id.in_(groupids))
+
+    def get_allgroups_member(self):
         "returns the list of groups that contact is member of."
+        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.member==True)
         groups = []
-        for g in self.direct_groups:
+        for cig in q:
+            g = Query(ContactGroup).get(cig.group_id)
+            if g not in groups:
+                groups.append(g)
+            g._append_supergroups(groups)
+        return groups
+
+    def get_allgroups_invited(self):
+        "returns the list of groups that contact is in invited list."
+        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.invited==True)
+        groups = []
+        for cig in q:
+            g = Query(ContactGroup).get(cig.group_id)
             if g not in groups:
                 groups.append(g)
             g._append_supergroups(groups)
@@ -155,7 +182,7 @@ class Contact(object):
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
-        return [ g for g in self.get_allgroups() if g.field_group ]
+        return [ g for g in self.get_allgroups_member() if g.field_group ]
 
     def get_allfields(self):
         contactgroupids = [ g.id for g in self.get_allgroups_withfields()] 
@@ -250,6 +277,16 @@ class ContactGroup(object):
         return result
     self_and_supergroups = property(_get_self_and_supergroups)
 
+    def get_direct_members(self):
+        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.c.group_id==self.id, ContactInGroup.c.member==True))
+        cids = [ cig.contact_id for cig in cigs ]
+        return Query(Contact).filter(Contact.c.id.in_(cids))
+
+    def get_direct_invited(self):
+        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.c.group_id==self.id, ContactInGroup.c.invited==True))
+        cids = [ cig.contact_id for cig in cigs ]
+        return Query(Contact).filter(Contact.c.id.in_(cids))
+
     def _get_members(self):
         gids = [ ]
         for g in self.self_and_subgroups:
@@ -259,9 +296,10 @@ class ContactGroup(object):
         #print "members=", s, ":"
         #for c in Session.execute(s):
         #    print c
-        s = select([contact_in_group_table.c.contact_id], contact_in_group_table.c.group_id.in_(gids)).distinct()
+        s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
         #print "members=", s, ":"
         result =  []
+        #TODO optimize me
         for cid in Session.execute(s):
             result.append(Query(Contact).get(cid[0]))
             #print cid[0]
@@ -354,9 +392,13 @@ class ContactFieldValue(object):
             result =  u'<a href="'+link+'">'+result+'</a>'
         return result
 
-#class ContactInGroup(object):
-#    def __repr__(self):
-#        return "ContactInGroup<%s,%s>"%(self.contact_id, self.group_id)
+class ContactInGroup(object):
+    def __init__(self, contact_id, group_id):
+        self.contact_id = contact_id
+        self.group_id = group_id
+
+    def __repr__(self):
+        return "ContactInGroup<%s,%s>"%(self.contact_id, self.group_id)
 #mapper(ContactInGroup,
 #    contact_in_group_table, properties={ \
 ##    'choices': relation(Choice, primaryjoin=choice_table.c.choice_group_id==choice_group_table.c.id, cascade="save, update, merge, expunge, refresh, delete, expire"),
@@ -369,6 +411,7 @@ choice_mapper=mapper(Choice, choice_table)
 choice_group_mapper = mapper(ChoiceGroup, choice_group_table)
 contact_mapper = mapper(Contact, contact_table)
 contact_group_mapper = mapper(ContactGroup, contact_group_table)
+contact_in_group_mapper = mapper(ContactInGroup, contact_in_group_table)
 contact_field_mapper = mapper(ContactField, contact_field_table)
 contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table)
 
@@ -385,14 +428,29 @@ choice_group_mapper.add_property('choices', relation(
     cascade="delete",
     passive_deletes=True))
 
-# ContactGroup <-> Contact
-contact_mapper.add_property('direct_groups', relation(
-    ContactGroup,
-    secondary=contact_in_group_table,
-    lazy=True,
-    cascade="none",
-    backref='direct_contacts',
+# ContactInGroup <-> Contact
+contact_mapper.add_property('in_group', relation(
+    ContactInGroup,
+    primaryjoin=contact_table.c.id==contact_in_group_table.c.contact_id,
+    cascade="delete",
+    backref="contact",
     passive_deletes=True))
+
+# ContactInGroup <-> Contact
+contact_group_mapper.add_property('in_group', relation(
+    ContactInGroup,
+    primaryjoin=contact_group_table.c.id==contact_in_group_table.c.group_id,
+    cascade="delete",
+    backref="group",
+    passive_deletes=True))
+# ContactGroup <-> Contact
+#contact_mapper.add_property('direct_groups', relation(
+#    ContactGroup,
+#    secondary=contact_in_group_table,
+#    lazy=True,
+#    cascade="none",
+#    backref='direct_contacts',
+#    passive_deletes=True))
 
 # ContactGroup <-> ContactGroup
 contact_group_mapper.add_property('direct_subgroups', relation(
