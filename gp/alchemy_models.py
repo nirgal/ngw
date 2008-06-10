@@ -195,7 +195,7 @@ class Contact(object):
             country = unicode(country)
         vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
 
-        for pfield in ('phone_1', 'phone_2', 'phone_3'):
+        for pfield in ('tel_mobile', 'tel_prive', 'tel_professionel'):
             phone = self.get_value_by_keyname(pfield)
             if not phone:
                 continue
