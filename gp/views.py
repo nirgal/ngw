@@ -844,7 +844,7 @@ def contactgroup_edit(request, id):
             # Search members to remove:
             members_to_remove = []
             for c in cg.direct_contacts:
-                print "Considering", c.name
+                #print "Considering", c.name
                 if c.id not in new_member_ids:
                     #print "REMOVING", c.name, "(", c.id, ") from group:", c.id, "not in", new_member_ids
                     members_to_remove.append(c)
