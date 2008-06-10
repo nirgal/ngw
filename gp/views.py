@@ -635,13 +635,14 @@ def contact_edit(request, id):
                 cfname = cf.name
                 cfid = cf.id
                 newvalue = form.clean()[cfname]
-                if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB, FTYPE_CHOICE):
-                    newvalue = unicode(newvalue)
-                elif cf.type == FTYPE_MULTIPLECHOICE:
-                    newvalue = ",".join(newvalue)
-                    print "storing", repr(newvalue), "in", cfname
-                elif cf.type==FTYPE_NUMBER:
-                    newvalue = unicode(newvalue) # store as a string for now
+                if newvalue!=None:
+                    if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB, FTYPE_CHOICE):
+                        newvalue = unicode(newvalue)
+                    elif cf.type == FTYPE_MULTIPLECHOICE:
+                        newvalue = ",".join(newvalue)
+                        print "storing", repr(newvalue), "in", cfname
+                    elif cf.type==FTYPE_NUMBER:
+                        newvalue = unicode(newvalue) # store as a string for now
                 cfv = Query(ContactFieldValue).get((id, cfid))
                 if cfv == None:
                     if newvalue:
