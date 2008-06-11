@@ -17,8 +17,26 @@ NB_LINES_PER_PAGE=100
 
 
 def get_default_display_fields():
-    # TODO check the field still exists
-    return copy.copy(DEFAULT_INITIAL_FIELDS)
+    # check the field still exists
+    result = []
+    for fname in DEFAULT_INITIAL_FIELDS:
+        if fname=='name':
+            pass
+        elif fname.startswith(GROUP_PREFIX):
+            try:
+                groupid = int(fname[len(GROUP_PREFIX):])
+            except ValueError:
+                print "Error in default fields: %s has invalid syntax." % fname
+                continue
+            if not Query(ContactGroup).get(groupid):
+                print "Error in default fields: There is not group #%d." % groupid
+                continue
+        else:
+            if not Query(ContactField).filter(ContactField.c.name==fname).first():
+                print "Error in default fields: %s doesn't exists." % fname
+                continue
+        result.append(fname)
+    return result
 
 def name_internal2nice(txt):
     """
@@ -484,6 +502,7 @@ class ContactSearchForm(forms.Form):
     def __init__(self, data=None, auto_id='id_%s', prefix=None, initial=None):
         forms.Form.__init__(self, data, auto_id, prefix, initial)
         self.lines = []
+        default_display_fields = get_default_display_fields()
 
         def addLine(self, line):
             self.lines.append(line)
@@ -495,7 +514,7 @@ class ContactSearchForm(forms.Form):
 
         # Add all contact fields
         for cf in Query(ContactField).order_by('sort_weight'):
-            initial_check = cf.name in DEFAULT_INITIAL_FIELDS
+            initial_check = cf.name in default_display_fields
             if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB):
                 addLine(self, ContactSearchLineText(self, cf, initial_check))
             elif cf.type == FTYPE_NUMBER:
@@ -511,7 +530,7 @@ class ContactSearchForm(forms.Form):
 
         # Add all groups
         for g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))):
-            initial_check = GROUP_PREFIX+str(g.id) in DEFAULT_INITIAL_FIELDS
+            initial_check = GROUP_PREFIX+str(g.id) in default_display_fields
             addLine(self, ContactSearchLineGroup(self, g, initial_check))
     
     def do_filter(self, q):
