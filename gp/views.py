@@ -16,6 +16,10 @@ DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_profess
 NB_LINES_PER_PAGE=100
 
 
+def get_default_display_fields():
+    # TODO check the field still exists
+    return copy.copy(DEFAULT_INITIAL_FIELDS)
+
 def name_internal2nice(txt):
     """
     Capitalize first letter and replace _ by spaces
@@ -143,7 +147,10 @@ def str_member_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
     return lambda c: c.str_member_of(gids)
 
-def contact_make_query_with_fields(fields):
+def contact_make_query_with_fields(fields=None):
+    if fields == None:
+        fields = get_default_display_fields()
+
     q = Query(Contact)
     n_entities = 1
     j = contact_table
@@ -173,7 +180,7 @@ def contact_list(request):
         select = request['select']
         fields = [ 'name' ] + select.split(',')
     else:
-        fields = DEFAULT_INITIAL_FIELDS
+        fields = None # default
     
     #print "contact_list:", fields
     q, cols = contact_make_query_with_fields(fields)
@@ -762,14 +769,36 @@ def contactgroup_list(request):
 
 
 def contactgroup_detail(request, id):
-    fields = DEFAULT_INITIAL_FIELDS
+    fields = get_default_display_fields()
     cg = Query(ContactGroup).get(id)
-    print cg.direct_subgroups
-    q, cols = contact_make_query_with_fields(fields)
-    q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
-    cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove</a>', None))
+    #print cg.direct_subgroups
     args={}
-    args['title'] = "Group "+cg.name
+
+    display=request.REQUEST.get("display", "")
+    if display=="mi":
+        args['title'] = "Members and invited contacts of group "+cg.name
+        fields.append(GROUP_PREFIX+str(id))
+        q, cols = contact_make_query_with_fields(fields)
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND (member=\'t\' OR invited=\'t\'))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    elif display=="i":
+        args['title'] = "Contact invited in group "+cg.name
+        q, cols = contact_make_query_with_fields(fields)
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    else:
+        display='m'
+        args['title'] = "Members of group "+cg.name
+        q, cols = contact_make_query_with_fields(fields)
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    if request.REQUEST.get("output", "")=="vcard":
+        result=u""
+        for row in q:
+            contact = row[0]
+            result += contact.vcard()
+        return HttpResponse(result.encode("utf-8"), mimetype="text/x-vcard")
+
+    cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove</a>', None))
+    args['baseurl'] = "?display="+display
+    args['display'] = display
     args['objtypename'] = "contactgroup"
     args['query'] = q
     args['cols'] = cols

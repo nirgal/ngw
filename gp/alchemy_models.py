@@ -189,12 +189,21 @@ class Contact(object):
         #print "contactgroupids=", contactgroupids
         return Query(ContactField).filter(or_(ContactField.c.contact_group_id.in_(contactgroupids),ContactField.c.contact_group_id == None)).order_by(ContactField.c.sort_weight)
 
-    def get_value_by_keyname(self, keyname):
+    def get_cfv_by_keyname(self, keyname):
         cf = Query(ContactField).filter(ContactField.c.name == keyname).one()
         if not cf:
             return None
         cfv = Query(ContactFieldValue).get((self.id, cf.id))
         return cfv
+
+    def get_value_by_keyname(self, keyname):
+        cf = Query(ContactField).filter(ContactField.c.name == keyname).one()
+        if not cf:
+            return u"ERROR: no field named "+keyname
+        cfv = Query(ContactFieldValue).get((self.id, cf.id))
+        if cfv == None:
+            return u"" # FIXME need default for choices
+        return unicode(cfv)
 
     def vcard(self):
         # http://www.ietf.org/rfc/rfc2426.txt
@@ -207,30 +216,21 @@ class Contact(object):
         vcf += line(u"BEGIN", u"VCARD")
         vcf += line(u"VERSION", u"3.0")
         vcf += line(u"FN", self.name)
+        vcf += line(u"N", self.name)
 
         street = self.get_value_by_keyname("street")
-        if street:
-            street = unicode(street)
         postal_code = self.get_value_by_keyname("postal_code")
-        if postal_code:
-            postal_code = unicode(postal_code)
         city = self.get_value_by_keyname("city")
-        if city:
-            city = unicode(city)
         country = self.get_value_by_keyname("country")
-        if country:
-            country = unicode(country)
         vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
 
         for pfield in ('tel_mobile', 'tel_prive', 'tel_professionel'):
             phone = self.get_value_by_keyname(pfield)
-            if not phone:
-                continue
-            vcf += line(u"TEL", unicode(phone))
+            vcf += line(u"TEL", phone)
 
         email = self.get_value_by_keyname("email")
         if email:
-            vcf += line(u"EMAIL", unicode(email))
+            vcf += line(u"EMAIL", email)
 
         vcf += line(u"END", u"VCARD")
         return vcf

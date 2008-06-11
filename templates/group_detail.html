@@ -11,17 +11,39 @@
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
     <br>
     {% include "query_entities.html" %}
+    {% comment %}
+    {% with cg.get_direct_invited.count as ci %}
+        {{ ci }} contact{{ ci|pluralize }} {{ ci|pluralize:"have,has" }} been invited in that group, but {{ ci|pluralize:"are,is" }} not member yet.
+    {% endwith %}
+    {% comment %}
+    {% for contact in cg.get_direct_invited %}
+        {% if forloop.first %}
+        <h1>Invited members</h1>
+        {% endif %}
+        ‣ <a href="{{ contact.get_link}}">{{ contact }}</a><br>
+    {% endfor %}
+    {% endcomment %}
     {% if cg.direct_subgroups %}
         <h1>Member groups</h1>
-        {% for sg in cg.direct_subgroups %}
-            ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includingtxt}}<br>
+        {% for sg in cg.direct_subgroups  %}
+        ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includingtxt}}<br>
         {% endfor %}
     {% endif %}
     {% block submitbar %}
     <div id=submitbar>
-      <a id=default href="/{{ objtypename }}s/">Group list</a>
-      <a href="/{{ objtypename }}s/{{ cg.id }}/edit">Edit</a>
-      <a href="/{{ objtypename }}s/{{ cg.id }}/emails">Email</a>
+        <a id=default href="/{{ objtypename }}s/">Group list</a>
+        <a href="/{{ objtypename }}s/{{ cg.id }}/edit">Edit</a>
+        <a href="/{{ objtypename }}s/{{ cg.id }}/emails">Email</a>
+        {% ifnotequal display "mi" %}
+            <a href="?display=mi">Show invited and members</a>  
+        {% endifnotequal %}
+        {% ifnotequal display "m" %}
+            <a href="?display=m">Show only members</a>  
+        {% endifnotequal %}
+        {% ifnotequal display "i" %}
+            <a href="?display=i">Show only invited</a>  
+        {% endifnotequal %}
+        <a href="?display={{display}}&output=vcard">Vcard</a>  
     </div>
     {% endblock %}
 {% endblock %}
