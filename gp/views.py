@@ -478,7 +478,10 @@ class ContactSearchLineDate(ContactSearchLineBaseField):
 
 class ContactSearchLineGroup(ContactSearchLine):
     def __init__(self, form, group, initial_check=False):
-        ContactSearchLine.__init__(self, form, GROUP_PREFIX + str(group.id), group.name, initial_check)
+        nicename = group.name
+        if group.date:
+            nicename+=u" "+unicode(group.date)
+        ContactSearchLine.__init__(self, form, GROUP_PREFIX + str(group.id), nicename, initial_check)
         self.group = group
         self.operators.append(("MEMBER", "Member", False, self.filter_MEMBER))
         self.operators.append(("INVITED", "Invited", False, self.filter_INVITED))
@@ -529,7 +532,7 @@ class ContactSearchForm(forms.Form):
                 addLine(self, ContactSearchLineBaseField(self, cf, initial_check))
 
         # Add all groups
-        for g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))):
+        for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]):
             initial_check = GROUP_PREFIX+str(g.id) in default_display_fields
             addLine(self, ContactSearchLineGroup(self, g, initial_check))
     
