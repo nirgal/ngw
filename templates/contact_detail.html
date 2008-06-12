@@ -30,6 +30,7 @@
       <a id=default href="/{{ objtypename }}s/">Contact list</a>
       <a href="/{{ objtypename }}s/{{ contact.id }}/edit">Edit</a>
       <a href="/{{ objtypename }}s/{{ contact.id }}/vcard">VCard</a>
+      <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
     </div>
     {% endblock %}
 

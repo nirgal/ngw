@@ -234,7 +234,10 @@ class Contact(object):
 
         vcf += line(u"END", u"VCARD")
         return vcf
+    
 
+    def get_addr_semicol(self):
+        return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
 
 
 class ContactGroup(object):
