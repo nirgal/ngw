@@ -798,17 +798,17 @@ def contactgroup_detail(request, id):
 
     display=request.REQUEST.get("display", "")
     if display=="mi":
-        args['title'] = "Members and invited contacts of group "+cg.name
+        args['title'] = "Members and invited contacts of group "+cg.unicode_with_date()
         fields.append(GROUP_PREFIX+str(id))
         q, cols = contact_make_query_with_fields(fields)
         q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND (member=\'t\' OR invited=\'t\'))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     elif display=="i":
-        args['title'] = "Contact invited in group "+cg.name
+        args['title'] = "Contact invited in group "+cg.unicode_with_date()
         q, cols = contact_make_query_with_fields(fields)
         q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     else:
         display='m'
-        args['title'] = "Members of group "+cg.name
+        args['title'] = "Members of group "+cg.unicode_with_date()
         q, cols = contact_make_query_with_fields(fields)
         q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     if request.REQUEST.get("output", "")=="vcard":
@@ -965,6 +965,9 @@ def contactgroup_delete(request, id):
     o = Query(ContactGroup).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.contactgroup_list'))# args=(p.id,)))
 
+
+def contactingroup_edit(request, gid, cid):
+    return HttpResponse("Not implemented")
 
 #######################################################################
 #

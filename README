@@ -3,3 +3,8 @@ Installation
 python-django (>0.96.2) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql-8.1
 
 Warning, some packages must be taken from etch-backports (python-sqlalchemy) or even lenny ( python-django python-support )
+
+TODO
+====
+
+Remove the default for choice list. It's confusing and unnecessary.
