@@ -1,9 +1,18 @@
 {% extends "base.html" %}
 
+
 {% block body %}
 <div style="border: 1px solid #999; padding:1ex;">
 Welcome!
 <br>There are {{ ncontacts }} contacts in the database.
+
+<p>
+<form action="/contacts/search">
+<input type=hidden name=name value=on>
+<input type=hidden name="_op_name" value=NAME>
+Quick contact search: <input name=_val_name id=defaultfocus>
+</form>
+<script>document.forms[0]._val_name.focus();</script>
 <p>Please select an operation bellow:
 </div>
 <div id=submitbar style="font-size:120%; padding:1ex;">

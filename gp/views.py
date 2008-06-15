@@ -818,7 +818,7 @@ def contactgroup_detail(request, id):
             result += contact.vcard()
         return HttpResponse(result.encode("utf-8"), mimetype="text/x-vcard")
 
-    cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove</a>', None))
+    cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove from group</a>', None))
     args['baseurl'] = "?display="+display
     args['display'] = display
     args['objtypename'] = "contactgroup"
@@ -852,6 +852,7 @@ def contactgroup_emails(request, id):
 class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
+    field_group = forms.BooleanField(required=False, help_text=u"Does that group members have specific fields?")
     date = forms.DateField(required=False)
     budget_code = forms.CharField(required=False, max_length=10)
     direct_members = forms.MultipleChoiceField(required=False)
@@ -861,27 +862,23 @@ class ContactGroupForm(forms.Form):
         forms.Form.__init__(self, data, auto_id, prefix, initial)
         
         self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
-        self.fields['direct_subgroups'].choices = [ (g.id, g.name) for g in Query(ContactGroup).order_by([ContactGroup.c.name]) ]
+        self.fields['direct_subgroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
 
     def flag_inherited_members(self, g):
         has_automembers = False
         choices = []
-        subgroups = g.subgroups
+        members = g.members
+        direct_members = g.get_direct_members()
         for c in Query(Contact).order_by(Contact.c.name):
-            automember = False
-            for sg in subgroups:
-                if c in sg.direct_contacts:
-                    automember = True
-                    break
-            flagname = c.name
-            if automember:
-                flagname += " "+AUTOMATIC_MEMBER_INDICATOR
+            cname = c.name
+            if c in members and c not in direct_members:
+                cname += " "+AUTOMATIC_MEMBER_INDICATOR
                 has_automembers = True
-            choices.append( (c.id, flagname) )
+            choices.append( (c.id, cname) )
 
         self.fields['direct_members'].choices = choices
         if has_automembers:
-            help_text = AUTOMATIC_MEMBER_INDICATOR + " = Automatic members from " + ", ".join([ sg.name+" ("+str(len(sg.direct_contacts))+")" for sg in subgroups ]),
+            help_text = AUTOMATIC_MEMBER_INDICATOR + " = Automatic members from " + ", ".join([ sg.name+" ("+str(sg.get_direct_members().count())+")" for sg in g.subgroups ]),
             self.fields['direct_members'].help_text = help_text
 
 
@@ -904,12 +901,12 @@ def contactgroup_edit(request, id):
             data = form.clean()
             cg.name = data['name']
             cg.description = data['description']
+            cg.field_group = data['field_group']
             cg.date = data['date']
             cg.budget_code = data['budget_code']
             
             # we need to add/remove people without destroying their admin flags
             new_member_ids = [ int(id) for id in data['direct_members']]
-            #print "BEFORE, members=", cg.direct_contacts
             print "WANTED MEMBERS=", new_member_ids
             for cid in new_member_ids:
                 c = Query(Contact).get(cid)
@@ -918,18 +915,12 @@ def contactgroup_edit(request, id):
                     cig = ContactInGroup(c.id, cg.id)
                     cig.member = True
             # Search members to remove:
-            #members_to_remove = []
             for cig in Query(ContactInGroup).filter(ContactInGroup.c.group_id==cg.id):
                 c = cig.contact
                 print "Considering", c.name.encode('utf-8')
                 if c.id not in new_member_ids:
                     print "REMOVING", c.name.encode('utf-8'), "(", c.id, ") from group:", c.id, "not in", new_member_ids
                     Session.delete(cig)
-                    #members_to_remove.append(c)
-            # Actually remove them
-            #for c in members_to_remove:
-            #        cg.direct_contacts.remove(c)
-            #print "AFTER, members=", cg.direct_contacts
 
             # subgroups have no properties: just recreate the array with brute force
             cg.direct_subgroups = [ Query(ContactGroup).get(id) for id in form.clean()['direct_subgroups']]
@@ -948,6 +939,7 @@ def contactgroup_edit(request, id):
             initialdata = {
                 'name': cg.name,
                 'description': cg.description,
+                'field_group': cg.field_group,
                 'date': cg.date,
                 'budget_code': cg.budget_code,
                 'direct_members': [ c.id for c in cg.get_direct_members() ],

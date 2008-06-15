@@ -326,6 +326,13 @@ class ContactGroup(object):
             return u""
         return u" (including "+u", ".join(['<a href="'+g.get_link()+'">'+g.name+'</a>' for g in sgs])+u")"
 
+    def unicode_with_date(self):
+        """ Returns the name of the group, and the date if there's one"""
+        result = self.name
+        if self.date:
+            result += u" "+str(self.date)
+        return result
+
 
 class ContactField(object):
     def __repr__(self):
