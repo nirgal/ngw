@@ -24,7 +24,7 @@ def ngw_auth(username, passwd):
     passwd = unicode(passwd, 'utf-8', 'replace')
     if not username or not passwd:
         return None
-    c = Query(Contact).filter(Contact.c.username==username).first()
+    c = Query(Contact).filter(Contact.c.login==username).first()
     if c==None:
         return None
     dbpasswd=c.passwd

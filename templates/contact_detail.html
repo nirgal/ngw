@@ -31,7 +31,9 @@
       <a href="/{{ objtypename }}s/{{ contact.id }}/edit">Edit</a>
       <a href="/{{ objtypename }}s/{{ contact.id }}/vcard">VCard</a>
       <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
-      <a href="/{{ objtypename }}s/{{ contact.id }}/pass">Edit password</a>
+      {% if contact.login %}
+      <a href="/{{ objtypename }}s/{{ contact.id }}/pass">Change password</a>
+      {% endif %}
     </div>
     {% endblock %}
 
