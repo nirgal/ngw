@@ -168,8 +168,12 @@ input[type=submit]:active#default , #submitbar a:active#default {
 }
 </style>
 <div id=banner>
+{%comment%}
+<div style="float:right; display:float;font-size:small; color:yellow;">Welcome {{ user }}</div>
+{%endcomment%}
 <big>Action</big>
 ... go ... go ... go ...
+<br clear=all>
 </div>
 <div id=nav>
 {% block nav %}

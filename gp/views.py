@@ -12,6 +12,7 @@ from django.newforms.util import smart_unicode
 from django.shortcuts import render_to_response
 from ngw.gp.alchemy_models import *
 from ngw.gp.basicauth import *
+from django.template import RequestContext
 
 GROUP_PREFIX = '_group_'
 DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
@@ -22,18 +23,20 @@ def ngw_auth(user, passwd):
     user = unicode(user, 'utf-8', 'replace')
     passwd = unicode(passwd, 'utf-8', 'replace')
     if not user:
-        return False
+        return None
     try:
         uid = int(user)
     except ValueError:
-        return False
+        return None
     c = Query(Contact).get(uid)
     if c==None:
-        return False
+        return None
     dbpasswd=c.passwd
     if not dbpasswd:
-        return False
-    return md5(passwd).hexdigest()==dbpasswd
+        return None
+    if md5(passwd).hexdigest()!=dbpasswd:
+        return None
+    return c
 
 
 def get_default_display_fields():
@@ -69,7 +72,7 @@ def name_internal2nice(txt):
     return txt
 
 def MultiValueDict_unicode(d):
-    "Create a copy of the dict, converting to unicode when necessary"
+    "Create a copy of the dict, converting values to unicode when necessary"
     def u(x):
         if isinstance(x, str):
             return unicode(x, "utf-8")
@@ -86,8 +89,7 @@ def index(request):
     return render_to_response('index.html', {
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
-        'username': request.username,
-    })
+    }, RequestContext(request))
 
 @http_authenticate(ngw_auth, 'ngw')
 def generic_delete(request, o, next_url):
@@ -103,7 +105,7 @@ def generic_delete(request, o, next_url):
         Session.commit()
         return HttpResponseRedirect(next_url)
     else:
-        return render_to_response('delete.html', {'title':title, 'id':id, 'objtypename':objtypename, 'o': o})
+        return render_to_response('delete.html', {'title':title, 'id':id, 'objtypename':objtypename, 'o': o}, RequestContext(request))
         
 
 # That class is a clone of forms.CheckboxSelectMultiple
@@ -173,7 +175,7 @@ def query_print_entities(request, template_name, args):
 
     if not args.has_key("baseurl"):
         args["baseurl"]="?"
-    return render_to_response(template_name, args)
+    return render_to_response(template_name, args, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -256,7 +258,7 @@ def contact_detail(request, id):
     args['objtypename'] = "contact"
     args['contact'] = c
     args['rows'] = rows
-    return render_to_response('contact_detail.html', args)
+    return render_to_response('contact_detail.html', args, RequestContext(request))
 
 
 
@@ -609,7 +611,7 @@ def contact_search(request):
 
     objtypename = "contact";
     title = "Searching "+objtypename+"s"
-    return render_to_response('search.html', { 'title':title, 'objtypename':objtypename, 'form':form})
+    return render_to_response('search.html', { 'title':title, 'objtypename':objtypename, 'form':form}, RequestContext(request))
 
 
 
@@ -776,7 +778,7 @@ def contact_edit(request, id):
             else:
                 form = ContactEditForm(id)
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
+    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
     
 
 class ContactPasswordForm(forms.Form):
@@ -810,7 +812,7 @@ def contact_pass(request, id):
     else: # GET
         form = ContactPasswordForm()
     args['form'] = form
-    return render_to_response('password.html', args)
+    return render_to_response('password.html', args, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -915,7 +917,7 @@ def contactgroup_emails(request, id):
     args['cg'] = cg
     args['emails'] = emails
     args['noemails'] = noemails
-    return render_to_response('emails.html', args)
+    return render_to_response('emails.html', args, RequestContext(request))
 
 
 class ContactGroupForm(forms.Form):
@@ -1020,7 +1022,7 @@ def contactgroup_edit(request, id):
             form.flag_inherited_members(cg)
         else: # add new one
             form = ContactGroupForm()
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
+    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1181,7 +1183,7 @@ def field_edit(request, id):
                         args['deletion_details'] = deletion_details
                         for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
                             args[k] = data[k]
-                        return render_to_response('type_change.html', args)
+                        return render_to_response('type_change.html', args, RequestContext(request))
                 # TODO check new values are compatible with actual XFValues
             cf.name = data['name']
             cf.hint = data['hint']
@@ -1220,7 +1222,7 @@ def field_edit(request, id):
             form = FieldEditForm()
 
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
+    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1426,7 +1428,7 @@ def choicegroup_edit(request, id=None):
     else:
         form = ChoiceGroupForm(cg)
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
+    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')

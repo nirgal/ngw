@@ -239,6 +239,11 @@ class Contact(object):
     def get_addr_semicol(self):
         return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
 
+    def get_and_delete_messages(self):
+        """
+        That function is called by django ContextProcessor auth.
+        """
+        return u""
 
 class ContactGroup(object):
     def __repr__(self):

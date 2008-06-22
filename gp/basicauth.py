@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 #Example usage:
-#def auth(user, pass):
-#    return (user,pass)==('me', 'secret')
+#def auth(username, password):
+#    return (username,password)==('me', 'secret')
 #
 #@http_authenticate(auth, 'myrealm')
 #def myview(request):
@@ -31,7 +31,7 @@ class HttpResponseAuthenticate(HttpResponse):
 class http_authenticate:
     """ Decorator that check authorization.
         Parameters:
-            passwd_checker(user,password): function that must return True if the user is recognised.
+            passwd_checker(username,password): function that must return True if the username is recognised.
             realm: string with the realm. See rfc1945.
     """
     def __init__(self, passwd_checker, realm):
@@ -42,18 +42,18 @@ class http_authenticate:
         def _wrapper(*args, **kwargs):
             request = args[0]
             if not 'HTTP_AUTHORIZATION' in request.META:
-                user, password = "", ""
-                if not self.passwd_checker(user, password):
+                username, password = "", ""
+                if not self.passwd_checker(username, password):
                     return HttpResponseAuthenticate("Password requiered", realm=self.realm)
             else:
                 auth = request.META['HTTP_AUTHORIZATION']
                 assert auth.startswith('Basic '), "Invalid authentification scheme"
-                user, password = base64.decodestring(auth[len('Basic '):]).split(':', 2)
+                username, password = base64.decodestring(auth[len('Basic '):]).split(':', 2)
+                user =  self.passwd_checker(username, password)
+                if not user:
+                    return HttpResponseAuthenticate("Invalid username/password", realm=self.realm)
  
-                if not self.passwd_checker(user, password):
-                    return HttpResponseAuthenticate("Invalid user/password", realm=self.realm)
- 
-            request.username = user
+            request.user = user
             return func(*args, **kwargs)
 
         _wrapper.__name__ = func.__name__
