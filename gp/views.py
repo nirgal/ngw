@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-import copy, traceback, time
+import copy, traceback, time, subprocess
 from pprint import pprint
 from itertools import chain
 from md5 import md5
@@ -10,33 +10,37 @@ from django.core.urlresolvers import reverse
 from django import newforms as forms
 from django.newforms.util import smart_unicode
 from django.shortcuts import render_to_response
+from django.template import RequestContext
 from ngw.gp.alchemy_models import *
 from ngw.gp.basicauth import *
-from django.template import RequestContext
 
 GROUP_PREFIX = '_group_'
 DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
 NB_LINES_PER_PAGE=100
 
 
-def ngw_auth(user, passwd):
-    user = unicode(user, 'utf-8', 'replace')
+def ngw_auth(username, passwd):
+    username = unicode(username, 'utf-8', 'replace')
     passwd = unicode(passwd, 'utf-8', 'replace')
-    if not user:
+    if not username or not passwd:
         return None
-    try:
-        uid = int(user)
-    except ValueError:
-        return None
-    c = Query(Contact).get(uid)
+    c = Query(Contact).filter(Contact.c.username==username).first()
     if c==None:
         return None
     dbpasswd=c.passwd
-    if not dbpasswd:
+    algo, salt, digest = dbpasswd.split('$')
+    if algo=="crypt":
+        targetdigest=subprocess.Popen(["openssl", "passwd", "-crypt", "-salt", salt, passwd], stdout=subprocess.PIPE).communicate()[0]
+        targetdigest=targetdigest[:-1] # remove extra "\n"
+        if salt+digest==targetdigest:
+            return c
+    elif algo=="md5":
+        if md5(salt+passwd).hexdigest()==digest:
+            return c
+    else:
+        print "Unsupported password algorithm", algo.encode('utf-8')
         return None
-    if md5(passwd).hexdigest()!=dbpasswd:
-        return None
-    return c
+    return None # authentification failed
 
 
 def get_default_display_fields():
@@ -806,7 +810,7 @@ def contact_pass(request, id):
         form = ContactPasswordForm(request.POST)
         if form.is_valid():
             # record the value
-            contact.passwd = md5(form.clean()['new_password']).hexdigest()
+            contact.passwd = "md5$$"+md5(form.clean()['new_password']).hexdigest()
             Session.commit()
             return HttpResponseRedirect(reverse('ngw.gp.views.contact_detail', args=(id,)))
     else: # GET
