@@ -80,41 +80,20 @@ class ChoiceGroup(object):
     @property
     def ordered_choices(self):
         "Utility property to get choices tuples in correct order"
-            
         q = Query(Choice)
         q = q.filter(choice_table.c.choice_group_id==self.id)
-        q = q.filter(choice_table.c.key=='')
-        
-        result = [('', 'Unknown')] # default
-        for c in q[0:]:
-            result = [('', c.value)] # overwrite default
-
-        q = Query(Choice)
-        q = q.filter(choice_table.c.choice_group_id==self.id)
-        q = q.filter(choice_table.c.key!='')
         if self.sort_by_key:
             q = q.order_by([choice_table.c.key])
         else:
             q = q.order_by([choice_table.c.value])
-        
-        for c in q:
-            result += [(c.key, c.value)]
-        #print "result=", result
-        return result
+        return [(c.key, c.value) for c in q]
 
     @property
-    def ordered_choices_no_default(self):
-        "Utility property to get choices tuples in correct order"
-            
-        q = Query(Choice)
-        q = q.filter(choice_table.c.choice_group_id==self.id)
-        q = q.filter(choice_table.c.key!='')
-        if self.sort_by_key:
-            q = q.order_by([choice_table.c.key])
-        else:
-            q = q.order_by([choice_table.c.value])
-        
-        return [(c.key, c.value) for c in q]
+    def ordered_choices_with_unknown(self):
+        """"
+        Utility property to get choices tuples in correct order, with extra Unknown key
+        """
+        return [('', u"Unknown")] + self.ordered_choices
 
     def get_link(self):
         return u"/choicegroups/"+str(self.id)+"/edit"

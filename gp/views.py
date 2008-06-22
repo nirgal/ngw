@@ -473,12 +473,12 @@ class ContactSearchLineChoice(ContactSearchLineBaseField):
         ContactSearchLineBaseField.__init__(self, form, xf, *args, **kargs)
         self.operators.append(("EQUALS", "=", True, self.filter_EQ))
         self.operators.append(("NE", "≠", True, self.filter_NEQ))
-        null_name = "NULL ("+Query(Choice).get((xf.choice_group.id, "")).value+")"
+        null_name = "NULL (Unknown)"
         self.operators.append(("NULL", null_name, False, self.filter_NULL))
 
     def add_fields(self, fields):
         ContactSearchLine.add_fields(self, fields)
-        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.xf.choice_group.ordered_choices_no_default,  widget=forms.Select() )
+        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.xf.choice_group.ordered_choices,  widget=forms.Select() )
 
         
 class ContactSearchLineMultiChoice(ContactSearchLineBaseField):
@@ -488,7 +488,7 @@ class ContactSearchLineMultiChoice(ContactSearchLineBaseField):
 
     def add_fields(self, fields):
         ContactSearchLine.add_fields(self, fields)
-        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.xf.choice_group.ordered_choices_no_default,  widget=forms.Select() )
+        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.xf.choice_group.ordered_choices,  widget=forms.Select() )
     
     def filter_MULTIHAS(self, query, value):
         return self._make_filter(query, 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', value=value, valuestart=value+",%", valuemiddle="%,"+value+",%", valueend="%,"+value)
@@ -658,9 +658,9 @@ class ContactEditForm(forms.Form):
             elif cf.type==FTYPE_RIB:
                 self.fields[cf.name] = RibField(required=False, help_text=cf.hint)
             elif cf.type==FTYPE_CHOICE:
-                self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint, widget=forms.Select(choices=cf.choice_group.ordered_choices))
+                self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint, widget=forms.Select(choices=cf.choice_group.ordered_choices_with_unknown))
             elif cf.type==FTYPE_MULTIPLECHOICE:
-                self.fields[cf.name] = forms.MultipleChoiceField(required=False, help_text=cf.hint, choices=cf.choice_group.ordered_choices_no_default, widget=NgwCheckboxSelectMultiple())
+                self.fields[cf.name] = forms.MultipleChoiceField(required=False, help_text=cf.hint, choices=cf.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
         
         def contactgroupchoices():
             result = []
@@ -1255,7 +1255,7 @@ def choicegroup_list(request):
     args['query'] = Query(ChoiceGroup)
     args['cols'] = [
         ( "Name", None, "name", ChoiceGroup.c.name),
-        ( "Choices", None, lambda cg: ", ".join([c[1] for c in cg.ordered_choices if c[1]]), None),
+        ( "Choices", None, lambda cg: ", ".join([c[1] for c in cg.ordered_choices]), None),
     ]
     args['title'] = "Select a choice group"
     args['objtypename'] = "choicegroup"
@@ -1270,13 +1270,7 @@ class ChoicesWidget(forms.MultiWidget):
         attrs_value['style'] = "width:90%"
         attrs_key['style'] = "width:9%; margin-left:1ex;"
 
-        # first line is special: key editing is disabled
-        attrs_key0 = copy.copy(attrs_key)
-        attrs_key0['disabled'] = ""
-        widgets.append(forms.TextInput(attrs=attrs_value))
-        widgets.append(forms.TextInput(attrs=attrs_key0))
-
-        for i in range(1, ndisplay):
+        for i in range(ndisplay):
             widgets.append(forms.TextInput(attrs=attrs_value))
             widgets.append(forms.TextInput(attrs=attrs_key))
         super(ChoicesWidget, self).__init__(widgets, attrs)
@@ -1310,7 +1304,6 @@ class ChoiceGroupForm(forms.Form):
 
     def __init__(self, cg=None, data=None, auto_id='id_%s', prefix=None, initial=None):
         forms.Form.__init__(self, data, auto_id, prefix, initial)
-        nextra_display=3
         
         ndisplay=0
         self.initial['possible_values']=[]
@@ -1319,21 +1312,12 @@ class ChoiceGroupForm(forms.Form):
             self.initial['name'] = cg.name
             self.initial['sort_by_key'] = cg.sort_by_key
             choices = cg.ordered_choices
-            self.initial['possible_values'].append(choices[0][1])
-            self.initial['possible_values'].append("Default")
-            ndisplay+=1
-        else:
-            self.initial['possible_values'].append("")
-            self.initial['possible_values'].append("Default")
-            ndisplay+=1
-
-        if cg:
-            for c in choices[1:]:
+            for c in choices:
                 self.initial['possible_values'].append(c[1])
                 self.initial['possible_values'].append(c[0])
                 ndisplay+=1
 
-        for i in range(nextra_display):
+        for i in range(3): # add 3 blank lines to add data
             self.initial['possible_values'].append("")
             self.initial['possible_values'].append("")
             ndisplay+=1
@@ -1344,7 +1328,7 @@ class ChoiceGroupForm(forms.Form):
         # necessary since keys are the id used in <select>
         possibles_values = self['possible_values']._data()
         keys = []
-        for i in range(1, len(possibles_values)/2):
+        for i in range(len(possibles_values)/2):
             v,k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
                 continue # ignore lines without values
@@ -1370,11 +1354,11 @@ class ChoiceGroupForm(forms.Form):
 
         possibles_values = self['possible_values']._data()
         #print "possibles_values=", self.clean_possible_values()
-        choices={"": possibles_values[0]} # default value
+        choices={}
 
         # first ignore lines with empty keys, and update auto_key
         auto_key = 0
-        for i in range(1,len(possibles_values)/2):
+        for i in range(len(possibles_values)/2):
             v,k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
                 continue # ignore lines whose value is empty
@@ -1388,7 +1372,7 @@ class ChoiceGroupForm(forms.Form):
         auto_key += 1
 
         # now generate key for empty ones
-        for i in range(1,len(possibles_values)/2):
+        for i in range(len(possibles_values)/2):
             v,k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
                 continue # ignore lines whose value is empty
@@ -1436,7 +1420,7 @@ def choicegroup_edit(request, id=None):
             elif request.POST.get("_addanother", None):
                 return HttpResponseRedirect("/choicegroups/add")
             else:
-                return HttpResponseRedirect(reverse('ngw.gp.views.choicegroup_list')) # args=(p.id,)))
+                return HttpResponseRedirect(reverse('ngw.gp.views.choicegroup_list'))
     else:
         form = ChoiceGroupForm(cg)
 
