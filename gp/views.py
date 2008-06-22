@@ -3,6 +3,7 @@
 import copy, traceback, time
 from pprint import pprint
 from itertools import chain
+from md5 import md5
 from django.http import *
 from django.utils.html import escape
 from django.core.urlresolvers import reverse
@@ -10,10 +11,29 @@ from django import newforms as forms
 from django.newforms.util import smart_unicode
 from django.shortcuts import render_to_response
 from ngw.gp.alchemy_models import *
+from ngw.gp.basicauth import *
 
 GROUP_PREFIX = '_group_'
 DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
 NB_LINES_PER_PAGE=100
+
+
+def ngw_auth(user, passwd):
+    user = unicode(user, 'utf-8', 'replace')
+    passwd = unicode(passwd, 'utf-8', 'replace')
+    if not user:
+        return False
+    try:
+        uid = int(user)
+    except ValueError:
+        return False
+    c = Query(Contact).get(uid)
+    if c==None:
+        return False
+    dbpasswd=c.passwd
+    if not dbpasswd:
+        return False
+    return md5(passwd).hexdigest()==dbpasswd
 
 
 def get_default_display_fields():
@@ -29,7 +49,7 @@ def get_default_display_fields():
                 print "Error in default fields: %s has invalid syntax." % fname
                 continue
             if not Query(ContactGroup).get(groupid):
-                print "Error in default fields: There is not group #%d." % groupid
+                print "Error in default fields: There is no group #%d." % groupid
                 continue
         else:
             if not Query(ContactField).filter(ContactField.c.name==fname).first():
@@ -37,6 +57,7 @@ def get_default_display_fields():
                 continue
         result.append(fname)
     return result
+
 
 def name_internal2nice(txt):
     """
@@ -60,12 +81,15 @@ def MultiValueDict_unicode(d):
         result.setlist(k, [ u(vi) for vi in v ])
     return result
 
+@http_authenticate(ngw_auth, 'ngw')
 def index(request):
     return render_to_response('index.html', {
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
+        'username': request.username,
     })
 
+@http_authenticate(ngw_auth, 'ngw')
 def generic_delete(request, o, next_url):
     objtypename = o.__class__.__name__.lower()
     title = "Please confirm deletetion"
@@ -152,6 +176,7 @@ def query_print_entities(request, template_name, args):
     return render_to_response(template_name, args)
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def test(request):
     return HttpResponse("This is a test")
 
@@ -193,13 +218,14 @@ def contact_make_query_with_fields(fields=None):
     return q, cols
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contact_list(request):
     if request.GET.has_key('select'):
         select = request['select']
         fields = [ 'name' ] + select.split(',')
     else:
         fields = None # default
-    
+   
     #print "contact_list:", fields
     q, cols = contact_make_query_with_fields(fields)
     args={}
@@ -211,6 +237,7 @@ def contact_list(request):
 
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contact_detail(request, id):
     c = Query(Contact).get(id)
     rows = []
@@ -233,6 +260,7 @@ def contact_detail(request, id):
 
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contact_vcard(request, id):
     c = Query(Contact).get(id)
     return HttpResponse(c.vcard().encode("utf-8"), mimetype="text/x-vcard")
@@ -547,6 +575,8 @@ class ContactSearchForm(forms.Form):
                 q = filter(q, value)
         return q
     
+
+@http_authenticate(ngw_auth, 'ngw')
 def contact_search(request):
     if request.method == 'POST':
         params = request.raw_post_data
@@ -611,7 +641,7 @@ class ContactEditForm(forms.Form):
             elif cf.type==FTYPE_NUMBER:
                 self.fields[cf.name] = forms.IntegerField(required=False, help_text=cf.hint)
             elif cf.type==FTYPE_DATE:
-                self.fields[cf.name] = forms.DateField(required=False, help_text=cf.hint)
+                self.fields[cf.name] = forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format."+u" "+cf.hint)
             elif cf.type==FTYPE_EMAIL:
                 self.fields[cf.name] = forms.EmailField(required=False, help_text=cf.hint)
             elif cf.type==FTYPE_RIB:
@@ -634,6 +664,7 @@ class ContactEditForm(forms.Form):
         self.fields['groups'] = forms.MultipleChoiceField(required=False, choices=contactgroupchoices())
         
 
+@http_authenticate(ngw_auth, 'ngw')
 def contact_edit(request, id):
     objtypename = "contact";
     if id:
@@ -748,6 +779,41 @@ def contact_edit(request, id):
     return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
     
 
+class ContactPasswordForm(forms.Form):
+    new_password = forms.CharField(max_length=50, widget=forms.PasswordInput())
+    confirm_password = forms.CharField(max_length=50, widget=forms.PasswordInput())
+
+    def clean(self):
+        if self.clean_data.get('new_password', u'') != self.clean_data.get('confirm_password', u''):
+            raise forms.ValidationError("The passwords must match!")
+        return self.clean_data
+
+
+@http_authenticate(ngw_auth, 'ngw')
+def contact_pass(request, id):
+    contact = Query(Contact).get(id)
+    args={}
+    args['title'] = "Change password"
+    args['objtypename'] = "contact"
+    args['contact'] = contact
+    if contact.passwd:
+        args['currentaccess'] = u"This contact has a password and can modify his own information."
+    else:
+        args['currentaccess'] = u"This contact has no password and cannot connect to modify his own information."
+    if request.method == 'POST':
+        form = ContactPasswordForm(request.POST)
+        if form.is_valid():
+            # record the value
+            contact.passwd = md5(form.clean()['new_password']).hexdigest()
+            Session.commit()
+            return HttpResponseRedirect(reverse('ngw.gp.views.contact_detail', args=(id,)))
+    else: # GET
+        form = ContactPasswordForm()
+    args['form'] = form
+    return render_to_response('password.html', args)
+
+
+@http_authenticate(ngw_auth, 'ngw')
 def contact_delete(request, id):
     o = Query(Contact).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.contact_list'))
@@ -760,6 +826,7 @@ def contact_delete(request, id):
 #
 #######################################################################
 
+@http_authenticate(ngw_auth, 'ngw')
 def contactgroup_list(request):
     def print_fields(cg):
         if cg.field_group:
@@ -790,6 +857,7 @@ def contactgroup_list(request):
     return query_print_entities(request, 'list.html', args)
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contactgroup_detail(request, id):
     fields = get_default_display_fields()
     cg = Query(ContactGroup).get(id)
@@ -828,6 +896,7 @@ def contactgroup_detail(request, id):
     return query_print_entities(request, 'group_detail.html', args)
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contactgroup_emails(request, id):
     cg = Query(ContactGroup).get(id)
     members = cg.members
@@ -852,7 +921,7 @@ def contactgroup_emails(request, id):
 class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
-    field_group = forms.BooleanField(required=False, help_text=u"Does that group members have specific fields?")
+    field_group = forms.BooleanField(required=False, help_text=u"Does that group yield specific fields to its members?")
     date = forms.DateField(required=False)
     budget_code = forms.CharField(required=False, max_length=10)
     direct_members = forms.MultipleChoiceField(required=False)
@@ -882,6 +951,7 @@ class ContactGroupForm(forms.Form):
             self.fields['direct_members'].help_text = help_text
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contactgroup_edit(request, id):
     objtypename = "contactgroup"
     if id:
@@ -953,6 +1023,7 @@ def contactgroup_edit(request, id):
     return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contactgroup_remove(request, gid, cid):
     cig = Query(ContactInGroup).get((cid, gid))
     if not cig:
@@ -961,11 +1032,14 @@ def contactgroup_remove(request, gid, cid):
     Session.commit()
     return HttpResponseRedirect(reverse('ngw.gp.views.contactgroup_detail', args=(gid,)))
 
+
+@http_authenticate(ngw_auth, 'ngw')
 def contactgroup_delete(request, id):
     o = Query(ContactGroup).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.contactgroup_list'))# args=(p.id,)))
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def contactingroup_edit(request, gid, cid):
     return HttpResponse("Not implemented")
 
@@ -975,6 +1049,7 @@ def contactingroup_edit(request, gid, cid):
 #
 #######################################################################
 
+@http_authenticate(ngw_auth, 'ngw')
 def field_list(request):
     args = {}
     args['query'] = Query(ContactField).order_by([ContactField.c.sort_weight])
@@ -990,6 +1065,7 @@ def field_list(request):
     return query_print_entities(request, 'list.html', args)
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def field_move_up(request, id):
     cf = Query(ContactField).get(id)
     cf.sort_weight -= 15
@@ -997,6 +1073,7 @@ def field_move_up(request, id):
     field_renumber()
     return HttpResponseRedirect(reverse('ngw.gp.views.field_list'))
 
+@http_authenticate(ngw_auth, 'ngw')
 def field_move_down(request, id):
     cf = Query(ContactField).get(id)
     cf.sort_weight += 15
@@ -1060,6 +1137,7 @@ class FieldEditForm(forms.Form):
         return result
         
 
+@http_authenticate(ngw_auth, 'ngw')
 def field_edit(request, id):
     objtypename = "contactfield"
     if id:
@@ -1145,6 +1223,7 @@ def field_edit(request, id):
     return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def field_delete(request, id):
     o = Query(ContactField).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.field_list'))
@@ -1156,6 +1235,7 @@ def field_delete(request, id):
 #
 #######################################################################
 
+@http_authenticate(ngw_auth, 'ngw')
 def choicegroup_list(request):
     args = {}
     args['query'] = Query(ChoiceGroup)
@@ -1322,6 +1402,7 @@ class ChoiceGroupForm(forms.Form):
         return cg
             
         
+@http_authenticate(ngw_auth, 'ngw')
 def choicegroup_edit(request, id=None):
     objtypename = "choicegroup"
     if id:
@@ -1348,6 +1429,7 @@ def choicegroup_edit(request, id=None):
     return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,})
 
 
+@http_authenticate(ngw_auth, 'ngw')
 def choicegroup_delete(request, id):
     o = Query(ChoiceGroup).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.choicegroup_list'))# args=(p.id,)))
