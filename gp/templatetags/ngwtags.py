@@ -2,6 +2,7 @@
 
 import inspect, traceback
 from django import template
+from django.utils import html
 
 register = template.Library()
 
@@ -81,6 +82,7 @@ def ngw_display(row, col):
     #TODO: handle more types & errors, like method need another parameter
     if result==None:
         return u""
+    result = html.escape(result)
     try:
         flink = entity.__getattribute__("get_link_"+attribute_name.encode('utf-8'))
         link = flink()

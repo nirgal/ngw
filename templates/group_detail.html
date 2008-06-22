@@ -2,13 +2,13 @@
 
 {% block nav %}
 {{ block.super }}
-› {{ cg.name }}
+› {{ cg.name|escape }}
 {% endblock %}
 
 {% block body %}
-    {% if cg.description %}{{ cg.description }}<br><br>{% endif %}
-    {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
-    {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
+    {% if cg.description %}{{ cg.description|escape }}<br><br>{% endif %}
+    {% if cg.date %}Date: <b>{{ cg.date|escape }}</b><br>{% endif %}
+    {% if cg.budget_code %}Budget code: {{ cg.budget_code|escape }}<br>{% endif %}
     <br>
     {% include "query_entities.html" %}
     {% comment %}
@@ -20,20 +20,20 @@
         {% if forloop.first %}
         <h1>Invited members</h1>
         {% endif %}
-        ‣ <a href="{{ contact.get_link}}">{{ contact }}</a><br>
+        ‣ <a href="{{ contact.get_link}}">{{ contact|escape }}</a><br>
     {% endfor %}
     {% endcomment %}
     {% if cg.direct_subgroups %}
         <h1>Sub groups</h1>
         {% for sg in cg.direct_subgroups  %}
-        ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includingtxt}}<br>
+        ‣ <a href="{{ sg.get_link }}">{{ sg.name|escape }}</a>{{sg.subgroups_includinghtml}}<br>
         {% endfor %}
     {% endif %}
     {% block submitbar %}
     <div id=submitbar>
-        <a href="/{{ objtypename }}s/{{ cg.id }}/edit">Edit</a>
-        <a href="/{{ objtypename }}s/{{ cg.id }}/emails">Emails</a>
-        <a href="?display={{display}}&output=vcard">Vcards</a>  
+        <a href="/{{ objtypename|escape }}s/{{ cg.id }}/edit">Edit</a>
+        <a href="/{{ objtypename|escape }}s/{{ cg.id }}/emails">Emails</a>
+        <a href="?display={{display}}&amp;output=vcard">Vcards</a>  
         {% ifnotequal display "mi" %}
             <a href="?display=mi">Show invited and members</a>  
         {% endifnotequal %}

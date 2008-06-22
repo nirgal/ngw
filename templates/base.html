@@ -171,7 +171,7 @@ input[type=submit]:active#default , #submitbar a:active#default {
 </style>
 <div id=banner>
 {%comment%}
-<div style="float:right; display:float;font-size:small; color:yellow;">Welcome {{ user }}</div>
+<div style="float:right; display:float;font-size:small; color:yellow;">Welcome {{ user|escape }}</div>
 {%endcomment%}
 <big>Action</big>
 ... go ... go ... go ...
@@ -183,7 +183,7 @@ input[type=submit]:active#default , #submitbar a:active#default {
 {% endblock %}
 </div>
 <div id=main>
-<div id=title>{{ title }}</div>
+<div id=title>{{ title|escape }}</div>
 {% block body %}
 <p>No body.
 {% endblock %}

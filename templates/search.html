@@ -2,7 +2,7 @@
 
 {% block nav %}
 {{ block.super }}
-› <a href="/{{ objtypename }}s/">{{ objtypename }}s</a>
+› <a href="/{{ objtypename|escape }}s/">{{ objtypename|escape }}s</a>
 › search
 {% endblock %}
 

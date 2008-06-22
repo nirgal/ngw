@@ -846,7 +846,7 @@ def contactgroup_list(request):
         if cg.field_group:
             fields = cg.contact_fields
             if fields:
-                return u", ".join(['<a href="'+f.get_link()+'">'+f.name+"</a>" for f in fields])
+                return u", ".join(['<a href="'+f.get_link()+'">'+html.escape(f.name)+"</a>" for f in fields])
             else:
                 return u"Yes (but none yet)"
         else:
@@ -859,7 +859,7 @@ def contactgroup_list(request):
         ( "Description", None, "description", contact_group_table.c.description ),
         ( "Fields", None, print_fields, contact_group_table.c.field_group ),
         ( "Super groups", None, lambda cg: u", ".join([sg.name for sg in cg.direct_supergroups]), None ),
-        ( "Sub groups", None, lambda cg: u", ".join([sg.name for sg in cg.direct_subgroups]), None ),
+        ( "Sub groups", None, lambda cg: u", ".join([html.escape(sg.name) for sg in cg.direct_subgroups]), None ),
         ( "Budget code", None, "budget_code", contact_group_table.c.budget_code ),
         ( "Members", None, lambda cg: str(len(cg.members)), None ),
     ]
@@ -1069,10 +1069,10 @@ def field_list(request):
     args['query'] = Query(ContactField).order_by([ContactField.c.sort_weight])
     args['cols'] = [
         ( "Name", None, "name", contact_field_table.c.name),
-        ( "Type", None, "repr_type", contact_field_table.c.type),
+        ( "Type", None, "type_as_html", contact_field_table.c.type),
         ( "Only for", None, "contact_group", contact_field_table.c.contact_group_id),
         ( "Display group", None, "display_group", contact_field_table.c.display_group),
-        ( "Move", None, lambda cf: "<a href="+str(cf.id)+"/moveup>Up</a> <a href="+str(cf.id)+"/movedown>Down</a>", None),
+        #( "Move", None, lambda cf: "<a href="+str(cf.id)+"/moveup>Up</a> <a href="+str(cf.id)+"/movedown>Down</a>", None),
     ]
     args['title'] = "Select an optionnal field"
     args['objtypename'] = "contactfield"
@@ -1255,7 +1255,7 @@ def choicegroup_list(request):
     args['query'] = Query(ChoiceGroup)
     args['cols'] = [
         ( "Name", None, "name", ChoiceGroup.c.name),
-        ( "Choices", None, lambda cg: ", ".join([c[1] for c in cg.ordered_choices]), None),
+        ( "Choices", None, lambda cg: ", ".join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
     args['title'] = "Select a choice group"
     args['objtypename'] = "choicegroup"

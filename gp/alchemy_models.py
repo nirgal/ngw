@@ -4,6 +4,7 @@
 from sqlalchemy import *
 from sqlalchemy.orm import *
 import sqlalchemy.engine.url
+from django.utils import html
 from settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
 
 FTYPE_TEXT='TEXT'
@@ -298,17 +299,17 @@ class ContactGroup(object):
         return u"/contactgroups/"+str(self.id)+"/"
     get_link_name = get_link
 
-    def supergroups_includingtxt(self):
+    def supergroups_includinghtml(self):
         sgs = self.supergroups
         if not sgs:
             return u""
-        return u" (implies "+u", ".join(['<a href="'+g.get_link()+'">'+g.name+'</a>' for g in sgs])+u")"
+        return u" (implies "+u", ".join(['<a href="'+g.get_link()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
-    def subgroups_includingtxt(self):
+    def subgroups_includinghtml(self):
         sgs = self.subgroups
         if not sgs:
             return u""
-        return u" (including "+u", ".join(['<a href="'+g.get_link()+'">'+g.name+'</a>' for g in sgs])+u")"
+        return u" (including "+u", ".join(['<a href="'+g.get_link()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
     def unicode_with_date(self):
         """ Returns the name of the group, and the date if there's one"""
@@ -325,10 +326,10 @@ class ContactField(object):
     def __unicode__(self):
         return self.name
 
-    def repr_type(self):
+    def type_as_html(self):
         type = FIELD_TYPES[self.type]
         if self.type in (FTYPE_CHOICE, FTYPE_MULTIPLECHOICE):
-            type += " ("+self.choice_group.name+")"
+            type += " (<a href='"+self.choice_group.get_link()+"'>"+html.escape(self.choice_group.name)+"</a>)"
         return type
 
     def get_link(self):

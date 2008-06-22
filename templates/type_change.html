@@ -8,17 +8,17 @@
 
 {% block body %}
 <form method=post>
-<input type=hidden name=id value="{{id}}">
-<input type=hidden name=name value="{{name}}">
-<input type=hidden name=hint value="{{hint}}">
-<input type=hidden name=contact_group value="{{contact_group}}">
-<input type=hidden name=type value="{{type}}">
-<input type=hidden name=choicegroup value="{{choicegroup}}">
-<input type=hidden name=move_after value="{{move_after}}">
-You are about to change the {{ objtypename }} {{ cf }}. However, some existing data is not compatible with the new type you selected. The only choice is to delete these records.
+<input type=hidden name=id value="{{id|escape}}">
+<input type=hidden name=name value="{{name|escape}}">
+<input type=hidden name=hint value="{{hint|escape}}">
+<input type=hidden name=contact_group value="{{contact_group|escape}}">
+<input type=hidden name=type value="{{type|escape}}">
+<input type=hidden name=choicegroup value="{{choicegroup|escape}}">
+<input type=hidden name=move_after value="{{move_after|escape}}">
+You are about to change the {{ objtypename|escape }} {{ cf.name|escape }}. However, some existing data is not compatible with the new type you selected. The only choice is to delete these records.
 <p>The following data will be deleted:
 <p>{% for deletion_detail in deletion_details %}
-    {{ deletion_detail|get:0 }}: {{ deletion_detail|get:1 }}<br>
+    {{ deletion_detail|get:0|escape }}: {{ deletion_detail|get:1 }}<br>
 {% endfor %}
     {% block submitbar %}
     <div id=submitbar>

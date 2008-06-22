@@ -20,15 +20,15 @@ Optionnal parameters:
         {% for col in cols %}
             <th>
             {% if col|get:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
-            {{col|get:0|name_internal2nice}}
-            {% if col|get:3 %}</a>{% endif %}
+            {{col|get:0|name_internal2nice|escape}}
+            {% if col|get:3|escape %}</a>{% endif %}
             {% if order|order_absmatch:forloop.counter0 %}{% if order|order_isreverted %} ▼{% else %} ▲{% endif %}{% endif %}
         {% endfor %}
         <tbody>
     {% endif %}
     <tr class=row{% cycle odd,even as oddity %}>
     {% for col in cols %}
-        <td>{{row|ngw_display:col}}
+        <td>{{row|ngw_display:col}}<!-- FIXME html escape-->
     {% endfor %}
 {% endfor %}
 <tr class=row{% cycle oddity %} id=objsummary>
