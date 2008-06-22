@@ -4,6 +4,8 @@ import copy, traceback, time, subprocess
 from pprint import pprint
 from itertools import chain
 from md5 import md5
+from sha import sha
+from random import random
 from django.http import *
 from django.utils.html import escape
 from django.core.urlresolvers import reverse
@@ -36,6 +38,9 @@ def ngw_auth(username, passwd):
             return c
     elif algo=="md5":
         if md5(salt+passwd).hexdigest()==digest:
+            return c
+    elif algo=="sha1":
+        if sha(salt+passwd).hexdigest()==digest:
             return c
     else:
         print "Unsupported password algorithm", algo.encode('utf-8')
@@ -810,7 +815,10 @@ def contact_pass(request, id):
         form = ContactPasswordForm(request.POST)
         if form.is_valid():
             # record the value
-            contact.passwd = "md5$$"+md5(form.clean()['new_password']).hexdigest()
+            password = form.clean()['new_password']
+            salt = sha(str(random())).hexdigest()[:5]
+            hash = sha(salt+password).hexdigest()
+            contact.passwd = "sha1$"+salt+"$"+hash
             Session.commit()
             return HttpResponseRedirect(reverse('ngw.gp.views.contact_detail', args=(id,)))
     else: # GET

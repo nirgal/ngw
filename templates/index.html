@@ -13,11 +13,39 @@ Welcome {{ user }}!
 Quick contact search: <input name=_val_name id=defaultfocus>
 </form>
 <script>document.forms[0]._val_name.focus();</script>
-<p>Please select an operation bellow:
 </div>
-<div id=submitbar style="font-size:120%; padding:1ex;">
+
+<h1 class="boxheader">Please select an operation:</h1>
+<div id=submitbar style="margin-top:0px;">
+<a href="contacts/{{user.id}}/">My information</a>
 <a href="contacts/">Contacts</a>
 <a href="contactgroups/">Contact Groups</a>
 <a href="contactfields/">Setup of optional fields</a>
 <a href="choicegroups/">Setup of choice lists</a>
+</div>
+
+<h1 class="boxheader">Deniers développements</h1>
+<div style="border: 1px solid #999; padding:1ex;">
+<b>Dimanche 22 juin</b><br>
+Nouvelle gestion des mots de passe. Il est possible de changer le mot de passe d'un contact depuis sa page détaillée. Il n'est en revanche toujours pas possible d'ajouter ni supprimer un accès depuis l'application.<br>
+Détails des changements sur la page d'accueil.<br>
+Ajout d'un bouton "Mes informations" sur la page d'accueil.<br><br>
+<b>Vendredi 20 juin</b><br>
+L'accès http est désormais coupé. Seul le protocole https est accepté. Le certificat de cryptage n'est pas déclaré nulle part, et il y a donc un avertissement de sécurité lors de la connection. Il faut ignorer cet avertissement.<br><br>
+<b>Jeudi 19 juin</b><br>
+Olivier a désormais également accès à cette base.<br><br>
+<b>Lundi 16 juin</b><br>
+Il est désormais possible d'ajouter un contact du type activiste depuis la page du groupe activiste, un contact du type bénévole depuis la page des bénévoles, etc. Seuls les groupes définissants des champs ("field_group" coché dans la page du groupe) supportent cette fonctionalité.<br><br>
+<b>Dimanche 15 juin</b><br>
+Petit formulaire sur la page d'accueil pour chercher rapidement un contact.<br><br>
+<b>Jeudi 12 juin</b><br>
+Tri de la liste des groupes par date.<br>
+Lien google map sur la page détaillée d'un contact.<br><br>
+<b>Mercredi 11 juin</b><br>
+Lien "vcard" sur la page d'un groupe pour importer (copier) rapidement tout le groupe dans son carnet d'adresse local. Les modifications locales seront bien sûr locales, et donc pas répercutées sur la base de données.<br><br>
+<b>Mardi 10 juin</b><br>
+Début de la gestion de contacts invités dans un groupe, mais pas encore vraiment membre.
+
+</div>
+
 {% endblock %}
