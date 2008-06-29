@@ -3,9 +3,8 @@
 {% extends "base.html" %}
 
 {% block body %}
+<form>
 <select multiple="multiple" size=4 name="groups" id="id_groups">
-<option value="2">People</option>
-<option value="3">Companies</option>
 <option value="4">Volunteers</option>
 <option value="5" selected="selected">Activists</option>
 <option value="6">Climbers</option>
@@ -18,18 +17,145 @@
 <option value="21" selected="selected">Brussels fishing wall</option>
 <option value="25">BAT</option>
 </select>
-
-<br clear=all>
-<select id="id_groups_off">
-</select>
-<select id="id_groups_on">
-</select>
+<input type=submit>
+</form>
 <script>
-sref=document.getElementById("id_groups");
-soff=document.getElementById("id_groups_off");
-son=document.getElementById("id_groups_on");
-for(opt in sref.options) {
-    alert(opt);
+function dump(o) {
+    var txt = "";
+    for (var k in o)
+        txt+=k+"="+(""+o[k]).replace(/\n/g, " ")+"<br>";
+    document.writeln("<hr>"+txt);
 }
+
+// Core javascript helper functions
+// Cross-browser event handlers.
+function addEvent(obj, evType, fn) {
+    if (obj.addEventListener) {
+        obj.addEventListener(evType, fn, false);
+        return true;
+    } else if (obj.attachEvent) {
+        var r = obj.attachEvent("on" + evType, fn);
+        return r;
+    } else {
+        return false;
+    }
+}
+
+var SelectBox = {
+    cache: new Object(),
+    init: function(id) {
+        var box = document.getElementById(id);
+        var node;
+        SelectBox.cache[id] = new Array();
+        var cache = SelectBox.cache[id];
+        for (var i = 0; (node = box.options[i]); i++) {
+            cache.push({ value: node.value, text: node.text, displayed: 1 });
+        }
+    },
+    redisplay: function(id) {
+        // Repopulate HTML select box from cache
+        var box = document.getElementById(id);
+        box.options.length = 0; // clear all options
+        for (var i = 0, j = SelectBox.cache[id].length; i < j; i++) {
+            var node = SelectBox.cache[id][i];
+            if (node.displayed) {
+                box.options[box.options.length] = new Option(node.text, node.value, false, false);
+            }
+        }
+    },
+    delete_from_cache: function(id, value) {
+        var node, delete_index = null;
+        for (var i = 0; (node = SelectBox.cache[id][i]); i++) {
+            if (node.value == value) {
+                delete_index = i;
+                break;
+            }
+        }
+        var j = SelectBox.cache[id].length - 1;
+        for (var i = delete_index; i < j; i++) {
+            SelectBox.cache[id][i] = SelectBox.cache[id][i+1];
+        }
+        SelectBox.cache[id].length--;
+    },
+    add_to_cache: function(id, option) {
+        SelectBox.cache[id].push({ value: option.value, text: option.text, displayed: 1 });
+    },
+    cache_contains: function(id, value) {
+        // Check if an item is contained in the cache
+        var node;
+        for (var i = 0; (node = SelectBox.cache[id][i]); i++) {
+            if (node.value == value) {
+                return true;
+            }
+        }
+        return false;
+    },
+    move: function(from, to) {
+        var from_box = document.getElementById(from);
+        var to_box = document.getElementById(to);
+        var option;
+        for (var i = 0; (option = from_box.options[i]); i++) {
+            if (option.selected && SelectBox.cache_contains(from, option.value)) {
+                SelectBox.add_to_cache(to, { value: option.value, text: option.text, displayed: 1 });
+                SelectBox.delete_from_cache(from, option.value);
+            }
+        }
+        SelectBox.redisplay(from);
+        SelectBox.redisplay(to);
+    },
+    select_all: function(id) {
+        var box = document.getElementById(id);
+        for (var i = 0; i < box.options.length; i++) {
+            box.options[i].selected = 'selected';
+        }
+    },
+}
+
+function findForm(node) {
+    // returns the node of the form containing the given node
+    if (node.tagName.toLowerCase() != 'form') {
+        return findForm(node.parentNode);
+    }
+    return node;
+}
+
+var SelectFilter = {
+    init: function(field_id) {
+        var from_box = document.getElementById(field_id);
+        from_box.id += '_from'; // change its ID
+        // Create the INPUT input box
+        var input_box = document.createElement('input');
+        input_box.id = field_id + '_input';
+        input_box.setAttribute('type', 'text');
+        from_box.parentNode.insertBefore(input_box, from_box);
+        from_box.parentNode.insertBefore(document.createElement('br'), input_box.nextSibling);
+        // Create the TO box
+        var to_box = document.createElement('select');
+        to_box.id = field_id + '_to';
+        to_box.setAttribute('multiple', 'multiple');
+        to_box.setAttribute('size', from_box.size);
+        from_box.parentNode.insertBefore(to_box, from_box.nextSibling);
+        to_box.setAttribute('name', from_box.getAttribute('name'));
+        from_box.setAttribute('name', from_box.getAttribute('name') + '_old');
+        // Give the filters a CSS hook
+        /*
+        from_box.setAttribute('class', 'filtered');
+        to_box.setAttribute('class', 'filtered');
+        */
+        // Set up the JavaScript event handlers for the select box filter interface
+        //addEvent(input_box, 'keyup', function(e) { SelectFilter.filter_key_up(e, field_id); });
+        //addEvent(input_box, 'keydown', function(e) { SelectFilter.filter_key_down(e, field_id); });
+        addEvent(from_box, 'dblclick', function() { SelectBox.move(field_id + '_from', field_id + '_to'); });
+        addEvent(from_box, 'focus', function() { input_box.focus(); });
+        addEvent(to_box, 'dblclick', function() { SelectBox.move(field_id + '_to', field_id + '_from'); });
+        addEvent(findForm(from_box), 'submit', function() { SelectBox.select_all(field_id + '_to'); });
+        SelectBox.init(field_id + '_from');
+        SelectBox.init(field_id + '_to');
+        // Move selected from_box options to to_box
+        SelectBox.move(field_id + '_from', field_id + '_to');
+    }
+}
+
+SelectFilter.init("id_groups");
 </script>
 {% endblock %}

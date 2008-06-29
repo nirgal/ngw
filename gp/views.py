@@ -189,7 +189,10 @@ def query_print_entities(request, template_name, args):
 
 @http_authenticate(ngw_auth, 'ngw')
 def test(request):
-    return HttpResponse("This is a test")
+    args={
+        "title": "Test",
+    }
+    return render_to_response("test.html", args, RequestContext(request))
 
 #######################################################################
 #
