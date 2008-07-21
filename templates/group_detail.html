@@ -25,6 +25,8 @@
     {% endcomment %}
     {% if cg.direct_subgroups %}
         <h1>Sub groups</h1>
+        <p>People in sub-groups are automatically members.
+        <br>
         {% for sg in cg.direct_subgroups  %}
         ‣ <a href="{{ sg.get_link }}">{{ sg.name|escape }}</a>{{sg.subgroups_includinghtml}}<br>
         {% endfor %}

@@ -4,7 +4,17 @@ python-django (>0.96.2) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  pyt
 
 Warning, some packages must be taken from etch-backports (python-sqlalchemy) or even lenny ( python-django python-support )
 
+Apache
+======
+Enable ssl in apache:
+a2enmod ssl
+
+Generate self-signed certificate:
+openssl req -nodes -x509 -days 3650 -new -newkey rsa:1024 -subj /CN=nike.fr.gl3 -keyout /var/www/ngw/https/nike.key -out /var/www/ngw/https/nike.crt
+openssl req -nodes -new -x509 -keyout nike.key -out nike.crt -days 0
+
+Listen on port 443
+Add a new line "Listen 80" to /etc/apache2/ports.conf"
+
 TODO
 ====
-
-Remove the default for choice list. It's confusing and unnecessary.

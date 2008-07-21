@@ -44,7 +44,7 @@ class http_authenticate:
             if not 'HTTP_AUTHORIZATION' in request.META:
                 username, password = "", ""
                 if not self.passwd_checker(username, password):
-                    return HttpResponseAuthenticate("Password requiered", realm=self.realm)
+                    return HttpResponseAuthenticate("Password required", realm=self.realm)
             else:
                 auth = request.META['HTTP_AUTHORIZATION']
                 assert auth.startswith('Basic '), "Invalid authentification scheme"
