@@ -2,17 +2,17 @@
 
 {% block nav %}
 {{ block.super }}
-› {{ objtypename|escape }}s
-› {{ o|escape }}s
+› {{ objtypename }}s
+› {{ o }}s
 › delete
 {% endblock %}
 
 {% block body %}
-You are about to delete the {{ objtypename|escape }} {{ o|escape }}. Are you sure ?
+You are about to delete the {{ objtypename }} {{ o }}. Are you sure ?
     {% block submitbar %}
     <div id=submitbar>
-    <a href="/{{ objtypename|escape }}s/{{ o.id }}/delete?confirm=1">Yes I'm Sure</a>
-    <a href="/{{ objtypename|escape }}s/{{ o.id }}/edit">Cancel</a> <!-- FIXME -->
+    <a href="/{{ objtypename }}s/{{ o.id }}/delete?confirm=1">Yes I'm Sure</a>
+    <a href="/{{ objtypename }}s/{{ o.id }}/edit">Cancel</a> <!-- FIXME -->
     </div>
     {% endblock %}
 

@@ -1,5 +1,5 @@
 <html>
-<title>{{ title }}</title>
+<title>{{ title|safe }}</title>
 <style type="text/css">
 body {
     font-family:sans-serif;
@@ -204,7 +204,7 @@ a.selector-clearall { background:url(/media/img/admin/selector-removeall.gif) le
 </style>
 <div id=banner>
 {%comment%}
-<div style="float:right; display:float;font-size:small; color:yellow;">Welcome {{ user|escape }}</div>
+<div style="float:right; display:float;font-size:small; color:yellow;">Welcome {{ user }}</div>
 {%endcomment%}
 <big>Action</big>
 ... go ... go ... go ...
@@ -216,7 +216,7 @@ a.selector-clearall { background:url(/media/img/admin/selector-removeall.gif) le
 {% endblock %}
 </div>
 <div id=main>
-<div id=title>{{ title|escape }}</div>
+<div id=title>{{ title }}</div>
 {% block body %}
 <p>No body.
 {% endblock %}

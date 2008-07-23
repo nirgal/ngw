@@ -8,11 +8,13 @@ from sha import sha
 from random import random
 from django.http import *
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
-from django import newforms as forms
-from django.newforms.util import smart_unicode
+from django import forms
+from django.forms.util import smart_unicode
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from ngw import settings
 from ngw.gp.alchemy_models import *
 from ngw.gp.basicauth import *
 
@@ -146,6 +148,25 @@ class NgwCheckboxSelectMultiple(forms.SelectMultiple):
     id_for_label = classmethod(id_for_label)
 
 
+class FilterMultipleSelectWidget(forms.SelectMultiple):
+    class Media:
+        js = ('ngw.js',)
+
+    def __init__(self, verbose_name, is_stacked, attrs=None, choices=()):
+        self.verbose_name = verbose_name
+        self.is_stacked = is_stacked
+        super(FilterMultipleSelectWidget, self).__init__(attrs, choices)
+
+    def render(self, name, value, attrs=None, choices=()):
+        output = [super(FilterMultipleSelectWidget, self).render(name, value, attrs, choices)]
+        output.append(u'<script type="text/javascript">addEvent(window, "load", function(e) {')
+        # TODO: "id_" is hard-coded here. This should instead use the correct
+        # API to determine the ID dynamically.
+        output.append(u'SelectFilter.init("id_%s", "%s", %s, "%s"); });</script>\n' % \
+            (name, self.verbose_name, int(self.is_stacked), settings.ADMIN_MEDIA_PREFIX))
+        return mark_safe(u''.join(output))
+
+
 
 def query_print_entities(request, template_name, args):
     q = args['query']
@@ -191,6 +212,7 @@ def query_print_entities(request, template_name, args):
 def test(request):
     args={
         "title": "Test",
+        "MEDIA_URL": settings.MEDIA_URL,
     }
     return render_to_response("test.html", args, RequestContext(request))
 
@@ -342,7 +364,7 @@ class ContactSearchLine:
         output += '<th><label for="id_'+self.name+'">'+self.label+'</label>\n'
         output += '<td>'+unicode(self.form["_op_"+self.name])+'\n'
         output += '<td><span id="data_'+self.name+'">'+unicode(self.form["_val_"+self.name])+'</span>\n'
-        return output
+        return mark_safe(output)
         
     def javascript_toggle_value(self):
         result = """function toggle_value_%(name)s() {
@@ -357,7 +379,7 @@ class ContactSearchLine:
             result += 'break;\n'
         result += " }\n"
         result += "}\n"
-        return result
+        return mark_safe(result)
 
     def _make_filter(self, query, where, **kargs):
         #print "kargs=", kargs
@@ -544,8 +566,8 @@ class ContactSearchLineGroup(ContactSearchLine):
 
         
 class ContactSearchForm(forms.Form):
-    def __init__(self, data=None, auto_id='id_%s', prefix=None, initial=None):
-        forms.Form.__init__(self, data, auto_id, prefix, initial)
+    def __init__(self, *args, **kargs):
+        forms.Form.__init__(self, *args, **kargs)
         self.lines = []
         default_display_fields = get_default_display_fields()
 
@@ -630,8 +652,8 @@ def contact_search(request):
 class ContactEditForm(forms.Form):
     name = forms.CharField()
 
-    def __init__(self, contactid=None, data=None, auto_id='id_%s', prefix=None, initial=None, default_group=None):
-        forms.Form.__init__(self, data, auto_id, prefix, initial)
+    def __init__(self, contactid=None, default_group=None, *args, **kargs):
+        forms.Form.__init__(self, *args, **kargs)
 
         if contactid:
             contact = Query(Contact).get(contactid)
@@ -675,7 +697,7 @@ class ContactEditForm(forms.Form):
                 result.append( (g.id, nice_name) )
             return result
 
-        self.fields['groups'] = forms.MultipleChoiceField(required=False, choices=contactgroupchoices())
+        self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Group", False), choices=contactgroupchoices())
         
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -690,7 +712,7 @@ def contact_edit(request, id):
             default_group = request.POST['default_group']
         else:
             default_group = None
-        form = ContactEditForm(id, request.POST, default_group=default_group)
+        form = ContactEditForm(id, data=request.POST, default_group=default_group)
         if form.is_valid():
             data = form.clean()
             # print "saving", repr(form.data)
@@ -770,16 +792,17 @@ def contact_edit(request, id):
             contact = Query(Contact).get(id)
             initialdata['groups'] = [ group.id for group in contact.get_directgroups_member() ]
             initialdata['name'] = contact.name
-            form = ContactEditForm(id, initialdata)
 
             for cfv in contact.values:
                 cf = cfv.field
                 if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB, FTYPE_CHOICE):
-                    form.data[cf.name] = cfv.value
+                    initialdata[cf.name] = cfv.value
                 elif cf.type==FTYPE_NUMBER:
-                    form.data[cf.name] = cfv.value
+                    initialdata[cf.name] = cfv.value
                 elif cf.type==FTYPE_MULTIPLECHOICE:
-                    form.data[cf.name] = cfv.value.split(",")
+                    initialdata[cf.name] = cfv.value.split(",")
+
+            form = ContactEditForm(id, initial=initialdata)
 
         else:
             if 'default_group' in request.GET:
@@ -798,9 +821,9 @@ class ContactPasswordForm(forms.Form):
     confirm_password = forms.CharField(max_length=50, widget=forms.PasswordInput())
 
     def clean(self):
-        if self.clean_data.get('new_password', u'') != self.clean_data.get('confirm_password', u''):
+        if self.cleaned_data.get('new_password', u'') != self.cleaned_data.get('confirm_password', u''):
             raise forms.ValidationError("The passwords must match!")
-        return self.clean_data
+        return self.cleaned_data
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -941,11 +964,11 @@ class ContactGroupForm(forms.Form):
     field_group = forms.BooleanField(required=False, help_text=u"Does that group yield specific fields to its members?")
     date = forms.DateField(required=False)
     budget_code = forms.CharField(required=False, max_length=10)
-    direct_members = forms.MultipleChoiceField(required=False)
-    direct_subgroups = forms.MultipleChoiceField(required=False)
+    direct_members = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("contacts", False))
+    direct_subgroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("groups", False))
 
-    def __init__(self, data=None, auto_id='id_%s', prefix=None, initial=None):
-        forms.Form.__init__(self, data, auto_id, prefix, initial)
+    def __init__(self, *args, **kargs):
+        forms.Form.__init__(self, *args, **kargs)
         
         self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
         self.fields['direct_subgroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
@@ -964,7 +987,7 @@ class ContactGroupForm(forms.Form):
 
         self.fields['direct_members'].choices = choices
         if has_automembers:
-            help_text = AUTOMATIC_MEMBER_INDICATOR + " = Automatic members from " + ", ".join([ sg.name+" ("+str(sg.get_direct_members().count())+")" for sg in g.subgroups ]),
+            help_text = AUTOMATIC_MEMBER_INDICATOR + " = Automatic members from " + ", ".join([ sg.name+" ("+str(sg.get_direct_members().count())+")" for sg in g.subgroups ])
             self.fields['direct_members'].help_text = help_text
 
 
@@ -1114,8 +1137,8 @@ class FieldEditForm(forms.Form):
     choicegroup = forms.CharField(required=False, widget=forms.Select)
     move_after = forms.IntegerField(widget=forms.Select())
 
-    def __init__(self, data=None, auto_id='id_%s', prefix=None, initial=None):
-        forms.Form.__init__(self, data, auto_id, prefix, initial)
+    def __init__(self, *args, **kargs):
+        forms.Form.__init__(self, *args, **kargs)
     
         contacttypes = Query(ContactGroup).filter(ContactGroup.c.field_group==True)
         self.fields['contact_group'].widget.choices = [('', 'Everyone')] + [ (g.id, g.name) for g in contacttypes ]
@@ -1139,12 +1162,12 @@ class FieldEditForm(forms.Form):
 
 
     def clean(self):
-        if self.clean_data['type'] in (FTYPE_CHOICE, FTYPE_MULTIPLECHOICE) and self.clean_data['choicegroup'] == "":
+        if self.cleaned_data['type'] in (FTYPE_CHOICE, FTYPE_MULTIPLECHOICE) and self.cleaned_data['choicegroup'] == "":
             raise forms.ValidationError("You must select a choicegroup when for types choice")
-        return self.clean_data
+        return self.cleaned_data
 
     def clean_name(self):
-        name = self.clean_data['name']
+        name = self.cleaned_data['name']
         result = u""
         for c in name:
             if c==u"_" or c>=u"0" and c<=u"9" or c>=u"A" and c<=u"Z" or c>=u"a" and c<=u"z":
@@ -1305,8 +1328,8 @@ class ChoiceGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     sort_by_key = forms.BooleanField(required=False)
 
-    def __init__(self, cg=None, data=None, auto_id='id_%s', prefix=None, initial=None):
-        forms.Form.__init__(self, data, auto_id, prefix, initial)
+    def __init__(self, cg=None, *args, **kargs):
+        forms.Form.__init__(self, *args, **kargs)
         
         ndisplay=0
         self.initial['possible_values']=[]
@@ -1341,7 +1364,7 @@ class ChoiceGroupForm(forms.Form):
                 raise forms.ValidationError("You cannot have two keys with the same value. Leave empty for automatic generation.")
             keys.append(k)
         #print "clean() OK"
-        return self.clean_data
+        return self.cleaned_data
 
 
     def save(self, cg):

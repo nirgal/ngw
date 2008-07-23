@@ -6,8 +6,7 @@ function dump(o) {
 }
 
 
-
-// Core javascript helper functions
+//-------- core.js
 // Cross-browser event handlers.
 function addEvent(obj, evType, fn) {
     if (obj.addEventListener) {
@@ -48,6 +47,7 @@ function quickElement() {
     return obj;
 }
 
+//-------- selectbox.js
 var SelectBox = {
     cache: new Object(),
     init: function(id) {
@@ -56,7 +56,7 @@ var SelectBox = {
         SelectBox.cache[id] = new Array();
         var cache = SelectBox.cache[id];
         for (var i = 0; (node = box.options[i]); i++) {
-            cache.push({ value: node.value, text: node.text, displayed: 1 });
+            cache.push({value: node.value, text: node.text, displayed: 1});
         }
     },
     redisplay: function(id) {
@@ -100,7 +100,7 @@ var SelectBox = {
         SelectBox.cache[id].length--;
     },
     add_to_cache: function(id, option) {
-        SelectBox.cache[id].push({ value: option.value, text: option.text, displayed: 1 });
+        SelectBox.cache[id].push({value: option.value, text: option.text, displayed: 1});
     },
     cache_contains: function(id, value) {
         // Check if an item is contained in the cache
@@ -118,7 +118,7 @@ var SelectBox = {
         var option;
         for (var i = 0; (option = from_box.options[i]); i++) {
             if (option.selected && SelectBox.cache_contains(from, option.value)) {
-                SelectBox.add_to_cache(to, { value: option.value, text: option.text, displayed: 1 });
+                SelectBox.add_to_cache(to, {value: option.value, text: option.text, displayed: 1});
                 SelectBox.delete_from_cache(from, option.value);
             }
         }
@@ -130,8 +130,10 @@ var SelectBox = {
         var to_box = document.getElementById(to);
         var option;
         for (var i = 0; (option = from_box.options[i]); i++) {
-            SelectBox.add_to_cache(to, { value: option.value, text: option.text, displayed: 1 });
-            SelectBox.delete_from_cache(from, option.value);
+            if (SelectBox.cache_contains(from, option.value)) {
+                SelectBox.add_to_cache(to, {value: option.value, text: option.text, displayed: 1});
+                SelectBox.delete_from_cache(from, option.value);
+            }
         }
         SelectBox.redisplay(from);
         SelectBox.redisplay(to);
@@ -155,9 +157,9 @@ var SelectBox = {
         for (var i = 0; i < box.options.length; i++) {
             box.options[i].selected = 'selected';
         }
-    },
+    }
 }
-
+//-------- selectfilter2.js
 function findForm(node) {
     // returns the node of the form containing the given node
     if (node.tagName.toLowerCase() != 'form') {
@@ -185,7 +187,7 @@ var SelectFilter = {
         // <div class="selector-available">
         var selector_available = quickElement('div', selector_div, '');
         selector_available.className = 'selector-available';
-        quickElement('h2', selector_available, 'Available '+field_name); //i18n
+        quickElement('h2', selector_available, 'Available '+field_name);
         var filter_p = quickElement('p', selector_available, '');
         filter_p.className = 'selector-filter';
         quickElement('img', filter_p, '', 'src', admin_media_prefix + 'img/admin/selector-search.gif');
@@ -207,10 +209,10 @@ var SelectFilter = {
         // <div class="selector-chosen">
         var selector_chosen = quickElement('div', selector_div, '');
         selector_chosen.className = 'selector-chosen';
-        quickElement('h2', selector_chosen, 'Chosen '+field_name); // i18n
+        quickElement('h2', selector_chosen, 'Chosen '+field_name);
         var selector_filter = quickElement('p', selector_chosen, 'Select your choice(s) and click ');
         selector_filter.className = 'selector-filter';
-        quickElement('img', selector_filter, '', 'src', admin_media_prefix + 'img/admin/selector-add.gif', 'alt', 'Add');
+        quickElement('img', selector_filter, '', 'src', admin_media_prefix + (is_stacked ? 'img/admin/selector_stacked-add.gif':'img/admin/selector-add.gif'), 'alt', 'Add');
         var to_box = quickElement('select', selector_chosen, '', 'id', field_id + '_to', 'multiple', 'multiple', 'size', from_box.size, 'name', from_box.getAttribute('name'));
         to_box.className = 'filtered';
         var clear_all = quickElement('a', selector_chosen, 'Clear all', 'href', 'javascript: (function() { SelectBox.move_all("' + field_id + '_to", "' + field_id + '_from");})()');
@@ -263,5 +265,3 @@ var SelectFilter = {
         return true;
     }
 }
-
-

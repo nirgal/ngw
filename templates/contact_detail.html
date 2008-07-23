@@ -1,10 +1,10 @@
-{% load ngwtags %}
 {% extends "base.html" %}
+{% load ngwtags %}
 
 {% block nav %}
 {{ block.super }}
-› <a href="/{{ objtypename|escape }}s/">{{ objtypename|escape }}s</a>
-› {{ contact.name|escape }}
+› <a href="/{{ objtypename|escape }}s/">{{ objtypename }}s</a>
+› {{ contact.name }}
 {% endblock %}
 
 {% block body %}
@@ -12,27 +12,27 @@
     <tr><td>
     
     {% for row in rows %}
-        {{ row|get:0|name_internal2nice|escape }}: <b>{{ row|get:1|escape }}</b><br>
+        {{ row|get:0|name_internal2nice }}: <b>{{ row|get:1 }}</b><br>
     {% endfor %}
     {% for g in contact.get_directgroups_member %}
         {% if not forloop.counter0 %}Member of groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_link|escape }}">{{ g.name|escape }}</a></b>{% if g.date %} {{ g.date|escape }}{% endif %} {{ g.supergroups_includinghtml }}<br> 
+        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_link }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
     {% endfor %}
     {% for g in contact.get_allgroups_invited %}
         {% if not forloop.counter0 %}Invited in groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_link }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date|escape }}{% endif %} {{ g.supergroups_includinghtml }}<br> 
+        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_link }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
     {% endfor %}
 
     </table>
 
     {% block submitbar %}
     <div id=submitbar>
-      <a id=default href="/{{ objtypename|escape }}s/">Contact list</a>
-      <a href="/{{ objtypename|escape }}s/{{ contact.id }}/edit">Edit</a>
-      <a href="/{{ objtypename|escape }}s/{{ contact.id }}/vcard">VCard</a>
-      <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol|escape }}">Google map</a>
+      <a id=default href="/{{ objtypename }}s/">Contact list</a>
+      <a href="/{{ objtypename }}s/{{ contact.id }}/edit">Edit</a>
+      <a href="/{{ objtypename }}s/{{ contact.id }}/vcard">VCard</a>
+      <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
       {% if contact.login %}
-      <a href="/{{ objtypename|escape }}s/{{ contact.id }}/pass">Change password</a>
+      <a href="/{{ objtypename }}s/{{ contact.id }}/pass">Change password</a>
       {% endif %}
     </div>
     {% endblock %}

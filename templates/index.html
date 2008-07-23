@@ -3,7 +3,7 @@
 
 {% block body %}
 <div style="border: 1px solid #999; padding:1ex;">
-Welcome {{ user|escape }}!
+Welcome {{ user }}!
 <br>There are {{ ncontacts }} contacts in the database.
 
 <p>
@@ -26,6 +26,11 @@ Quick contact search: <input name=_val_name id=defaultfocus>
 
 <h1 class="boxheader">Derniers développements</h1>
 <div style="border: 1px solid #999; padding:1ex;">
+<b>Mercredi 23 juillet</b><br>
+Beaucoup de changements internes sur la façon de gérer les choses (Passage à Django 1.0) mais peu de changements côté utilisateur.<br>
+Il y a désormais une petite interface pour choisir une sélection multiple; Elle est utilisée dans la modification des groupes et des utilisateurs.<br>
+<b>Mardi 22 juillet</b><br>
+Druide a désormais accès à cette base.<br><br>
 <b>Dimanche 22 juin</b><br>
 Nouvelle gestion des mots de passe. Il est possible de changer le mot de passe d'un contact depuis sa page détaillée. Il n'est en revanche toujours pas possible d'ajouter ni supprimer un accès depuis l'application.<br>
 Il n'y a plus de choix par défaut dans les listes de choix. C'était inutile et source de confusion. La valeur "Inconnu" (Unknown) est systématiquement disponible dans tous les choix qui ne sont pas des choix multiples; C'est la valeur par défaut.<br>

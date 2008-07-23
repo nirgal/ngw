@@ -1,8 +1,7 @@
-{% load ngwtags %}
-
 {% extends "base.html" %}
+{% load ngwtags %}
 {% block body %}
-<script type="text/javascript" src="/ngw.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}/ngw.js"></script>
 
 <form>
 <table class=objchange>
@@ -28,6 +27,7 @@
 </div>
 </form>
 <script>
-SelectFilter.init("id_groups", "Groups", 0, '/media/');
+SelectFilter.init("id_groups", "Groups", 0, '{{MEDIA_URL}}/media/');
 </script>
+{{form.media}}
 {% endblock %}
