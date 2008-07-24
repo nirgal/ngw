@@ -50,6 +50,8 @@ contact_group_table = Table('contact_group', meta, autoload=True)
 contact_in_group_table = Table('contact_in_group', meta, autoload=True)
 group_in_group_table = Table('group_in_group', meta, autoload=True)
 
+contact_sysmsg_table = Table('contact_sysmsg', meta, autoload=True)
+
 #print "meta analysis:"
 #for t in meta.table_iterator(reverse=True):
 #    print "TABLE", t.name
@@ -219,11 +221,23 @@ class Contact(object):
     def get_addr_semicol(self):
         return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
 
+
+    def push_message(self, message):
+        ContactSysMsg(self.id, message)
+        Session.commit()
+
     def get_and_delete_messages(self):
         """
         That function is called by django ContextProcessor auth.
+        See django.core.context_processors
         """
-        return u""
+        messages = []
+        for sm in self.sysmsg:
+            messages.append(sm.message)
+            Session.delete(sm)
+        Session.commit()
+        return messages
+
 
 class ContactGroup(object):
     def __repr__(self):
@@ -399,6 +413,13 @@ class ContactInGroup(object):
 ##    'choices': relation(Choice, primaryjoin=choice_table.c.choice_group_id==choice_group_table.c.id, cascade="save, update, merge, expunge, refresh, delete, expire"),
 #})
 
+class ContactSysMsg(object):
+    def __init__(self, contact_id, message):
+        self.contact_id = contact_id
+        self.message = message
+    def __repr__(self):
+        return "ContactSysMsg<%s,%s>"%(self.contact_id, self.message)
+
 ########################################################################
 # Map the class to the tables
 ########################################################################
@@ -409,6 +430,7 @@ contact_group_mapper = mapper(ContactGroup, contact_group_table)
 contact_in_group_mapper = mapper(ContactInGroup, contact_in_group_table)
 contact_field_mapper = mapper(ContactField, contact_field_table)
 contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table)
+contact_sysmsg_mapper = mapper(ContactSysMsg, contact_sysmsg_table)
 
 ########################################################################
 # Define the relations between the tables
@@ -488,3 +510,10 @@ contact_field_mapper.add_property('values', relation(
     backref="field",
     passive_deletes=True))
 
+# ChoiceGroup <-> Choice
+# Contact <-> ContactSysMsg
+contact_mapper.add_property('sysmsg', relation(
+    ContactSysMsg,
+    primaryjoin=contact_sysmsg_table.c.contact_id==contact_table.c.id,
+    cascade="delete",
+    passive_deletes=True))

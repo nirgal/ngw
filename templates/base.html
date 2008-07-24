@@ -215,6 +215,13 @@ a.selector-clearall { background:url(/media/img/admin/selector-removeall.gif) le
 <a href="/">Home</a>
 {% endblock %}
 </div>
+
+{% for msg in messages %}
+<div style="border: 1px solid #999; padding:1ex; margin:1ex; background: #ffc;">
+{{ msg }}
+</div>
+{% endfor %}
+
 <div id=main>
 <div id=title>{{ title }}</div>
 {% block body %}

@@ -18,8 +18,6 @@ from ngw import settings
 from ngw.gp.alchemy_models import *
 from ngw.gp.basicauth import *
 
-import django
-
 GROUP_PREFIX = '_group_'
 DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
 NB_LINES_PER_PAGE=100
@@ -781,6 +779,7 @@ def contact_edit(request, id):
                         cfv.value = newvalue
                     else:
                         Session.delete(cfv)
+            request.user.push_message("Contact has been saved sucessfully!")
             Session.commit()
             if request.POST.get("_continue", None):
                 return HttpResponseRedirect("/contacts/"+str(contact.id)+"/edit")
