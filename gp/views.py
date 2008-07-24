@@ -1234,12 +1234,9 @@ def field_edit(request, id):
                         if not Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==cfv.value).count():
                             deletion_details.append((cfv.contact, cfv))
                 elif data['type']==FTYPE_MULTIPLECHOICE:
-                    print "type=multi"
                     for cfv in cf.values:
                         choice_group_id = int(data['choicegroup'])
-                        print "Spliting", cfv.value
                         for v in cfv.value.split(','):
-                            print "Checking ",v
                             if not Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==v).count():
                                 deletion_details.append((cfv.contact, cfv))
                                 break # stop parsing the other values, this is allready bad
