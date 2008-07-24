@@ -18,6 +18,8 @@ from ngw import settings
 from ngw.gp.alchemy_models import *
 from ngw.gp.basicauth import *
 
+import django
+
 GROUP_PREFIX = '_group_'
 DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
 NB_LINES_PER_PAGE=100
@@ -461,6 +463,8 @@ class ContactSearchLineInteger(ContactSearchLineBaseField):
         self.operators.append(("GT", ">", True, self.filter_IGT))
         self.operators.append(("LE", "≤", True, self.filter_ILE))
         self.operators.append(("GE", "≥", True, self.filter_IGE))
+        self.operators.append(("NULL", "NULL", False, self.filter_NULL))
+        self.operators.append(("NOTNULL", "NOT NULL", False, self.filter_NOTNULL))
     
     def filter_IEQ(self, query, value):
         return self._make_filter(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', value=int(value))
@@ -529,6 +533,8 @@ class ContactSearchLineDate(ContactSearchLineBaseField):
         self.operators.append(("AGE_GE", "Age ≥", True, self.filter_AGE_GE))
         #self.operators.append(("VALID_GT", "Validity ≥", True, self.filter_VALID_GT))
         self.operators.append(("FUTURE", "In the future", False, self.filter_FUTURE))
+        self.operators.append(("NULL", "NULL", False, self.filter_NULL))
+        self.operators.append(("NOTNULL", "NOT NULL", False, self.filter_NOTNULL))
 
     def filter_AGE_GE(self, query, value):
         return self._make_filter(query, 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', value=int(value))
@@ -1194,8 +1200,10 @@ def field_edit(request, id):
             data = form.clean()
             if not id:
                 cf = ContactField()
-            elif cf.type != data['type']:
+            elif cf.type != data['type'] or cf.choice_group_id != int(data['choicegroup']):
                 deletion_details=[]
+                if data['type'] in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_PHONE):
+                    pass
                 if data['type']==FTYPE_NUMBER:
                     for cfv in cf.values:
                         try:
@@ -1208,6 +1216,34 @@ def field_edit(request, id):
                             time.strptime(cfv.value, '%Y-%m-%d')
                         except ValueError:
                             deletion_details.append((cfv.contact, cfv))
+                elif data['type']==FTYPE_EMAIL:
+                    for cfv in cf.values:
+                        try:
+                            forms.EmailField().clean(cfv.value)
+                        except forms.ValidationError:
+                            deletion_details.append((cfv.contact, cfv))
+                elif data['type']==FTYPE_RIB:
+                    for cfv in cf.values:
+                        try:
+                            RibField().clean(cfv.value)
+                        except forms.ValidationError:
+                            deletion_details.append((cfv.contact, cfv))
+                elif data['type']==FTYPE_CHOICE:
+                    for cfv in cf.values:
+                        choice_group_id = int(data['choicegroup'])
+                        if not Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==cfv.value).count():
+                            deletion_details.append((cfv.contact, cfv))
+                elif data['type']==FTYPE_MULTIPLECHOICE:
+                    print "type=multi"
+                    for cfv in cf.values:
+                        choice_group_id = int(data['choicegroup'])
+                        print "Spliting", cfv.value
+                        for v in cfv.value.split(','):
+                            print "Checking ",v
+                            if not Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==v).count():
+                                deletion_details.append((cfv.contact, cfv))
+                                break # stop parsing the other values, this is allready bad
+                
                 if deletion_details:
                     if request.POST.get('confirm', None):
                         for cfv in [ dd[1] for dd in deletion_details ]:
@@ -1222,7 +1258,6 @@ def field_edit(request, id):
                         for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
                             args[k] = data[k]
                         return render_to_response('type_change.html', args, RequestContext(request))
-                # TODO check new values are compatible with actual XFValues
             cf.name = data['name']
             cf.hint = data['hint']
             if data['contact_group']:

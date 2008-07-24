@@ -1,6 +1,6 @@
 Installation
 ============
-python-django (>0.96.2) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql-8.1
+python-django (>1.0) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql-8.1
 
 Warning, some packages must be taken from etch-backports (python-sqlalchemy) or even lenny ( python-django python-support )
 
@@ -10,11 +10,10 @@ Enable ssl in apache:
 a2enmod ssl
 
 Generate self-signed certificate:
-openssl req -nodes -x509 -days 3650 -new -newkey rsa:1024 -subj /CN=nike.fr.gl3 -keyout /var/www/ngw/https/nike.key -out /var/www/ngw/https/nike.crt
-openssl req -nodes -new -x509 -keyout nike.key -out nike.crt -days 0
+openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 -keyout nike.key -out nike.crt
 
 Listen on port 443
-Add a new line "Listen 80" to /etc/apache2/ports.conf"
+Add a new line "Listen 443" to /etc/apache2/ports.conf"
 
 TODO
 ====
