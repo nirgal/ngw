@@ -1199,7 +1199,7 @@ def field_edit(request, id):
             data = form.clean()
             if not id:
                 cf = ContactField()
-            elif cf.type != data['type'] or cf.choice_group_id != int(data['choicegroup']):
+            elif cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']:
                 deletion_details=[]
                 if data['type'] in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_PHONE):
                     pass
