@@ -240,7 +240,7 @@ class Contact(object):
 
 class ContactGroup(object):
     def __repr__(self):
-        return self.name
+        return self.name.encode('utf-8')
 
     def _append_subgroups(self, result):
         for g in self.direct_subgroups:
