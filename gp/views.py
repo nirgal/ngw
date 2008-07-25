@@ -113,7 +113,7 @@ def generic_delete(request, o, next_url):
     confirm = request.GET.get("confirm", "")
     if confirm:
         Session.delete(o)
-        Session.commit()
+        request.user.push_message("Object has been deleted sucessfully!")
         return HttpResponseRedirect(next_url)
     else:
         return render_to_response('delete.html', {'title':title, 'id':id, 'objtypename':objtypename, 'o': o}, RequestContext(request))
@@ -214,6 +214,7 @@ def test(request):
         "title": "Test",
         "MEDIA_URL": settings.MEDIA_URL,
     }
+    ContactSysMsg(123456, 'Boum')
     return render_to_response("test.html", args, RequestContext(request))
 
 #######################################################################
@@ -780,7 +781,6 @@ def contact_edit(request, id):
                     else:
                         Session.delete(cfv)
             request.user.push_message("Contact has been saved sucessfully!")
-            Session.commit()
             if request.POST.get("_continue", None):
                 return HttpResponseRedirect("/contacts/"+str(contact.id)+"/edit")
             elif request.POST.get("_addanother", None):
@@ -850,7 +850,7 @@ def contact_pass(request, id):
             salt = sha(str(random())).hexdigest()[:5]
             hash = sha(salt+password).hexdigest()
             contact.passwd = "sha1$"+salt+"$"+hash
-            Session.commit()
+            request.user.push_message("Password has been changed sucessfully!")
             return HttpResponseRedirect(reverse('ngw.gp.views.contact_detail', args=(id,)))
     else: # GET
         form = ContactPasswordForm()
@@ -1039,7 +1039,7 @@ def contactgroup_edit(request, id):
 
             # subgroups have no properties: just recreate the array with brute force
             cg.direct_subgroups = [ Query(ContactGroup).get(id) for id in form.clean()['direct_subgroups']]
-            Session.commit()
+            request.user.push_message(u"Group %s has been changed sucessfully!" % cg.name)
             
             if request.POST.get("_continue", None):
                 return HttpResponseRedirect("/contactgroups/"+str(cg.id)+"/edit")
@@ -1074,7 +1074,7 @@ def contactgroup_remove(request, gid, cid):
     if not cig:
         return HttpResponse("Error, that contact is not a direct member. Please check subgroups")
     Session.delete(cig)
-    Session.commit()
+    request.user.push_message(u"%s has been removed for group %s." % (cig.contact.name, cig.group.name))
     return HttpResponseRedirect(reverse('ngw.gp.views.contactgroup_detail', args=(gid,)))
 
 
@@ -1269,7 +1269,7 @@ def field_edit(request, id):
 
             Session.commit()
             field_renumber()
-            Session.commit()
+            request.user.push_message(u"Field %s has been changed sucessfully." % cf.name)
             if request.POST.get("_continue", None):
                 return HttpResponseRedirect("/contactfields/"+str(cf.id)+"/edit")
             elif request.POST.get("_addanother", None):
@@ -1398,7 +1398,7 @@ class ChoiceGroupForm(forms.Form):
         return self.cleaned_data
 
 
-    def save(self, cg):
+    def save(self, cg, request):
         if cg:
             oldid = cg.id
         else:
@@ -1407,8 +1407,6 @@ class ChoiceGroupForm(forms.Form):
         cg.name = self.clean()['name']
         cg.sort_by_key = self.clean()['sort_by_key']
         
-        #Session.flush() # we'll need cg.id just bellow
-
         possibles_values = self['possible_values']._data()
         #print "possibles_values=", self.clean_possible_values()
         choices={}
@@ -1453,7 +1451,7 @@ class ChoiceGroupForm(forms.Form):
             #print "ADDING", k
             cg.choices.append(Choice(key=k, value=v))
     
-        Session.commit()
+        request.user.push_message(u"Choice %s has been saved sucessfully." % cg.name)
         return cg
             
         
@@ -1471,7 +1469,7 @@ def choicegroup_edit(request, id=None):
     if request.method == 'POST':
         form = ChoiceGroupForm(cg, MultiValueDict_unicode(request.POST))
         if form.is_valid():
-            cg = form.save(cg)
+            cg = form.save(cg, request)
             if request.POST.get("_continue", None):
                 return HttpResponseRedirect("/choicegroups/"+str(cg.id)+"/edit")
             elif request.POST.get("_addanother", None):

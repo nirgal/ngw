@@ -5,7 +5,7 @@ from sqlalchemy import *
 from sqlalchemy.orm import *
 import sqlalchemy.engine.url
 from django.utils import html
-from settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
+from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
 
 FTYPE_TEXT='TEXT'
 FTYPE_LONGTEXT='LONGTEXT'
@@ -49,7 +49,6 @@ contact_field_value_table = Table('contact_field_value', meta, autoload=True)
 contact_group_table = Table('contact_group', meta, autoload=True)
 contact_in_group_table = Table('contact_in_group', meta, autoload=True)
 group_in_group_table = Table('group_in_group', meta, autoload=True)
-
 contact_sysmsg_table = Table('contact_sysmsg', meta, autoload=True)
 
 #print "meta analysis:"
@@ -224,7 +223,7 @@ class Contact(object):
 
     def push_message(self, message):
         ContactSysMsg(self.id, message)
-        Session.commit()
+        #N# Session.commit()
 
     def get_and_delete_messages(self):
         """
@@ -235,7 +234,7 @@ class Contact(object):
         for sm in self.sysmsg:
             messages.append(sm.message)
             Session.delete(sm)
-        Session.commit()
+        #N# Session.commit()
         return messages
 
 
@@ -517,3 +516,5 @@ contact_mapper.add_property('sysmsg', relation(
     primaryjoin=contact_sysmsg_table.c.contact_id==contact_table.c.id,
     cascade="delete",
     passive_deletes=True))
+
+print "Alchemy initialized"
