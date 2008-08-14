@@ -1,15 +1,13 @@
 Installation
 ============
-python-django (>1.0) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql-8.1
-
-libapache2-mod-auth-pgsql ?
+python-django (>1.0) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql
 
 Warning, some packages must be taken from etch-backports (python-sqlalchemy) or even lenny ( python-django python-support )
 
 Apache
 ======
-Enable ssl in apache:
-a2enmod ssl
+Enable ssl and authn_dbd in apache:
+a2enmod ssl dbd authn_dbd
 
 Generate self-signed certificate:
 openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 -keyout nike.key -out nike.crt
