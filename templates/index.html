@@ -20,14 +20,16 @@ Quick contact search: <input name=_val_name id=defaultfocus>
 <a href="contacts/{{user.id}}/">My information</a>
 <a href="contacts/">Contacts</a>
 <a href="contactgroups/">Contact Groups</a>
+{% if user.is_admin %}
 <a href="contactfields/">Setup of optional fields</a>
 <a href="choicegroups/">Setup of choice lists</a>
+{% endif %}
 </div>
 
 <h1 class="boxheader">Derniers développements</h1>
 <div style="border: 1px solid #999; padding:1ex;">
 <b>Vendredi 25 juillet</b><br>
-Messages de confirmation pour les actions d'enregistrement.<br>
+Messages de confirmation quand on enregistre quelque chose.<br>
 <br>
 <b>Jeudi 24 juillet</b><br>
 De nombreux champs on été traduits en français.<br>

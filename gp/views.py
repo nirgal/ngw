@@ -6,6 +6,7 @@ from itertools import chain
 from md5 import md5
 from sha import sha
 from random import random
+from base64 import b64encode
 from django.http import *
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
@@ -32,21 +33,27 @@ def ngw_auth(username, passwd):
     if c==None:
         return None
     dbpasswd=c.passwd
-    algo, salt, digest = dbpasswd.split('$')
-    if algo=="crypt":
+    if dbpasswd.startswith(u"{SHA}"):
+        digest = dbpasswd[5:]
+        if b64encode(sha(passwd).digest())==digest:
+            return c
+    else: # assume crypt algorithm
+        salt,digest = dbpasswd[0:2],dbpasswd[2:]
         targetdigest=subprocess.Popen(["openssl", "passwd", "-crypt", "-salt", salt, passwd], stdout=subprocess.PIPE).communicate()[0]
         targetdigest=targetdigest[:-1] # remove extra "\n"
         if salt+digest==targetdigest:
             return c
-    elif algo=="md5":
-        if md5(salt+passwd).hexdigest()==digest:
-            return c
-    elif algo=="sha1":
-        if sha(salt+passwd).hexdigest()==digest:
-            return c
-    else:
-        print "Unsupported password algorithm", algo.encode('utf-8')
-        return None
+    #algo, salt, digest = dbpasswd.split('$')
+    #if algo=="crypt":
+    #elif algo=="md5":
+    #    if md5(salt+passwd).hexdigest()==digest:
+    #        return c
+    #elif algo=="sha1":
+    #    if sha(salt+passwd).hexdigest()==digest:
+    #        return c
+    #else:
+    #    print "Unsupported password algorithm", algo.encode('utf-8')
+    #    return None
     return None # authentification failed
 
 
@@ -112,10 +119,12 @@ def generic_delete(request, o, next_url):
 
     confirm = request.GET.get("confirm", "")
     if confirm:
+        name = unicode(o)
         Session.delete(o)
-        request.user.push_message("Object has been deleted sucessfully!")
+        request.user.push_message("%s has been deleted sucessfully!"%name)
         return HttpResponseRedirect(next_url)
     else:
+        print o.Meta.verbose_name
         return render_to_response('delete.html', {'title':title, 'id':id, 'objtypename':objtypename, 'o': o}, RequestContext(request))
         
 
@@ -214,7 +223,6 @@ def test(request):
         "title": "Test",
         "MEDIA_URL": settings.MEDIA_URL,
     }
-    ContactSysMsg(123456, 'Boum')
     return render_to_response("test.html", args, RequestContext(request))
 
 #######################################################################
@@ -288,6 +296,7 @@ def contact_detail(request, id):
         if cfv:
             rows.append((cf.name, unicode(cfv)))
     
+    is_admin = c.is_admin()
     args={}
     args['title'] = "Contact detail"
     args['objtypename'] = "contact"
@@ -657,8 +666,9 @@ def contact_search(request):
 class ContactEditForm(forms.Form):
     name = forms.CharField()
 
-    def __init__(self, contactid=None, default_group=None, *args, **kargs):
+    def __init__(self, request_user, id=None, default_group=None, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
+        contactid = id # FIXME
 
         if contactid:
             contact = Query(Contact).get(contactid)
@@ -688,21 +698,22 @@ class ContactEditForm(forms.Form):
             elif cf.type==FTYPE_RIB:
                 self.fields[cf.name] = RibField(required=False, help_text=cf.hint)
             elif cf.type==FTYPE_CHOICE:
-                self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint, widget=forms.Select(choices=cf.choice_group.ordered_choices_with_unknown))
+                self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint, widget=forms.Select(choices=[('', u"Unknown")]+cf.choice_group.ordered_choices))
             elif cf.type==FTYPE_MULTIPLECHOICE:
                 self.fields[cf.name] = forms.MultipleChoiceField(required=False, help_text=cf.hint, choices=cf.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
         
-        def contactgroupchoices():
-            result = []
-            # sql "_" means "any character" and must be escaped
-            for g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]):
-                nice_name = g.name
-                if g.date:
-                    nice_name+=u" "+unicode(g.date)
-                result.append( (g.id, nice_name) )
-            return result
+        if request_user.is_admin():
+            def contactgroupchoices():
+                result = []
+                # sql "_" means "any character" and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by ...
+                for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]):
+                    nice_name = g.name
+                    if g.date:
+                        nice_name+=u" "+unicode(g.date)
+                    result.append( (g.id, nice_name) )
+                return result
 
-        self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Group", False), choices=contactgroupchoices())
+            self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Group", False), choices=contactgroupchoices())
         
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -717,7 +728,7 @@ def contact_edit(request, id):
             default_group = request.POST['default_group']
         else:
             default_group = None
-        form = ContactEditForm(id, data=request.POST, default_group=default_group)
+        form = ContactEditForm(id=id, data=request.POST, default_group=default_group, request_user=request.user)
         if form.is_valid():
             data = form.clean()
             # print "saving", repr(form.data)
@@ -738,20 +749,21 @@ def contact_edit(request, id):
                 else:
                     contactgroupids = [ ]
 
-            newgroups = data.get('groups', [])
-            registeredgroups = []
-            for gid in newgroups:
-                cig = Query(ContactInGroup).get((contact.id, gid))
-                if cig==None: # Was not a member
-                    cig = ContactInGroup(contact.id, gid)
-                    cig.member = True
-                registeredgroups.append(gid)
-            for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==id, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
-                # TODO optimize me
-                print "Deleting", cig
-                Session.delete(cig)
-            #print "newgroups =", newgroups
-            #contact.direct_groups = newgroups
+            if request.user.is_admin():
+                newgroups = data.get('groups', [])
+                registeredgroups = []
+                for gid in newgroups:
+                    cig = Query(ContactInGroup).get((contact.id, gid))
+                    if cig==None: # Was not a member
+                        cig = ContactInGroup(contact.id, gid)
+                        cig.member = True
+                    registeredgroups.append(gid)
+                for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==id, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
+                    # TODO optimize me
+                    print "Deleting", cig
+                    Session.delete(cig)
+                #print "newgroups =", newgroups
+                #contact.direct_groups = newgroups
             
             # 2/ In ContactFields
             for cf in Query(ContactField):
@@ -780,7 +792,7 @@ def contact_edit(request, id):
                         cfv.value = newvalue
                     else:
                         Session.delete(cfv)
-            request.user.push_message("Contact has been saved sucessfully!")
+            request.user.push_message(u"Contact %s has been saved sucessfully!" % contact.name)
             if request.POST.get("_continue", None):
                 return HttpResponseRedirect("/contacts/"+str(contact.id)+"/edit")
             elif request.POST.get("_addanother", None):
@@ -807,16 +819,16 @@ def contact_edit(request, id):
                 elif cf.type==FTYPE_MULTIPLECHOICE:
                     initialdata[cf.name] = cfv.value.split(",")
 
-            form = ContactEditForm(id, initial=initialdata)
+            form = ContactEditForm(id=id, initial=initialdata, request_user=request.user)
 
         else:
             if 'default_group' in request.GET:
                 default_group = request.GET['default_group']
                 initialdata['default_group'] = default_group
                 initialdata['groups'] = [ int(default_group) ]
-                form = ContactEditForm(id, initial=initialdata, default_group=default_group )
+                form = ContactEditForm(id=id, initial=initialdata, default_group=default_group, request_user=request.user)
             else:
-                form = ContactEditForm(id)
+                form = ContactEditForm(id=id, request_user=request.user)
 
     return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
     
@@ -847,9 +859,8 @@ def contact_pass(request, id):
         if form.is_valid():
             # record the value
             password = form.clean()['new_password']
-            salt = sha(str(random())).hexdigest()[:5]
-            hash = sha(salt+password).hexdigest()
-            contact.passwd = "sha1$"+salt+"$"+hash
+            hash = b64encode(sha(password).digest())
+            contact.passwd = "{SHA}"+hash
             request.user.push_message("Password has been changed sucessfully!")
             return HttpResponseRedirect(reverse('ngw.gp.views.contact_detail', args=(id,)))
     else: # GET

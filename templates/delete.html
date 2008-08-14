@@ -3,7 +3,7 @@
 {% block nav %}
 {{ block.super }}
 › {{ objtypename }}s
-› {{ o }}s
+› <a href="{{o.get_link}}">{{ o }}</a>
 › delete
 {% endblock %}
 

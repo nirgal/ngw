@@ -2,6 +2,8 @@ Installation
 ============
 python-django (>1.0) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql-8.1
 
+libapache2-mod-auth-pgsql ?
+
 Warning, some packages must be taken from etch-backports (python-sqlalchemy) or even lenny ( python-django python-support )
 
 Apache

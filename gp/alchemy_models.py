@@ -24,12 +24,14 @@ FIELD_TYPES={
     FTYPE_DATE: 'Date',
     FTYPE_EMAIL: 'E.Mail',
     FTYPE_PHONE: 'Phone',
-    FTYPE_RIB: 'Bank account',
+    FTYPE_RIB: 'French bank account',
     FTYPE_CHOICE: 'Choice',
     FTYPE_MULTIPLECHOICE: 'Multiple choice',
 }
 FIELD_TYPE_CHOICES = FIELD_TYPES.items() # TODO: sort
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
+
+GROUP_ADMIN = 8
 
 dburl = sqlalchemy.engine.url.URL("postgres", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
 engine = create_engine(dburl, convert_unicode=True) #, echo=True)
@@ -90,12 +92,12 @@ class ChoiceGroup(object):
             q = q.order_by([choice_table.c.value])
         return [(c.key, c.value) for c in q]
 
-    @property
-    def ordered_choices_with_unknown(self):
-        """"
-        Utility property to get choices tuples in correct order, with extra Unknown key
-        """
-        return [('', u"Unknown")] + self.ordered_choices
+    #@property
+    #def ordered_choices_with_unknown(self):
+    #    """"
+    #    Utility property to get choices tuples in correct order, with extra Unknown key
+    #    """
+    #    return [('', u"Unknown")] + self.ordered_choices
 
     def get_link(self):
         return u"/choicegroups/"+str(self.id)+"/edit"
@@ -103,6 +105,8 @@ class ChoiceGroup(object):
 
 
 class Contact(object):
+    class Meta:
+        verbose_name="contact"
     def __init__(self, name):
         self.name = name
 
@@ -236,6 +240,10 @@ class Contact(object):
             Session.delete(sm)
         #N# Session.commit()
         return messages
+
+    def is_admin(self):
+        cig = Query(ContactInGroup).get((self.id, GROUP_ADMIN))
+        return cig!=None
 
 
 class ContactGroup(object):
@@ -400,6 +408,7 @@ class ContactFieldValue(object):
             result =  u'<a href="'+link+'">'+result+'</a>'
         return result
 
+
 class ContactInGroup(object):
     def __init__(self, contact_id, group_id):
         self.contact_id = contact_id
@@ -411,6 +420,7 @@ class ContactInGroup(object):
 #    contact_in_group_table, properties={ \
 ##    'choices': relation(Choice, primaryjoin=choice_table.c.choice_group_id==choice_group_table.c.id, cascade="save, update, merge, expunge, refresh, delete, expire"),
 #})
+
 
 class ContactSysMsg(object):
     def __init__(self, contact_id, message):
