@@ -217,13 +217,15 @@ def query_print_entities(request, template_name, args):
 
 #@http_authenticate(ngw_auth, 'ngw')
 def test(request):
-    print Choice.get_verbose_name()
     args={
         "title": "Test",
         "MEDIA_URL": settings.MEDIA_URL,
         "objtype": Contact,
     }
     return render_to_response("test.html", args, RequestContext(request))
+
+def logout(request):
+    return HttpResponse("good bye")
 
 #######################################################################
 #
@@ -358,7 +360,7 @@ class ContactSearchLine:
             # form_display: "&lt;"
             # need_parameter: True/False
             # filter_function(self, Query, value) -> Query
-            ("", "", False, lambda x,y,z: x),
+            ("", "", False, lambda s,q,v: s),
             ]
     
     def add_fields(self, fields):
@@ -404,7 +406,7 @@ class ContactSearchLine:
             elif isinstance(v, int):
                 params_where[ k ] = v
             else:
-                raise Exception("Unsupported type "+str(type(v)))
+                raise Exception(u"Unsupported type "+unicode(type(v)))
         where = where % params_where
         return query.filter(where).params(params_sql)
 
@@ -425,12 +427,12 @@ class ContactSearchLineName(ContactSearchLine):
 
 
 class ContactSearchLineBaseField(ContactSearchLine):
-    def __init__(self, form, xf, initial_check=False):
-        ContactSearchLine.__init__(self, form, xf.name, name_internal2nice(xf.name), initial_check)
-        self.xf = xf
+    def __init__(self, form, cf, initial_check=False):
+        ContactSearchLine.__init__(self, form, cf.name, name_internal2nice(cf.name), initial_check)
+        self.cf = cf
 
     def _make_filter(self, query, where, **kargs):
-        kargs['field_id'] = self.xf.id
+        kargs['field_id'] = self.cf.id
         return ContactSearchLine._make_filter(self, query, where, **kargs)
 
     def filter_STARTSWITH(self, query, value):
@@ -505,8 +507,8 @@ class ContactSearchLineText(ContactSearchLineBaseField):
     
         
 class ContactSearchLineChoice(ContactSearchLineBaseField):
-    def __init__(self, form, xf, *args, **kargs):
-        ContactSearchLineBaseField.__init__(self, form, xf, *args, **kargs)
+    def __init__(self, form, cf, *args, **kargs):
+        ContactSearchLineBaseField.__init__(self, form, cf, *args, **kargs)
         self.operators.append(("EQUALS", "=", True, self.filter_EQ))
         self.operators.append(("NE", "≠", True, self.filter_NEQ))
         null_name = "NULL (Unknown)"
@@ -514,7 +516,7 @@ class ContactSearchLineChoice(ContactSearchLineBaseField):
 
     def add_fields(self, fields):
         ContactSearchLine.add_fields(self, fields)
-        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.xf.choice_group.ordered_choices,  widget=forms.Select() )
+        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.cf.choice_group.ordered_choices,  widget=forms.Select() )
 
         
 class ContactSearchLineMultiChoice(ContactSearchLineBaseField):
@@ -524,7 +526,7 @@ class ContactSearchLineMultiChoice(ContactSearchLineBaseField):
 
     def add_fields(self, fields):
         ContactSearchLine.add_fields(self, fields)
-        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.xf.choice_group.ordered_choices,  widget=forms.Select() )
+        self.form.fields["_val_"+self.name] = forms.ChoiceField(required=False, choices=self.cf.choice_group.ordered_choices,  widget=forms.Select() )
     
     def filter_MULTIHAS(self, query, value):
         return self._make_filter(query, 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', value=value, valuestart=value+",%", valuemiddle="%,"+value+",%", valueend="%,"+value)
@@ -702,6 +704,8 @@ class ContactEditForm(forms.Form):
                 self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint, widget=forms.Select(choices=[('', u"Unknown")]+cf.choice_group.ordered_choices))
             elif cf.type==FTYPE_MULTIPLECHOICE:
                 self.fields[cf.name] = forms.MultipleChoiceField(required=False, help_text=cf.hint, choices=cf.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
+            else:
+                raise Exception(u"Unsupported type "+cf.type)
         
         if request_user.is_admin():
             def contactgroupchoices():
@@ -782,6 +786,8 @@ def contact_edit(request, id):
                         #print "storing", repr(newvalue), "in", cfname
                     elif cf.type==FTYPE_NUMBER:
                         newvalue = unicode(newvalue) # store as a string for now
+                    else:
+                        raise u"Unknown field type "+cf.type
                 cfv = Query(ContactFieldValue).get((id, cfid))
                 if cfv == None:
                     if newvalue:
@@ -833,7 +839,15 @@ def contact_edit(request, id):
             else:
                 form = ContactEditForm(id=id, request_user=request.user)
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtype':objtype,}, RequestContext(request))
+    args={}
+    args['form'] = form
+    args['title'] = title
+    args['id'] = id
+    args['objtype'] = objtype
+    if id:
+        args['o'] = contact
+
+    return render_to_response('edit.html', args, RequestContext(request))
     
 
 class ContactPasswordForm(forms.Form):

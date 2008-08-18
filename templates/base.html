@@ -203,7 +203,7 @@ a.selector-clearall { background:url(/media/img/admin/selector-removeall.gif) le
 
 </style>
 <div id=banner>
-<div style="float:right; display:float;font-size:small; color:yellow;">Welcome {{ user }}</div>
+<div style="float:right; display:float;font-size:small; color:yellow;">Welcome <a href="{{user.get_absolute_url}}" style="color:yellow; text-decoration:underline;">{{ user }}</a></div>
 <big>Action</big> ... go ... go ... go ...
 <br clear=all>
 </div>
