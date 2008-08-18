@@ -1,9 +1,10 @@
-{% extends "list.html" %}
+{% extends "base.html" %}
 {% load ngwtags %}
 
 {% block nav %}
 {{ block.super }}
-› <a href="{{ cg.getlink }}">{{ cg.name }}</a>
+› <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
+› <a href="{{ cg.get_absolute_url }}">{{ cg }}</a>
 › emails
 {% endblock %}
 

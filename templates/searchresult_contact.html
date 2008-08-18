@@ -2,7 +2,7 @@
 
 {% block nav %}
 {{ block.super }}
-› <a href=/{{ objtypename }}s/>{{ objtypename }}s</a>
+› <a href="{{ objtype.get_class_absolute_url }}">{{ objtype.get_verbose_name_plural }}</a>
 › search
 {% endblock %}
 
@@ -11,7 +11,7 @@
 
     {% block submitbar %}
     <div id=submitbar>
-      <a id=default href="/{{ objtypename }}s/search">New search</a>
+      <a id=default href="{{ objtype.get_class_absolute_url }}search">New search</a>
       {% comment %}
       <a href="javascript:alert('Not implemented yet!');">Create a group with selection</a>
       {% endcomment %}

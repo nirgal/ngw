@@ -38,7 +38,6 @@ engine = create_engine(dburl, convert_unicode=True) #, echo=True)
 
 Session = scoped_session(sessionmaker(bind=engine, autoflush=True, transactional=True))
 meta = MetaData(engine)
-mapper = Session.mapper
 
 ########################################################################
 # create the table objects, using the existing database
@@ -68,16 +67,48 @@ contact_sysmsg_table = Table('contact_sysmsg', meta, autoload=True)
 #        #print "cascade:", c.cascade
 #        #print dir(c)
 
+
+class NgwModel(object):
+    @classmethod
+    def get_class_verbose_name(cls):
+        try:
+            return cls.Meta.verbose_name
+        except AttributeError:
+            return cls.__name__.lower()
+    
+    @classmethod
+    def get_class_verbose_name_plural(cls):
+        try:
+            return cls.Meta.verbose_name_plural
+        except AttributeError:
+            return cls.get_class_verbose_name()+u"s"
+    
+    @classmethod
+    def get_class_absolute_url(cls):
+        return u"/"+unicode(cls.__name__.lower(), "utf-8-")+u"s/"
+
+    def get_absolute_url(self):
+        return self.get_class_absolute_url()+unicode(self.id)+u"/"
+
 ########################################################################
 # Define classes to be mapped to the above tables.
 # Most properties are fetched from the database, and autodeclared
 ########################################################################
-class Choice(object):
+class Choice(NgwModel):
+    class Meta:
+        pass
     def __init__(self, key, value):
+        NgwModel.__init__(self)
         self.key = key
         self.value = value
 
-class ChoiceGroup(object):
+class ChoiceGroup(NgwModel):
+    class Meta:
+        verbose_name="choices list"
+
+    def __unicode__(self):
+        return self.name
+
     def __repr__(self):
         return "ChoiceGroup<"+self.name.encode('utf-8')+">"
 
@@ -92,22 +123,17 @@ class ChoiceGroup(object):
             q = q.order_by([choice_table.c.value])
         return [(c.key, c.value) for c in q]
 
-    #@property
-    #def ordered_choices_with_unknown(self):
-    #    """"
-    #    Utility property to get choices tuples in correct order, with extra Unknown key
-    #    """
-    #    return [('', u"Unknown")] + self.ordered_choices
-
     def get_link(self):
         return u"/choicegroups/"+str(self.id)+"/edit"
-    get_link_name = get_link
+    get_link_name=get_link # templatetags
 
 
-class Contact(object):
+class Contact(NgwModel):
     class Meta:
         verbose_name="contact"
+
     def __init__(self, name):
+        NgwModel.__init__(self)
         self.name = name
 
     def __repr__(self):
@@ -135,7 +161,7 @@ class Contact(object):
 
     def get_link(self):
         return u"/contacts/"+str(self.id)+"/"
-    get_link_name = get_link
+    get_link_name=get_link # templatetags
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is direct member of."
@@ -246,7 +272,13 @@ class Contact(object):
         return cig!=None
 
 
-class ContactGroup(object):
+class ContactGroup(NgwModel):
+    class Meta:
+        verbose_name = u"contacts group"
+
+    def __unicode__(self):
+        return self.name
+
     def __repr__(self):
         return self.name.encode('utf-8')
 
@@ -318,7 +350,7 @@ class ContactGroup(object):
 
     def get_link(self):
         return u"/contactgroups/"+str(self.id)+"/"
-    get_link_name = get_link
+    get_link_name=get_link # templatetags
 
     def supergroups_includinghtml(self):
         sgs = self.supergroups
@@ -340,7 +372,10 @@ class ContactGroup(object):
         return result
 
 
-class ContactField(object):
+class ContactField(NgwModel):
+    class Meta:
+        verbose_name = u"optional field"
+
     def __repr__(self):
         return "ContactField<"+self.name.encode('utf-8')+">"
 
@@ -355,10 +390,13 @@ class ContactField(object):
 
     def get_link(self):
         return u"/contactfields/"+str(self.id)+"/edit"
-    get_link_name = get_link
+    get_link_name=get_link # templatetags
 
 
-class ContactFieldValue(object):
+class ContactFieldValue(NgwModel):
+    class Meta:
+        verbose_name = u"contact field value"
+
     def __repr__(self):
         return 'ContactFieldValue<"'+unicode(self.contact).encode("utf-8")+'", "'+unicode(self.field).encode('utf-8')+'", "'+unicode(self).encode('utf-8')+'">'
 
@@ -409,21 +447,19 @@ class ContactFieldValue(object):
         return result
 
 
-class ContactInGroup(object):
+class ContactInGroup(NgwModel):
     def __init__(self, contact_id, group_id):
+        NgwModel.__init__(self)
         self.contact_id = contact_id
         self.group_id = group_id
 
     def __repr__(self):
         return "ContactInGroup<%s,%s>"%(self.contact_id, self.group_id)
-#mapper(ContactInGroup,
-#    contact_in_group_table, properties={ \
-##    'choices': relation(Choice, primaryjoin=choice_table.c.choice_group_id==choice_group_table.c.id, cascade="save, update, merge, expunge, refresh, delete, expire"),
-#})
 
 
-class ContactSysMsg(object):
+class ContactSysMsg(NgwModel):
     def __init__(self, contact_id, message):
+        NgwModel.__init__(self)
         self.contact_id = contact_id
         self.message = message
     def __repr__(self):
@@ -432,6 +468,7 @@ class ContactSysMsg(object):
 ########################################################################
 # Map the class to the tables
 ########################################################################
+mapper = Session.mapper
 choice_mapper=mapper(Choice, choice_table)
 choice_group_mapper = mapper(ChoiceGroup, choice_group_table)
 contact_mapper = mapper(Contact, contact_table)
@@ -441,6 +478,10 @@ contact_field_mapper = mapper(ContactField, contact_field_table)
 contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table)
 contact_sysmsg_mapper = mapper(ContactSysMsg, contact_sysmsg_table)
 
+#mapper(ContactInGroup,
+#    contact_in_group_table, properties={ \
+##    'choices': relation(Choice, primaryjoin=choice_table.c.choice_group_id==choice_group_table.c.id, cascade="save, update, merge, expunge, refresh, delete, expire"),
+#})
 ########################################################################
 # Define the relations between the tables
 ########################################################################

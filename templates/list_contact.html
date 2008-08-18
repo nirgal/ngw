@@ -1,20 +1,11 @@
-{% extends "base.html" %}
+{% extends "list.html" %}
 
-{% block nav %}
-{{ block.super }}
-› <a href=/{{ objtypename }}s/>{{ objtypename }}s</a>
-{% endblock %}
-
-{% block body %}
-    {% include "query_entities.html" %}
-
-    {% block submitbar %}
-    <div id=submitbar>
-      <a id=default href="/{{ objtypename }}s/search"><!img src="/media/img/admin/selector-search.gif" border=0>Search</a>
-      <a href="/{{ objtypename }}s/add?default_group=2"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a person</a>
-      <a href="/{{ objtypename }}s/add?default_group=4"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a volunter</a>
-      <a href="/{{ objtypename }}s/add?default_group=5"><img src="/media/img/admin/icon_addlink.gif" border=0> Add an activist</a>
-      <a href="/{{ objtypename }}s/add?default_group=3"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a company</a>
-    </div>
-    {% endblock %}
+{% block submitbar %}
+<div id=submitbar>
+  <a id=default href="{{ objtype.get_class_absolute_url }}search"><!img src="/media/img/admin/selector-search.gif" border=0>Search</a>
+  <a href="{{ objtype.get_class_absolute_url }}add?default_group=2"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a person</a>
+  <a href="{{ objtype.get_class_absolute_url }}add?default_group=4"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a volunter</a>
+  <a href="{{ objtype.get_class_absolute_url }}add?default_group=5"><img src="/media/img/admin/icon_addlink.gif" border=0> Add an activist</a>
+  <a href="{{ objtype.get_class_absolute_url }}add?default_group=3"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a company</a>
+</div>
 {% endblock %}

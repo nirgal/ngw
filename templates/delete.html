@@ -2,17 +2,17 @@
 
 {% block nav %}
 {{ block.super }}
-› {{ objtypename }}s
-› <a href="{{o.get_link}}">{{ o }}</a>
+› <a href="{{o.get_class_absolute_url}}">{{ o.get_class_verbose_name_plural }}</a>
+› <a href="{{o.get_absolute_url}}">{{ o }}</a>
 › delete
 {% endblock %}
 
 {% block body %}
-You are about to delete the {{ objtypename }} {{ o }}. Are you sure ?
+You are about to delete {{ o.get_class_verbose_name }} {{ o }}. Are you sure ?
     {% block submitbar %}
     <div id=submitbar>
-    <a href="/{{ objtypename }}s/{{ o.id }}/delete?confirm=1">Yes I'm Sure</a>
-    <a href="/{{ objtypename }}s/{{ o.id }}/edit">Cancel</a> <!-- FIXME -->
+    <a href="{{o.get_absolute_url}}delete?confirm=1">Yes I'm Sure</a>
+    <a href="{{o.get_absolute_url}}edit">Cancel</a>
     </div>
     {% endblock %}
 

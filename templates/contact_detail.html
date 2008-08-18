@@ -3,7 +3,7 @@
 
 {% block nav %}
 {{ block.super }}
-› <a href="/{{ objtypename|escape }}s/">{{ objtypename }}s</a>
+› <a href="{{contact.get_class_absolute_url}}">{{ contact.get_class_verbose_name_plural }}</a>
 › {{ contact.name }}
 {% endblock %}
 
@@ -27,12 +27,12 @@
 
     {% block submitbar %}
     <div id=submitbar>
-      <a id=default href="/{{ objtypename }}s/">Contact list</a>
-      <a href="/{{ objtypename }}s/{{ contact.id }}/edit">Edit</a>
-      <a href="/{{ objtypename }}s/{{ contact.id }}/vcard">VCard</a>
+      <a id=default href="{{contact.get_class_absolute_url}}">Contact list</a>
+      <a href="{{contact.get_absolute_url}}edit">Edit</a>
+      <a href="{{contact.get_absolute_url}}vcard">VCard</a>
       <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
       {% if contact.login %}
-      <a href="/{{ objtypename }}s/{{ contact.id }}/pass">Change password</a>
+      <a href="{{contact.get_absolute_url}}pass">Change password</a>
       {% endif %}
     </div>
     {% endblock %}

@@ -1,7 +1,8 @@
-{% extends "list.html" %}
+{% extends "base.html" %}
 
 {% block nav %}
 {{ block.super }}
+› <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
 › {{ cg.name }}
 {% endblock %}
 
@@ -33,8 +34,8 @@
     {% endif %}
     {% block submitbar %}
     <div id=submitbar>
-        <a href="/{{ objtypename }}s/{{ cg.id }}/edit">Edit</a>
-        <a href="/{{ objtypename }}s/{{ cg.id }}/emails">Emails</a>
+        <a href="{{cg.get_absolute_url}}edit">Edit</a>
+        <a href="{{cg.get_absolute_url}}emails">Emails</a>
         <a href="?display={{display}}&amp;output=vcard">Vcards</a>  
         {% ifnotequal display "mi" %}
             <a href="?display=mi">Show invited and members</a>  

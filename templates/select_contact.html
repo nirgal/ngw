@@ -2,7 +2,7 @@
 
 {% block nav %}
 {{ block.super }}
-› <a href=/{{ objtypename }}s/>{{ objtypename }}s</a>
+› <a href="{{ objtype.get_class_absolute_url }}">{{ objtype.get_class_verbose_name_plural }}</a>
 › select
 {% endblock %}
 

@@ -111,7 +111,6 @@ def index(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def generic_delete(request, o, next_url):
-    objtypename = o.__class__.__name__.lower()
     title = "Please confirm deletetion"
 
     if not o:
@@ -124,8 +123,7 @@ def generic_delete(request, o, next_url):
         request.user.push_message("%s has been deleted sucessfully!"%name)
         return HttpResponseRedirect(next_url)
     else:
-        print o.Meta.verbose_name
-        return render_to_response('delete.html', {'title':title, 'id':id, 'objtypename':objtypename, 'o': o}, RequestContext(request))
+        return render_to_response('delete.html', {'title':title, 'o': o}, RequestContext(request))
         
 
 # That class is a clone of forms.CheckboxSelectMultiple
@@ -217,11 +215,13 @@ def query_print_entities(request, template_name, args):
     return render_to_response(template_name, args, RequestContext(request))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+#@http_authenticate(ngw_auth, 'ngw')
 def test(request):
+    print Choice.get_verbose_name()
     args={
         "title": "Test",
         "MEDIA_URL": settings.MEDIA_URL,
+        "objtype": Contact,
     }
     return render_to_response("test.html", args, RequestContext(request))
 
@@ -275,7 +275,7 @@ def contact_list(request):
     q, cols = contact_make_query_with_fields(fields)
     args={}
     args['title'] = "Contact list"
-    args['objtypename'] = "contact"
+    args['objtype'] = Contact
     args['query'] = q
     args['cols'] = cols
     return query_print_entities(request, 'list_contact.html', args)
@@ -298,8 +298,7 @@ def contact_detail(request, id):
     
     is_admin = c.is_admin()
     args={}
-    args['title'] = "Contact detail"
-    args['objtypename'] = "contact"
+    args['title'] = u"Details for "+unicode(c)
     args['contact'] = c
     args['rows'] = rows
     return render_to_response('contact_detail.html', args, RequestContext(request))
@@ -649,7 +648,7 @@ def contact_search(request):
             q = form.do_filter(q)
             args={}
             args['title'] = "Contacts search results"
-            args['objtypename'] = "contact"
+            args['objtype'] = Contact
             args['query'] = q
             args['cols'] = cols
             args['baseurl'] = "?"+params
@@ -657,9 +656,11 @@ def contact_search(request):
     else:
         form = ContactSearchForm()
 
-    objtypename = "contact";
-    title = "Searching "+objtypename+"s"
-    return render_to_response('search.html', { 'title':title, 'objtypename':objtypename, 'form':form}, RequestContext(request))
+    args={}
+    args['objtype'] = Contact
+    args['title'] = u"Searching "+Contact.get_class_verbose_name_plural()
+    args['form'] = form
+    return render_to_response('search.html', args, RequestContext(request))
 
 
 
@@ -718,11 +719,13 @@ class ContactEditForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_edit(request, id):
-    objtypename = "contact";
+    objtype = Contact;
     if id:
-        title = "Changing a "+objtypename
+        contact = Query(Contact).get(id)
+        title = u"Editing "+unicode(contact)
     else:
-        title = "Adding a new "+objtypename
+        title = u"Adding a new "+objtype.get_class_verbose_name()
+
     if request.method == 'POST':
         if 'default_group' in request.POST:
             default_group = request.POST['default_group']
@@ -737,7 +740,6 @@ def contact_edit(request, id):
 
             # 1/ In contact
             if id:
-                contact = Query(Contact).get(id)
                 contactgroupids = [ g.id for g in contact.get_allgroups_withfields()]  # Need to keep a record of initial groups
                 contact.name = data['name']
             else:
@@ -794,11 +796,13 @@ def contact_edit(request, id):
                         Session.delete(cfv)
             request.user.push_message(u"Contact %s has been saved sucessfully!" % contact.name)
             if request.POST.get("_continue", None):
-                return HttpResponseRedirect("/contacts/"+str(contact.id)+"/edit")
+                if not id:
+                    Session.commit() # We need the id rigth now!
+                return HttpResponseRedirect(contact.get_absolute_url()+u"edit")
             elif request.POST.get("_addanother", None):
-                url = "/contacts/add"
+                url = contact.get_class_absolute_url()+u"add"
                 if default_group:
-                    url+="?default_group="+str(default_group)
+                    url+=u"?default_group="+unicode(default_group)
                 return HttpResponseRedirect(url)
             else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.contact_list')) # args=(p.id,)))
@@ -806,7 +810,6 @@ def contact_edit(request, id):
     else: # GET /  HEAD
         initialdata = {}
         if id: # modify existing
-            contact = Query(Contact).get(id)
             initialdata['groups'] = [ group.id for group in contact.get_directgroups_member() ]
             initialdata['name'] = contact.name
 
@@ -830,7 +833,7 @@ def contact_edit(request, id):
             else:
                 form = ContactEditForm(id=id, request_user=request.user)
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
+    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtype':objtype,}, RequestContext(request))
     
 
 class ContactPasswordForm(forms.Form):
@@ -848,7 +851,6 @@ def contact_pass(request, id):
     contact = Query(Contact).get(id)
     args={}
     args['title'] = "Change password"
-    args['objtypename'] = "contact"
     args['contact'] = contact
     if contact.passwd:
         args['currentaccess'] = u"This contact has a password and can modify his own information."
@@ -909,7 +911,7 @@ def contactgroup_list(request):
     args['title'] = "Select a contact group"
     args['query'] = q
     args['cols'] = cols
-    args['objtypename'] = "contactgroup"
+    args['objtype'] = ContactGroup
     return query_print_entities(request, 'list.html', args)
 
 
@@ -945,7 +947,6 @@ def contactgroup_detail(request, id):
     cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove from group</a>', None))
     args['baseurl'] = "?display="+display
     args['display'] = display
-    args['objtypename'] = "contactgroup"
     args['query'] = q
     args['cols'] = cols
     args['cg'] = cg
@@ -967,7 +968,6 @@ def contactgroup_emails(request, id):
 
     args = {}
     args['title'] = u"Emails for "+cg.name
-    args['objtypename'] = "contactgroup"
     args['cg'] = cg
     args['emails'] = emails
     args['noemails'] = noemails
@@ -1009,20 +1009,19 @@ class ContactGroupForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_edit(request, id):
-    objtypename = "contactgroup"
+    objtype= ContactGroup
     if id:
-        title = "Changing a "+objtypename
+        cg = Query(ContactGroup).get(id)
+        title = u"Editing "+unicode(cg)
     else:
-        title = "Adding a new "+objtypename
+        title = u"Adding a new "+objtype.get_class_verbose_name()
     
     if request.method == 'POST':
         form = ContactGroupForm(request.POST)
         if form.is_valid():
             # record the values
 
-            if id:
-                cg = Query(ContactGroup).get(id)
-            else:
+            if not id:
                 cg = ContactGroup()
             data = form.clean()
             cg.name = data['name']
@@ -1053,9 +1052,11 @@ def contactgroup_edit(request, id):
             request.user.push_message(u"Group %s has been changed sucessfully!" % cg.name)
             
             if request.POST.get("_continue", None):
-                return HttpResponseRedirect("/contactgroups/"+str(cg.id)+"/edit")
+                if not id:
+                    Session.commit() # We need the id rigth now!
+                return HttpResponseRedirect(cg.get_absolute_url()+u"edit")
             elif request.POST.get("_addanother", None):
-                return HttpResponseRedirect("/contactgroups/add")
+                return HttpResponseRedirect(cg.get_class_absolute_url()+u"add")
             else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.contactgroup_detail', args=(cg.id,)))
 
@@ -1076,7 +1077,7 @@ def contactgroup_edit(request, id):
             form.flag_inherited_members(cg)
         else: # add new one
             form = ContactGroupForm()
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
+    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtype':objtype,}, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1117,7 +1118,7 @@ def field_list(request):
         #( "Move", None, lambda cf: "<a href="+str(cf.id)+"/moveup>Up</a> <a href="+str(cf.id)+"/movedown>Down</a>", None),
     ]
     args['title'] = "Select an optionnal field"
-    args['objtypename'] = "contactfield"
+    args['objtype'] = ContactField
     return query_print_entities(request, 'list.html', args)
 
 
@@ -1195,15 +1196,13 @@ class FieldEditForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_edit(request, id):
-    objtypename = "contactfield"
-    if id:
-        title = "Changing a "+objtypename
-    else:
-        title = "Adding a new "+objtypename
-    
+    objtype=ContactField
     if id:
         cf = Query(ContactField).get(id)
-
+        title = u"Editing "+unicode(cf)
+    else:
+        title = u"Adding a new "+objtype.get_class_verbose_name()
+    
     if request.method == 'POST':
         form = FieldEditForm(request.POST)
         if form.is_valid():
@@ -1258,7 +1257,6 @@ def field_edit(request, id):
                     else:
                         args={}
                         args['title'] = "Type incompatible with existing data"
-                        args['objtypename'] = "contactfield"
                         args['id'] = id
                         args['cf'] = cf
                         args['deletion_details'] = deletion_details
@@ -1282,9 +1280,11 @@ def field_edit(request, id):
             field_renumber()
             request.user.push_message(u"Field %s has been changed sucessfully." % cf.name)
             if request.POST.get("_continue", None):
-                return HttpResponseRedirect("/contactfields/"+str(cf.id)+"/edit")
+                if not id:
+                    Session.commit() # We need the id rigth now!
+                return HttpResponseRedirect(cf.get_absolute_url()+u"edit")
             elif request.POST.get("_addanother", None):
-                return HttpResponseRedirect("/contactfields/add")
+                return HttpResponseRedirect(cf.get_class_absolute_url()+u"add")
             else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.field_list')) # args=(p.id,)))
         # else validation error
@@ -1302,7 +1302,14 @@ def field_edit(request, id):
             form = FieldEditForm()
 
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
+    args={}
+    args['form'] = form
+    args['title'] = title
+    args['id'] = id
+    args['objtype'] = objtype
+    if id:
+        args['o'] = cf
+    return render_to_response('edit.html', args, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1326,7 +1333,7 @@ def choicegroup_list(request):
         ( "Choices", None, lambda cg: ", ".join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
     args['title'] = "Select a choice group"
-    args['objtypename'] = "choicegroup"
+    args['objtype'] = ChoiceGroup
     return query_print_entities(request, 'list.html', args)
 
 
@@ -1468,29 +1475,30 @@ class ChoiceGroupForm(forms.Form):
         
 @http_authenticate(ngw_auth, 'ngw')
 def choicegroup_edit(request, id=None):
-    objtypename = "choicegroup"
+    objtype = ChoiceGroup
     if id:
-        title = "Changing a "+objtypename
         cg = Session.get(ChoiceGroup, id)
-        #print cg
+        title = u"Editing "+unicode(cg)
     else:
-        title = "Adding a new "+objtypename
         cg = None
+        title = u"Adding a new "+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ChoiceGroupForm(cg, MultiValueDict_unicode(request.POST))
         if form.is_valid():
             cg = form.save(cg, request)
             if request.POST.get("_continue", None):
-                return HttpResponseRedirect("/choicegroups/"+str(cg.id)+"/edit")
+                if not id:
+                    Session.commit() # We need the id rigth now!
+                return HttpResponseRedirect(cg.get_absolute_url()+u"edit")
             elif request.POST.get("_addanother", None):
-                return HttpResponseRedirect("/choicegroups/add")
+                return HttpResponseRedirect(cg.get_class_absolute_url()+u"add")
             else:
                 return HttpResponseRedirect(reverse('ngw.gp.views.choicegroup_list'))
     else:
         form = ChoiceGroupForm(cg)
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtypename':objtypename,}, RequestContext(request))
+    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtype':objtype,}, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
