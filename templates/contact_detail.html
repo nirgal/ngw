@@ -27,7 +27,9 @@
 
     {% block submitbar %}
     <div id=submitbar>
+      {% if user.is_admin %}
       <a id=default href="{{contact.get_class_absolute_url}}">Contact list</a>
+      {% endif %}
       <a href="{{contact.get_absolute_url}}edit">Edit</a>
       <a href="{{contact.get_absolute_url}}vcard">VCard</a>
       <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>

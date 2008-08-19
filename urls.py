@@ -5,6 +5,8 @@ urlpatterns = patterns('',
 
     (r'^test$', 'ngw.gp.views.test'),
 
+    (r'^logout$', 'ngw.gp.views.logout'),
+
     (r'^contacts/$', 'ngw.gp.views.contact_list'),
     (r'^contacts/add$', 'ngw.gp.views.contact_edit', {'id': None}),
     (r'^contacts/search$', 'ngw.gp.views.contact_search'),

@@ -12,6 +12,7 @@ body, table {
 a[href] {
     text-decoration: none;
 }
+/*
 #banner {
     font-weight:bold;
     font-size: 120%;
@@ -19,6 +20,8 @@ a[href] {
     background-color: #008000;
     color: #ccc;
 }
+
+*/
 #nav {
     border-bottom: 1px solid #ccc;
     padding: 0ex;
@@ -201,15 +204,24 @@ a.selector-clearall { background:url(/media/img/admin/selector-removeall.gif) le
 .stacked .selector-add { background-image:url(/media/img/admin/selector_stacked-add.gif); }
 .stacked .selector-remove { background-image:url(/media/img/admin/selector_stacked-remove.gif); }
 
+table#banner { width:100%; border-style:none; background-color: #008000; }
+table#banner td { border-style:none; }
+table#banner td#sitetitle { font-weight:bold; font-size:130%; padding:1ex; color:#ccc; }
+table#banner td#userinfo { font-size:small; padding:1ex; color:yellow; text-align:right; vertical-align:bottom; }
+table#banner td#userinfo a[href] { color:yellow; text-decoration:underline; }
 </style>
-<div id=banner>
-<div style="float:right; display:float;font-size:small; color:yellow;">Welcome <a href="{{user.get_absolute_url}}" style="color:yellow; text-decoration:underline;">{{ user }}</a></div>
-<big>Action</big> ... go ... go ... go ...
-<br clear=all>
-</div>
+
+<table id=banner>
+<tr>
+<td id=sitetitle><big>Action</big> ... go ... go ... go ...
+{% if user.id %} <td id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="https://logout@{{request.META.HTTP_HOST}}/logout">Logout</a>{% endif %}
+</table>
+
 <div id=nav>
 {% block nav %}
+{% if user.id %}
 <a href="/">Home</a>
+{% endif %}
 {% endblock %}
 </div>
 

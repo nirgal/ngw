@@ -14,7 +14,7 @@ from django.core.urlresolvers import reverse
 from django import forms
 from django.forms.util import smart_unicode
 from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.template import loader, RequestContext
 from ngw import settings
 from ngw.gp.alchemy_models import *
 from ngw.gp.basicauth import *
@@ -33,6 +33,8 @@ def ngw_auth(username, passwd):
     if c==None:
         return None
     dbpasswd=c.passwd
+    if not dbpasswd:
+        return None
     if dbpasswd.startswith(u"{SHA}"):
         digest = dbpasswd[5:]
         if b64encode(sha(passwd).digest())==digest:
@@ -102,6 +104,13 @@ def MultiValueDict_unicode(d):
         result.setlist(k, [ u(vi) for vi in v ])
     return result
 
+def unauthorized(request):
+    return HttpResponseForbidden(
+        loader.render_to_string('message.html',{
+            'message': "Sorry. You are not authorized to browse that page."},
+            RequestContext(request)))
+
+
 @http_authenticate(ngw_auth, 'ngw')
 def index(request):
     return render_to_response('index.html', {
@@ -111,6 +120,9 @@ def index(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def generic_delete(request, o, next_url):
+    if not request.user.is_admin():
+        return unauthorized(request)
+
     title = "Please confirm deletetion"
 
     if not o:
@@ -199,7 +211,6 @@ def query_print_entities(request, template_name, args):
         page=int(page)
     except ValueError:
         page = 1
-    
     q = q.limit(NB_LINES_PER_PAGE)
     q = q.offset(NB_LINES_PER_PAGE*(page-1))
 
@@ -222,10 +233,11 @@ def test(request):
         "MEDIA_URL": settings.MEDIA_URL,
         "objtype": Contact,
     }
+    #raise Exception(u"Boum")
     return render_to_response("test.html", args, RequestContext(request))
 
 def logout(request):
-    return HttpResponse("good bye")
+    return render_to_response("message.html", {"message": mark_safe("Have a nice day!<br><a href=\"https://"+request.META["HTTP_HOST"]+"\">Login again</a>")}, RequestContext(request))
 
 #######################################################################
 #
@@ -267,6 +279,9 @@ def contact_make_query_with_fields(fields=None):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_list(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
+
     if request.GET.has_key('select'):
         select = request['select']
         fields = [ 'name' ] + select.split(',')
@@ -286,6 +301,9 @@ def contact_list(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_detail(request, id):
+    id = int(id)
+    if id!=request.user.id and not request.user.is_admin():
+        return unauthorized(request)
     c = Query(Contact).get(id)
     rows = []
     for cf in c.get_allfields():
@@ -309,6 +327,9 @@ def contact_detail(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_vcard(request, id):
+    id = int(id)
+    if id!=request.user.id and not request.user.is_admin():
+        return unauthorized(request)
     c = Query(Contact).get(id)
     return HttpResponse(c.vcard().encode("utf-8"), mimetype="text/x-vcard")
 
@@ -629,6 +650,8 @@ class ContactSearchForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_search(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
     if request.method == 'POST':
         params = request.raw_post_data
     else:
@@ -723,6 +746,9 @@ class ContactEditForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_edit(request, id):
+    id = int(id)
+    if id!=request.user.id and not request.user.is_admin():
+        return unauthorized(request)
     objtype = Contact;
     if id:
         contact = Query(Contact).get(id)
@@ -811,8 +837,10 @@ def contact_edit(request, id):
                     url+=u"?default_group="+unicode(default_group)
                 return HttpResponseRedirect(url)
             else:
-                return HttpResponseRedirect(reverse('ngw.gp.views.contact_list')) # args=(p.id,)))
-        # else /new/ or /change/ failed validation
+                if not id:
+                    Session.commit() # We need the id rigth now!
+                return HttpResponseRedirect(contact.get_absolute_url())
+        # else add/update failed validation
     else: # GET /  HEAD
         initialdata = {}
         if id: # modify existing
@@ -862,6 +890,9 @@ class ContactPasswordForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_pass(request, id):
+    id = int(id)
+    if id!=request.user.id and not request.user.is_admin():
+        return unauthorized(request)
     contact = Query(Contact).get(id)
     args={}
     args['title'] = "Change password"
@@ -887,6 +918,8 @@ def contact_pass(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_delete(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     o = Query(Contact).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.contact_list'))
 
@@ -900,6 +933,8 @@ def contact_delete(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_list(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
     def print_fields(cg):
         if cg.field_group:
             fields = cg.contact_fields
@@ -931,6 +966,8 @@ def contactgroup_list(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_detail(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     fields = get_default_display_fields()
     cg = Query(ContactGroup).get(id)
     #print cg.direct_subgroups
@@ -969,6 +1006,8 @@ def contactgroup_detail(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_emails(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     cg = Query(ContactGroup).get(id)
     members = cg.members
     emails = []
@@ -1023,6 +1062,8 @@ class ContactGroupForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_edit(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     objtype= ContactGroup
     if id:
         cg = Query(ContactGroup).get(id)
@@ -1096,6 +1137,8 @@ def contactgroup_edit(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_remove(request, gid, cid):
+    if not request.user.is_admin():
+        return unauthorized(request)
     cig = Query(ContactInGroup).get((cid, gid))
     if not cig:
         return HttpResponse("Error, that contact is not a direct member. Please check subgroups")
@@ -1106,12 +1149,16 @@ def contactgroup_remove(request, gid, cid):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_delete(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     o = Query(ContactGroup).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.contactgroup_list'))# args=(p.id,)))
 
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactingroup_edit(request, gid, cid):
+    if not request.user.is_admin():
+        return unauthorized(request)
     return HttpResponse("Not implemented")
 
 #######################################################################
@@ -1122,6 +1169,8 @@ def contactingroup_edit(request, gid, cid):
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_list(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
     args = {}
     args['query'] = Query(ContactField).order_by([ContactField.c.sort_weight])
     args['cols'] = [
@@ -1138,6 +1187,8 @@ def field_list(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_move_up(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     cf = Query(ContactField).get(id)
     cf.sort_weight -= 15
     Session.commit()
@@ -1146,6 +1197,8 @@ def field_move_up(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_move_down(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     cf = Query(ContactField).get(id)
     cf.sort_weight += 15
     Session.commit()
@@ -1210,6 +1263,8 @@ class FieldEditForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_edit(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     objtype=ContactField
     if id:
         cf = Query(ContactField).get(id)
@@ -1328,6 +1383,8 @@ def field_edit(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_delete(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     o = Query(ContactField).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.field_list'))
 
@@ -1340,6 +1397,8 @@ def field_delete(request, id):
 
 @http_authenticate(ngw_auth, 'ngw')
 def choicegroup_list(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
     args = {}
     args['query'] = Query(ChoiceGroup)
     args['cols'] = [
@@ -1489,6 +1548,8 @@ class ChoiceGroupForm(forms.Form):
         
 @http_authenticate(ngw_auth, 'ngw')
 def choicegroup_edit(request, id=None):
+    if not request.user.is_admin():
+        return unauthorized(request)
     objtype = ChoiceGroup
     if id:
         cg = Session.get(ChoiceGroup, id)
@@ -1517,6 +1578,8 @@ def choicegroup_edit(request, id=None):
 
 @http_authenticate(ngw_auth, 'ngw')
 def choicegroup_delete(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
     o = Query(ChoiceGroup).get(id)
     return generic_delete(request, o, reverse('ngw.gp.views.choicegroup_list'))# args=(p.id,)))
 
