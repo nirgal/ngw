@@ -233,7 +233,7 @@ def test(request):
         "MEDIA_URL": settings.MEDIA_URL,
         "objtype": Contact,
     }
-    #raise Exception(u"Boum")
+    raise Exception(u"Boum")
     return render_to_response("test.html", args, RequestContext(request))
 
 def logout(request):
@@ -746,9 +746,14 @@ class ContactEditForm(forms.Form):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contact_edit(request, id):
-    id = int(id)
-    if id!=request.user.id and not request.user.is_admin():
-        return unauthorized(request)
+    if id:
+        id = int(id)
+        if id!=request.user.id and not request.user.is_admin():
+            return unauthorized(request)
+    else:
+        if not request.user.is_admin():
+            return unauthorized(request)
+        
     objtype = Contact;
     if id:
         contact = Query(Contact).get(id)
