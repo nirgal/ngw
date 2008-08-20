@@ -30,5 +30,6 @@
 SelectFilter.init("id_groups", "Groups", 0, '{{MEDIA_URL}}/media/');
 </script>
 {{form.media}}
-<a href="https://logout@{{ request.META.HTTP_HOST }}/logout">logout</a>
+<a href="https://logout@{{ request.META.HTTP_HOST }}/logout">logout</a><br>
+env:{{env|pprint}}
 {% endblock %}
