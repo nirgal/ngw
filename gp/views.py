@@ -912,8 +912,11 @@ def contact_pass(request, id):
         if form.is_valid():
             # record the value
             password = form.clean()['new_password']
-            hash = b64encode(sha(password).digest())
-            contact.passwd = "{SHA}"+hash
+            hash=subprocess.Popen(["openssl", "passwd", "-crypt", password], stdout=subprocess.PIPE).communicate()[0]
+            hash=hash[:-1] # remove extra "\n"
+            contact.passwd = hash
+            #hash = b64encode(sha(password).digest())
+            #contact.passwd = "{SHA}"+hash
             request.user.push_message("Password has been changed sucessfully!")
             return HttpResponseRedirect(reverse('ngw.gp.views.contact_detail', args=(id,)))
     else: # GET
