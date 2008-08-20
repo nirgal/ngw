@@ -268,7 +268,9 @@ class Contact(NgwModel):
         return messages
 
     def is_admin(self):
-        cig = Query(ContactInGroup).get((self.id, GROUP_ADMIN))
+        adminsubgroups = Query(ContactGroup).get(GROUP_ADMIN).self_and_subgroups
+        print adminsubgroups
+        cig = Query(ContactInGroup).filter(ContactInGroup.c.contact_id==self.id).filter(ContactInGroup.c.group_id.in_([g.id for g in adminsubgroups])).one()
         return cig!=None
 
 
