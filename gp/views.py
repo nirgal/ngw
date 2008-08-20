@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-import copy, traceback, time, subprocess
+import os, copy, traceback, time, subprocess
 from pprint import pprint
 from itertools import chain
 from md5 import md5
@@ -230,10 +230,11 @@ def query_print_entities(request, template_name, args):
 def test(request):
     args={
         "title": "Test",
+        "env": os.environ,
         "MEDIA_URL": settings.MEDIA_URL,
         "objtype": Contact,
     }
-    raise Exception(u"Boum")
+    #raise Exception(u"Boum")
     return render_to_response("test.html", args, RequestContext(request))
 
 def logout(request):
@@ -1137,7 +1138,14 @@ def contactgroup_edit(request, id):
             form.flag_inherited_members(cg)
         else: # add new one
             form = ContactGroupForm()
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtype':objtype,}, RequestContext(request))
+    args={}
+    args['title'] = title
+    args['id'] = id
+    args['objtype'] = objtype
+    args['form'] = form
+    if id:
+        args['o'] = cg
+    return render_to_response('edit.html', args, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1578,7 +1586,14 @@ def choicegroup_edit(request, id=None):
     else:
         form = ChoiceGroupForm(cg)
 
-    return render_to_response('edit.html', {'form': form, 'title':title, 'id':id, 'objtype':objtype,}, RequestContext(request))
+    args={}
+    args['title'] = title
+    args['id'] = id
+    args['objtype'] = objtype
+    args['form'] = form
+    if id:
+        args['o'] = cg
+    return render_to_response('edit.html', args, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
