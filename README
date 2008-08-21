@@ -1,19 +1,18 @@
 Installation
 ============
-python-django (>1.0) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql
+python-django (>1.0) python-support (>= 0.7.1) python-sqlalchemy (>=0.4)  python-psycopg2 postgresql libapache2-mod-auth-psql
 
 Warning, some packages must be taken from etch-backports (python-sqlalchemy) or even lenny ( python-django python-support )
 
+django 1.0 packaged for debian is available on http://nirgal.com
+
 Apache
 ======
-Enable ssl and authn_dbd in apache:
-a2enmod ssl dbd authn_dbd
+Enable ssl and auth_pgsql in apache:
+a2enmod ssl 000_auth_pgsql
 
 Generate self-signed certificate:
 openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 -keyout nike.key -out nike.crt
 
 Listen on port 443
 Add a new line "Listen 443" to /etc/apache2/ports.conf"
-
-TODO
-====
