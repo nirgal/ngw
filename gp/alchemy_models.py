@@ -17,6 +17,7 @@ FTYPE_PHONE='PHONE'
 FTYPE_RIB='RIB'
 FTYPE_CHOICE='CHOICE'
 FTYPE_MULTIPLECHOICE='MULTIPLECHOICE'
+FTYPE_PASSWORD='PASSWORD'
 
 FIELD_TYPES={
     FTYPE_TEXT: 'Text',
@@ -28,6 +29,7 @@ FIELD_TYPES={
     FTYPE_RIB: 'French bank account',
     FTYPE_CHOICE: 'Choice',
     FTYPE_MULTIPLECHOICE: 'Multiple choice',
+    FTYPE_PASSWORD: 'Password',
 }
 FIELD_TYPE_CHOICES = FIELD_TYPES.items() # TODO: sort
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
@@ -433,6 +435,8 @@ class ContactFieldValue(NgwModel):
         cf = self.field
         if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_NUMBER, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB):
             return self.value
+        elif cf.type == FTYPE_PASSWORD:
+            return u"********"
         elif cf.type == FTYPE_CHOICE:
             chg = cf.choice_group
             if chg == None:

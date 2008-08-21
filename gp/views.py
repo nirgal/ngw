@@ -630,8 +630,10 @@ class ContactSearchForm(forms.Form):
                 addLine(self, ContactSearchLineChoice(self, cf, initial_check))
             elif cf.type == FTYPE_MULTIPLECHOICE:
                 addLine(self, ContactSearchLineMultiChoice(self, cf, initial_check))
+            elif cf.type == FTYPE_PASSWORD:
+                pass
             else:
-                addLine(self, ContactSearchLineBaseField(self, cf, initial_check))
+                raise Exception(u"Unknown field type "+cf.type)
 
         # Add all groups
         for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]):
@@ -729,6 +731,8 @@ class ContactEditForm(forms.Form):
                 self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint, widget=forms.Select(choices=[('', u"Unknown")]+cf.choice_group.ordered_choices))
             elif cf.type==FTYPE_MULTIPLECHOICE:
                 self.fields[cf.name] = forms.MultipleChoiceField(required=False, help_text=cf.hint, choices=cf.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
+            elif cf.type==FTYPE_PASSWORD:
+                pass # password are not edited in that form
             else:
                 raise Exception(u"Unsupported type "+cf.type)
         
@@ -806,7 +810,7 @@ def contact_edit(request, id):
             
             # 2/ In ContactFields
             for cf in Query(ContactField):
-                if cf.contact_group_id and cf.contact_group_id not in contactgroupids:
+                if cf.contact_group_id and cf.contact_group_id not in contactgroupids or cf.type==FTYPE_PASSWORD:
                     continue
                 cfname = cf.name
                 cfid = cf.id
@@ -862,6 +866,10 @@ def contact_edit(request, id):
                     initialdata[cf.name] = cfv.value
                 elif cf.type==FTYPE_MULTIPLECHOICE:
                     initialdata[cf.name] = cfv.value.split(",")
+                elif cf.type==FTYPE_PASSWORD:
+                    pass
+                else:
+                    raise Exception(u"Unknown field type "+cf.type)
 
             form = ContactEditForm(id=id, initial=initialdata, request_user=request.user)
 
@@ -912,6 +920,10 @@ def contact_pass(request, id):
             hash=subprocess.Popen(["openssl", "passwd", "-crypt", password], stdout=subprocess.PIPE).communicate()[0]
             hash=hash[:-1] # remove extra "\n"
             cfv = Query(ContactFieldValue).get((contact.id, 2))
+            if not cfv:
+                cfv = ContactFieldValue()
+                cfv.contact_id = contact.id
+                cfv.contact_field_id = 2
             cfv.value = hash
             #hash = b64encode(sha(password).digest())
             #contact.passwd = "{SHA}"+hash
@@ -1342,6 +1354,10 @@ def field_edit(request, id):
                             if not Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==v).count():
                                 deletion_details.append((cfv.contact, cfv))
                                 break # stop parsing the other values, this is allready bad
+                elif data['type']==FTYPE_PASSWORD:
+                    for cfv in cf.values:
+                        if len(cfv.value)!=13:
+                            deletion_details.append((cfv.contact, cfv))
                 
                 if deletion_details:
                     if request.POST.get('confirm', None):
