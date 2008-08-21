@@ -21,8 +21,8 @@ Quick contact search: <input name=_val_name id=defaultfocus>
 <div id=submitbar style="margin-top:0px;">
 <a href="contacts/{{user.id}}/">My information</a>
 {% if user.is_admin %}
-<a href="contacts/">Contacts</a>
 <a href="contactgroups/">Contact Groups</a>
+<a href="contacts/">All contacts</a>
 <a href="contactfields/">Setup of optional fields</a>
 <a href="choicegroups/">Setup of choice lists</a>
 {% endif %}
@@ -31,6 +31,9 @@ Quick contact search: <input name=_val_name id=defaultfocus>
 {% if user.is_admin %}
 <h1 class="boxheader">Derniers développements</h1>
 <div style="border: 1px solid #999; padding:1ex;">
+<b>Jeudi 21 août</b><br>
+Les groupes peuvent maintenant contenir des fichiers. La liste est disponible sur la page du groupe. Il n'est pas encore possible d'en ajouter depuis l'interface html.<br>
+<br>
 <b>Mardi 19 août</b><br>
 Barre de navigation plus détaillée.<br>
 <br>

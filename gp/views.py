@@ -979,6 +979,8 @@ def contactgroup_detail(request, id):
         return unauthorized(request)
     fields = get_default_display_fields()
     cg = Query(ContactGroup).get(id)
+    if not cg:
+        raise Http404
     #print cg.direct_subgroups
     args={}
 
@@ -1010,6 +1012,9 @@ def contactgroup_detail(request, id):
     args['query'] = q
     args['cols'] = cols
     args['cg'] = cg
+    args['dir'] = cg.static_folder()
+    args['files'] = os.listdir(args['dir'])
+    args['files'].remove('.htaccess')
     return query_print_entities(request, 'group_detail.html', args)
 
 
@@ -1076,6 +1081,8 @@ def contactgroup_edit(request, id):
     objtype= ContactGroup
     if id:
         cg = Query(ContactGroup).get(id)
+        if not cg:
+            raise Http404
         title = u"Editing "+unicode(cg)
     else:
         title = u"Adding a new "+objtype.get_class_verbose_name()
@@ -1114,7 +1121,9 @@ def contactgroup_edit(request, id):
             # subgroups have no properties: just recreate the array with brute force
             cg.direct_subgroups = [ Query(ContactGroup).get(id) for id in form.clean()['direct_subgroups']]
             request.user.push_message(u"Group %s has been changed sucessfully!" % cg.name)
-            
+
+            cg.check_static_folder_created()
+
             if request.POST.get("_continue", None):
                 if not id:
                     Session.commit() # We need the id rigth now!
@@ -1168,6 +1177,7 @@ def contactgroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(ContactGroup).get(id)
+    # TODO: delete static folder
     return generic_delete(request, o, reverse('ngw.gp.views.contactgroup_list'))# args=(p.id,)))
 
 

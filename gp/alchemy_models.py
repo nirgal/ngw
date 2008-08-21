@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
+import os
 from sqlalchemy import *
 from sqlalchemy.orm import *
 import sqlalchemy.engine.url
@@ -32,6 +33,9 @@ FIELD_TYPE_CHOICES = FIELD_TYPES.items() # TODO: sort
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
 GROUP_ADMIN = 8
+
+# Ends with a /
+GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
 
 dburl = sqlalchemy.engine.url.URL("postgres", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
 engine = create_engine(dburl, convert_unicode=True) #, echo=True)
@@ -371,6 +375,27 @@ class ContactGroup(NgwModel):
         if self.date:
             result += u" "+str(self.date)
         return result
+
+    def static_folder(self):
+        """ Returns the name of the folder for static files for that group """
+        return GROUP_STATIC_DIR+str(self.id)
+
+
+    def check_static_folder_created(self):
+        """ Create the folder for static files and setup permissions """
+        if not self.id:
+            Session.commit()
+        assert(self.id)
+        dirname = self.static_folder()
+        if not os.path.isdir(dirname):
+            print "Creating missing directory for group %i" % self.id
+            os.mkdir(dirname)
+        htaccess_path = os.path.join(dirname, ".htaccess")
+        if not os.path.isfile(htaccess_path):
+            print "Creating missing .htaccess file for group %i" % self.id
+            f = open(htaccess_path, 'w')
+            f.write("Require group %i\n" % self.id)
+            f.close()
 
 
 class ContactField(NgwModel):

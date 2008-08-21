@@ -32,6 +32,18 @@
         ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includinghtml|safe}}<br>
         {% endfor %}
     {% endif %}
+    
+    {% for f in files %}
+        {% if forloop.first %}
+            <h1 class=boxheader>Files</h1>
+            <div style="border: 1px solid #999; padding: 1ex;">
+        {% endif %}
+        &gt;<a href="/static/g/{{cg.id}}/{{f}}">{{f}}</a><br>
+        {% if forloop.last %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
     {% block submitbar %}
     <div id=submitbar>
         <a href="{{cg.get_absolute_url}}edit">Edit</a>

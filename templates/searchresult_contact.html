@@ -2,8 +2,8 @@
 
 {% block nav %}
 {{ block.super }}
-› <a href="{{ objtype.get_class_absolute_url }}">{{ objtype.get_verbose_name_plural }}</a>
-› search
+› <a href="{{ objtype.get_class_absolute_url }}">{{ objtype.get_class_verbose_name_plural }}</a>
+› <a href="{{ objtype.get_class_absolute_url }}search">search</a>
 {% endblock %}
 
 {% block body %}
