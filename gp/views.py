@@ -29,10 +29,11 @@ def ngw_auth(username, passwd):
     passwd = unicode(passwd, 'utf-8', 'replace')
     if not username or not passwd:
         return None
-    c = Query(Contact).filter(Contact.c.login==username).first()
-    if c==None:
+    login_value = Query(ContactFieldValue).filter(ContactFieldValue.c.contact_field_id==1).filter(ContactFieldValue.c.value==username).first()
+    if not login_value:
         return None
-    dbpasswd=c.passwd
+    c = login_value.contact
+    dbpasswd=Query(ContactFieldValue).get((c.id, 2)).value
     if not dbpasswd:
         return None
     if dbpasswd.startswith(u"{SHA}"):
@@ -903,10 +904,6 @@ def contact_pass(request, id):
     args={}
     args['title'] = "Change password"
     args['contact'] = contact
-    if contact.passwd:
-        args['currentaccess'] = u"This contact has a password and can modify his own information."
-    else:
-        args['currentaccess'] = u"This contact has no password and cannot connect to modify his own information."
     if request.method == 'POST':
         form = ContactPasswordForm(request.POST)
         if form.is_valid():
@@ -914,7 +911,8 @@ def contact_pass(request, id):
             password = form.clean()['new_password']
             hash=subprocess.Popen(["openssl", "passwd", "-crypt", password], stdout=subprocess.PIPE).communicate()[0]
             hash=hash[:-1] # remove extra "\n"
-            contact.passwd = hash
+            cfv = Query(ContactFieldValue).get((contact.id, 2))
+            cfv.value = hash
             #hash = b64encode(sha(password).digest())
             #contact.passwd = "{SHA}"+hash
             request.user.push_message("Password has been changed sucessfully!")

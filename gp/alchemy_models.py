@@ -220,6 +220,9 @@ class Contact(NgwModel):
             return u"" # FIXME need default for choices
         return unicode(cfv)
 
+    def get_login(self):
+        return self.get_value_by_keyname("login")
+
     def vcard(self):
         # http://www.ietf.org/rfc/rfc2426.txt
         vcf = u""

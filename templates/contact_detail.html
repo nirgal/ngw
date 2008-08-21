@@ -33,7 +33,7 @@
       <a href="{{contact.get_absolute_url}}edit">Edit</a>
       <a href="{{contact.get_absolute_url}}vcard">VCard</a>
       <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
-      {% if contact.login %}
+      {% if contact.get_login %}
       <a href="{{contact.get_absolute_url}}pass">Change password</a>
       {% endif %}
     </div>

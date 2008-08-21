@@ -1,4 +1,15 @@
-CREATE OR REPLACE FUNCTION subgroups_append(integer, integer[]) RETURNS SETOF integer AS $$
+DROP VIEW auth_users;
+DROP VIEW auth_user_groups;
+DROP FUNCTION self_and_subgroups(integer);
+DROP FUNCTION subgroups_append(integer, integer[]);
+
+CREATE VIEW auth_users (login, password) AS
+    SELECT login_values.value, password_values.value
+    FROM contact_field_value AS login_values
+    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
+    WHERE login_values.contact_field_id=1;
+
+CREATE FUNCTION subgroups_append(integer, integer[]) RETURNS SETOF integer AS $$
     -- Get $2 as a setof (this sucks!)
     SELECT id FROM contact_group WHERE id=ANY($2)
     UNION
@@ -11,7 +22,7 @@ CREATE OR REPLACE FUNCTION subgroups_append(integer, integer[]) RETURNS SETOF in
 $$ LANGUAGE SQL STABLE;
 
 
-CREATE OR REPLACE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
+CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
     SELECT $1
     UNION
     SELECT subgroups_append($1, '{}'::integer[]);
@@ -46,7 +57,18 @@ $$ LANGUAGE SQL STABLE;
 
 -- SELECT DISTINCT contact_id, contact.login, joined_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id ORDER BY contact_id;
 
-DROP VIEW auth_user_groups;
 -- CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, joined_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id;
-CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, automatic_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
+--CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, automatic_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
+--
+CREATE VIEW auth_user_groups ( login, gid ) AS 
+    SELECT DISTINCT login_values.value, automatic_group_id
+        FROM contact_in_group 
+        JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
+        (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
+        WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
+
+
+
+alter table contact drop login;
+alter table contact drop passwd;
 
