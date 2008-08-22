@@ -7,6 +7,7 @@ from sqlalchemy.orm import *
 import sqlalchemy.engine.url
 from django.utils import html
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
+import decorated_letters
 
 FTYPE_TEXT='TEXT'
 FTYPE_LONGTEXT='LONGTEXT'
@@ -34,6 +35,9 @@ FIELD_TYPES={
 FIELD_TYPE_CHOICES = FIELD_TYPES.items() # TODO: sort
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
+FIELD_LOGIN = 1
+FIELD_PASSWORD = 2
+GROUP_USER = 2
 GROUP_ADMIN = 8
 
 # Ends with a /
@@ -275,6 +279,20 @@ class Contact(NgwModel):
             Session.delete(sm)
         #N# Session.commit()
         return messages
+
+    def generate_login(self):
+        words=self.name.split(" ")
+        login=[w[0].lower() for w in words[:-1] ] + [ words[-1].lower() ]
+        login = "".join(login)
+        login = decorated_letters.remove_decoration(login)
+        return login
+
+    @staticmethod
+    def check_login_created():
+        for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(2))) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=1) WHERE contact_field_value.value IS NULL"):
+            contact = Query(Contact).get(uid)
+            new_login = contact.generate_login()
+            print "(DEBUG) Adding login %s for user %i who is a member of group user but has no login!"%(new_login, uid)
 
     def is_admin(self):
         adminsubgroups = Query(ContactGroup).get(GROUP_ADMIN).self_and_subgroups
@@ -602,3 +620,4 @@ contact_mapper.add_property('sysmsg', relation(
     passive_deletes=True))
 
 print "Alchemy initialized"
+Contact.check_login_created()

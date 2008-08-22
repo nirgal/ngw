@@ -2,7 +2,7 @@
 
 {% block nav %}
 {{ block.super }}
-› <a href={{objtype.get_class_absolute_url}}>{{objtype.get_class_verbose_name_plural}}</a>
+› {{objtype.get_class_verbose_name_plural}}
 {% endblock %}
 
 {% block body %}
@@ -10,7 +10,7 @@
 
     {% block submitbar %}
     <div id=submitbar>
-    <a href="{{ objtype.get_class_absolute_url}}add"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a {{ objtype.get_class_verbose_name }}</a>
+    <a href="{{ objtype.get_class_absolute_url}}add"><img src="/media/img/admin/icon_addlink.gif" border=0> Add {{ objtype.get_class_verbose_name }}</a>
     </div>
     {% endblock %}
 

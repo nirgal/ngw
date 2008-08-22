@@ -66,9 +66,3 @@ CREATE VIEW auth_user_groups ( login, gid ) AS
         JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
         (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
         WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
-
-
-
-alter table contact drop login;
-alter table contact drop passwd;
-
