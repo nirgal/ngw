@@ -9,6 +9,11 @@ from django.utils import html
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
 import decorated_letters
 
+GROUP_USER = 2
+GROUP_ADMIN = 8
+FIELD_LOGIN = 1
+FIELD_PASSWORD = 2
+
 FTYPE_TEXT='TEXT'
 FTYPE_LONGTEXT='LONGTEXT'
 FTYPE_NUMBER='NUMBER'
@@ -34,11 +39,6 @@ FIELD_TYPES={
 }
 FIELD_TYPE_CHOICES = FIELD_TYPES.items() # TODO: sort
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
-
-FIELD_LOGIN = 1
-FIELD_PASSWORD = 2
-GROUP_USER = 2
-GROUP_ADMIN = 8
 
 # Ends with a /
 GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
@@ -258,11 +258,9 @@ class Contact(NgwModel):
 
         vcf += line(u"END", u"VCARD")
         return vcf
-    
 
     def get_addr_semicol(self):
         return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
-
 
     def push_message(self, message):
         ContactSysMsg(self.id, message)
@@ -285,14 +283,36 @@ class Contact(NgwModel):
         login=[w[0].lower() for w in words[:-1] ] + [ words[-1].lower() ]
         login = "".join(login)
         login = decorated_letters.remove_decoration(login)
-        return login
+        def get_logincfv_by_login(ref_uid, login):
+            " return first login cfv where loginname=login and not uid!=ref_uid "
+            return Query(ContactFieldValue).filter(ContactFieldValue.c.contact_field_id==FIELD_LOGIN) \
+                                   .filter(ContactFieldValue.c.value==login) \
+                                   .filter(ContactFieldValue.c.contact_id!=ref_uid) \
+                                   .first()
+        if not get_logincfv_by_login(self.id, login):
+            return login
+        i=1;
+        while (True):
+            altlogin = login+unicode(i)
+            if not get_logincfv_by_login(self.id, altlogin):
+                return altlogin
+            i+=1
 
     @staticmethod
-    def check_login_created():
+    def check_login_created(logged_contact):
+        # Create login for people member of group 2
         for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(2))) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=1) WHERE contact_field_value.value IS NULL"):
             contact = Query(Contact).get(uid)
             new_login = contact.generate_login()
-            print "(DEBUG) Adding login %s for user %i who is a member of group user but has no login!"%(new_login, uid)
+            cfv = ContactFieldValue()
+            cfv.contact_id = uid
+            cfv.contact_field_id = FIELD_LOGIN
+            cfv.value = new_login
+            logged_contact.push_message("Login information generated for User %s."%(contact.name))
+        
+        for cfv in Query(ContactFieldValue).filter("contact_field_value.contact_field_id=1 AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(2)) AND contact_in_group.member='t')"):
+            logged_contact.push_message("Delete login information for User %s."%(cfv.contact.name))
+            Session.delete(cfv)
 
     def is_admin(self):
         adminsubgroups = Query(ContactGroup).get(GROUP_ADMIN).self_and_subgroups
@@ -620,4 +640,3 @@ contact_mapper.add_property('sysmsg', relation(
     passive_deletes=True))
 
 print "Alchemy initialized"
-Contact.check_login_created()

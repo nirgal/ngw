@@ -12,18 +12,21 @@
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
     <br>
     {% include "query_entities.html" %}
+
     {% comment %}
     {% with cg.get_direct_invited.count as ci %}
         {{ ci }} contact{{ ci|pluralize }} {{ ci|pluralize:"have,has" }} been invited in that group, but {{ ci|pluralize:"are,is" }} not member yet.
     {% endwith %}
+
     {% comment %}
     {% for contact in cg.get_direct_invited %}
-        {% if forloop.first %}
+    {% if forloop.first %}
         <h1>Invited members</h1>
         {% endif %}
         ‣ <a href="{{ contact.get_link }}">{{ contact }}</a><br>
     {% endfor %}
     {% endcomment %}
+
     {% if cg.direct_subgroups %}
         <h1>Sub groups</h1>
         <p>People in sub-groups are automatically members.

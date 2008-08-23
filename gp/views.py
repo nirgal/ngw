@@ -227,7 +227,7 @@ def query_print_entities(request, template_name, args):
     return render_to_response(template_name, args, RequestContext(request))
 
 
-#@http_authenticate(ngw_auth, 'ngw')
+@http_authenticate(ngw_auth, 'ngw')
 def test(request):
     args={
         "title": "Test",
@@ -1133,6 +1133,8 @@ def contactgroup_edit(request, id):
             request.user.push_message(u"Group %s has been changed sucessfully!" % cg.name)
 
             cg.check_static_folder_created()
+            Session.commit()
+            Contact.check_login_created(request.user)
 
             if request.POST.get("_continue", None):
                 if not id:
