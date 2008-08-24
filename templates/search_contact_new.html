@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block nav %}
+{{ block.super }}
+› <a href="{{ objtype.get_class_absolute_url }}">{{ objtype.get_class_verbose_name_plural }}</a>
+› search
+{% endblock %}
+
+{% block body %}
+<script>
+ALLOW_ERROR_MESSAGE=true;
+
+function get_XMLHttpRequest() {
+    if(window.XMLHttpRequest)
+        try {
+            return new XMLHttpRequest();
+        } catch(e) {}
+    alert("ERROR: Your browser doesn't support XMLHttpRequest! Get a real browser please.");
+    return null;
+}
+
+function ajax_load_innerhtml(element_id, url) {
+    req = get_XMLHttpRequest();
+    if (!req)
+        return;
+    document.getElementById(element_id).innerHTML = "<img src='{{MEDIA_URL}}/loading.gif' align=middle> L O A D I N G . . . ";
+    req.element_id = element_id;
+    req.onreadystatechange = function () {
+        if (this.readyState == 4) {
+            if (this.status==200 || ALLOW_ERROR_MESSAGE)
+                document.getElementById(this.element_id).innerHTML = this.responseText;
+            else
+                alert("There was a problem retrieving the XML data:\n" + this.statusText);
+        }
+    };
+    req.open("GET", url, true);
+    req.send("");
+}
+
+/*
+function debug(DFGHJ) {
+    document.getElementById("curent_filter").innerHTML += document.getElementById("filter_group_field");
+    for (x in document.getElementById("filter_group_field")) {
+        document.getElementById("curent_filter").innerHTML += x;
+        document.getElementById("curent_filter").innerHTML += "=&gt;";
+        document.getElementById("curent_filter").innerHTML += document.getElementById("filter_group_field")[x];
+        document.getElementById("curent_filter").innerHTML += "<br>";
+    }
+}
+*/
+
+var old_grouptype=null;
+function select_grouptype(type) {
+    ajax_load_innerhtml("list_field", "/testsearch/fields/"+type);
+    if (old_grouptype)
+        document.getElementById("filter_group_"+old_grouptype).className = "";
+    document.getElementById("filter_group_"+type).className = "activeSelectionItem";
+    old_grouptype = type;
+}
+
+
+var old_field=null;
+function select_field(field) {
+    ajax_load_innerhtml("list_filters", "/testsearch/filters/"+field);
+    if (old_field)
+        document.getElementById("field_"+old_field).className = "";
+    document.getElementById("field_"+field).className = "activeSelectionItem";
+    old_field = field;
+}
+
+</script>
+<style>
+.activeSelectionItem {
+    font-size:140%;
+    font-weight:bold;
+}
+</style>
+
+<div style="border: 1px solid #999; padding:1ex;">
+Type of filter:
+<a href="javascript:select_grouptype('field')" id="filter_group_field">Field</a> |
+<a href="javascript:select_grouptype('group')" id="filter_group_group">Group</a> |
+<a href="javascript:select_grouptype('event')" id="filter_group_event">Event</a>
+</div>
+
+<br>
+
+<div id="list_field" style="border: 1px solid #999; padding:1ex;">
+{{message}}
+</div>
+
+<br>
+
+<div id="list_filters" style="border: 1px solid #999; padding:1ex;">
+</div>
+
+<h1 class="boxheader">Current filter</h1>
+<div id="curent_filter" style="border: 1px solid #999; padding:1ex;">
+All contacts
+</div>
+
+
+<div id=submitbar>
+<a href="#">Launch search</a>
+</div>
+
+{% endblock %}

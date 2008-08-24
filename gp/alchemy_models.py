@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-import os
+import os, time
 from sqlalchemy import *
 from sqlalchemy.orm import *
 import sqlalchemy.engine.url
 from django.utils import html
+from django import forms
+from django.forms.util import smart_unicode
+from itertools import chain
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
 import decorated_letters
 
@@ -14,30 +17,6 @@ GROUP_ADMIN = 8
 FIELD_LOGIN = 1
 FIELD_PASSWORD = 2
 
-FTYPE_TEXT='TEXT'
-FTYPE_LONGTEXT='LONGTEXT'
-FTYPE_NUMBER='NUMBER'
-FTYPE_DATE='DATE'
-FTYPE_EMAIL='EMAIL'
-FTYPE_PHONE='PHONE'
-FTYPE_RIB='RIB'
-FTYPE_CHOICE='CHOICE'
-FTYPE_MULTIPLECHOICE='MULTIPLECHOICE'
-FTYPE_PASSWORD='PASSWORD'
-
-FIELD_TYPES={
-    FTYPE_TEXT: 'Text',
-    FTYPE_LONGTEXT: 'Long text',
-    FTYPE_NUMBER: 'Number',
-    FTYPE_DATE: 'Date',
-    FTYPE_EMAIL: 'E.Mail',
-    FTYPE_PHONE: 'Phone',
-    FTYPE_RIB: 'French bank account',
-    FTYPE_CHOICE: 'Choice',
-    FTYPE_MULTIPLECHOICE: 'Multiple choice',
-    FTYPE_PASSWORD: 'Password',
-}
-FIELD_TYPE_CHOICES = FIELD_TYPES.items() # TODO: sort
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
 # Ends with a /
@@ -441,25 +420,254 @@ class ContactGroup(NgwModel):
             f.close()
 
 
+########################################
+# Contact Fields
+
+class RibField(forms.Field):
+    # TODO handle international IBAN numbers http://fr.wikipedia.org/wiki/ISO_13616
+    def clean(self, value):
+        """
+        Validate the RIB key
+        """
+        super(RibField, self).clean(value)
+        if value in (None, ""):
+            return None
+        iso_value = ""
+        for c in value:
+            if c==" ":
+                continue # ignore spaces
+            if c>="0" and c<="9":
+                iso_value += c
+                continue
+            c = c.upper()
+            if c>="A" and c<="I":
+                iso_value += str(ord(c)-64)
+            elif c>="J" and c<="R":
+                iso_value += str(ord(c)-73)
+            elif c>="S" and c<="Z":
+                iso_value+= str(ord(c)-81)
+            else:
+                raise forms.ValidationError("Illegal character "+c)
+            
+        if len(iso_value) != 23:
+            raise forms.ValidationError("There must be 23 non blank characters.")
+            
+        print iso_value
+        if int(iso_value) % 97:
+            raise forms.ValidationError("CRC error")
+            
+        return value
+
+
+# That class is a clone of forms.CheckboxSelectMultiple
+# It only adds an extra class=multiplechoice to the <ul>
+class NgwCheckboxSelectMultiple(forms.SelectMultiple):
+    def render(self, name, value, attrs=None, choices=()):
+        if value is None: value = []
+        has_id = attrs and attrs.has_key('id')
+        final_attrs = self.build_attrs(attrs, name=name)
+        output = [u'<ul class=multiplechoice>']
+        str_values = set([smart_unicode(v) for v in value]) # Normalize to strings.
+        for i, (option_value, option_label) in enumerate(chain(self.choices, choices)):
+            # If an ID attribute was given, add a numeric index as a suffix,
+            # so that the checkboxes don't all have the same ID attribute.
+            if has_id:
+                final_attrs = dict(final_attrs, id='%s_%s' % (attrs['id'], i))
+            cb = forms.CheckboxInput(final_attrs, check_test=lambda value: value in str_values)
+            option_value = smart_unicode(option_value)
+            rendered_cb = cb.render(name, option_value)
+            output.append(u'<li><label>%s %s</label></li>' % (rendered_cb, html.escape(smart_unicode(option_label))))
+        output.append(u'</ul>')
+        return u'\n'.join(output)
+
+    def id_for_label(self, id_):
+        # See the comment for RadioSelect.id_for_label()
+        if id_:
+            id_ += '_0'
+        return id_
+    id_for_label = classmethod(id_for_label)
+
+
+
+CONTACT_FIELD_TYPES_CLASSES=[]
+def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
+    CONTACT_FIELD_TYPES_CLASSES.append(cls)
+    cls.db_type_id = db_type_id
+    cls.human_type_id = human_type_id
+    cls.has_choice = has_choice
+    return cls
+def get_contact_field_type_by_dbid(db_type_id):
+    for cls in CONTACT_FIELD_TYPES_CLASSES:
+        if cls.db_type_id == db_type_id:
+            return cls
+    raise KeyError(u"No ContactField class using id "+db_type_id)
+
 class ContactField(NgwModel):
     class Meta:
         verbose_name = u"optional field"
 
     def __repr__(self):
-        return "ContactField<"+self.name.encode('utf-8')+">"
+        return "ContactField<"+str(self.id)+","+self.name.encode('utf-8')+','+self.type+">"
 
     def __unicode__(self):
         return self.name
 
+    def str_type_base(self):
+        return self.__class__.human_type_id
+
     def type_as_html(self):
-        type = FIELD_TYPES[self.type]
-        if self.type in (FTYPE_CHOICE, FTYPE_MULTIPLECHOICE):
-            type += " (<a href='"+self.choice_group.get_link()+"'>"+html.escape(self.choice_group.name)+"</a>)"
-        return type
+        return self.str_type_base()
+
+    def format_value_unicode(self, value):
+        return value
+    def format_value_html(self, value):
+        return self.format_value_unicode(value)
 
     def get_link(self):
-        return u"/contactfields/"+str(self.id)+"/edit"
+        return u"/contactfields/"+unicode(self.id)+u"/edit"
     get_link_name=get_link # templatetags
+
+    def formfield_value_to_db_value(self, value):
+        return unicode(value)
+    def db_value_to_formfield_value(self, value):
+        return value
+
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        return True
+
+class TextContactField(ContactField):
+    def get_form_fields(self):
+        return forms.CharField(max_length=255, required=False, help_text=self.hint)
+register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
+
+class LongTextContactField(ContactField):
+    def get_form_fields(self):
+        return forms.CharField(widget=forms.Textarea, required=False, help_text=self.hint)
+register_contact_field_type(LongTextContactField, u"LONGTEXT", u"Long Text", has_choice=False)
+
+class NumberContactField(ContactField):
+    def get_form_fields(self):
+        return forms.IntegerField(required=False, help_text=self.hint)
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        try:
+            int(value)
+        except ValueError:
+            return False
+        return True
+
+register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice=False)
+
+class DateContactField(ContactField):
+    def get_form_fields(self):
+        return forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint)
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        try:
+            time.strptime(value, '%Y-%m-%d')
+        except ValueError:
+            return False
+        return True
+register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False)
+
+class EmailContactField(ContactField):
+    def format_value_html(self, value):
+        return u'<a href="mailto:%(value)s">%(value)s</a>' % {'value':value}
+    def get_form_fields(self):
+        return forms.EmailField(required=False, help_text=self.hint)
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        try:
+            forms.EmailField().clean(value)
+        except forms.ValidationError:
+            return False
+        return True
+register_contact_field_type(EmailContactField, u"EMAIL", u"E.Mail", has_choice=False)
+
+class PhoneContactField(ContactField):
+    def format_value_html(self, value):
+        return u'<a href="tel:%(value)s">%(value)s</a>' % {'value':value} # rfc3966
+    def get_form_fields(self):
+        return forms.CharField(max_length=255, required=False, help_text=self.hint)
+register_contact_field_type(PhoneContactField, u"PHONE", u"Phone", has_choice=False)
+
+class RibContactField(ContactField):
+    def get_form_fields(self):
+        return RibField(required=False, help_text=self.hint)
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        try:
+            RibField().clean(value)
+        except forms.ValidationError:
+            return False
+        return True
+register_contact_field_type(RibContactField, u"RIB", u"French bank account", has_choice=False)
+
+class ChoiceContactField(ContactField):
+    def type_as_html(self):
+        return self.str_type_base() + u" (<a href='"+self.choice_group.get_link()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
+    def format_value_unicode(self, value):
+        chg = self.choice_group
+        if chg == None:
+            return u"Error"
+        c = Query(Choice).get((chg.id, value))
+        if c == None:
+            return u"Error"
+        else:
+            return c.value
+    def get_form_fields(self):
+        return forms.CharField(max_length=255, required=False, help_text=self.hint, widget=forms.Select(choices=[(u'', u"Unknown")]+self.choice_group.ordered_choices))
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        return Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==value).count() == 1
+register_contact_field_type(ChoiceContactField, u"CHOICE", u"Choice", has_choice=True)
+
+class MultipleChoiceContactField(ContactField):
+    def type_as_html(self):
+        return self.str_type_base() + u" (<a href='"+self.choice_group.get_link()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
+    def format_value_unicode(self, value):
+        chg = self.choice_group
+        if chg == None:
+            return u"Error"
+        txt_choice_list = []
+        for cid in value.split(u","):
+            if cid==u"":
+                txt_choice_list.append( "default" ) # this should never occur
+                continue
+            c = Query(Choice).get((chg.id, cid))
+            if c == None:
+                txt_choice_list.append( "error" )
+            else:
+                txt_choice_list.append( c.value )
+        return u", ".join(txt_choice_list)
+    def get_form_fields(self):
+        return forms.MultipleChoiceField(required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
+    def formfield_value_to_db_value(self, value):
+        return u",".join(value)
+    def db_value_to_formfield_value(self, value):
+        return value.split(u",")
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        for v in value.split(','):
+            if Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==v).count() != 1:
+                return False
+        return True
+register_contact_field_type(MultipleChoiceContactField, u"MULTIPLECHOICE", u"Multiple choice", has_choice=True)
+
+class PasswordContactField(ContactField):
+    def format_value_unicode(self, value):
+        return u"********"
+    def get_form_fields(self):
+        return None
+    def formfield_value_to_db_value(self, value):
+        raise NotImplemented()
+    def db_value_to_formfield_value(self, value):
+        raise NotImplemented(u"Cannot reverse hash of a password")
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        return len(value)==13 #TODO
+register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_choice=False)
 
 
 class ContactFieldValue(NgwModel):
@@ -470,53 +678,10 @@ class ContactFieldValue(NgwModel):
         return 'ContactFieldValue<"'+unicode(self.contact).encode("utf-8")+'", "'+unicode(self.field).encode('utf-8')+'", "'+unicode(self).encode('utf-8')+'">'
 
     def __unicode__(self):
-        cf = self.field
-        if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_NUMBER, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB):
-            return self.value
-        elif cf.type == FTYPE_PASSWORD:
-            return u"********"
-        elif cf.type == FTYPE_CHOICE:
-            chg = cf.choice_group
-            if chg == None:
-                return u"Error"
-            c = Query(Choice).get((chg.id, self.value))
-            if c == None:
-                return u"Error"
-            else:
-                return c.value
-        elif cf.type == FTYPE_MULTIPLECHOICE:
-            chg = cf.choice_group
-            if chg == None:
-                return u"Error"
-            txt_choice_list = []
-            for cid in self.value.split(u","):
-                if cid==u"":
-                    txt_choice_list.append( "default" ) # this should never occur
-                    continue
-                c = Query(Choice).get((chg.id, cid))
-                if c == None:
-                    txt_choice_list.append( "error" )
-                else:
-                    txt_choice_list.append( c.value )
-            return u", ".join(txt_choice_list)
-        else:
-            raise Exception("Unsuported field type "+cf.type)
+        return self.field.format_value_unicode(self.value)
  
-    def get_link_value(self):
-        t = self.field.type
-        if t==FTYPE_EMAIL:
-            return u"mailto:"+self.value
-        elif t==FTYPE_PHONE: # rfc3966
-            return u"tel:"+self.value
-        return u""
-
-    def str_print(self):
-        result = unicode(self)
-        link = self.get_link_value()
-        if link:
-            result =  u'<a href="'+link+'">'+result+'</a>'
-        return result
-
+    def as_html(self):
+        return self.field.format_value_html(self.value)
 
 class ContactInGroup(NgwModel):
     def __init__(self, contact_id, group_id):
@@ -545,7 +710,9 @@ choice_group_mapper = mapper(ChoiceGroup, choice_group_table)
 contact_mapper = mapper(Contact, contact_table)
 contact_group_mapper = mapper(ContactGroup, contact_group_table)
 contact_in_group_mapper = mapper(ContactInGroup, contact_in_group_table)
-contact_field_mapper = mapper(ContactField, contact_field_table)
+contact_field_mapper = mapper(ContactField, contact_field_table, polymorphic_on=contact_field_table.c.type)
+for cls in CONTACT_FIELD_TYPES_CLASSES:
+    mapper(cls, contact_field_table, inherits=ContactField, polymorphic_identity=cls.db_type_id)
 contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table)
 contact_sysmsg_mapper = mapper(ContactSysMsg, contact_sysmsg_table)
 

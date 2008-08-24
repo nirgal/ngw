@@ -2,17 +2,14 @@
 
 import os, copy, traceback, time, subprocess
 from pprint import pprint
-from itertools import chain
 from md5 import md5
 from sha import sha
 from random import random
 from base64 import b64encode
 from django.http import *
-from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django import forms
-from django.forms.util import smart_unicode
 from django.shortcuts import render_to_response
 from django.template import loader, RequestContext
 from ngw import settings
@@ -22,6 +19,17 @@ from ngw.gp.basicauth import *
 GROUP_PREFIX = '_group_'
 DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
 NB_LINES_PER_PAGE=100
+
+FTYPE_TEXT='TEXT'
+FTYPE_LONGTEXT='LONGTEXT'
+FTYPE_NUMBER='NUMBER'
+FTYPE_DATE='DATE'
+FTYPE_EMAIL='EMAIL'
+FTYPE_PHONE='PHONE'
+FTYPE_RIB='RIB'
+FTYPE_CHOICE='CHOICE'
+FTYPE_MULTIPLECHOICE='MULTIPLECHOICE'
+FTYPE_PASSWORD='PASSWORD'
 
 
 def ngw_auth(username, passwd):
@@ -139,35 +147,6 @@ def generic_delete(request, o, next_url):
         return render_to_response('delete.html', {'title':title, 'o': o}, RequestContext(request))
         
 
-# That class is a clone of forms.CheckboxSelectMultiple
-# It only adds an extra class=multiplechoice to the <ul>
-class NgwCheckboxSelectMultiple(forms.SelectMultiple):
-    def render(self, name, value, attrs=None, choices=()):
-        if value is None: value = []
-        has_id = attrs and attrs.has_key('id')
-        final_attrs = self.build_attrs(attrs, name=name)
-        output = [u'<ul class=multiplechoice>']
-        str_values = set([smart_unicode(v) for v in value]) # Normalize to strings.
-        for i, (option_value, option_label) in enumerate(chain(self.choices, choices)):
-            # If an ID attribute was given, add a numeric index as a suffix,
-            # so that the checkboxes don't all have the same ID attribute.
-            if has_id:
-                final_attrs = dict(final_attrs, id='%s_%s' % (attrs['id'], i))
-            cb = forms.CheckboxInput(final_attrs, check_test=lambda value: value in str_values)
-            option_value = smart_unicode(option_value)
-            rendered_cb = cb.render(name, option_value)
-            output.append(u'<li><label>%s %s</label></li>' % (rendered_cb, escape(smart_unicode(option_label))))
-        output.append(u'</ul>')
-        return u'\n'.join(output)
-
-    def id_for_label(self, id_):
-        # See the comment for RadioSelect.id_for_label()
-        if id_:
-            id_ += '_0'
-        return id_
-    id_for_label = classmethod(id_for_label)
-
-
 class FilterMultipleSelectWidget(forms.SelectMultiple):
     class Media:
         js = ('ngw.js',)
@@ -239,7 +218,11 @@ def test(request):
     return render_to_response("test.html", args, RequestContext(request))
 
 def logout(request):
-    return render_to_response("message.html", {"message": mark_safe("Have a nice day!<br><a href=\"https://"+request.META["HTTP_HOST"]+"\">Login again</a>")}, RequestContext(request))
+    if os.environ['HTTPS']:
+        scheme = "https"
+    else:
+        scheme = "http"
+    return render_to_response("message.html", {"message": mark_safe("Have a nice day!<br><a href=\""+scheme+"://"+request.META["HTTP_HOST"]+"\">Login again</a>")}, RequestContext(request))
 
 #######################################################################
 #
@@ -272,7 +255,7 @@ def contact_make_query_with_fields(fields=None):
             a = contact_field_value_table.alias()
             q = q.add_entity(ContactFieldValue, alias=a)
             j = outerjoin(j, a, and_(contact_table.c.id==a.c.contact_id, a.c.contact_field_id==cf.id ))
-            cols.append( (cf.name, n_entities, "str_print", a.c.value) )
+            cols.append( (cf.name, n_entities, "as_html", a.c.value) )
             n_entities += 1
 
     q = q.select_from(j)
@@ -310,13 +293,8 @@ def contact_detail(request, id):
     rows = []
     for cf in c.get_allfields():
         cfv = Query(ContactFieldValue).get((id, cf.id))
-        #if cfv:
-        #    nice_value = unicode(cfv)
-        #else:
-        #    nice_value = u""
-        #rows.append((cf.name, nice_value))
         if cfv:
-            rows.append((cf.name, unicode(cfv)))
+            rows.append((cf.name, mark_safe(cfv.as_html())))
     
     is_admin = c.is_admin()
     args={}
@@ -335,41 +313,6 @@ def contact_vcard(request, id):
     c = Query(Contact).get(id)
     return HttpResponse(c.vcard().encode("utf-8"), mimetype="text/x-vcard")
 
-
-class RibField(forms.Field):
-    # TODO handle international IBAN numbers http://fr.wikipedia.org/wiki/ISO_13616
-    def clean(self, value):
-        """
-        Validate the RIB key
-        """
-        super(RibField, self).clean(value)
-        if value in (None, ""):
-            return None
-        iso_value = ""
-        for c in value:
-            if c==" ":
-                continue # ignore spaces
-            if c>="0" and c<="9":
-                iso_value += c
-                continue
-            c = c.upper()
-            if c>="A" and c<="I":
-                iso_value += str(ord(c)-64)
-            elif c>="J" and c<="R":
-                iso_value += str(ord(c)-73)
-            elif c>="S" and c<="Z":
-                iso_value+= str(ord(c)-81)
-            else:
-                raise forms.ValidationError("Illegal character "+c)
-            
-        if len(iso_value) != 23:
-            raise forms.ValidationError("There must be 23 non blank characters.")
-            
-        print iso_value
-        if int(iso_value) % 97:
-            raise forms.ValidationError("CRC error")
-            
-        return value
 
 
 class ContactSearchLine:
@@ -715,26 +658,9 @@ class ContactEditForm(forms.Form):
             if cf.contact_group_id:
                 if cf.contact_group_id not in contactgroupids:
                     continue # some fields are excluded
-            if cf.type==FTYPE_TEXT or cf.type==FTYPE_PHONE:
-                self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint)
-            elif cf.type==FTYPE_LONGTEXT:
-                self.fields[cf.name] = forms.CharField(widget=forms.Textarea, required=False, help_text=cf.hint)
-            elif cf.type==FTYPE_NUMBER:
-                self.fields[cf.name] = forms.IntegerField(required=False, help_text=cf.hint)
-            elif cf.type==FTYPE_DATE:
-                self.fields[cf.name] = forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format."+u" "+cf.hint)
-            elif cf.type==FTYPE_EMAIL:
-                self.fields[cf.name] = forms.EmailField(required=False, help_text=cf.hint)
-            elif cf.type==FTYPE_RIB:
-                self.fields[cf.name] = RibField(required=False, help_text=cf.hint)
-            elif cf.type==FTYPE_CHOICE:
-                self.fields[cf.name] = forms.CharField(max_length=255, required=False, help_text=cf.hint, widget=forms.Select(choices=[('', u"Unknown")]+cf.choice_group.ordered_choices))
-            elif cf.type==FTYPE_MULTIPLECHOICE:
-                self.fields[cf.name] = forms.MultipleChoiceField(required=False, help_text=cf.hint, choices=cf.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
-            elif cf.type==FTYPE_PASSWORD:
-                pass # password are not edited in that form
-            else:
-                raise Exception(u"Unsupported type "+cf.type)
+            fields = cf.get_form_fields()
+            if fields:
+                self.fields[cf.name] = fields
         
         if request_user.is_admin():
             def contactgroupchoices():
@@ -816,15 +742,7 @@ def contact_edit(request, id):
                 cfid = cf.id
                 newvalue = data[cfname]
                 if newvalue!=None:
-                    if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB, FTYPE_CHOICE):
-                        newvalue = unicode(newvalue)
-                    elif cf.type == FTYPE_MULTIPLECHOICE:
-                        newvalue = ",".join(newvalue)
-                        #print "storing", repr(newvalue), "in", cfname
-                    elif cf.type==FTYPE_NUMBER:
-                        newvalue = unicode(newvalue) # store as a string for now
-                    else:
-                        raise u"Unknown field type "+cf.type
+                    newvalue = cf.formfield_value_to_db_value(newvalue)
                 cfv = Query(ContactFieldValue).get((id, cfid))
                 if cfv == None:
                     if newvalue:
@@ -860,17 +778,8 @@ def contact_edit(request, id):
 
             for cfv in contact.values:
                 cf = cfv.field
-                if cf.type in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_DATE, FTYPE_EMAIL, FTYPE_PHONE, FTYPE_RIB, FTYPE_CHOICE):
-                    initialdata[cf.name] = cfv.value
-                elif cf.type==FTYPE_NUMBER:
-                    initialdata[cf.name] = cfv.value
-                elif cf.type==FTYPE_MULTIPLECHOICE:
-                    initialdata[cf.name] = cfv.value.split(",")
-                elif cf.type==FTYPE_PASSWORD:
-                    pass
-                else:
-                    raise Exception(u"Unknown field type "+cf.type)
-
+                if cf.type != FTYPE_PASSWORD:
+                    initialdata[cf.name] = cf.db_value_to_formfield_value(cfv.value)
             form = ContactEditForm(id=id, initial=initialdata, request_user=request.user)
 
         else:
@@ -1255,7 +1164,8 @@ class FieldEditForm(forms.Form):
     name = forms.CharField()
     hint = forms.CharField(required=False, widget=forms.Textarea)
     contact_group = forms.CharField(required=False, widget=forms.Select)
-    type = forms.CharField(widget=forms.Select(choices=FIELD_TYPE_CHOICES), initial="")
+    types_choices = [ (cls.db_type_id, cls.human_type_id) for cls in CONTACT_FIELD_TYPES_CLASSES ]
+    type = forms.CharField(widget=forms.Select(choices=types_choices), initial="")
     choicegroup = forms.CharField(required=False, widget=forms.Select)
     move_after = forms.IntegerField(widget=forms.Select())
 
@@ -1265,18 +1175,20 @@ class FieldEditForm(forms.Form):
         contacttypes = Query(ContactGroup).filter(ContactGroup.c.field_group==True)
         self.fields['contact_group'].widget.choices = [('', 'Everyone')] + [ (g.id, g.name) for g in contacttypes ]
 
-        self.fields['type'].widget.attrs = { "onchange": "if (this.value=='"+FTYPE_CHOICE+"' || this.value=='"+FTYPE_MULTIPLECHOICE+"') { document.forms[0]['choicegroup'].disabled = 0; } else { document.forms[0]['choicegroup'].value = ''; document.forms[0]['choicegroup'].disabled = 1; }" }
+        js_test_type_has_choice = u" || ".join([ u"this.value=='"+cls.db_type_id+"'" for cls in CONTACT_FIELD_TYPES_CLASSES if cls.has_choice ])
+        self.fields['type'].widget.attrs = { "onchange": "if (0 || "+js_test_type_has_choice+") { document.forms[0]['choicegroup'].disabled = 0; } else { document.forms[0]['choicegroup'].value = ''; document.forms[0]['choicegroup'].disabled = 1; }" }
     
         self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in Query(ChoiceGroup).order_by(ChoiceGroup.c.name)]
         #pprint (self.data)
         #pprint (self.initial)
-       
+ 
         t = self.data.get("type", "") or self.initial.get('type', "")
-        if t != FTYPE_CHOICE and t!=FTYPE_MULTIPLECHOICE:
-            self.fields['choicegroup'].widget.attrs['disabled'] = 1
-        else:
+        cls_contact_field = get_contact_field_type_by_dbid(t)
+        if cls_contact_field.has_choice:
             if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
                 del self.fields['choicegroup'].widget.attrs['disabled']
+        else:
+            self.fields['choicegroup'].widget.attrs['disabled'] = 1
         
         self.fields['choicegroup'].required = False
         
@@ -1284,8 +1196,10 @@ class FieldEditForm(forms.Form):
 
 
     def clean(self):
-        if self.cleaned_data['type'] in (FTYPE_CHOICE, FTYPE_MULTIPLECHOICE) and self.cleaned_data['choicegroup'] == "":
-            raise forms.ValidationError("You must select a choicegroup when for types choice")
+        t = self.cleaned_data['type']
+        cls_contact_field = get_contact_field_type_by_dbid(t)
+        if cls_contact_field.has_choice and not self.cleaned_data['choicegroup']:
+            raise forms.ValidationError("You must select a choice group for that type.")
         return self.cleaned_data
 
     def clean_name(self):
@@ -1318,49 +1232,14 @@ def field_edit(request, id):
                 cf = ContactField()
             elif cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']:
                 deletion_details=[]
-                if data['type'] in (FTYPE_TEXT, FTYPE_LONGTEXT, FTYPE_PHONE):
-                    pass
-                if data['type']==FTYPE_NUMBER:
-                    for cfv in cf.values:
-                        try:
-                            int(cfv.value)
-                        except ValueError:
-                            deletion_details.append((cfv.contact, cfv))
-                elif data['type']==FTYPE_DATE:
-                    for cfv in cf.values:
-                        try:
-                            time.strptime(cfv.value, '%Y-%m-%d')
-                        except ValueError:
-                            deletion_details.append((cfv.contact, cfv))
-                elif data['type']==FTYPE_EMAIL:
-                    for cfv in cf.values:
-                        try:
-                            forms.EmailField().clean(cfv.value)
-                        except forms.ValidationError:
-                            deletion_details.append((cfv.contact, cfv))
-                elif data['type']==FTYPE_RIB:
-                    for cfv in cf.values:
-                        try:
-                            RibField().clean(cfv.value)
-                        except forms.ValidationError:
-                            deletion_details.append((cfv.contact, cfv))
-                elif data['type']==FTYPE_CHOICE:
-                    for cfv in cf.values:
-                        choice_group_id = int(data['choicegroup'])
-                        if not Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==cfv.value).count():
-                            deletion_details.append((cfv.contact, cfv))
-                elif data['type']==FTYPE_MULTIPLECHOICE:
-                    for cfv in cf.values:
-                        choice_group_id = int(data['choicegroup'])
-                        for v in cfv.value.split(','):
-                            if not Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==v).count():
-                                deletion_details.append((cfv.contact, cfv))
-                                break # stop parsing the other values, this is allready bad
-                elif data['type']==FTYPE_PASSWORD:
-                    for cfv in cf.values:
-                        if len(cfv.value)!=13:
-                            deletion_details.append((cfv.contact, cfv))
-                
+                cls = get_contact_field_type_by_dbid(data['type'])
+                choice_group_id = None
+                if data['choicegroup']:
+                    choice_group_id = int(data['choicegroup'])
+                for cfv in cf.values:
+                    if not cls.validate_unicode_value(cfv.value, choice_group_id):
+                        deletion_details.append((cfv.contact, cfv))
+                        
                 if deletion_details:
                     if request.POST.get('confirm', None):
                         for cfv in [ dd[1] for dd in deletion_details ]:
@@ -1374,13 +1253,20 @@ def field_edit(request, id):
                         for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
                             args[k] = data[k]
                         return render_to_response('type_change.html', args, RequestContext(request))
+                if id:
+                    # Needed work around sqlalchemy polymorphic feature
+                    # Recreate the record
+                    # Updating type of a sub class silently fails
+                    id_int = int(id)
+                    Session.execute("UPDATE contact_field SET type='%(type)s' WHERE id=%(id)i"%{'id':id_int, 'type': data['type']})
+                    cf = Query(ContactField).get(id)
             cf.name = data['name']
             cf.hint = data['hint']
             if data['contact_group']:
                 cf.contact_group_id = int(data['contact_group'])
             else:
                 cf.contact_group_id = None
-            cf.type = data['type']
+            cf.type = data['type'] # BUG can't change polymorphic type
             if data['choicegroup']:
                 cf.choice_group_id = int(data['choicegroup'])
             else:
@@ -1389,6 +1275,7 @@ def field_edit(request, id):
 
             Session.commit()
             field_renumber()
+            print cf
             request.user.push_message(u"Field %s has been changed sucessfully." % cf.name)
             if request.POST.get("_continue", None):
                 if not id:
