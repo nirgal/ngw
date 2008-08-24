@@ -4,6 +4,9 @@ urlpatterns = patterns('',
     (r'^$', 'ngw.gp.views.index'),
 
     (r'^test$', 'ngw.gp.views.test'),
+    (r'^testsearch$', 'ngw.gp.newsearch.testsearch'),
+    (r'^testsearch/fields/(?P<kind>\w+)$', 'ngw.gp.newsearch.testsearch_get_fields'),
+    (r'^testsearch/filters/(?P<field>\w+)$', 'ngw.gp.newsearch.testsearch_get_filters'),
 
     (r'^logout$', 'ngw.gp.views.logout'),
 
