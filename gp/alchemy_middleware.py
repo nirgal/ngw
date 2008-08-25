@@ -2,28 +2,36 @@
 
 from ngw.gp.alchemy_models import *
 
+PRINT_TRANSACTION_ENDS=False
+
 class TransactionMiddleware(object):
     def process_request(self, request):
         # todo: transaction.begin
         return None
 
     def process_exception(self, request, exception):
-        print "Session.rollback"
+        if PRINT_TRANSACTION_ENDS:
+            print "Session.rollback"
         Session.rollback()
-        print "Session.clear"
+        if PRINT_TRANSACTION_ENDS:
+            print "Session.clear"
         Session.clear() # removed pending saves
         return None
 
     def process_response(self, request, response):
         try:
-            print "Session.commit"
+            if PRINT_TRANSACTION_ENDS:
+                print "Session.commit"
             Session.commit() # This does a flush too
-            print "Session.clear"
+            if PRINT_TRANSACTION_ENDS:
+                print "Session.clear"
             Session.clear()
         except:
-            print "Session.rollback"
+            if PRINT_TRANSACTION_ENDS:
+                print "Session.rollback"
             Session.rollback()
-            print "Session.clear"
+            if PRINT_TRANSACTION_ENDS:
+                print "Session.clear"
             Session.clear()
             raise
         return response

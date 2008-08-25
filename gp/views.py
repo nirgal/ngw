@@ -1183,12 +1183,13 @@ class FieldEditForm(forms.Form):
         #pprint (self.initial)
  
         t = self.data.get("type", "") or self.initial.get('type', "")
-        cls_contact_field = get_contact_field_type_by_dbid(t)
-        if cls_contact_field.has_choice:
-            if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
-                del self.fields['choicegroup'].widget.attrs['disabled']
-        else:
-            self.fields['choicegroup'].widget.attrs['disabled'] = 1
+        if t:
+            cls_contact_field = get_contact_field_type_by_dbid(t)
+            if cls_contact_field.has_choice:
+                if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
+                    del self.fields['choicegroup'].widget.attrs['disabled']
+            else:
+                self.fields['choicegroup'].widget.attrs['disabled'] = 1
         
         self.fields['choicegroup'].required = False
         
