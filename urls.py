@@ -7,6 +7,8 @@ urlpatterns = patterns('',
     (r'^testsearch$', 'ngw.gp.newsearch.testsearch'),
     (r'^testsearch/fields/(?P<kind>\w+)$', 'ngw.gp.newsearch.testsearch_get_fields'),
     (r'^testsearch/filters/(?P<field>\w+)$', 'ngw.gp.newsearch.testsearch_get_filters'),
+    (r'^testsearch/params/(?P<field>\w+)/(?P<filtername>\w+)$', 'ngw.gp.newsearch.testsearch_get_params'),
+    (r'^testsearch/filter_to_html$', 'ngw.gp.newsearch.testsearch_filter_to_html'),
 
     (r'^logout$', 'ngw.gp.views.logout'),
 

@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+import pprint
 from django.http import *
 from django.utils.safestring import mark_safe
 from ngw.gp.views import *
@@ -196,11 +197,9 @@ def testsearch(request):
     if not request.user.is_admin():
         return unauthorized(request)
     
-    params = request.META['QUERY_STRING'] or u""
-    strfilter = request.REQUEST.get('filter') or u"ffilter(6,notnull)"
+    strfilter = request.REQUEST.get('filter') or u""
     filter = parse_filterstring(strfilter)
-
-
+    
     if request.GET.has_key('runfilter'):
         q, cols = contact_make_query_with_fields()
         q = filter.apply_filter_to_query(q)
@@ -209,6 +208,7 @@ def testsearch(request):
         args['objtype'] = Contact
         args['query'] = q
         args['cols'] = cols
+        params = request.META['QUERY_STRING'] or u""
         args['baseurl'] = "?"+params
         return query_print_entities(request, 'searchresult_contact.html', args)
         
@@ -216,9 +216,8 @@ def testsearch(request):
     args={}
     args["title"] = "Contact search"
     args["objtype"] = Contact
-    filter_str = u"Raw filter: "+strfilter+u"<br>" + \
-                 u"Parsed filter: "+filter.to_html()
-    args["filter_from_py"] = mark_safe(filter_str)
+    args["filter_from_py"] = filter.to_html()
+    args["strfilter"] = mark_safe(html.escape(strfilter))
     return render_to_response('search_contact_new.html', args, RequestContext(request))
 
 
@@ -254,7 +253,9 @@ def testsearch_get_filters(request, field):
     elif field.startswith(u"field_"):
         field_id = int(field[len(u"field_"):])
         field = Query(ContactField).get(field_id)
-        body+=u"Not implemented: Fetching filters from type "+field.human_type_id
+        body += u"Add a filter for field of type "+field.human_type_id+u" : "
+            
+        body += format_link_list([ (u"javascript:select_filtername('"+internal_name+u"')", no_br(internal_name), u"filter_"+internal_name) for (internal_name, filter_function, filter_as_html_function, return_type, parameter_types) in field.filters_info ])
 
     elif field.startswith(u"group_"):
         group_id = int(field[len(u"group_"):])
@@ -264,6 +265,52 @@ def testsearch_get_filters(request, field):
     else:
         body+=u"ERROR in get_filters: field=="+field
     
-    body+=u"<br>"
-    body+=u"<a href=#>Add this filter</a> (AND/OR)"
     return HttpResponse(body)
+
+
+@http_authenticate(ngw_auth, 'ngw')
+def testsearch_get_params(request, field, filtername):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    
+    if not field.startswith(u"field_"):
+        return HttpResponse(u"ERROR: field "+field+" not supported")
+    field_id = int(field[len(u"field_"):])
+
+    field = Query(ContactField).get(field_id)
+    filter_info = [ filter_info for filter_info in field.filters_info if filter_info[0]==filtername][0]
+    internal_name, filter_function, filter_as_html_function, return_type, parameter_types = filter_info
+
+    body = u""
+    #body += u"Parameter for field "+ field.human_type_id + " and filter "+filtername+u": "+html.escape(pprint.pformat(parameter_types))+u"<br>"
+    for i, param_type in enumerate(parameter_types):
+        body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
+
+    js = u"'ffilter("
+    js+= unicode(field_id)
+    js+= u","
+    js+= filtername
+    for i, param_type in enumerate(parameter_types):
+        js+=u",'+"
+        if param_type==unicode:
+            js+=u"escape_quote("
+        js+=u"document.getElementById('filter_param_"+unicode(i)+u"').value"
+        if param_type==unicode:
+            js+=u")"
+        js+=u"+'"
+    js+=u")'"
+    body += u"<input type=submit onclick=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; ajax_load_innerhtml('curent_filter','/testsearch/filter_to_html?'+newfilter);\" value=\"Set filter\">\n"
+    body += u"<br clear=all>\n"
+    return HttpResponse(body)
+
+
+
+@http_authenticate(ngw_auth, 'ngw')
+def testsearch_filter_to_html(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
+ 
+    # that request expect a single string as parameters/values
+    #FIXME: crashes when there's a '&' or a '='
+    strfilter = request.GET.items()[0][0]
+    return HttpResponse(parse_filterstring(strfilter).to_html())

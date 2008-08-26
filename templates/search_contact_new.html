@@ -37,6 +37,11 @@ function ajax_load_innerhtml(element_id, url) {
     req.send("");
 }
 
+function escape_quote(str) {
+/* TODO: Add \ before any \ or ' */
+    return "'"+str+"'";
+}
+
 /*
 function debug(DFGHJ) {
     document.getElementById("curent_filter").innerHTML += document.getElementById("filter_group_field");
@@ -49,24 +54,39 @@ function debug(DFGHJ) {
 }
 */
 
-var old_grouptype=null;
+var cur_grouptype=null;
 function select_grouptype(type) {
     ajax_load_innerhtml("list_field", "/testsearch/fields/"+type);
-    if (old_grouptype)
-        document.getElementById("filter_group_"+old_grouptype).className = "";
+    if (cur_grouptype)
+        document.getElementById("filter_group_"+cur_grouptype).className = "";
     document.getElementById("filter_group_"+type).className = "activeSelectionItem";
-    old_grouptype = type;
+    cur_grouptype = type;
 }
 
 
-var old_field=null;
+var cur_field=null;
 function select_field(field) {
     ajax_load_innerhtml("list_filters", "/testsearch/filters/"+field);
-    if (old_field)
-        document.getElementById("field_"+old_field).className = "";
+    if (cur_field)
+        document.getElementById("field_"+cur_field).className = "";
     document.getElementById("field_"+field).className = "activeSelectionItem";
-    old_field = field;
+    cur_field = field;
 }
+
+var cur_filtername=null;
+function select_filtername(filtername) {
+    ajax_load_innerhtml("filter_param", "/testsearch/params/"+cur_field+"/"+filtername);
+    if (cur_filtername)
+        document.getElementById("filter_"+cur_filtername).className = "";
+    document.getElementById("filter_"+filtername).className = "activeSelectionItem";
+    cur_filtername = filtername;
+}
+
+/*
+function set_filter(newfilter) {
+    document.getElementById('filter').value=newfilter;
+    ajax_load_innerhtml('curent_filter','/testsearch/filter_to_html?'+newfilter);
+}*/
 
 </script>
 <style>
@@ -94,14 +114,31 @@ Type of filter:
 <div id="list_filters" style="border: 1px solid #999; padding:1ex;">
 </div>
 
+<br>
+
+<div id="filter_param" style="border: 1px solid #999; padding:1ex;">
+</div>
+
+
+
+
 <h1 class="boxheader">Current filter</h1>
 <div id="curent_filter" style="border: 1px solid #999; padding:1ex;">
 {{filter_from_py}}
 </div>
 
+<br>
+
+<form>
+<div style="border: 1px solid #999; padding:1ex;">
+Internal representation of filter: <input type=text id="filter" name="filter" value="{{strfilter}}">
+</div>
 
 <div id=submitbar>
-<a href="#">Launch search</a>
+<input type=submit value="Launch search">
 </div>
+<input type=hidden name=runfilter value=1>
+
+</form>
 
 {% endblock %}

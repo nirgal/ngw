@@ -496,6 +496,7 @@ def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     cls.db_type_id = db_type_id
     cls.human_type_id = human_type_id
     cls.has_choice = has_choice
+    cls.filters_info = []
     return cls
 def get_contact_field_type_by_dbid(db_type_id):
     for cls in CONTACT_FIELD_TYPES_CLASSES:
@@ -503,74 +504,6 @@ def get_contact_field_type_by_dbid(db_type_id):
             return cls
     raise KeyError(u"No ContactField class using id "+db_type_id)
 
-
-
-class FilterCondition(object):
-    @staticmethod
-    def apply_where_to_query(query, where, **kargs):
-        # kargs is a dictionnary of parameters to apply to where
-        # unicode parameters are escaped
-        # integers are expanded inline
-        params_where = { }
-        params_sql = { }
-        for k,v in kargs.iteritems():
-            #print k,"=",v
-            if isinstance(v, unicode):
-                params_where[ k ] = u':'+k
-                params_sql[ k ] = v
-            elif isinstance(v, int):
-                params_where[ k ] = v
-            else:
-                raise Exception(u"Unsupported type "+unicode(type(v)))
-        where = where % params_where
-        return query.filter(where).params(params_sql)
-
-    def apply_filter_to_query(self, query):
-        raise StandardError(u"Abstract method called.")
-
-    def to_html(self):
-        raise StandardError(u"Abstract method called.")
-
-
-class NameFilterCondition(FilterCondition):
-    def __init__(self, filter_name, *args):
-        self.filter_name = filter_name
-        self.args = args
-
-    def apply_filter_to_query(self, query):
-        filter = getattr(self, "sqlfilter_"+self.filter_name)
-        query = filter(query, *self.args)
-        return query
-
-    def to_html(self):
-        filter_to_html = getattr(self, "sqlfilter_"+self.filter_name+"_to_html")
-        return filter_to_html(*self.args)
-
-    def sqlfilter_startswith(self, query, *args):
-        value = args[0]
-        return FilterCondition.apply_where_to_query(query, 'contact.name ILIKE %(value_name1)s OR contact.name ILIKE %(value_name2)s', value_name1=value+"%", value_name2="% "+value+"%")
-    def sqlfilter_startswith_to_html(self, *args):
-        return "name words starts with \""+args[0]+"\"."
-    sqlfilter_notnull_params = (unicode)
-
-
-class FieldFilterCondition(FilterCondition):
-    def __init__(self, field_id, filter_name, *args):
-        self.field_id = field_id
-        self.filter_name = filter_name
-        self.args = args
-
-    def apply_filter_to_query(self, query):
-        cf = Query(ContactField).get(self.field_id)
-        filter = getattr(cf, "sqlfilter_"+self.filter_name)
-        print filter
-        query = filter(query, *self.args)
-        return query
-
-    def to_html(self):
-        cf = Query(ContactField).get(self.field_id)
-        filter_to_html = getattr(cf, "sqlfilter_"+self.filter_name+"_to_html")
-        return filter_to_html(*self.args)
 
 
 class ContactField(NgwModel):
@@ -607,17 +540,28 @@ class ContactField(NgwModel):
     def validate_unicode_value(cls, value, choice_group_id=None):
         return True
 
+    @classmethod
+    def register_filter(cls, internal_name, filter_function, filter_as_html_function, return_type, parameter_types):
+        cls.filters_info.append([internal_name, filter_function, filter_as_html_function, return_type, parameter_types])
+
     def sqlfilter_notnull(self, query, *args):
         return FilterCondition.apply_where_to_query(query, 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', field_id=self.id)
     def sqlfilter_notnull_to_html(self, *args):
         return self.name+" NOT NULL"
-    sqlfilter_notnull_params = ()
+
+    def sqlfilter_startswith(self, query, *args):
+        value = args[0]
+        return FilterCondition.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value2)s', field_id=self.id, value1=value+"%", value2="% "+value+"%")
+    def sqlfilter_startswith_to_html(self, *args):
+        return self.name+" Starts with "+args[0]
 
 
 class TextContactField(ContactField):
     def get_form_fields(self):
         return forms.CharField(max_length=255, required=False, help_text=self.hint)
 register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
+TextContactField.register_filter(u"notnull", ContactField.sqlfilter_notnull, ContactField.sqlfilter_notnull_to_html, bool, ())
+TextContactField.register_filter(u"startswith", ContactField.sqlfilter_startswith, ContactField.sqlfilter_startswith_to_html, bool, (unicode,))
 
 class LongTextContactField(ContactField):
     def get_form_fields(self):
@@ -634,7 +578,6 @@ class NumberContactField(ContactField):
         except ValueError:
             return False
         return True
-
 register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice=False)
 
 class DateContactField(ContactField):
@@ -746,6 +689,86 @@ class PasswordContactField(ContactField):
     def validate_unicode_value(cls, value, choice_group_id=None):
         return len(value)==13 #TODO
 register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_choice=False)
+
+
+
+
+class FilterCondition(object):
+    """
+    This is a full condition with both function and arguments
+    """
+    @staticmethod
+    def apply_where_to_query(query, where, **kargs):
+        # kargs is a dictionnary of parameters to apply to where
+        # unicode parameters are escaped
+        # integers are expanded inline
+        params_where = { }
+        params_sql = { }
+        for k,v in kargs.iteritems():
+            #print k,"=",v
+            if isinstance(v, unicode):
+                params_where[ k ] = u':'+k
+                params_sql[ k ] = v
+            elif isinstance(v, int):
+                params_where[ k ] = v
+            else:
+                raise Exception(u"Unsupported type "+unicode(type(v)))
+        where = where % params_where
+        return query.filter(where).params(params_sql)
+
+    def apply_filter_to_query(self, query):
+        raise StandardError(u"Abstract method called.")
+
+    def to_html(self):
+        raise StandardError(u"Abstract method called.")
+
+
+class NameFilterCondition(FilterCondition):
+    def __init__(self, filter_name, *args):
+        self.filter_name = filter_name
+        self.args = args
+
+    def apply_filter_to_query(self, query):
+        filter = getattr(self, "sqlfilter_"+self.filter_name)
+        query = filter(query, *self.args)
+        return query
+
+    def to_html(self):
+        filter_to_html = getattr(self, "sqlfilter_"+self.filter_name+"_to_html")
+        return filter_to_html(*self.args)
+
+    def sqlfilter_startswith(self, query, *args):
+        value = args[0]
+        return FilterCondition.apply_where_to_query(query, 'contact.name ILIKE %(value_name1)s OR contact.name ILIKE %(value_name2)s', value_name1=value+"%", value_name2="% "+value+"%")
+    def sqlfilter_startswith_to_html(self, *args):
+        return "name words starts with \""+args[0]+"\"."
+    sqlfilter_notnull_params = (unicode)
+
+
+class FieldFilterCondition(FilterCondition):
+    def __init__(self, field_id, filter_name, *args):
+        self.field_id = field_id
+        self.filter_name = filter_name
+        self.args = args
+
+    def apply_filter_to_query(self, query):
+        cf = Query(ContactField).get(self.field_id)
+        filter = getattr(cf, "sqlfilter_"+self.filter_name)
+        query = filter(query, *self.args)
+        return query
+
+    def to_html(self):
+        cf = Query(ContactField).get(self.field_id)
+        filter_to_html = getattr(cf, "sqlfilter_"+self.filter_name+"_to_html")
+        return filter_to_html(*self.args)
+
+    #@staticmethod
+    #def get_filters_info(field_id):
+    #    cf = Query(ContactField).get(self.field_id)
+    #    return cf.filters_info
+        
+
+
 
 
 class ContactFieldValue(NgwModel):

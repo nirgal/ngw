@@ -1,7 +1,6 @@
 # -*- encoding: utf8 -*-
 
 import os, copy, traceback, time, subprocess
-from pprint import pprint
 from md5 import md5
 from sha import sha
 from random import random
@@ -1179,8 +1178,6 @@ class FieldEditForm(forms.Form):
         self.fields['type'].widget.attrs = { "onchange": "if (0 || "+js_test_type_has_choice+") { document.forms[0]['choicegroup'].disabled = 0; } else { document.forms[0]['choicegroup'].value = ''; document.forms[0]['choicegroup'].disabled = 1; }" }
     
         self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in Query(ChoiceGroup).order_by(ChoiceGroup.c.name)]
-        #pprint (self.data)
-        #pprint (self.initial)
  
         t = self.data.get("type", "") or self.initial.get('type', "")
         if t:
