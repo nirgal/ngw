@@ -55,7 +55,12 @@ function debug(DFGHJ) {
 */
 
 var cur_grouptype=null;
+var cur_field=null;
+var cur_filtername=null;
+var add_another_filter=false;
+
 function select_grouptype(type) {
+    select_field(null);
     ajax_load_innerhtml("list_field", "/testsearch/fields/"+type);
     if (cur_grouptype)
         document.getElementById("filter_group_"+cur_grouptype).className = "";
@@ -63,22 +68,30 @@ function select_grouptype(type) {
     cur_grouptype = type;
 }
 
-
-var cur_field=null;
 function select_field(field) {
-    ajax_load_innerhtml("list_filters", "/testsearch/filters/"+field);
+    select_filtername(null);
+    if (field)
+        ajax_load_innerhtml("list_filters", "/testsearch/filters/"+field);
+    else
+        document.getElementById("list_filters").innerHTML="";
     if (cur_field)
         document.getElementById("field_"+cur_field).className = "";
-    document.getElementById("field_"+field).className = "activeSelectionItem";
+    if (field)
+        document.getElementById("field_"+field).className = "activeSelectionItem";
     cur_field = field;
 }
 
-var cur_filtername=null;
 function select_filtername(filtername) {
-    ajax_load_innerhtml("filter_param", "/testsearch/params/"+cur_field+"/"+filtername);
+    previous_filter = document.getElementById('filter').value;
+    if (filtername)
+        ajax_load_innerhtml("filter_param", "/testsearch/params/"+cur_field+"/"+filtername+"?previous_filter="+previous_filter);
+    else
+        document.getElementById("filter_param").innerHTML="";
+
     if (cur_filtername)
         document.getElementById("filter_"+cur_filtername).className = "";
-    document.getElementById("filter_"+filtername).className = "activeSelectionItem";
+    if (filtername)
+        document.getElementById("filter_"+filtername).className = "activeSelectionItem";
     cur_filtername = filtername;
 }
 
@@ -127,18 +140,13 @@ Type of filter:
 {{filter_from_py}}
 </div>
 
-<br>
-
-<form>
-<div style="border: 1px solid #999; padding:1ex;">
-Internal representation of filter: <input type=text id="filter" name="filter" value="{{strfilter}}">
-</div>
-
 <div id=submitbar>
+<form id="search_form">
+<div style="text-align:left;">Internal representation of filter:</div>
+<input type=text id="filter" name="filter" value="{{strfilter}}">
 <input type=submit value="Launch search">
-</div>
 <input type=hidden name=runfilter value=1>
-
 </form>
+</div>
 
 {% endblock %}

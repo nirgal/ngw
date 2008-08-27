@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import pprint
+import urllib2
 from django.http import *
 from django.utils.safestring import mark_safe
 from ngw.gp.views import *
@@ -108,7 +109,31 @@ class FilterLexer(object):
 
 
 def filter_parse_expression(lexer):
-    lexem = lexer.next()
+    try:
+        lexem = lexer.next()
+    except StopIteration:
+        return EmptyBoundFilter()
+
+    if lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"and":
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.LPARENTHESIS:
+            raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected '('.")
+
+        subfilter1 = filter_parse_expression(lexer)
+
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.COMMA:
+            raise (u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected ','.")
+        
+        subfilter2 = filter_parse_expression(lexer)
+
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.RPARENTHESIS:
+            raise (u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected ')'.")
+        
+        return AndBoundFilter(subfilter1, subfilter2)
+
+
     if lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"ffilter":
         lexem = lexer.next()
         if lexem.type!=FilterLexer.Lexem.Type.LPARENTHESIS:
@@ -143,7 +168,8 @@ def filter_parse_expression(lexer):
             elif lexem.type==FilterLexer.Lexem.Type.INT:
                 params.append(int(lexem.str))
                 
-        return FieldFilterCondition(field_id, field_filter_name, *params)
+        filter = Query(ContactField).get(field_id).get_filter_by_name(field_filter_name)
+        return filter.bind(*params)
 
     elif lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"nfilter":
         lexem = lexer.next()
@@ -170,11 +196,13 @@ def filter_parse_expression(lexer):
             elif lexem.type==FilterLexer.Lexem.Type.INT:
                 params.append(int(lexem.str))
                 
-        return NameFilterCondition(name_filter_name, *params)
+        #FIXME
+        return NameBoundFilter(name_filter_name, *params)
 
     else:
         raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8'))
     
+
 def filter_parse_expression_root(lexer):
     exp = filter_parse_expression(lexer)
     try:
@@ -187,10 +215,13 @@ def filter_parse_expression_root(lexer):
 
 
 def parse_filterstring(sfilter):
-    print "Parsing", sfilter
+    #print "Parsing", sfilter
     return filter_parse_expression_root(FilterLexer(sfilter).parse())
 
     
+
+
+
 
 @http_authenticate(ngw_auth, 'ngw')
 def testsearch(request):
@@ -217,7 +248,7 @@ def testsearch(request):
     args["title"] = "Contact search"
     args["objtype"] = Contact
     args["filter_from_py"] = filter.to_html()
-    args["strfilter"] = mark_safe(html.escape(strfilter))
+    args["strfilter"] = mark_safe(strfilter)
     return render_to_response('search_contact_new.html', args, RequestContext(request))
 
 
@@ -255,7 +286,7 @@ def testsearch_get_filters(request, field):
         field = Query(ContactField).get(field_id)
         body += u"Add a filter for field of type "+field.human_type_id+u" : "
             
-        body += format_link_list([ (u"javascript:select_filtername('"+internal_name+u"')", no_br(internal_name), u"filter_"+internal_name) for (internal_name, filter_function, filter_as_html_function, return_type, parameter_types) in field.filters_info ])
+        body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in field.get_filters() ])
 
     elif field.startswith(u"group_"):
         group_id = int(field[len(u"group_"):])
@@ -273,18 +304,17 @@ def testsearch_get_params(request, field, filtername):
     if not request.user.is_admin():
         return unauthorized(request)
     
+    previous_filter = request.GET.get("previous_filter", u"")
+
     if not field.startswith(u"field_"):
         return HttpResponse(u"ERROR: field "+field+" not supported")
     field_id = int(field[len(u"field_"):])
 
     field = Query(ContactField).get(field_id)
-    filter_info = [ filter_info for filter_info in field.filters_info if filter_info[0]==filtername][0]
-    internal_name, filter_function, filter_as_html_function, return_type, parameter_types = filter_info
+    filter = field.get_filter_by_name(filtername)
+    parameter_types = filter.get_param_types()
 
     body = u""
-    #body += u"Parameter for field "+ field.human_type_id + " and filter "+filtername+u": "+html.escape(pprint.pformat(parameter_types))+u"<br>"
-    for i, param_type in enumerate(parameter_types):
-        body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
 
     js = u"'ffilter("
     js+= unicode(field_id)
@@ -299,8 +329,23 @@ def testsearch_get_params(request, field, filtername):
             js+=u")"
         js+=u"+'"
     js+=u")'"
-    body += u"<input type=submit onclick=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; ajax_load_innerhtml('curent_filter','/testsearch/filter_to_html?'+newfilter);\" value=\"Set filter\">\n"
-    body += u"<br clear=all>\n"
+
+    if previous_filter:
+        body += u"<form onsubmit=\"newfilter="+js+u"; newfilter='and('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter); } return false;\">\n"
+        for i, param_type in enumerate(parameter_types):
+            body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
+        body += u"<input type=submit name=1 value=\"Add and apply filter\" onclick=\"add_another_filter=false;\">\n"
+        body += u"<input type=submit name=2 value=\"Continue adding conditions\" onclick=\"add_another_filter=true;\">\n"
+        body += u"</form>\n"
+        body += u"<br clear=all>\n"
+    else:
+        body += u"<form onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter); } return false;\">\n"
+        for i, param_type in enumerate(parameter_types):
+            body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
+        body += u"<input type=submit value=\"Apply filter\" onclick=\"add_another_filter=false;\">\n"
+        body += u"<input type=submit value=\"Set filter and add another condition\" onclick=\"add_another_filter=true;\">\n"
+        body += u"</form>\n"
+        body += u"<br clear=all>\n"
     return HttpResponse(body)
 
 
@@ -310,7 +355,8 @@ def testsearch_filter_to_html(request):
     if not request.user.is_admin():
         return unauthorized(request)
  
-    # that request expect a single string as parameters/values
-    #FIXME: crashes when there's a '&' or a '='
-    strfilter = request.GET.items()[0][0]
-    return HttpResponse(parse_filterstring(strfilter).to_html())
+    strfilter = request.META['QUERY_STRING'] or u""
+    strfilter = urllib2.unquote(strfilter)
+    strfilter = unicode(strfilter, 'utf8')
+    filter = parse_filterstring(strfilter)
+    return HttpResponse(filter.to_html())

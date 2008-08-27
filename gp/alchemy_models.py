@@ -496,7 +496,6 @@ def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     cls.db_type_id = db_type_id
     cls.human_type_id = human_type_id
     cls.has_choice = has_choice
-    cls.filters_info = []
     return cls
 def get_contact_field_type_by_dbid(db_type_id):
     for cls in CONTACT_FIELD_TYPES_CLASSES:
@@ -540,32 +539,30 @@ class ContactField(NgwModel):
     def validate_unicode_value(cls, value, choice_group_id=None):
         return True
 
-    @classmethod
-    def register_filter(cls, internal_name, filter_function, filter_as_html_function, return_type, parameter_types):
-        cls.filters_info.append([internal_name, filter_function, filter_as_html_function, return_type, parameter_types])
 
-    def sqlfilter_notnull(self, query, *args):
-        return FilterCondition.apply_where_to_query(query, 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', field_id=self.id)
-    def sqlfilter_notnull_to_html(self, *args):
-        return self.name+" NOT NULL"
+    def get_filters_classes(self):
+        return (FieldFilterNull, FieldFilterNotNull,)
 
-    def sqlfilter_startswith(self, query, *args):
-        value = args[0]
-        return FilterCondition.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value2)s', field_id=self.id, value1=value+"%", value2="% "+value+"%")
-    def sqlfilter_startswith_to_html(self, *args):
-        return self.name+" Starts with "+args[0]
+    def get_filters(self):
+        return [ cls(self.id) for cls in self.get_filters_classes() ]
+
+    def get_filter_by_name(self, name):
+        return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
+
 
 
 class TextContactField(ContactField):
     def get_form_fields(self):
         return forms.CharField(max_length=255, required=False, help_text=self.hint)
+    def get_filters_classes(self):
+        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
-TextContactField.register_filter(u"notnull", ContactField.sqlfilter_notnull, ContactField.sqlfilter_notnull_to_html, bool, ())
-TextContactField.register_filter(u"startswith", ContactField.sqlfilter_startswith, ContactField.sqlfilter_startswith_to_html, bool, (unicode,))
 
 class LongTextContactField(ContactField):
     def get_form_fields(self):
         return forms.CharField(widget=forms.Textarea, required=False, help_text=self.hint)
+    def get_filters_classes(self):
+        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(LongTextContactField, u"LONGTEXT", u"Long Text", has_choice=False)
 
 class NumberContactField(ContactField):
@@ -590,6 +587,8 @@ class DateContactField(ContactField):
         except ValueError:
             return False
         return True
+    def get_filters_classes(self):
+        return (FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False)
 
 class EmailContactField(ContactField):
@@ -693,9 +692,165 @@ register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_
 
 
 
-class FilterCondition(object):
+
+class Filter(object):
     """
-    This is a full condition with both function and arguments
+    This is a generic filter that must be given arguments before being applied.
+    Exemple: "profession startswith"
+    Filters should define 3 methods:
+        apply_filter_to_query(query, ...)
+        to_html(...)
+        get_param_types()
+    """
+    def bind(self, *args):
+        return BoundFilter(self, *args)
+
+
+class NameFilterStartsWith(Filter):
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, 'contact.name ILIKE %(value_name1)s OR contact.name ILIKE %(value_name2)s', value_name1=value+"%", value_name2="% "+value+"%")
+    def to_html(self, value):
+        return "<b>Name</b> words starts with \""+value+"\"."
+
+    def get_param_types(self):
+        return (unicode,)
+NameFilterStartsWith.internal_name="startswith"
+NameFilterStartsWith.human_name=u"has a word starting with"
+
+
+class FieldFilterStartsWith(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value2)s', field_id=self.field_id, value1=value+"%", value2="% "+value+"%")
+
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+" starts with "+value
+
+    def get_param_types(self):
+        return (unicode,)
+FieldFilterStartsWith.internal_name="startswith"
+FieldFilterStartsWith.human_name=u"has a word starting with"
+
+
+class FieldFilterEQ(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name+u" "+value
+    def get_param_types(self):
+        return (unicode,)
+FieldFilterEQ.internal_name="eq"
+FieldFilterEQ.human_name=u"="
+
+    
+class FieldFilterNEQ(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name+u" "+value
+    def get_param_types(self):
+        return (unicode,)
+FieldFilterNEQ.internal_name="neq"
+FieldFilterNEQ.human_name=u"≠"
+
+    
+class FieldFilterLE(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name+u" "+value
+    def get_param_types(self):
+        return (unicode,)
+FieldFilterLE.internal_name="le"
+FieldFilterLE.human_name=u"≤"
+
+    
+class FieldFilterGE(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name+u" "+value
+    def get_param_types(self):
+        return (unicode,)
+FieldFilterGE.internal_name="ge"
+FieldFilterGE.human_name=u"≥"
+
+    
+class FieldFilterLIKE(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name+u" "+value
+    def get_param_types(self):
+        return (unicode,)
+FieldFilterGE.internal_name="like"
+FieldFilterGE.human_name=u"SQL LIKE"
+
+    
+class FieldFilterILIKE(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name+u" "+value
+    def get_param_types(self):
+        return (unicode,)
+FieldFilterGE.internal_name="ilike"
+FieldFilterGE.human_name=u"SQL ILIKE"
+
+    
+class FieldFilterNull(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query):
+        return BoundFilter.apply_where_to_query(query, 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', field_id=self.field_id)
+    def to_html(self):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name
+    def get_param_types(self):
+        return ()
+FieldFilterNull.internal_name="null"
+FieldFilterNull.human_name=u"is undefined"
+
+    
+class FieldFilterNotNull(Filter):
+    def __init__(self, field_id):
+        self.field_id = field_id
+    def apply_filter_to_query(self, query):
+        return BoundFilter.apply_where_to_query(query, 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', field_id=self.field_id)
+    def to_html(self):
+        field = Query(ContactField).get(self.field_id)
+        return field.name+u" "+self.__class__.human_name
+    def get_param_types(self):
+        return ()
+FieldFilterNotNull.internal_name="notnull"
+FieldFilterNotNull.human_name=u"is defined"
+
+    
+    
+class BoundFilter(object):
+    """
+    This is a full contact filter with both function and arguments
     """
     @staticmethod
     def apply_where_to_query(query, where, **kargs):
@@ -716,58 +871,34 @@ class FilterCondition(object):
         where = where % params_where
         return query.filter(where).params(params_sql)
 
-    def apply_filter_to_query(self, query):
-        raise StandardError(u"Abstract method called.")
-
-    def to_html(self):
-        raise StandardError(u"Abstract method called.")
-
-
-class NameFilterCondition(FilterCondition):
-    def __init__(self, filter_name, *args):
-        self.filter_name = filter_name
+    def __init__(self, filter, *args):
+        self.filter = filter
         self.args = args
 
+    def __repr__(self):
+        return "BoundFilter<" + \
+            ",".join([repr(self.filter)]+[repr(arg) for arg in self.args]) \
+            +">"
     def apply_filter_to_query(self, query):
-        filter = getattr(self, "sqlfilter_"+self.filter_name)
-        query = filter(query, *self.args)
-        return query
+        return self.filter.apply_filter_to_query(query, *self.args)
 
     def to_html(self):
-        filter_to_html = getattr(self, "sqlfilter_"+self.filter_name+"_to_html")
-        return filter_to_html(*self.args)
+        return self.filter.to_html(*self.args)
 
-    def sqlfilter_startswith(self, query, *args):
-        value = args[0]
-        return FilterCondition.apply_where_to_query(query, 'contact.name ILIKE %(value_name1)s OR contact.name ILIKE %(value_name2)s', value_name1=value+"%", value_name2="% "+value+"%")
-    def sqlfilter_startswith_to_html(self, *args):
-        return "name words starts with \""+args[0]+"\"."
-    sqlfilter_notnull_params = (unicode)
-
-
-class FieldFilterCondition(FilterCondition):
-    def __init__(self, field_id, filter_name, *args):
-        self.field_id = field_id
-        self.filter_name = filter_name
-        self.args = args
-
+class EmptyBoundFilter(object):
     def apply_filter_to_query(self, query):
-        cf = Query(ContactField).get(self.field_id)
-        filter = getattr(cf, "sqlfilter_"+self.filter_name)
-        query = filter(query, *self.args)
         return query
-
     def to_html(self):
-        cf = Query(ContactField).get(self.field_id)
-        filter_to_html = getattr(cf, "sqlfilter_"+self.filter_name+"_to_html")
-        return filter_to_html(*self.args)
+        return u"All contacts"
 
-    #@staticmethod
-    #def get_filters_info(field_id):
-    #    cf = Query(ContactField).get(self.field_id)
-    #    return cf.filters_info
-        
-
+class AndBoundFilter(object):
+    def __init__(self, f1, f2):
+        self.f1 = f1
+        self.f2 = f2
+    def apply_filter_to_query(self, query):
+        return self.f2.apply_filter_to_query(self.f1.apply_filter_to_query(query))
+    def to_html(self):
+        return self.f1.to_html() + "<br> AND <br>" + self.f2.to_html()
 
 
 
