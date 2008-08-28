@@ -555,19 +555,21 @@ class TextContactField(ContactField):
     def get_form_fields(self):
         return forms.CharField(max_length=255, required=False, help_text=self.hint)
     def get_filters_classes(self):
-        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterNull, FieldFilterNotNull,)
+        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
 
 class LongTextContactField(ContactField):
     def get_form_fields(self):
         return forms.CharField(widget=forms.Textarea, required=False, help_text=self.hint)
     def get_filters_classes(self):
-        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterNull, FieldFilterNotNull,)
+        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(LongTextContactField, u"LONGTEXT", u"Long Text", has_choice=False)
 
 class NumberContactField(ContactField):
     def get_form_fields(self):
         return forms.IntegerField(required=False, help_text=self.hint)
+    def get_filters_classes(self):
+        return (FieldFilterEQ, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterNull, FieldFilterNotNull,)
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -588,7 +590,7 @@ class DateContactField(ContactField):
             return False
         return True
     def get_filters_classes(self):
-        return (FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterNull, FieldFilterNotNull,)
+        return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE,  FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False)
 
 class EmailContactField(ContactField):
@@ -603,6 +605,8 @@ class EmailContactField(ContactField):
         except forms.ValidationError:
             return False
         return True
+    def get_filters_classes(self):
+        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(EmailContactField, u"EMAIL", u"E.Mail", has_choice=False)
 
 class PhoneContactField(ContactField):
@@ -610,6 +614,8 @@ class PhoneContactField(ContactField):
         return u'<a href="tel:%(value)s">%(value)s</a>' % {'value':value} # rfc3966
     def get_form_fields(self):
         return forms.CharField(max_length=255, required=False, help_text=self.hint)
+    def get_filters_classes(self):
+        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(PhoneContactField, u"PHONE", u"Phone", has_choice=False)
 
 class RibContactField(ContactField):
@@ -622,6 +628,8 @@ class RibContactField(ContactField):
         except forms.ValidationError:
             return False
         return True
+    def get_filters_classes(self):
+        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(RibContactField, u"RIB", u"French bank account", has_choice=False)
 
 class ChoiceContactField(ContactField):
@@ -641,6 +649,9 @@ class ChoiceContactField(ContactField):
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         return Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==value).count() == 1
+    def get_filters_classes(self):
+        return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterNull, FieldFilterNotNull,)
+
 register_contact_field_type(ChoiceContactField, u"CHOICE", u"Choice", has_choice=True)
 
 class MultipleChoiceContactField(ContactField):
@@ -673,6 +684,8 @@ class MultipleChoiceContactField(ContactField):
             if Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==v).count() != 1:
                 return False
         return True
+    def get_filters_classes(self):
+        return (FieldFilterMultiChoiceHAS, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(MultipleChoiceContactField, u"MULTIPLECHOICE", u"Multiple choice", has_choice=True)
 
 class PasswordContactField(ContactField):
@@ -689,6 +702,20 @@ class PasswordContactField(ContactField):
         return len(value)==13 #TODO
 register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_choice=False)
 
+class ContactNameMetaField(object):
+    @classmethod
+    def get_filters_classes(cls):
+        return (NameFilterStartsWith, )
+
+    @classmethod
+    def get_filters(cls):
+        return [ filter() for filter in cls.get_filters_classes() ]
+
+    @classmethod
+    def get_filter_by_name(cls, name):
+        return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
+
+    
 
 
 
@@ -727,13 +754,13 @@ class FieldFilterOp0(FieldFilter):
     """ Helper abstract class for field filters that takes not parameter """
     def to_html(self):
         field = Query(ContactField).get(self.field_id)
-        return field.name+u" "+self.__class__.human_name
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name
 
 class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
-        return field.name+u" "+self.__class__.human_name+u" "+value
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+unicode(value)
 
 
 class FieldFilterStartsWith(FieldFilterOp1):
@@ -786,8 +813,8 @@ class FieldFilterLIKE(FieldFilterOp1):
         return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', field_id=self.field_id, value=value)
     def get_param_types(self):
         return (unicode,)
-FieldFilterGE.internal_name="like"
-FieldFilterGE.human_name=u"SQL LIKE"
+FieldFilterLIKE.internal_name="like"
+FieldFilterLIKE.human_name=u"SQL LIKE"
 
     
 class FieldFilterILIKE(FieldFilterOp1):
@@ -795,8 +822,8 @@ class FieldFilterILIKE(FieldFilterOp1):
         return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', field_id=self.field_id, value=value)
     def get_param_types(self):
         return (unicode,)
-FieldFilterGE.internal_name="ilike"
-FieldFilterGE.human_name=u"SQL ILIKE"
+FieldFilterILIKE.internal_name="ilike"
+FieldFilterILIKE.human_name=u"SQL ILIKE"
 
     
 class FieldFilterNull(FieldFilterOp0):
@@ -826,13 +853,13 @@ FieldFilterIEQ.internal_name="ieq"
 FieldFilterIEQ.human_name=u"="
 
     
-class FieldFilterINEQ(FieldFilterOp1):
+class FieldFilterINE(FieldFilterOp1):
     def apply_filter_to_query(self, query, value):
         return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', field_id=self.field_id, value=int(value))
     def get_param_types(self):
         return (int,)
-FieldFilterINEQ.internal_name="ineq"
-FieldFilterINEQ.human_name=u"≠"
+FieldFilterINE.internal_name="ineq"
+FieldFilterINE.human_name=u"≠"
 
     
 class FieldFilterIEQ(FieldFilterOp1):
@@ -895,18 +922,77 @@ class FieldFilterVALID_GT(FieldFilterOp1):
     def get_param_types(self):
         return (int,)
 FieldFilterVALID_GT.internal_name="validitygt"
-FieldFilterVALID_GT.human_name=u"≥"
+FieldFilterVALID_GT.human_name=u"date until event ≥"
 
     
-class FieldFilterFUTURE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', field_id=self.field_id, value=int(value))
+class FieldFilterFUTURE(FieldFilterOp0):
+    def apply_filter_to_query(self, query):
+        return BoundFilter.apply_where_to_query(query, 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', field_id=self.field_id)
     def get_param_types(self):
-        return (int,)
+        return ()
 FieldFilterFUTURE.internal_name="future"
 FieldFilterFUTURE.human_name=u"In the future"
 
     
+class FieldFilterChoiceEQ(FieldFilterOp1):
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        cfv = Query(Choice).get((field.choice_group_id, value))
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+html.escape(cfv.value)
+    def get_param_types(self):
+        field = Query(ContactField).get(self.field_id)
+        return (field.choice_group,)
+FieldFilterChoiceEQ.internal_name="ceq"
+FieldFilterChoiceEQ.human_name=u"="
+
+
+class FieldFilterChoiceNEQ(FieldFilterOp1):
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', field_id=self.field_id, value=value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        cfv = Query(Choice).get((field.choice_group_id, value))
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+html.escape(cfv.value)
+    def get_param_types(self):
+        field = Query(ContactField).get(self.field_id)
+        return (field.choice_group,)
+FieldFilterChoiceNEQ.internal_name="cneq"
+FieldFilterChoiceNEQ.human_name=u"≠"
+
+    
+class FieldFilterMultiChoiceHAS(FieldFilterOp1):
+    def apply_filter_to_query(self, query, value):
+        return BoundFilter.apply_where_to_query(query, 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', field_id=self.field_id, value=value, valuestart=value+",%", valuemiddle="%,"+value+",%", valueend="%,"+value)
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        cfv = Query(Choice).get((field.choice_group_id, value))
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+html.escape(cfv.value)
+    def get_param_types(self):
+        field = Query(ContactField).get(self.field_id)
+        return (field.choice_group,)
+FieldFilterMultiChoiceHAS.internal_name="mchas"
+FieldFilterMultiChoiceHAS.human_name=u"contains"
+
+
+
+class GroupFilterIsMember(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+    def apply_filter_to_query(self, query):
+        return BoundFilter.apply_where_to_query(query, 'contact.name ILIKE %(value_name1)s OR contact.name ILIKE %(value_name2)s', value_name1=value+"%", value_name2="% "+value+"%")
+    def to_html(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return "member of group \""+group+"\"."
+
+    def get_param_types(self):
+        return ()
+GroupFilterIsMember.internal_name="memberof"
+GroupFilterIsMember.human_name=u"is member of group"
+
+    
+GROUP_FILTERS=(GroupFilterIsMember,)
     
 class BoundFilter(object):
     """

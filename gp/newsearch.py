@@ -196,8 +196,8 @@ def filter_parse_expression(lexer):
             elif lexem.type==FilterLexer.Lexem.Type.INT:
                 params.append(int(lexem.str))
                 
-        #FIXME
-        return NameBoundFilter(name_filter_name, *params)
+        filter = ContactNameMetaField.get_filter_by_name(name_filter_name)
+        return filter.bind(*params)
 
     else:
         raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8'))
@@ -247,7 +247,7 @@ def testsearch(request):
     args={}
     args["title"] = "Contact search"
     args["objtype"] = Contact
-    args["filter_from_py"] = filter.to_html()
+    args["filter_from_py"] = mark_safe(filter.to_html())
     args["strfilter"] = mark_safe(strfilter)
     return render_to_response('search_contact_new.html', args, RequestContext(request))
 
@@ -279,19 +279,20 @@ def testsearch_get_filters(request, field):
     
     body = u""
     if field == u"name":
-        body+=u"testsearch_get_filters NOT IMPLEMENTED for field=name"
+        body += u"Add a filter for name : "
+        body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in ContactNameMetaField.get_filters() ])
 
     elif field.startswith(u"field_"):
         field_id = int(field[len(u"field_"):])
         field = Query(ContactField).get(field_id)
         body += u"Add a filter for field of type "+field.human_type_id+u" : "
-            
         body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in field.get_filters() ])
 
     elif field.startswith(u"group_"):
         group_id = int(field[len(u"group_"):])
         group = Query(ContactGroup).get(group_id)
-        body+=u"testsearch_get_filters NOT IMPLEMENTED for field="+field
+        body += u"Add a filter for group/event : "
+        body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in GROUP_FILTERS ])
 
     else:
         body+=u"ERROR in get_filters: field=="+field
@@ -306,42 +307,66 @@ def testsearch_get_params(request, field, filtername):
     
     previous_filter = request.GET.get("previous_filter", u"")
 
-    if not field.startswith(u"field_"):
-        return HttpResponse(u"ERROR: field "+field+" not supported")
-    field_id = int(field[len(u"field_"):])
+    if field == u"name":
+        filter = ContactNameMetaField.get_filter_by_name(filtername)
+        filter_internal_beginin=u"nfilter("
 
-    field = Query(ContactField).get(field_id)
-    filter = field.get_filter_by_name(filtername)
+    elif field.startswith(u"field_"):
+        field_id = int(field[len(u"field_"):])
+        field = Query(ContactField).get(field_id)
+        filter = field.get_filter_by_name(filtername)
+        filter_internal_beginin=u"ffilter("+unicode(field_id)+u","
+
+    else:
+        return HttpResponse(u"ERROR: field "+field+" not supported")
+
     parameter_types = filter.get_param_types()
 
     body = u""
 
-    js = u"'ffilter("
-    js+= unicode(field_id)
-    js+= u","
+    js = u"'"+filter_internal_beginin
     js+= filtername
     for i, param_type in enumerate(parameter_types):
         js+=u",'+"
         if param_type==unicode:
-            js+=u"escape_quote("
-        js+=u"document.getElementById('filter_param_"+unicode(i)+u"').value"
-        if param_type==unicode:
-            js+=u")"
+            js += u"escape_quote(document.getElementById('filter_param_"+unicode(i)+u"').value)"
+        elif param_type==int:
+            js+=u"document.getElementById('filter_param_"+unicode(i)+u"').value"
+        elif isinstance(param_type, ChoiceGroup):
+            js+=u"escape_quote(document.getElementById('filter_param_"+unicode(i)+u"').options[document.getElementById('filter_param_"+unicode(i)+u"').selectedIndex].value)"
+        else:
+            raise Exception(u"Unsupported filter parameter of type "+unicode(param_type))
         js+=u"+'"
     js+=u")'"
 
     if previous_filter:
         body += u"<form onsubmit=\"newfilter="+js+u"; newfilter='and('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
-            body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
-        body += u"<input type=submit name=1 value=\"Add and apply filter\" onclick=\"add_another_filter=false;\">\n"
-        body += u"<input type=submit name=2 value=\"Continue adding conditions\" onclick=\"add_another_filter=true;\">\n"
+            if param_type in (unicode, int):
+                body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
+            elif isinstance(param_type, ChoiceGroup):
+                body += u"<select id=\"filter_param_"+unicode(i)+u"\">\n"
+                for choice_key, choice_value in param_type.ordered_choices:
+                    body += "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)}
+                body += u"</select>\n"
+            else:
+                raise Exception(u"Unsupported filter parameter of type "+unicode(param_type))
+        body += u"<input type=submit value=\"Add and apply filter\" onclick=\"add_another_filter=false;\">\n"
+        body += u"<input type=submit value=\"Continue adding conditions\" onclick=\"add_another_filter=true;\">\n"
         body += u"</form>\n"
         body += u"<br clear=all>\n"
     else:
         body += u"<form onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
-            body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
+            if param_type in (unicode, int):
+                body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
+            elif isinstance(param_type, ChoiceGroup):
+                body += u"<select id=\"filter_param_"+unicode(i)+u"\">\n"
+                for choice_key, choice_value in param_type.ordered_choices:
+                    body += "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)}
+                body += u"</select>\n"
+            else:
+                raise Exception(u"Unsupported filter parameter of type "+unicode(param_type))
         body += u"<input type=submit value=\"Apply filter\" onclick=\"add_another_filter=false;\">\n"
         body += u"<input type=submit value=\"Set filter and add another condition\" onclick=\"add_another_filter=true;\">\n"
         body += u"</form>\n"
@@ -355,7 +380,7 @@ def testsearch_filter_to_html(request):
     if not request.user.is_admin():
         return unauthorized(request)
  
-    strfilter = request.META['QUERY_STRING'] or u""
+    strfilter = request.META['QUERY_STRING'] or ""
     strfilter = urllib2.unquote(strfilter)
     strfilter = unicode(strfilter, 'utf8')
     filter = parse_filterstring(strfilter)

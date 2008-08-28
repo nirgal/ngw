@@ -148,5 +148,9 @@ Type of filter:
 <input type=hidden name=runfilter value=1>
 </form>
 </div>
+<script>
+newfilter=document.getElementById('filter').value;
+ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter);
+</script>
 
 {% endblock %}

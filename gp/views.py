@@ -217,7 +217,7 @@ def test(request):
     return render_to_response("test.html", args, RequestContext(request))
 
 def logout(request):
-    if os.environ['HTTPS']:
+    if os.environ.has_key('HTTPS'):
         scheme = "https"
     else:
         scheme = "http"
