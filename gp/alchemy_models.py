@@ -420,6 +420,14 @@ class ContactGroup(NgwModel):
             f.write("Require group %i\n" % self.id)
             f.close()
 
+    def get_filters_classes(self):
+        return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, )
+
+    def get_filters(self):
+        return [ cls(self.id) for cls in self.get_filters_classes() ]
+
+    def get_filter_by_name(self, name):
+        return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
 
 ########################################
 # Contact Fields
@@ -702,6 +710,7 @@ class PasswordContactField(ContactField):
         return len(value)==13 #TODO
 register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_choice=False)
 
+
 class ContactNameMetaField(object):
     @classmethod
     def get_filters_classes(cls):
@@ -716,8 +725,6 @@ class ContactNameMetaField(object):
         return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
 
     
-
-
 
 
 class Filter(object):
@@ -981,18 +988,62 @@ class GroupFilterIsMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def apply_filter_to_query(self, query):
-        return BoundFilter.apply_where_to_query(query, 'contact.name ILIKE %(value_name1)s OR contact.name ILIKE %(value_name2)s', value_name1=value+"%", value_name2="% "+value+"%")
+        group = Query(ContactGroup).get(self.group_id)
+        return BoundFilter.apply_where_to_query(query, 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
-        return "member of group \""+group+"\"."
-
+        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name="memberof"
 GroupFilterIsMember.human_name=u"is member of group"
 
     
-GROUP_FILTERS=(GroupFilterIsMember,)
+class GroupFilterIsInvited(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+    def apply_filter_to_query(self, query):
+        group = Query(ContactGroup).get(self.group_id)
+        return BoundFilter.apply_where_to_query(query, 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
+    def to_html(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
+    def get_param_types(self):
+        return ()
+GroupFilterIsInvited.internal_name="ginvited"
+GroupFilterIsInvited.human_name=u"has been invited in group"
+
+    
+class GroupFilterIsNotMember(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+    def apply_filter_to_query(self, query):
+        group = Query(ContactGroup).get(self.group_id)
+        return BoundFilter.apply_where_to_query(query, 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
+    def to_html(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
+    def get_param_types(self):
+        return ()
+GroupFilterIsNotMember.internal_name="notmemberof"
+GroupFilterIsNotMember.human_name=u"is not member of group"
+
+    
+class GroupFilterIsNotInvited(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+    def apply_filter_to_query(self, query):
+        group = Query(ContactGroup).get(self.group_id)
+        return BoundFilter.apply_where_to_query(query, 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
+    def to_html(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
+    def get_param_types(self):
+        return ()
+GroupFilterIsNotInvited.internal_name="ginvited"
+GroupFilterIsNotInvited.human_name=u"has not been invited in group"
+
+    
     
 class BoundFilter(object):
     """

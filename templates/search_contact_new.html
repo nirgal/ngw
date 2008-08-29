@@ -95,13 +95,12 @@ function select_filtername(filtername) {
     cur_filtername = filtername;
 }
 
-/*
 function set_filter(newfilter) {
     document.getElementById('filter').value=newfilter;
     ajax_load_innerhtml('curent_filter','/testsearch/filter_to_html?'+newfilter);
-}*/
-
+}
 </script>
+
 <style>
 .activeSelectionItem {
     font-size:140%;
@@ -133,20 +132,17 @@ Type of filter:
 </div>
 
 
-
-
 <h1 class="boxheader">Current filter</h1>
-<div id="curent_filter" style="border: 1px solid #999; padding:1ex;">
-{{filter_from_py}}
-</div>
-
 <div id=submitbar>
-<form id="search_form">
-<div style="text-align:left;">Internal representation of filter:</div>
-<input type=text id="filter" name="filter" value="{{strfilter}}">
-<input type=submit value="Launch search">
-<input type=hidden name=runfilter value=1>
-</form>
+    <div id="curent_filter" style="text-align:left;">
+    </div>
+    <form id="search_form">
+    <div style="text-align:left; display:none;">Internal representation of filter:</div>
+    <input type=hidden id="filter" name="filter" value="{{strfilter}}">
+    <input type=submit value="Launch search" id=default>
+    <input type=hidden name=runfilter value=1>
+    <a href="javascript:set_filter('')">Reset filter</a>
+    </form>
 </div>
 <script>
 newfilter=document.getElementById('filter').value;

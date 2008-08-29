@@ -171,6 +171,43 @@ def filter_parse_expression(lexer):
         filter = Query(ContactField).get(field_id).get_filter_by_name(field_filter_name)
         return filter.bind(*params)
 
+    elif lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"gfilter":
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.LPARENTHESIS:
+            raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected '('.")
+
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.INT:
+            raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected INT.")
+        group_id = int(lexem.str)
+
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.COMMA:
+            raise (u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected ','.")
+        
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.WORD:
+            raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected word.")
+        group_filter_name = lexem.str
+
+        params = [ ]
+
+        while 1:
+            lexem = lexer.next()
+            if lexem.type==FilterLexer.Lexem.Type.RPARENTHESIS:
+                break
+            if lexem.type!=FilterLexer.Lexem.Type.COMMA:
+                raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected ','.")
+
+            lexem = lexer.next()
+            if lexem.type==FilterLexer.Lexem.Type.STRING:
+                params.append(lexem.str)
+            elif lexem.type==FilterLexer.Lexem.Type.INT:
+                params.append(int(lexem.str))
+                
+        filter = Query(ContactGroup).get(group_id).get_filter_by_name(group_filter_name)
+        return filter.bind(*params)
+
     elif lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"nfilter":
         lexem = lexer.next()
         if lexem.type!=FilterLexer.Lexem.Type.LPARENTHESIS:
@@ -247,7 +284,6 @@ def testsearch(request):
     args={}
     args["title"] = "Contact search"
     args["objtype"] = Contact
-    args["filter_from_py"] = mark_safe(filter.to_html())
     args["strfilter"] = mark_safe(strfilter)
     return render_to_response('search_contact_new.html', args, RequestContext(request))
 
@@ -292,7 +328,7 @@ def testsearch_get_filters(request, field):
         group_id = int(field[len(u"group_"):])
         group = Query(ContactGroup).get(group_id)
         body += u"Add a filter for group/event : "
-        body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in GROUP_FILTERS ])
+        body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in group.get_filters() ])
 
     else:
         body+=u"ERROR in get_filters: field=="+field
@@ -316,6 +352,12 @@ def testsearch_get_params(request, field, filtername):
         field = Query(ContactField).get(field_id)
         filter = field.get_filter_by_name(filtername)
         filter_internal_beginin=u"ffilter("+unicode(field_id)+u","
+
+    elif field.startswith(u"group_"):
+        group_id = int(field[len(u"group_"):])
+        group = Query(ContactGroup).get(group_id)
+        filter = group.get_filter_by_name(filtername)
+        filter_internal_beginin=u"gfilter("+unicode(group_id)+u","
 
     else:
         return HttpResponse(u"ERROR: field "+field+" not supported")
