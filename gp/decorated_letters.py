@@ -3,7 +3,7 @@
 #TODO: æĳœ
 
 # for range \u00c0 \u0179
-letter_to_alternatives={
+letter_to_alternatives_lower={
     u'a': u'àáâãäåāăą',
     u'c': u'çćĉċč',
     u'd': u'ďđ',
@@ -25,14 +25,19 @@ letter_to_alternatives={
     u'z': u'źżž',
 }
 
-# lower case version only, for now
+letter_to_alternatives={}
+for letter,alternatives in letter_to_alternatives_lower.iteritems():
+    letter_to_alternatives[letter] = alternatives
+    letter_to_alternatives[letter.upper()] = alternatives.upper()
+
+
 alternative_to_letter = {}
-for letter,alternatives in letter_to_alternatives.iteritems():
+for letter,alternatives in letter_to_alternatives_lower.iteritems():
     for alternative in alternatives:
         alternative_to_letter[alternative] = letter
+        alternative_to_letter[alternative.upper()] = letter.upper()
 
 def remove_decoration(utxt):
-    # TODO: support upper_cases
     result = u""
     for l in utxt:
         if l in alternative_to_letter:
@@ -40,3 +45,16 @@ def remove_decoration(utxt):
         ord(l) < 128
         result += l
     return result
+
+def str_match_withdecoration(txt):
+    result=u""
+    for c in txt:
+        c = c.lower()
+        if c in alternative_to_letter.keys():
+            c = alternative_to_letter[c]
+        if c in letter_to_alternatives.keys():
+            result += u"["+c+letter_to_alternatives[c]+c.upper()+letter_to_alternatives[c.upper()]+u"]"
+        else:
+            result += c
+    return result
+
