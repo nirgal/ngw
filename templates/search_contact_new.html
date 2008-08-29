@@ -61,7 +61,7 @@ var add_another_filter=false;
 
 function select_grouptype(type) {
     select_field(null);
-    ajax_load_innerhtml("list_field", "/testsearch/fields/"+type);
+    ajax_load_innerhtml("list_field", "/contacts/search/fields/"+type);
     if (cur_grouptype)
         document.getElementById("filter_group_"+cur_grouptype).className = "";
     document.getElementById("filter_group_"+type).className = "activeSelectionItem";
@@ -71,7 +71,7 @@ function select_grouptype(type) {
 function select_field(field) {
     select_filtername(null);
     if (field)
-        ajax_load_innerhtml("list_filters", "/testsearch/filters/"+field);
+        ajax_load_innerhtml("list_filters", "/contacts/search/filters/"+field);
     else
         document.getElementById("list_filters").innerHTML="";
     if (cur_field)
@@ -84,7 +84,7 @@ function select_field(field) {
 function select_filtername(filtername) {
     previous_filter = document.getElementById('filter').value;
     if (filtername)
-        ajax_load_innerhtml("filter_param", "/testsearch/params/"+cur_field+"/"+filtername+"?previous_filter="+previous_filter);
+        ajax_load_innerhtml("filter_param", "/contacts/search/params/"+cur_field+"/"+filtername+"?previous_filter="+previous_filter);
     else
         document.getElementById("filter_param").innerHTML="";
 
@@ -97,7 +97,7 @@ function select_filtername(filtername) {
 
 function set_filter(newfilter) {
     document.getElementById('filter').value=newfilter;
-    ajax_load_innerhtml('curent_filter','/testsearch/filter_to_html?'+newfilter);
+    ajax_load_innerhtml('curent_filter','/contacts/search/filter_to_html?'+newfilter);
 }
 </script>
 
@@ -146,7 +146,7 @@ Type of filter:
 </div>
 <script>
 newfilter=document.getElementById('filter').value;
-ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter);
+ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter);
 </script>
 
 {% endblock %}

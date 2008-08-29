@@ -8,12 +8,12 @@ Welcome {{ user }}!
 <br>There are {{ ncontacts }} contacts in the database.
 
 <p>
-<form action="/contacts/search">
-<input type=hidden name=name value=on>
-<input type=hidden name="_op_name" value=NAME>
-Quick contact search: <input name=_val_name id=defaultfocus>
+{%comment%}TODO: quoteescape {%endcomment%}
+<form id=realform action="/contacts/search"><input type=hidden name=filter value=""><input type=hidden name=runfilter value=1></form>
+<form id=displayedform action="#" onsubmit="javascript:document.forms['realform']['filter'].value='nfilter(startswith,\''+document.forms['displayedform']['filter'].value+'\')'; document.forms['realform'].submit(); return false;">
+Quick contact search: <input name=filter id=defaultfocus>
 </form>
-<script>document.forms[0]._val_name.focus();</script>
+<script>document.forms['displayedform'].filter.focus();</script>
 </div>
 {% endif %}
 
@@ -31,6 +31,8 @@ Quick contact search: <input name=_val_name id=defaultfocus>
 {% if user.is_admin %}
 <h1 class="boxheader">Derniers développements</h1>
 <div style="border: 1px solid #999; padding:1ex;">
+<b>Coming soon...</b><br>
+Nouveau système de recherche de contacts.<br>
 <b>Jeudi 21 août</b><br>
 Les groupes peuvent maintenant contenir des fichiers. Leur liste est disponible sur la page du groupe. Il n'est pas encore possible d'en ajouter depuis l'interface html.<br>
 Les personnes du nouveau groupe "Utilisateur" peuvent désormais se loguer sans etre administrateur. Seuls les administrateurs sont actuellement membres de ce groupe. Il est possible de changer son identifiant ("login") depuis la page d'édition d'un contact qui est utilisateur.<br>

@@ -11,7 +11,6 @@ from django.forms.util import smart_unicode
 from itertools import chain
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
 import decorated_letters
-#import inspect
 
 GROUP_USER = 2
 GROUP_ADMIN = 8
@@ -24,7 +23,7 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
 
 dburl = sqlalchemy.engine.url.URL("postgres", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
-engine = create_engine(dburl, convert_unicode=True) #, echo=True)
+engine = create_engine(dburl, convert_unicode=True, echo=True)
 
 Session = scoped_session(sessionmaker(bind=engine, autoflush=True, transactional=True))
 meta = MetaData(engine)
@@ -1060,18 +1059,18 @@ class BoundFilter(object):
         params_sql = { }
         for k,v in kargs.iteritems():
             #print k,"=",v
+            auto_param_name=u"autoparam_"+unicode(len(query._params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
             if isinstance(v, unicode):
-                params_where[ k ] = u':'+k
-                params_sql[ k ] = v
+                params_where[ k ] = u':'+auto_param_name+k
+                params_sql[ auto_param_name+k ] = v
             elif isinstance(v, int):
                 params_where[ k ] = v
             else:
                 raise Exception(u"Unsupported type "+unicode(type(v)))
         where = where % params_where
-        print "where=", where.encode("utf8")
-        for k,v in params_sql.iteritems():
-            print '%s="%s"' % (k, v.encode("utf8"))
-        print repr(params_sql)
+        #print "where=", where.encode("utf8")
+        #for k,v in params_sql.iteritems():
+        #    print '%s="%s"' % (k, v.encode("utf8"))
         return query.filter(where).params(params_sql)
 
     def __init__(self, filter, *args):

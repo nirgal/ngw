@@ -382,7 +382,7 @@ def testsearch_get_params(request, field, filtername):
     js+=u")'"
 
     if previous_filter:
-        body += u"<form onsubmit=\"newfilter="+js+u"; newfilter='and('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter); } return false;\">\n"
+        body += u"<form onsubmit=\"newfilter="+js+u"; newfilter='and('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
                 body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
@@ -398,7 +398,7 @@ def testsearch_get_params(request, field, filtername):
         body += u"</form>\n"
         body += u"<br clear=all>\n"
     else:
-        body += u"<form onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/testsearch/filter_to_html?'+newfilter); } return false;\">\n"
+        body += u"<form onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
                 body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
