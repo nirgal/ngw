@@ -23,7 +23,7 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
 
 dburl = sqlalchemy.engine.url.URL("postgres", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
-engine = create_engine(dburl, convert_unicode=True, echo=True)
+engine = create_engine(dburl, convert_unicode=True) #, echo=True)
 
 Session = scoped_session(sessionmaker(bind=engine, autoflush=True, transactional=True))
 meta = MetaData(engine)
