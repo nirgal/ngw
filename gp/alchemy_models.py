@@ -744,7 +744,7 @@ class NameFilterStartsWith(Filter):
         value = decorated_letters.str_match_withdecoration(value.lower())
         return BoundFilter.apply_where_to_query(query, u'contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s', value_name1=u"^"+value, value_name2=u" "+value)
     def to_html(self, value):
-        return u"<b>Name</b> words starts with \""+value+"\"."
+        return u"<b>Name</b> "+self.__class__.human_name+u" \""+unicode(value)+u"\""
 
     def get_param_types(self):
         return (unicode,)
@@ -767,7 +767,7 @@ class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+unicode(value)
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+unicode(value)+u"\""
 
 
 class FieldFilterStartsWith(FieldFilterOp1):
@@ -948,7 +948,7 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+html.escape(cfv.value)
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = Query(ContactField).get(self.field_id)
         return (field.choice_group,)
@@ -962,7 +962,7 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+html.escape(cfv.value)
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = Query(ContactField).get(self.field_id)
         return (field.choice_group,)
@@ -976,7 +976,7 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "+html.escape(cfv.value)
+        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = Query(ContactField).get(self.field_id)
         return (field.choice_group,)
@@ -993,7 +993,7 @@ class GroupFilterIsMember(Filter):
         return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
-        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
+        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\""
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name="memberof"
@@ -1008,7 +1008,7 @@ class GroupFilterIsInvited(Filter):
         return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
-        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
+        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\""
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name="ginvited"

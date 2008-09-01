@@ -261,13 +261,16 @@ def parse_filterstring(sfilter):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def testsearch(request):
+def contactsearch(request):
     if not request.user.is_admin():
         return unauthorized(request)
     
-    strfilter = request.REQUEST.get('filter') or u""
+    strfilter = request.REQUEST.get('filter', u"")
     filter = parse_filterstring(strfilter)
-    
+ 
+    fields = request.REQUEST.get('fields', u"")
+    print "fields=", fields
+
     if request.GET.has_key('runfilter'):
         q, cols = contact_make_query_with_fields()
         q = filter.apply_filter_to_query(q)
@@ -276,6 +279,7 @@ def testsearch(request):
         args['objtype'] = Contact
         args['query'] = q
         args['cols'] = cols
+        args['filter_html'] = mark_safe(filter.to_html())
         params = request.META['QUERY_STRING'] or u""
         args['baseurl'] = "?"+params
         return query_print_entities(request, 'searchresult_contact.html', args)
@@ -284,12 +288,12 @@ def testsearch(request):
     args={}
     args["title"] = "Contact search"
     args["objtype"] = Contact
-    args["strfilter"] = mark_safe(strfilter)
+    args["strfilter"] = strfilter
     return render_to_response('search_contact_new.html', args, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def testsearch_get_fields(request, kind):
+def contactsearch_get_fields(request, kind):
     if not request.user.is_admin():
         return unauthorized(request)
     
@@ -309,7 +313,7 @@ def testsearch_get_fields(request, kind):
     return HttpResponse(body)
 
 @http_authenticate(ngw_auth, 'ngw')
-def testsearch_get_filters(request, field):
+def contactsearch_get_filters(request, field):
     if not request.user.is_admin():
         return unauthorized(request)
     
@@ -337,7 +341,7 @@ def testsearch_get_filters(request, field):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def testsearch_get_params(request, field, filtername):
+def contactsearch_get_params(request, field, filtername):
     if not request.user.is_admin():
         return unauthorized(request)
     
@@ -418,7 +422,7 @@ def testsearch_get_params(request, field, filtername):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def testsearch_filter_to_html(request):
+def contactsearch_filter_to_html(request):
     if not request.user.is_admin():
         return unauthorized(request)
  
