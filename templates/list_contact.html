@@ -1,5 +1,26 @@
 {% extends "list.html" %}
 
+{% block body %}
+<script src="{{MEDIA_URL}}/ngw.js"></script>
+
+<div id=filterbox class=box>
+    <form id="quickfilter_realform" action="/contacts/search">
+        <input type=hidden name=filter value="">
+        <input type=hidden name=runfilter value=1>
+    </form>
+
+    <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['quickfilter_realform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['quickfilter_realform'].submit(); return false;">
+        <img src="/media/img/admin/icon_searchbox.png" alt="Search">
+        <input name=filter id=defaultfocus style="width:auto;">
+        &nbsp;&nbsp;&nbsp;&nbsp;<a href="/contacts/search">Advanced search</a>
+    </form>
+
+    <script>document.forms['quickfilter_displayedform'].filter.focus();</script>
+</div>
+
+{{ block.super }}
+{% endblock %}
+
 {% block submitbar %}
 <div id=submitbar>
   <a id=default href="{{ objtype.get_class_absolute_url }}search"><!img src="/media/img/admin/selector-search.gif" border=0>Search</a>

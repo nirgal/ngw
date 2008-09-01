@@ -576,7 +576,7 @@ class NumberContactField(ContactField):
     def get_form_fields(self):
         return forms.IntegerField(required=False, help_text=self.hint)
     def get_filters_classes(self):
-        return (FieldFilterEQ, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterNull, FieldFilterNotNull,)
+        return (FieldFilterEQ, FieldFilterIEQ, FieldFilterINE, FieldFilterILE, FieldFilterIGE, FieldFilterILT, FieldFilterIGT, FieldFilterNull, FieldFilterNotNull,)
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -767,7 +767,12 @@ class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+unicode(value)+u"\""
+        result = u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "
+        if isinstance(value, unicode):
+            value = u'"'+value+u'"'
+        else:
+            value = unicode(value)
+        return result+value
 
 
 class FieldFilterStartsWith(FieldFilterOp1):

@@ -265,3 +265,41 @@ var SelectFilter = {
         return true;
     }
 }
+
+//--------------- Ajax
+
+ALLOW_ERROR_MESSAGE=true;
+
+function get_XMLHttpRequest() {
+    if(window.XMLHttpRequest)
+        try {
+            return new XMLHttpRequest();
+        } catch(e) {}
+    alert("ERROR: Your browser doesn't support XMLHttpRequest! Get a real browser please.");
+    return null;
+}
+
+function ajax_load_innerhtml(element_id, url) {
+    req = get_XMLHttpRequest();
+    if (!req)
+        return;
+    document.getElementById(element_id).innerHTML = "<img src='{{MEDIA_URL}}/loading.gif' align=middle> L O A D I N G . . . ";
+    req.element_id = element_id;
+    req.onreadystatechange = function () {
+        if (this.readyState == 4) {
+            if (this.status==200 || ALLOW_ERROR_MESSAGE)
+                document.getElementById(this.element_id).innerHTML = this.responseText;
+            else
+                alert("There was a problem retrieving the XML data:\n" + this.statusText);
+        }
+    };
+    req.open("GET", url, true);
+    req.send("");
+}
+
+
+function escape_quote(str) {
+/* TODO: Add \ before any \ or ' */
+    return "'"+str+"'";
+}
+

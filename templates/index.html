@@ -2,15 +2,16 @@
 
 
 {% block body %}
+<script src="{{MEDIA_URL}}/ngw.js"></script>
+
 {% if user.is_admin %}
 <div style="border: 1px solid #999; padding:1ex;">
 Welcome {{ user }}!
 <br>There are {{ ncontacts }} contacts in the database.
 
 <p>
-{%comment%}TODO: quoteescape {%endcomment%}
 <form id=realform action="/contacts/search"><input type=hidden name=filter value=""><input type=hidden name=runfilter value=1></form>
-<form id=displayedform action="#" onsubmit="javascript:document.forms['realform']['filter'].value='nfilter(startswith,\''+document.forms['displayedform']['filter'].value+'\')'; document.forms['realform'].submit(); return false;">
+<form id=displayedform action="#" onsubmit="javascript:document.forms['realform']['filter'].value='nfilter(startswith,'+escape_quote(document.forms['displayedform']['filter'].value)+')'; document.forms['realform'].submit(); return false;">
 Quick contact search: <input name=filter id=defaultfocus>
 </form>
 <script>document.forms['displayedform'].filter.focus();</script>

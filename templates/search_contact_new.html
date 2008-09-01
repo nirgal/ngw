@@ -7,53 +7,8 @@
 {% endblock %}
 
 {% block body %}
+<script src="{{MEDIA_URL}}/ngw.js"></script>
 <script>
-ALLOW_ERROR_MESSAGE=true;
-
-function get_XMLHttpRequest() {
-    if(window.XMLHttpRequest)
-        try {
-            return new XMLHttpRequest();
-        } catch(e) {}
-    alert("ERROR: Your browser doesn't support XMLHttpRequest! Get a real browser please.");
-    return null;
-}
-
-function ajax_load_innerhtml(element_id, url) {
-    req = get_XMLHttpRequest();
-    if (!req)
-        return;
-    document.getElementById(element_id).innerHTML = "<img src='{{MEDIA_URL}}/loading.gif' align=middle> L O A D I N G . . . ";
-    req.element_id = element_id;
-    req.onreadystatechange = function () {
-        if (this.readyState == 4) {
-            if (this.status==200 || ALLOW_ERROR_MESSAGE)
-                document.getElementById(this.element_id).innerHTML = this.responseText;
-            else
-                alert("There was a problem retrieving the XML data:\n" + this.statusText);
-        }
-    };
-    req.open("GET", url, true);
-    req.send("");
-}
-
-function escape_quote(str) {
-/* TODO: Add \ before any \ or ' */
-    return "'"+str+"'";
-}
-
-/*
-function debug(DFGHJ) {
-    document.getElementById("curent_filter").innerHTML += document.getElementById("filter_group_field");
-    for (x in document.getElementById("filter_group_field")) {
-        document.getElementById("curent_filter").innerHTML += x;
-        document.getElementById("curent_filter").innerHTML += "=&gt;";
-        document.getElementById("curent_filter").innerHTML += document.getElementById("filter_group_field")[x];
-        document.getElementById("curent_filter").innerHTML += "<br>";
-    }
-}
-*/
-
 var cur_grouptype=null;
 var cur_field=null;
 var cur_filtername=null;
@@ -108,27 +63,21 @@ function set_filter(newfilter) {
 }
 </style>
 
-<div style="border: 1px solid #999; padding:1ex;">
+<div class=box>
 Type of filter:
 <a href="javascript:select_grouptype('field')" id="filter_group_field">Field</a> |
 <a href="javascript:select_grouptype('group')" id="filter_group_group">Group</a> |
 <a href="javascript:select_grouptype('event')" id="filter_group_event">Event</a>
 </div>
 
-<br>
-
-<div id="list_field" style="border: 1px solid #999; padding:1ex;">
+<div id="list_field" class=box>
 {{message}}
 </div>
 
-<br>
-
-<div id="list_filters" style="border: 1px solid #999; padding:1ex;">
+<div id="list_filters" class=box>
 </div>
 
-<br>
-
-<div id="filter_param" style="border: 1px solid #999; padding:1ex;">
+<div id="filter_param" class=box>
 </div>
 
 
