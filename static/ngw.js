@@ -283,7 +283,7 @@ function ajax_load_innerhtml(element_id, url) {
     req = get_XMLHttpRequest();
     if (!req)
         return;
-    document.getElementById(element_id).innerHTML = "<img src='{{MEDIA_URL}}/loading.gif' align=middle> L O A D I N G . . . ";
+    document.getElementById(element_id).innerHTML = "<img src='/loading.gif' align=middle> L O A D I N G . . . ";
     req.element_id = element_id;
     req.onreadystatechange = function () {
         if (this.readyState == 4) {
