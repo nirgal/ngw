@@ -15,8 +15,10 @@ from ngw import settings
 from ngw.gp.alchemy_models import *
 from ngw.gp.basicauth import *
 
-GROUP_PREFIX = '_group_'
-DEFAULT_INITIAL_FIELDS=['name', 'email', 'tel_mobile', 'tel_prive', 'tel_professionel', 'region']
+DISP_NAME = u'name'
+DISP_FIELD_PREFIX = u'field_'
+DISP_GROUP_PREFIX = u'group_'
+DEFAULT_INITIAL_FIELDS=[DISP_NAME, DISP_FIELD_PREFIX+u'7', DISP_FIELD_PREFIX+u'8', DISP_FIELD_PREFIX+u'10', DISP_FIELD_PREFIX+u'52', DISP_FIELD_PREFIX+u'53']
 NB_LINES_PER_PAGE=100
 
 FTYPE_TEXT='TEXT'
@@ -73,19 +75,27 @@ def get_default_display_fields():
     for fname in DEFAULT_INITIAL_FIELDS:
         if fname=='name':
             pass
-        elif fname.startswith(GROUP_PREFIX):
+        elif fname.startswith(DISP_GROUP_PREFIX):
             try:
-                groupid = int(fname[len(GROUP_PREFIX):])
+                groupid = int(fname[len(DISP_GROUP_PREFIX):])
             except ValueError:
-                print "Error in default fields: %s has invalid syntax." % fname
+                print "Error in default fields: %s has invalid syntax." % fname.encode('utf8')
                 continue
             if not Query(ContactGroup).get(groupid):
                 print "Error in default fields: There is no group #%d." % groupid
                 continue
-        else:
-            if not Query(ContactField).filter(ContactField.c.name==fname).first():
-                print "Error in default fields: %s doesn't exists." % fname
+        elif fname.startswith(DISP_FIELD_PREFIX):
+            try:
+                fieldid = int(fname[len(DISP_FIELD_PREFIX):])
+            except ValueError:
+                print "Error in default fields: %s has invalid syntax." % fname.encode('utf8')
                 continue
+            if not Query(ContactField).get(fieldid):
+                print "Error in default fields: There is no field #%d." % fieldid
+                continue
+        else:
+            print "Error in default fields: Invalid syntax in \"%s\"." % fname.encode('utf8')
+            continue
         result.append(fname)
     return result
 
@@ -161,7 +171,7 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
         # TODO: "id_" is hard-coded here. This should instead use the correct
         # API to determine the ID dynamically.
         output.append(u'SelectFilter.init("id_%s", "%s", %s, "%s"); });</script>\n' % \
-            (name, self.verbose_name, int(self.is_stacked), settings.MEDIA_URL+settings.ADMIN_MEDIA_PREFIX))
+            (name, self.verbose_name.replace(u'"', u'\\"'), int(self.is_stacked), settings.MEDIA_URL+settings.ADMIN_MEDIA_PREFIX))
         return mark_safe(u''.join(output))
 
 
@@ -234,7 +244,7 @@ def str_member_of_factory(contact_group):
     return lambda c: c.str_member_of(gids)
 
 def contact_make_query_with_fields(fields=None):
-    if fields == None:
+    if not fields:
         fields = get_default_display_fields()
 
     q = Query(Contact)
@@ -243,43 +253,73 @@ def contact_make_query_with_fields(fields=None):
     cols=[]
     
     for prop in fields:
-        if prop.startswith(GROUP_PREFIX):
-            groupid = int(prop[len(GROUP_PREFIX):])
+        if prop==u"name":
+            cols.append( ("name", 0, "name", contact_table.c.name) )
+        elif prop.startswith(DISP_GROUP_PREFIX):
+            groupid = int(prop[len(DISP_GROUP_PREFIX):])
             cg = Query(ContactGroup).get(groupid)
             cols.append( (cg.name, 0, str_member_of_factory(cg), None) )
-        elif prop=="name":
-            cols.append( ("name", 0, "name", contact_table.c.name) )
-        else:
-            cf = Query(ContactField).filter_by(name=prop).one()
+        elif prop.startswith(DISP_FIELD_PREFIX):
+            fieldid = int(prop[len(DISP_FIELD_PREFIX):])
+            cf = Query(ContactField).get(fieldid)
             a = contact_field_value_table.alias()
             q = q.add_entity(ContactFieldValue, alias=a)
             j = outerjoin(j, a, and_(contact_table.c.id==a.c.contact_id, a.c.contact_field_id==cf.id ))
             cols.append( (cf.name, n_entities, "as_html", a.c.value) )
             n_entities += 1
+        else:
+            raise ValueError(u"Invalid field "+prop)
 
     q = q.select_from(j)
     return q, cols
 
 
+def get_available_fields():
+    result = [ (DISP_NAME, u'Name') ]
+    for cf in Query(ContactField).order_by(ContactField.c.sort_weight):
+        result.append((DISP_FIELD_PREFIX+unicode(cf.id), name_internal2nice(cf.name)))
+    for cg in Query(ContactGroup):
+        result.append((DISP_GROUP_PREFIX+unicode(cg.id), cg.unicode_with_date()))
+    return result
+
+
+class FieldSelectForm(forms.Form):
+    def __init__(self, *args, **kargs):
+        #TODO: param user -> fine tuned fields selection
+        forms.Form.__init__(self, *args, **kargs)
+        self.fields[u'selected_fields']=forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Fields", False), choices=get_available_fields())
+
 @http_authenticate(ngw_auth, 'ngw')
 def contact_list(request):
+    import contactsearch # FIXME
     if not request.user.is_admin():
         return unauthorized(request)
 
-    if request.GET.has_key('select'):
-        select = request['select']
-        fields = [ 'name' ] + select.split(',')
+    strfilter = request.REQUEST.get(u'filter', u'')
+    filter = contactsearch.parse_filterstring(strfilter)
+
+    strfields = request.REQUEST.get(u'fields', None)
+    if strfields:
+        fields = strfields.split(u',')
     else:
-        fields = None # default
+        fields = get_default_display_fields()
+        strfields = u",".join(fields)
    
     #print "contact_list:", fields
     q, cols = contact_make_query_with_fields(fields)
+    q = filter.apply_filter_to_query(q)
+
     args={}
     args['title'] = "Contact list"
     args['objtype'] = Contact
     args['query'] = q
     args['cols'] = cols
+    args['filter'] = strfilter
+    args['fields'] = strfields
+    args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
+
     return query_print_entities(request, 'list_contact.html', args)
+
 
 
 
@@ -342,17 +382,9 @@ class ContactEditForm(forms.Form):
                 self.fields[cf.name] = fields
         
         if request_user.is_admin():
-            def contactgroupchoices():
-                result = []
-                # sql "_" means "any character" and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by ...
-                for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]):
-                    nice_name = g.name
-                    if g.date:
-                        nice_name+=u" "+unicode(g.date)
-                    result.append( (g.id, nice_name) )
-                return result
-
-            self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Group", False), choices=contactgroupchoices())
+            # sql "_" means "any character" and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by ...
+            contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]) ]
+            self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Group", False), choices=contactgroupchoices)
         
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -361,7 +393,7 @@ def contact_edit(request, id):
         id = int(id)
         if id!=request.user.id and not request.user.is_admin():
             return unauthorized(request)
-    else:
+    else: # add
         if not request.user.is_admin():
             return unauthorized(request)
         
@@ -585,7 +617,7 @@ def contactgroup_detail(request, id):
     display=request.REQUEST.get("display", "")
     if display=="mi":
         args['title'] = "Members and invited contacts of group "+cg.unicode_with_date()
-        fields.append(GROUP_PREFIX+str(id))
+        fields.append(DISP_GROUP_PREFIX+unicode(id))
         q, cols = contact_make_query_with_fields(fields)
         q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND (member=\'t\' OR invited=\'t\'))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     elif display=="i":

@@ -9,7 +9,7 @@ urlpatterns = patterns('',
 
     (r'^contacts/$', 'ngw.gp.views.contact_list'),
     (r'^contacts/add$', 'ngw.gp.views.contact_edit', {'id': None}),
-    (r'^contacts/search$', 'ngw.gp.contactsearch.contactsearch'),
+    (r'^contacts/filter$', 'ngw.gp.contactsearch.editfilter'),
     (r'^contacts/search/fields/(?P<kind>\w+)$', 'ngw.gp.contactsearch.contactsearch_get_fields'),
     (r'^contacts/search/filters/(?P<field>\w+)$', 'ngw.gp.contactsearch.contactsearch_get_filters'),
     (r'^contacts/search/params/(?P<field>\w+)/(?P<filtername>\w+)$', 'ngw.gp.contactsearch.contactsearch_get_params'),

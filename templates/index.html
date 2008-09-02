@@ -5,16 +5,16 @@
 <script src="{{MEDIA_URL}}/ngw.js"></script>
 
 {% if user.is_admin %}
-<div style="border: 1px solid #999; padding:1ex;">
-Welcome {{ user }}!
-<br>There are {{ ncontacts }} contacts in the database.
-
-<p>
-<form id=realform action="/contacts/search"><input type=hidden name=filter value=""><input type=hidden name=runfilter value=1></form>
-<form id=displayedform action="#" onsubmit="javascript:document.forms['realform']['filter'].value='nfilter(startswith,'+escape_quote(document.forms['displayedform']['filter'].value)+')'; document.forms['realform'].submit(); return false;">
-Quick contact search: <input name=filter id=defaultfocus>
-</form>
-<script>document.forms['displayedform'].filter.focus();</script>
+<div class=box>
+    Welcome {{ user }}!
+    <br>There are {{ ncontacts }} contacts in the database.
+    
+    <p>
+    <form id=realform action="/contacts/"><input type=hidden name=filter value=""></form>
+    <form id=displayedform action="#" onsubmit="javascript:document.forms['realform']['filter'].value='nfilter(startswith,'+escape_quote(document.forms['displayedform']['filter'].value)+')'; document.forms['realform'].submit(); return false;">
+    Quick contact search: <input name=filter id=defaultfocus>
+    </form>
+    <script>document.forms['displayedform'].filter.focus();</script>
 </div>
 {% endif %}
 
@@ -31,8 +31,8 @@ Quick contact search: <input name=filter id=defaultfocus>
 
 {% if user.is_admin %}
 <h1 class="boxheader">Derniers développements</h1>
-<div style="border: 1px solid #999; padding:1ex;">
-<b>Coming soon...</b><br>
+<div class=box>
+<b>Mardi 2 septembre</b><br>
 Nouveau système de recherche de contacts.<br>
 <br>
 <b>Jeudi 21 août</b><br>

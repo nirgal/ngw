@@ -1,0 +1,34 @@
+<style>
+.activeSelectionItem {
+    font-size:140%;
+    font-weight:bold;
+}
+</style>
+
+<h1 class="boxheader">Current filter</h1>
+<div id="curent_filter" style="text-align:left;" class=box>
+{{filter_html}}
+</div>
+<div class=submitbar>
+<a href="javascript:document.forms['mainform'].submit();" id=default>Apply filter</a>
+<a href="javascript:set_filter('');select_grouptype(null);">Reset filter</a>
+</div>
+
+
+<h1 class="boxheader">Add condition</h1>
+<div class=box>
+Type of filter:
+<a href="javascript:select_grouptype('field')" id="filter_group_field">Field</a> |
+<a href="javascript:select_grouptype('group')" id="filter_group_group">Group</a> |
+<a href="javascript:select_grouptype('event')" id="filter_group_event">Event</a>
+</div>
+
+<div id="list_field" class=box>
+</div>
+
+<div id="list_filters" class=box>
+</div>
+
+<div id="filter_param" class=box>
+</div>
+

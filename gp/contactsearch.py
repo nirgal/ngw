@@ -261,35 +261,11 @@ def parse_filterstring(sfilter):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contactsearch(request):
+def editfilter(request):
     if not request.user.is_admin():
         return unauthorized(request)
-    
-    strfilter = request.REQUEST.get('filter', u"")
-    filter = parse_filterstring(strfilter)
- 
-    fields = request.REQUEST.get('fields', u"")
-    print "fields=", fields
-
-    if request.GET.has_key('runfilter'):
-        q, cols = contact_make_query_with_fields()
-        q = filter.apply_filter_to_query(q)
-        args={}
-        args['title'] = "Contacts search results"
-        args['objtype'] = Contact
-        args['query'] = q
-        args['cols'] = cols
-        args['filter_html'] = mark_safe(filter.to_html())
-        params = request.META['QUERY_STRING'] or u""
-        args['baseurl'] = "?"+params
-        return query_print_entities(request, 'searchresult_contact.html', args)
-        
-
-    args={}
-    args["title"] = "Contact search"
-    args["objtype"] = Contact
-    args["strfilter"] = strfilter
-    return render_to_response('search_contact_new.html', args, RequestContext(request))
+    filter = parse_filterstring(u'')
+    return render_to_response('filter.html', {'filter_html':mark_safe(filter.to_html())}, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -386,7 +362,7 @@ def contactsearch_get_params(request, field, filtername):
     js+=u")'"
 
     if previous_filter:
-        body += u"<form onsubmit=\"newfilter="+js+u"; newfilter='and('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
+        body += u"<form onsubmit=\"newfilter="+js+u"; newfilter='and('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
                 body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
@@ -402,7 +378,7 @@ def contactsearch_get_params(request, field, filtername):
         body += u"</form>\n"
         body += u"<br clear=all>\n"
     else:
-        body += u"<form onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['search_form'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
+        body += u"<form onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
                 body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"

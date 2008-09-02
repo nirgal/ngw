@@ -3,27 +3,126 @@
 {% block body %}
 <script src="{{MEDIA_URL}}/ngw.js"></script>
 
-<div id=filterbox class=box>
-    <form id="quickfilter_realform" action="/contacts/search">
-        <input type=hidden name=filter value="">
-        <input type=hidden name=runfilter value=1>
-    </form>
+<script>
+{%comment%}
+For some obscure reason, that block of functions cannot be loaded via rpc
+{%endcomment%}
+var cur_grouptype=null;
+var cur_field=null;
+var cur_filtername=null;
+var add_another_filter=false;
 
-    <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['quickfilter_realform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['quickfilter_realform'].submit(); return false;">
+function select_grouptype(type) {
+    select_field(null);
+    if (type)
+        ajax_load_innerhtml("list_field", "/contacts/search/fields/"+type);
+    else
+        document.getElementById("list_field").innerHTML="";
+
+    if (cur_grouptype)
+        document.getElementById("filter_group_"+cur_grouptype).className = "";
+    if (type)
+        document.getElementById("filter_group_"+type).className = "activeSelectionItem";
+    cur_grouptype = type;
+}
+
+function select_field(field) {
+    select_filtername(null);
+    if (field)
+        ajax_load_innerhtml("list_filters", "/contacts/search/filters/"+field);
+    else
+        document.getElementById("list_filters").innerHTML="";
+    if (cur_field)
+        document.getElementById("field_"+cur_field).className = "";
+    if (field)
+        document.getElementById("field_"+field).className = "activeSelectionItem";
+    cur_field = field;
+}
+
+function select_filtername(filtername) {
+    previous_filter = document.getElementById('filter').value;
+    if (filtername)
+        ajax_load_innerhtml("filter_param", "/contacts/search/params/"+cur_field+"/"+filtername+"?previous_filter="+previous_filter);
+    else
+        document.getElementById("filter_param").innerHTML="";
+
+    if (cur_filtername)
+        document.getElementById("filter_"+cur_filtername).className = "";
+    if (filtername)
+        document.getElementById("filter_"+filtername).className = "activeSelectionItem";
+    cur_filtername = filtername;
+}
+
+function set_filter(newfilter) {
+    document.getElementById('filter').value=newfilter;
+    ajax_load_innerhtml('curent_filter','/contacts/search/filter_to_html?'+newfilter);
+}
+</script>
+
+
+<form id="mainform">
+    <div style="text-align:left; display:none;">Internal representation of filter:</div>
+    <input type=hidden id=filter name=filter value="{{filter}}">
+    <input type=hidden id=fields name=fields value="{{fields}}">
+</form>
+
+<div id=filterbox class=box>
+{% if filter %}
+    {% include "filter.html" %}
+    <script>
+    newfilter=document.getElementById('filter').value;
+    ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter);
+    </script>
+{% else %}
+    <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['mainform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['mainform'].submit(); return false;">
         <img src="/media/img/admin/icon_searchbox.png" alt="Search">
         <input name=filter id=defaultfocus style="width:auto;">
-        &nbsp;&nbsp;&nbsp;&nbsp;<a href="/contacts/search">Advanced search</a>
+        &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:ajax_load_innerhtml('filterbox', '/contacts/filter');">Advanced search</a>
     </form>
 
     <script>document.forms['quickfilter_displayedform'].filter.focus();</script>
+{% endif %}
 </div>
 
 {{ block.super }}
+
+<script>
+function submit_fields() {
+    var sel = document.forms['field_selection_widget'].selected_fields;
+    var new_fields='';
+    for (i=0; i<sel.options.length; i++) {
+        if (new_fields!='')
+            new_fields+=','
+        new_fields+=sel.options[i].value;
+    }
+    document.getElementById('fields').value = new_fields;
+    document.forms['mainform'].submit();
+}
+function show_field_selection() {
+    document.getElementById('select_fields_title').style.display='block';
+    document.getElementById('select_fields').style.display='block';
+    document.getElementById('submitbar').style.display='none';
+    document.getElementById('objlist').style.display='none';
+}
+</script>
+<h1 id="select_fields_title" style="display:none;">Displayed columns</h1>
+<div id="select_fields" class=box style="display:none;">
+    {{ field_form.media|safe }}
+    <form id=field_selection_widget action="#" onsubmit="submit_fields(); return false;"> {% comment %}Form id is needed by SelectFilter widget{% endcomment %}
+    <table class=objchange>
+        {{fields_form.as_table}}
+    </table>
+    <div class=submitbar>
+        <input type=submit value="Set columns">
+    </div>
+    </form>
+</div>
+
 {% endblock %}
 
 {% block submitbar %}
 <div id=submitbar>
-  <a id=default href="{{ objtype.get_class_absolute_url }}search"><!img src="/media/img/admin/selector-search.gif" border=0>Search</a>
+  <a href="javascript:show_field_selection();" id=default> Select displayed columns</a>
   <a href="{{ objtype.get_class_absolute_url }}add?default_group=2"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a person</a>
   <a href="{{ objtype.get_class_absolute_url }}add?default_group=4"><img src="/media/img/admin/icon_addlink.gif" border=0> Add a volunter</a>
   <a href="{{ objtype.get_class_absolute_url }}add?default_group=5"><img src="/media/img/admin/icon_addlink.gif" border=0> Add an activist</a>

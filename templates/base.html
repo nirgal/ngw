@@ -137,7 +137,7 @@ input[type=text], textarea {
     width: 100%;
 }
 
-#submitbar {
+#submitbar, .submitbar {
     width: auto;
     display: block;
     overflow: auto;
@@ -146,7 +146,7 @@ input[type=text], textarea {
     border: solid 1px #999;
     text-align: center;
 }
-input[type=submit] , #submitbar a {
+input[type=submit] , #submitbar a, .submitbar a {
     /*display: inline-block;*/
     float: left;
     font-size: 90%; /* needed 100%*/
@@ -165,16 +165,16 @@ input[type=submit] , #submitbar a {
     background: url(/media/img/admin/nav-bg.gif) bottom repeat-x;
     color: black;
 }
-input[type=submit]:active , #submitbar a:active {
+input[type=submit]:active , #submitbar a:active, .submitbar a:active {
     background: url(/media/img/admin/nav-bg-reverse.gif) top repeat-x;
 }
 
-input[type=submit]#default , #submitbar a#default {
+input[type=submit]#default , #submitbar a#default, .submitbar a#default {
     background: #7CA0C7 url(/media/img/admin/default-bg.gif) bottom repeat-x;
     color:white;
     
 }
-input[type=submit]:active#default , #submitbar a:active#default {
+input[type=submit]:active#default , #submitbar a:active#default, .submitbar a:active#default {
     background: #7CA0C7 url(/media/img/admin/default-bg-reverse.gif) top repeat-x;
 }
 
@@ -182,7 +182,7 @@ input[type=submit]:active#default , #submitbar a:active#default {
 .selector { width:580px; float:left; }
 .selector select { width:270px; height:17.2em; }
 .selector-available, .selector-chosen { float:left; width:270px; text-align:center; margin-bottom:5px; }
-.selector-available h2, .selector-chosen h2 { border:1px solid #ccc; }
+.selector-available h2, .selector-chosen h2 { border:1px solid #ccc; margin-bottom:0px; }
 .selector .selector-available h2 { background:white url(/media/img/admin/nav-bg.gif) bottom left repeat-x; color:#666; }
 .selector .selector-filter { background:white; border:1px solid #ccc; border-width:0 1px; padding:3px; color:#999; font-size:10px; margin:0; text-align:left; }
 .selector .selector-chosen .selector-filter { padding:4px 5px; }
