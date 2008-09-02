@@ -286,15 +286,15 @@ function ajax_load_innerhtml(element_id, url) {
     document.getElementById(element_id).innerHTML = "<img src='/loading.gif' align=middle> L O A D I N G . . . ";
     req.element_id = element_id;
     req.onreadystatechange = function () {
-        if (this.readyState == 4) {
-            if (this.status==200 || ALLOW_ERROR_MESSAGE)
-                document.getElementById(this.element_id).innerHTML = this.responseText;
+        if (req.readyState == 4) {
+            if (req.status==200 || ALLOW_ERROR_MESSAGE)
+                document.getElementById(req.element_id).innerHTML = req.responseText;
             else
-                alert("There was a problem retrieving the XML data:\n" + this.statusText);
+                alert("There was a problem retrieving the XML data:\n" + req.statusText);
         }
     };
     req.open("GET", url, true);
-    req.send("");
+    req.send(null);
 }
 
 
