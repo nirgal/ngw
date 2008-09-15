@@ -223,7 +223,7 @@ form {
 
 <table id=banner>
 <tr>
-<td id=sitetitle><big>Action</big> ... go ... go ... go ...
+<td id=sitetitle>{{ banner|safe }}
 {% if user.id %} <td id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="https://logout@{{request.META.HTTP_HOST}}/logout">Logout</a>{% endif %}
 </table>
 

@@ -7,6 +7,10 @@ from django.utils import html
 register = template.Library()
 
 @register.filter
+def autobr(txt):
+    return txt.replace('\n', '<br>');
+
+@register.filter
 def row_get_value_by_key(alchemy_entity, column_name):
     return alchemy_entity.__getattribute__(column_name)
     

@@ -134,6 +134,7 @@ def index(request):
     return render_to_response('index.html', {
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
+        'changes': Query(Config).get('changes').text,
     }, RequestContext(request))
 
 @http_authenticate(ngw_auth, 'ngw')

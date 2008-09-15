@@ -40,6 +40,7 @@ contact_group_table = Table('contact_group', meta, autoload=True)
 contact_in_group_table = Table('contact_in_group', meta, autoload=True)
 group_in_group_table = Table('group_in_group', meta, autoload=True)
 contact_sysmsg_table = Table('contact_sysmsg', meta, autoload=True)
+config_table = Table('config', meta, autoload=True)
 
 #print "meta analysis:"
 #for t in meta.table_iterator(reverse=True):
@@ -83,6 +84,11 @@ class NgwModel(object):
 # Define classes to be mapped to the above tables.
 # Most properties are fetched from the database, and autodeclared
 ########################################################################
+class Config(NgwModel):
+    class Meta:
+        pass
+    pass
+
 class Choice(NgwModel):
     class Meta:
         pass
@@ -1154,6 +1160,7 @@ for cls in CONTACT_FIELD_TYPES_CLASSES:
     mapper(cls, contact_field_table, inherits=ContactField, polymorphic_identity=cls.db_type_id)
 contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table)
 contact_sysmsg_mapper = mapper(ContactSysMsg, contact_sysmsg_table)
+config_mapper = mapper(Config, config_table)
 
 #mapper(ContactInGroup,
 #    contact_in_group_table, properties={ \
