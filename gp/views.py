@@ -48,12 +48,14 @@ def ngw_auth(username, passwd):
     if dbpasswd.startswith(u"{SHA}"):
         digest = dbpasswd[5:]
         if b64encode(sha(passwd).digest())==digest:
+            c.update_lastconnection()
             return c
     else: # assume crypt algorithm
         salt,digest = dbpasswd[0:2],dbpasswd[2:]
         targetdigest=subprocess.Popen(["openssl", "passwd", "-crypt", "-salt", salt, passwd], stdout=subprocess.PIPE).communicate()[0]
         targetdigest=targetdigest[:-1] # remove extra "\n"
         if salt+digest==targetdigest:
+            c.update_lastconnection()
             return c
     #algo, salt, digest = dbpasswd.split('$')
     #if algo=="crypt":

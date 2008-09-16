@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import os, time
+from datetime import *
 from sqlalchemy import *
 from sqlalchemy.orm import *
 import sqlalchemy.engine.url
@@ -14,8 +15,10 @@ import decorated_letters
 
 GROUP_USER = 2
 GROUP_ADMIN = 8
+
 FIELD_LOGIN = 1
 FIELD_PASSWORD = 2
+FIELD_LASTCONNECTION = 3
 
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
@@ -304,6 +307,13 @@ class Contact(NgwModel):
         cig = Query(ContactInGroup).filter(ContactInGroup.c.contact_id==self.id).filter(ContactInGroup.c.group_id.in_([g.id for g in adminsubgroups])).first()
         return cig!=None
 
+    def update_lastconnection(self):
+        cfv = Query(ContactFieldValue).get((self.id, FIELD_LASTCONNECTION))
+        if not cfv:
+            cfv = ContactFieldValue()
+            cfv.contact_id = self.id
+            cfv.contact_field_id = FIELD_LASTCONNECTION
+        cfv.value = datetime.utcnow().date().isoformat()
 
 class ContactGroup(NgwModel):
     class Meta:
