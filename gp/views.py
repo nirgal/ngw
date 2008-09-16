@@ -238,6 +238,31 @@ def logout(request):
 
 #######################################################################
 #
+# Logs
+#
+#######################################################################
+
+@http_authenticate(ngw_auth, 'ngw')
+def logs(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
+
+    args={}
+    args['title'] = "Global log"
+    args['objtype'] = Log
+    args['query'] = Query(Log)
+    args['cols'] = [
+        ( "Date", None, "small_date", Log.c.dt),
+        ( "User", None, "contact", Log.c.contact_id),
+        ( "Action", None, "action_txt", Log.c.action),
+        ( "Target", None, "target_repr", Log.c.target_repr),
+        ( "Property", None, "property_repr", Log.c.property_repr),
+        ( "Change", None, "change", Log.c.change),
+    ]
+    return query_print_entities(request, 'list_log.html', args)
+
+#######################################################################
+#
 # Contacts
 #
 #######################################################################
@@ -422,9 +447,32 @@ def contact_edit(request, id):
             # 1/ In contact
             if id:
                 contactgroupids = [ g.id for g in contact.get_allgroups_withfields()]  # Need to keep a record of initial groups
+                if contact.name != data['name']:
+                    log = Log(request.user.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = u"Contact "+unicode(contact.id)
+                    log.target_repr = u"Contact "+contact.name
+                    log.property = u"Name"
+                    log.property_repr = u"Name"
+                    log.change = u"change from "+contact.name+u" to "+data['name']
+
                 contact.name = data['name']
             else:
                 contact = Contact(data['name'])
+                Session.flush()
+                log = Log(request.user.id)
+                log.action = LOG_ACTION_ADD
+                log.target = u"Contact "+unicode(contact.id)
+                log.target_repr = u"Contact "+contact.name
+
+                log = Log(request.user.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u"Contact "+unicode(contact.id)
+                log.target_repr = u"Contact "+contact.name
+                log.property = u"Name"
+                log.property_repr = u"Name"
+                log.change = u"new value is "+contact.name
+
                 default_group = data.get('default_group', "") # Direct requested group
                 if default_group:
                     default_group = int(default_group)
@@ -460,14 +508,37 @@ def contact_edit(request, id):
                 cfv = Query(ContactFieldValue).get((id, cfid))
                 if cfv == None:
                     if newvalue:
+                        log = Log(request.user.id)
+                        log.action = LOG_ACTION_CHANGE
+                        log.target = u"Contact "+unicode(contact.id)
+                        log.target_repr = u"Contact "+contact.name
+                        log.property = unicode(cfid)
+                        log.property_repr = cf.name
                         cfv = ContactFieldValue()
                         cfv.contact = contact
                         cfv.field = cf
                         cfv.value = newvalue
-                else:
+                        log.change = u"new value is "+unicode(cfv)
+                else: # There was a value
                     if newvalue:
-                        cfv.value = newvalue
+                        if cfv.value!=newvalue:
+                            log = Log(request.user.id)
+                            log.action = LOG_ACTION_CHANGE
+                            log.target = u"Contact "+unicode(contact.id)
+                            log.target_repr = u"Contact "+contact.name
+                            log.property = unicode(cfid)
+                            log.property_repr = cf.name
+                            log.change = u"change from "+unicode(cfv)
+                            cfv.value = newvalue
+                            log.change += u" to "+unicode(cfv)
                     else:
+                        log = Log(request.user.id)
+                        log.action = LOG_ACTION_DEL
+                        log.target = u"Contact "+unicode(contact.id)
+                        log.target_repr = u"Contact "+contact.name
+                        log.property = unicode(cfid)
+                        log.property_repr = cf.name
+                        log.change = u"old value was "+unicode(cfv)
                         Session.delete(cfv)
             request.user.push_message(u"Contact %s has been saved sucessfully!" % contact.name)
             if request.POST.get("_continue", None):

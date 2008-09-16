@@ -44,6 +44,7 @@ contact_in_group_table = Table('contact_in_group', meta, autoload=True)
 group_in_group_table = Table('group_in_group', meta, autoload=True)
 contact_sysmsg_table = Table('contact_sysmsg', meta, autoload=True)
 config_table = Table('config', meta, autoload=True)
+log_table = Table('log', meta, autoload=True)
 
 #print "meta analysis:"
 #for t in meta.table_iterator(reverse=True):
@@ -87,6 +88,42 @@ class NgwModel(object):
 # Define classes to be mapped to the above tables.
 # Most properties are fetched from the database, and autodeclared
 ########################################################################
+# Types of change
+LOG_ACTION_ADD      = 1
+LOG_ACTION_CHANGE   = 2
+LOG_ACTION_DEL      = 3
+
+class Log(NgwModel):
+    class Meta:
+        pass
+    def __init__(self, contact_id):
+        NgwModel.__init__(self)
+        self.dt = datetime.utcnow()
+        self.contact_id = contact_id
+    
+    def __unicode__(self):
+        return u"%(date)s: %(contactname)s %(type_and_data)s"% {
+                u'date': self.dt.isoformat(),
+                u'contactname': self.contact.name,
+                u'action_and_data': self.action_and_data(),
+                }
+            
+    def action_and_data(self):
+        if self.action==LOG_ACTION_CHANGE:
+            return u"%(property)s %(target)s: %(change)s"% {
+                u'target': self.target_repr,
+                u'property': self.property_repr,
+                u'change': self.change,
+                }
+
+    def small_date(self):
+        return self.dt.strftime('%Y-%m-%d %H:%M:%S')
+
+    def action_txt(self):
+        return { LOG_ACTION_ADD: u"Add",
+                 LOG_ACTION_CHANGE: u"Update",
+                 LOG_ACTION_DEL: u"Delete"}[self.action]
+
 class Config(NgwModel):
     class Meta:
         pass
@@ -1171,6 +1208,7 @@ for cls in CONTACT_FIELD_TYPES_CLASSES:
 contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table)
 contact_sysmsg_mapper = mapper(ContactSysMsg, contact_sysmsg_table)
 config_mapper = mapper(Config, config_table)
+log_mapper = mapper(Log, log_table)
 
 #mapper(ContactInGroup,
 #    contact_in_group_table, properties={ \
@@ -1254,12 +1292,19 @@ contact_field_mapper.add_property('values', relation(
     backref="field",
     passive_deletes=True))
 
-# ChoiceGroup <-> Choice
 # Contact <-> ContactSysMsg
 contact_mapper.add_property('sysmsg', relation(
     ContactSysMsg,
     primaryjoin=contact_sysmsg_table.c.contact_id==contact_table.c.id,
     cascade="delete",
+    passive_deletes=True))
+
+# Log <-> Contact
+log_mapper.add_property('contact', relation(
+    Contact,
+    primaryjoin=log_table.c.contact_id==contact_table.c.id,
+    cascade="delete",
+    backref='logs',
     passive_deletes=True))
 
 print "Alchemy initialized"
