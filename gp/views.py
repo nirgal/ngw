@@ -722,7 +722,7 @@ def contactgroup_emails(request, id):
     emails = []
     noemails = []
     for c in members:
-        email = c.get_value_by_keyname("email")
+        email = c.get_fieldvalue_by_id(7)
         if email:
             emails.append((c, email))
         else:

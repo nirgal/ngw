@@ -235,22 +235,6 @@ class Contact(NgwModel):
         #print "contactgroupids=", contactgroupids
         return Query(ContactField).filter(or_(ContactField.c.contact_group_id.in_(contactgroupids),ContactField.c.contact_group_id == None)).order_by(ContactField.c.sort_weight)
 
-    def get_cfv_by_keyname(self, keyname):
-        cf = Query(ContactField).filter(ContactField.c.name == keyname).one()
-        if not cf:
-            return None
-        cfv = Query(ContactFieldValue).get((self.id, cf.id))
-        return cfv
-
-    def get_value_by_keyname(self, keyname):
-        cf = Query(ContactField).filter(ContactField.c.name == keyname).one()
-        if not cf:
-            return u"ERROR: no field named "+keyname
-        cfv = Query(ContactFieldValue).get((self.id, cf.id))
-        if cfv == None:
-            return u""
-        return unicode(cfv)
-
     def get_fieldvalue_by_id(self, field_id):
         cfv = Query(ContactFieldValue).get((self.id, field_id))
         if cfv == None:
@@ -258,7 +242,7 @@ class Contact(NgwModel):
         return unicode(cfv)
 
     def get_login(self):
-        return self.get_value_by_keyname("login")
+        return self.get_fieldvalue_by_id(FIELD_LOGIN)
 
     def vcard(self):
         # http://www.ietf.org/rfc/rfc2426.txt
