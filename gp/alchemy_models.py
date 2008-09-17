@@ -558,6 +558,11 @@ def get_contact_field_type_by_dbid(db_type_id):
 class ContactField(NgwModel):
     class Meta:
         verbose_name = u"optional field"
+    
+    # Overide url for all derived classes
+    @classmethod
+    def get_class_absolute_url(cls):
+        return u"/contactfields/"
 
     def __repr__(self):
         return "ContactField<"+str(self.id)+","+self.name.encode('utf8')+','+self.type.encode('utf8')+">"
