@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-import os, time
+import os
 from datetime import *
 from sqlalchemy import *
 from sqlalchemy.orm import *
@@ -248,7 +248,13 @@ class Contact(NgwModel):
             return u"ERROR: no field named "+keyname
         cfv = Query(ContactFieldValue).get((self.id, cf.id))
         if cfv == None:
-            return u"" # FIXME need default for choices
+            return u""
+        return unicode(cfv)
+
+    def get_fieldvalue_by_id(self, field_id):
+        cfv = Query(ContactFieldValue).get((self.id, field_id))
+        if cfv == None:
+            return u""
         return unicode(cfv)
 
     def get_login(self):
@@ -267,17 +273,17 @@ class Contact(NgwModel):
         vcf += line(u"FN", self.name)
         vcf += line(u"N", self.name)
 
-        street = self.get_value_by_keyname("street")
-        postal_code = self.get_value_by_keyname("postal_code")
-        city = self.get_value_by_keyname("city")
-        country = self.get_value_by_keyname("country")
+        street = self.get_fieldvalue_by_id(9)
+        postal_code = self.get_fieldvalue_by_id(11)
+        city = self.get_fieldvalue_by_id(4)
+        country = self.get_fieldvalue_by_id(5)
         vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
 
-        for pfield in ('tel_mobile', 'tel_prive', 'tel_professionel'):
-            phone = self.get_value_by_keyname(pfield)
+        for cfid in (8, 10, 52): #'tel_mobile', 'tel_prive', 'tel_professionel'
+            phone = self.get_fieldvalue_by_id(cfid)
             vcf += line(u"TEL", phone)
 
-        email = self.get_value_by_keyname("email")
+        email = self.get_fieldvalue_by_id(7)
         if email:
             vcf += line(u"EMAIL", email)
 
@@ -285,7 +291,8 @@ class Contact(NgwModel):
         return vcf
 
     def get_addr_semicol(self):
-        return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
+        #return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
+        return self.get_fieldvalue_by_id(9)+u";"+self.get_fieldvalue_by_id(4)+u";"+self.get_fieldvalue_by_id(5)
 
     def push_message(self, message):
         ContactSysMsg(self.id, message)
@@ -300,7 +307,6 @@ class Contact(NgwModel):
         for sm in self.sysmsg:
             messages.append(sm.message)
             Session.delete(sm)
-        #N# Session.commit()
         return messages
 
     def generate_login(self):
@@ -570,7 +576,7 @@ class ContactField(NgwModel):
         verbose_name = u"optional field"
 
     def __repr__(self):
-        return "ContactField<"+str(self.id)+","+self.name.encode('utf-8')+','+self.type+">"
+        return "ContactField<"+str(self.id)+","+self.name.encode('utf8')+','+self.type.encode('utf8')+">"
 
     def __unicode__(self):
         return self.name
@@ -645,7 +651,7 @@ class DateContactField(ContactField):
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
-            time.strptime(value, '%Y-%m-%d')
+            datetime.strptime(value, '%Y-%m-%d')
         except ValueError:
             return False
         return True
