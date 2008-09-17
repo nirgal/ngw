@@ -316,10 +316,12 @@ def contact_list(request):
 
     strfilter = request.REQUEST.get(u'filter', u'')
     filter = contactsearch.parse_filterstring(strfilter)
+    baseurl=u'?filter='+strfilter
 
     strfields = request.REQUEST.get(u'fields', None)
     if strfields:
         fields = strfields.split(u',')
+        baseurl+='&fields='+strfields
     else:
         fields = get_default_display_fields()
         strfields = u",".join(fields)
@@ -330,6 +332,7 @@ def contact_list(request):
 
     args={}
     args['title'] = "Contact list"
+    args['baseurl'] = baseurl
     args['objtype'] = Contact
     args['query'] = q
     args['cols'] = cols
