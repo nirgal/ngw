@@ -15,16 +15,6 @@ def row_get_value_by_key(alchemy_entity, column_name):
     return alchemy_entity.__getattribute__(column_name)
     
 @register.filter
-def name_internal2nice(txt):
-    """
-    Capitalize first letter and replace _ by spaces
-    """
-    txt = txt.replace('_', ' ')
-    if len(txt)>0:
-        txt = txt[0].upper() + txt[1:]
-    return txt
-
-@register.filter
 def iter_alchemy_tuple(row):
     """ That filter iterate entities when row is a tuple.
     When it's now, it iterates once yielding the one value"""

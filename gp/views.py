@@ -102,15 +102,6 @@ def get_default_display_fields():
     return result
 
 
-def name_internal2nice(txt):
-    """
-    Capitalize first letter and replace _ by spaces
-    """
-    txt = txt.replace('_', ' ')
-    if len(txt)>0:
-        txt = txt[0].upper() + txt[1:]
-    return txt
-
 def MultiValueDict_unicode(d):
     "Create a copy of the dict, converting values to unicode when necessary"
     def u(x):
@@ -305,7 +296,7 @@ def contact_make_query_with_fields(fields=None):
 def get_available_fields():
     result = [ (DISP_NAME, u'Name') ]
     for cf in Query(ContactField).order_by(ContactField.c.sort_weight):
-        result.append((DISP_FIELD_PREFIX+unicode(cf.id), name_internal2nice(cf.name)))
+        result.append((DISP_FIELD_PREFIX+unicode(cf.id), cf.name))
     for cg in Query(ContactGroup):
         result.append((DISP_GROUP_PREFIX+unicode(cg.id), cg.unicode_with_date()))
     return result
@@ -407,7 +398,7 @@ class ContactEditForm(forms.Form):
                     continue # some fields are excluded
             fields = cf.get_form_fields()
             if fields:
-                self.fields[cf.name] = fields
+                self.fields[unicode(cf.id)] = fields
         
         if request_user.is_admin():
             # sql "_" means "any character" and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by ...
@@ -502,7 +493,7 @@ def contact_edit(request, id):
                     continue
                 cfname = cf.name
                 cfid = cf.id
-                newvalue = data[cfname]
+                newvalue = data[unicode(cfid)]
                 if newvalue!=None:
                     newvalue = cf.formfield_value_to_db_value(newvalue)
                 cfv = Query(ContactFieldValue).get((id, cfid))
@@ -564,7 +555,7 @@ def contact_edit(request, id):
             for cfv in contact.values:
                 cf = cfv.field
                 if cf.type != FTYPE_PASSWORD:
-                    initialdata[cf.name] = cf.db_value_to_formfield_value(cfv.value)
+                    initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
             form = ContactEditForm(id=id, initial=initialdata, request_user=request.user)
 
         else:
@@ -660,14 +651,14 @@ def contactgroup_list(request):
 
     q = Query(ContactGroup)
     cols = [
-        ( "Date", None, "date", contact_group_table.c.date ),
-        ( "Name", None, "name", contact_group_table.c.name ),
-        ( "Description", None, "description", contact_group_table.c.description ),
-        ( "Fields", None, print_fields, contact_group_table.c.field_group ),
-        ( "Super groups", None, lambda cg: u", ".join([sg.name for sg in cg.direct_supergroups]), None ),
-        ( "Sub groups", None, lambda cg: u", ".join([html.escape(sg.name) for sg in cg.direct_subgroups]), None ),
-        ( "Budget code", None, "budget_code", contact_group_table.c.budget_code ),
-        ( "Members", None, lambda cg: str(len(cg.members)), None ),
+        ( u"Date", None, "date", contact_group_table.c.date ),
+        ( u"Name", None, "name", contact_group_table.c.name ),
+        ( u"Description", None, "description", contact_group_table.c.description ),
+        ( u"Contact fields", None, print_fields, contact_group_table.c.field_group ),
+        ( u"Super\u00a0groups", None, lambda cg: u", ".join([sg.name for sg in cg.direct_supergroups]), None ),
+        ( u"Sub\u00a0groups", None, lambda cg: u", ".join([html.escape(sg.name) for sg in cg.direct_subgroups]), None ),
+        ( u"Budget\u00a0code", None, "budget_code", contact_group_table.c.budget_code ),
+        #( "Members", None, lambda cg: str(len(cg.members)), None ),
     ]
     args={}
     args['title'] = "Select a contact group"
@@ -986,16 +977,6 @@ class FieldEditForm(forms.Form):
             raise forms.ValidationError("You must select a choice group for that type.")
         return self.cleaned_data
 
-    def clean_name(self):
-        name = self.cleaned_data['name']
-        result = u""
-        for c in name:
-            if c==u"_" or c>=u"0" and c<=u"9" or c>=u"A" and c<=u"Z" or c>=u"a" and c<=u"z":
-                result+=c
-            else:
-                result+="_"
-        return result
-        
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_edit(request, id):

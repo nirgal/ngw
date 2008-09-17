@@ -183,16 +183,16 @@ class Contact(NgwModel):
         cig = Query(ContactInGroup).get((self.id, gid))
         if cig:
             if cig.member:
-                return "Member"
+                return u"Member"
             elif cig.invited:
-                return "Invited"
+                return u"Invited"
             else:
-                return "ERROR: not member and not invited"
+                return u"ERROR: not member and not invited"
 
         elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids))).execute().fetchone(): 
-            return "Member"+" "+AUTOMATIC_MEMBER_INDICATOR
+            return u"Member"+u" "+AUTOMATIC_MEMBER_INDICATOR
         else:
-            return ""
+            return u""
 
     def get_link(self):
         return u"/contacts/"+str(self.id)+"/"
@@ -613,21 +613,21 @@ class ContactField(NgwModel):
 
 class TextContactField(ContactField):
     def get_form_fields(self):
-        return forms.CharField(max_length=255, required=False, help_text=self.hint)
+        return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
 
 class LongTextContactField(ContactField):
     def get_form_fields(self):
-        return forms.CharField(widget=forms.Textarea, required=False, help_text=self.hint)
+        return forms.CharField(label=self.name, widget=forms.Textarea, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(LongTextContactField, u"LONGTEXT", u"Long Text", has_choice=False)
 
 class NumberContactField(ContactField):
     def get_form_fields(self):
-        return forms.IntegerField(required=False, help_text=self.hint)
+        return forms.IntegerField(label=self.name, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterIEQ, FieldFilterINE, FieldFilterILE, FieldFilterIGE, FieldFilterILT, FieldFilterIGT, FieldFilterNull, FieldFilterNotNull,)
     @classmethod
@@ -641,7 +641,7 @@ register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice
 
 class DateContactField(ContactField):
     def get_form_fields(self):
-        return forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint)
+        return forms.DateField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint)
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -657,7 +657,7 @@ class EmailContactField(ContactField):
     def format_value_html(self, value):
         return u'<a href="mailto:%(value)s">%(value)s</a>' % {'value':value}
     def get_form_fields(self):
-        return forms.EmailField(required=False, help_text=self.hint)
+        return forms.EmailField(label=self.name, required=False, help_text=self.hint)
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -673,14 +673,14 @@ class PhoneContactField(ContactField):
     def format_value_html(self, value):
         return u'<a href="tel:%(value)s">%(value)s</a>' % {'value':value} # rfc3966
     def get_form_fields(self):
-        return forms.CharField(max_length=255, required=False, help_text=self.hint)
+        return forms.CharField(label=self.name, max_length=255, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(PhoneContactField, u"PHONE", u"Phone", has_choice=False)
 
 class RibContactField(ContactField):
     def get_form_fields(self):
-        return RibField(required=False, help_text=self.hint)
+        return RibField(label=self.name, required=False, help_text=self.hint)
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -705,7 +705,7 @@ class ChoiceContactField(ContactField):
         else:
             return c.value
     def get_form_fields(self):
-        return forms.CharField(max_length=255, required=False, help_text=self.hint, widget=forms.Select(choices=[(u'', u"Unknown")]+self.choice_group.ordered_choices))
+        return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[(u'', u"Unknown")]+self.choice_group.ordered_choices))
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         return Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==value).count() == 1
@@ -733,7 +733,7 @@ class MultipleChoiceContactField(ContactField):
                 txt_choice_list.append( c.value )
         return u", ".join(txt_choice_list)
     def get_form_fields(self):
-        return forms.MultipleChoiceField(required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
+        return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
     def formfield_value_to_db_value(self, value):
         return u",".join(value)
     def db_value_to_formfield_value(self, value):
@@ -814,13 +814,13 @@ class FieldFilterOp0(FieldFilter):
     """ Helper abstract class for field filters that takes not parameter """
     def to_html(self):
         field = Query(ContactField).get(self.field_id)
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name
+        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name
 
 class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
-        result = u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" "
+        result = u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" "
         if isinstance(value, unicode):
             value = u'"'+value+u'"'
         else:
@@ -1006,7 +1006,7 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = Query(ContactField).get(self.field_id)
         return (field.choice_group,)
@@ -1020,7 +1020,7 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = Query(ContactField).get(self.field_id)
         return (field.choice_group,)
@@ -1034,7 +1034,7 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
-        return u"<b>"+field.name+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = Query(ContactField).get(self.field_id)
         return (field.choice_group,)

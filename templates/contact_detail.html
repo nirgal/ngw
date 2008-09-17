@@ -12,7 +12,7 @@
     <tr><td>
     
     {% for row in rows %}
-        {{ row|get:0|name_internal2nice }}: <b>{{ row|get:1 }}</b><br>
+        {{ row|get:0 }}: <b>{{ row|get:1 }}</b><br>
     {% endfor %}
     {% for g in contact.get_directgroups_member %}
         {% if not forloop.counter0 %}Member of groups:<br>{% endif %}

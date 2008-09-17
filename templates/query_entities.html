@@ -20,7 +20,7 @@ Optionnal parameters:
         {% for col in cols %}
             <th>
             {% if col|get:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
-            {{col|get:0|name_internal2nice}}
+            {{col|get:0}}
             {% if col|get:3 %}</a>{% endif %}
             {% if order|order_absmatch:forloop.counter0 %}{% if order|order_isreverted %} ▼{% else %} ▲{% endif %}{% endif %}
         {% endfor %}

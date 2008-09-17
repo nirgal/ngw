@@ -276,7 +276,7 @@ def contactsearch_get_fields(request, kind):
     body = u""
     if kind==u"field":
         body += u"Add a field: "
-        body += format_link_list([(u"javascript:select_field('name')", u"Name", u"field_name")]+[ (u"javascript:select_field('field_"+unicode(cf.id)+"')", no_br(name_internal2nice(cf.name)), u"field_field_"+unicode(cf.id)) for cf in Query(ContactField).order_by(ContactField.c.sort_weight)])
+        body += format_link_list([(u"javascript:select_field('name')", u"Name", u"field_name")]+[ (u"javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), u"field_field_"+unicode(cf.id)) for cf in Query(ContactField).order_by(ContactField.c.sort_weight)])
     elif kind==u"group":
         body += u"Add a group: "
         body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.c.date==None)])
