@@ -130,7 +130,7 @@ def index(request):
         'changes': Query(Config).get('changes').text,
     }, RequestContext(request))
 
-@http_authenticate(ngw_auth, 'ngw')
+# Helper function that is never call directly, hence the lack of authentification check
 def generic_delete(request, o, next_url):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -273,7 +273,7 @@ def contact_make_query_with_fields(fields=None):
     
     for prop in fields:
         if prop==u"name":
-            cols.append( ("name", 0, "name", contact_table.c.name) )
+            cols.append( (u"Name", 0, "name", contact_table.c.name) )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
             cg = Query(ContactGroup).get(groupid)
@@ -962,11 +962,13 @@ class FieldEditForm(forms.Form):
         t = self.data.get("type", "") or self.initial.get('type', "")
         if t:
             cls_contact_field = get_contact_field_type_by_dbid(t)
-            if cls_contact_field.has_choice:
-                if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
-                    del self.fields['choicegroup'].widget.attrs['disabled']
-            else:
-                self.fields['choicegroup'].widget.attrs['disabled'] = 1
+        else:
+            cls_contact_field = CONTACT_FIELD_TYPES_CLASSES[0]
+        if cls_contact_field.has_choice:
+            if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
+                del self.fields['choicegroup'].widget.attrs['disabled']
+        else:
+            self.fields['choicegroup'].widget.attrs['disabled'] = 1
         
         self.fields['choicegroup'].required = False
         
@@ -998,50 +1000,70 @@ def field_edit(request, id):
             data = form.clean()
             if not id:
                 cf = ContactField()
-            elif cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']:
-                deletion_details=[]
-                cls = get_contact_field_type_by_dbid(data['type'])
-                choice_group_id = None
+                
+                cf.name = data['name']
+                cf.hint = data['hint']
+                if data['contact_group']:
+                    cf.contact_group_id = int(data['contact_group'])
+                else:
+                    cf.contact_group_id = None
+                cf.type = data['type'] # BUG can't change polymorphic type
                 if data['choicegroup']:
-                    choice_group_id = int(data['choicegroup'])
-                for cfv in cf.values:
-                    if not cls.validate_unicode_value(cfv.value, choice_group_id):
-                        deletion_details.append((cfv.contact, cfv))
-                        
-                if deletion_details:
-                    if request.POST.get('confirm', None):
-                        for cfv in [ dd[1] for dd in deletion_details ]:
-                            Session.delete(cfv)
-                    else:
-                        args={}
-                        args['title'] = "Type incompatible with existing data"
-                        args['id'] = id
-                        args['cf'] = cf
-                        args['deletion_details'] = deletion_details
-                        for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
-                            args[k] = data[k]
-                        return render_to_response('type_change.html', args, RequestContext(request))
-                if id:
+                    cf.choice_group_id = int(data['choicegroup'])
+                else:
+                    cf.choice_group_id = None
+                cf.sort_weight = int(data['move_after'])
+                # reload polymorphic class:
+                Session.commit()
+                cfid = cf.id
+                Session.execute("UPDATE contact_field SET type='%(type)s' WHERE id=%(id)i"%{'id':cfid, 'type': data['type']})
+                Session.expunge(cf)
+                cf = Query(ContactField).get(cfid)
+            else:
+                if cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']:
+                    deletion_details=[]
+                    cls = get_contact_field_type_by_dbid(data['type'])
+                    choice_group_id = None
+                    if data['choicegroup']:
+                        choice_group_id = int(data['choicegroup'])
+                    for cfv in cf.values:
+                        if not cls.validate_unicode_value(cfv.value, choice_group_id):
+                            deletion_details.append((cfv.contact, cfv))
+                            
+                    if deletion_details:
+                        if request.POST.get('confirm', None):
+                            for cfv in [ dd[1] for dd in deletion_details ]:
+                                Session.delete(cfv)
+                        else:
+                            args={}
+                            args['title'] = "Type incompatible with existing data"
+                            args['id'] = id
+                            args['cf'] = cf
+                            args['deletion_details'] = deletion_details
+                            for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
+                                args[k] = data[k]
+                            return render_to_response('type_change.html', args, RequestContext(request))
+                    
                     # Needed work around sqlalchemy polymorphic feature
                     # Recreate the record
                     # Updating type of a sub class silently fails
                     id_int = int(id)
                     Session.execute("UPDATE contact_field SET type='%(type)s' WHERE id=%(id)i"%{'id':id_int, 'type': data['type']})
                     cf = Query(ContactField).get(id)
-            cf.name = data['name']
-            cf.hint = data['hint']
-            if data['contact_group']:
-                cf.contact_group_id = int(data['contact_group'])
-            else:
-                cf.contact_group_id = None
-            cf.type = data['type'] # BUG can't change polymorphic type
-            if data['choicegroup']:
-                cf.choice_group_id = int(data['choicegroup'])
-            else:
-                cf.choice_group_id = None
-            cf.sort_weight = int(data['move_after'])
+                cf.name = data['name']
+                cf.hint = data['hint']
+                if data['contact_group']:
+                    cf.contact_group_id = int(data['contact_group'])
+                else:
+                    cf.contact_group_id = None
+                cf.type = data['type'] # BUG can't change polymorphic type
+                if data['choicegroup']:
+                    cf.choice_group_id = int(data['choicegroup'])
+                else:
+                    cf.choice_group_id = None
+                cf.sort_weight = int(data['move_after'])
 
-            Session.commit()
+
             field_renumber()
             print cf
             request.user.push_message(u"Field %s has been changed sucessfully." % cf.name)
