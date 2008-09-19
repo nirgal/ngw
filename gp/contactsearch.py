@@ -134,6 +134,26 @@ def filter_parse_expression(lexer):
         return AndBoundFilter(subfilter1, subfilter2)
 
 
+    if lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"or":
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.LPARENTHESIS:
+            raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected '('.")
+
+        subfilter1 = filter_parse_expression(lexer)
+
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.COMMA:
+            raise (u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected ','.")
+        
+        subfilter2 = filter_parse_expression(lexer)
+
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.RPARENTHESIS:
+            raise (u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected ')'.")
+        
+        return OrBoundFilter(subfilter1, subfilter2)
+
+
     if lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"ffilter":
         lexem = lexer.next()
         if lexem.type!=FilterLexer.Lexem.Type.LPARENTHESIS:

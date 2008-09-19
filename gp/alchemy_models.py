@@ -773,24 +773,63 @@ class ContactNameMetaField(object):
 
     
 
+class FilterHelper(object):
+    @staticmethod
+    def sqlescape_where_params(query, where, **kargs):
+        """
+        That function renames the arguements in such a way that it can be called successive times using the same parameters.
+        It modifies the where string and return a new one, *without* actually applying the filters, so it can be used in a or clause.
+        On the other hand, the parameters are automatically added to the query ones.
+        The return value is a 2-tupple with the modified where clause and the modified parameters.
+        """
+        # kargs is a dictionnary of parameters to apply to where
+        # unicode parameters are escaped
+        # integers are expanded inline
+        params_where = { }
+        params_sql = { }
+        for k,v in kargs.iteritems():
+            #print k,"=",v
+            auto_param_name=u"autoparam_"+unicode(len(query._params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
+            if isinstance(v, unicode):
+                params_where[ k ] = u':'+auto_param_name+k
+                params_sql[ auto_param_name+k ] = v
+            elif isinstance(v, int):
+                params_where[ k ] = v
+            else:
+                raise Exception(u"Unsupported type "+unicode(type(v)))
+        where = where % params_where
+        return where, params_sql
 
-class Filter(object):
+    def get_sql_query_where(self, query, *args, **kargs):
+        """
+        Helper function thaa:
+        - calls self.get_sql_where_params
+        - renames the parameters in a way there can't be name collisions
+        - add the literal parameters to the query
+        - return (query, where string)
+        """
+        where, params = self.get_sql_where_params(*args, **kargs)
+        where, params = self.sqlescape_where_params(query, where, **params)
+        query = query.params(params)
+        return query, where
+
+    
+class Filter(FilterHelper):
     """
     This is a generic filter that must be given arguments before being applied.
     Exemple: "profession startswith"
     Filters should define 3 methods:
-        apply_filter_to_query(query, ...)
+        get_sql_where_params(query, ...)
         to_html(...)
         get_param_types()
     """
     def bind(self, *args):
         return BoundFilter(self, *args)
 
-
 class NameFilterStartsWith(Filter):
-    def apply_filter_to_query(self, query, value):
+    def get_sql_where_params(self, value):
         value = decorated_letters.str_match_withdecoration(value.lower())
-        return BoundFilter.apply_where_to_query(query, u'contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s', value_name1=u"^"+value, value_name2=u" "+value)
+        return u'contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s', { 'value_name1':u"^"+value, 'value_name2':u" "+value }
     def to_html(self, value):
         return u"<b>Name</b> "+self.__class__.human_name+u" \""+unicode(value)+u"\""
 
@@ -824,9 +863,9 @@ class FieldFilterOp1(FieldFilter):
 
 
 class FieldFilterStartsWith(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
+    def get_sql_where_params(self, value):
         value = decorated_letters.str_match_withdecoration(value.lower())
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', field_id=self.field_id, value1=u"^"+value, value2=u" "+value)
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', { 'field_id':self.field_id, 'value1':u"^"+value, 'value2':u" "+value}
     def get_param_types(self):
         return (unicode,)
 FieldFilterStartsWith.internal_name="startswith"
@@ -834,8 +873,8 @@ FieldFilterStartsWith.human_name=u"has a word starting with"
 
 
 class FieldFilterEQ(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (unicode,)
 FieldFilterEQ.internal_name="eq"
@@ -843,8 +882,8 @@ FieldFilterEQ.human_name=u"="
 
     
 class FieldFilterNEQ(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
 FieldFilterNEQ.internal_name="neq"
@@ -852,8 +891,8 @@ FieldFilterNEQ.human_name=u"≠"
 
     
 class FieldFilterLE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
 FieldFilterLE.internal_name="le"
@@ -861,8 +900,8 @@ FieldFilterLE.human_name=u"≤"
 
     
 class FieldFilterGE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
 FieldFilterGE.internal_name="ge"
@@ -870,8 +909,8 @@ FieldFilterGE.human_name=u"≥"
 
     
 class FieldFilterLIKE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
 FieldFilterLIKE.internal_name="like"
@@ -879,8 +918,8 @@ FieldFilterLIKE.human_name=u"SQL LIKE"
 
     
 class FieldFilterILIKE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
 FieldFilterILIKE.internal_name="ilike"
@@ -888,8 +927,8 @@ FieldFilterILIKE.human_name=u"SQL ILIKE"
 
     
 class FieldFilterNull(FieldFilterOp0):
-    def apply_filter_to_query(self, query):
-        return BoundFilter.apply_where_to_query(query, u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', field_id=self.field_id)
+    def get_sql_where_params(self):
+        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
     def get_param_types(self):
         return ()
 FieldFilterNull.internal_name="null"
@@ -897,8 +936,8 @@ FieldFilterNull.human_name=u"is undefined"
 
     
 class FieldFilterNotNull(FieldFilterOp0):
-    def apply_filter_to_query(self, query):
-        return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', field_id=self.field_id)
+    def get_sql_where_params(self):
+        return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
     def get_param_types(self):
         return ()
 FieldFilterNotNull.internal_name="notnull"
@@ -906,8 +945,8 @@ FieldFilterNotNull.human_name=u"is defined"
 
     
 class FieldFilterIEQ(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterIEQ.internal_name="ieq"
@@ -915,8 +954,8 @@ FieldFilterIEQ.human_name=u"="
 
     
 class FieldFilterINE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterINE.internal_name="ineq"
@@ -924,8 +963,8 @@ FieldFilterINE.human_name=u"≠"
 
     
 class FieldFilterIEQ(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterIEQ.internal_name="ieq"
@@ -933,8 +972,8 @@ FieldFilterIEQ.human_name=u"="
 
     
 class FieldFilterILT(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterILT.internal_name="ilt"
@@ -942,8 +981,8 @@ FieldFilterILT.human_name=u"<"
 
     
 class FieldFilterIGT(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterIGT.internal_name="igt"
@@ -951,8 +990,8 @@ FieldFilterIGT.human_name=u">"
 
     
 class FieldFilterILE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterILE.internal_name="ile"
@@ -960,8 +999,8 @@ FieldFilterILE.human_name=u"≤"
 
     
 class FieldFilterIGE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterIGE.internal_name="ige"
@@ -969,8 +1008,8 @@ FieldFilterIGE.human_name=u"≥"
 
     
 class FieldFilterAGE_GE(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterAGE_GE.internal_name="agege"
@@ -978,8 +1017,8 @@ FieldFilterAGE_GE.human_name=u"Age (years) ≥"
 
     
 class FieldFilterVALID_GT(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', field_id=self.field_id, value=int(value))
+    def get_sql_where_params(self, value):
+        return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
 FieldFilterVALID_GT.internal_name="validitygt"
@@ -987,8 +1026,8 @@ FieldFilterVALID_GT.human_name=u"date until event ≥"
 
     
 class FieldFilterFUTURE(FieldFilterOp0):
-    def apply_filter_to_query(self, query):
-        return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', field_id=self.field_id)
+    def get_sql_where_params(self):
+        return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', { 'field_id': self.field_id }
     def get_param_types(self):
         return ()
 FieldFilterFUTURE.internal_name="future"
@@ -996,8 +1035,8 @@ FieldFilterFUTURE.human_name=u"In the future"
 
     
 class FieldFilterChoiceEQ(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
@@ -1010,8 +1049,8 @@ FieldFilterChoiceEQ.human_name=u"="
 
 
 class FieldFilterChoiceNEQ(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', field_id=self.field_id, value=value)
+    def get_sql_where_params(self, value):
+        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
@@ -1024,8 +1063,8 @@ FieldFilterChoiceNEQ.human_name=u"≠"
 
     
 class FieldFilterMultiChoiceHAS(FieldFilterOp1):
-    def apply_filter_to_query(self, query, value):
-        return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', field_id=self.field_id, value=value, valuestart=value+",%", valuemiddle="%,"+value+",%", valueend="%,"+value)
+    def get_sql_where_params(self, value):
+        return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
         field = Query(ContactField).get(self.field_id)
         cfv = Query(Choice).get((field.choice_group_id, value))
@@ -1041,9 +1080,9 @@ FieldFilterMultiChoiceHAS.human_name=u"contains"
 class GroupFilterIsMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
-    def apply_filter_to_query(self, query):
+    def get_sql_where_params(self):
         group = Query(ContactGroup).get(self.group_id)
-        return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
         return self.__class__.human_name+u" \""+group.unicode_with_date()+"\""
@@ -1056,9 +1095,9 @@ GroupFilterIsMember.human_name=u"is member of group"
 class GroupFilterIsInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
-    def apply_filter_to_query(self, query):
+    def get_sql_where_params(self):
         group = Query(ContactGroup).get(self.group_id)
-        return BoundFilter.apply_where_to_query(query, u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
         return self.__class__.human_name+u" \""+group.unicode_with_date()+"\""
@@ -1071,9 +1110,9 @@ GroupFilterIsInvited.human_name=u"has been invited in group"
 class GroupFilterIsNotMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
-    def apply_filter_to_query(self, query):
+    def get_sql_where_params(self):
         group = Query(ContactGroup).get(self.group_id)
-        return BoundFilter.apply_where_to_query(query, u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
         return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
@@ -1086,45 +1125,30 @@ GroupFilterIsNotMember.human_name=u"is not member of group"
 class GroupFilterIsNotInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
-    def apply_filter_to_query(self, query):
+    def get_sql_where_params(self):
         group = Query(ContactGroup).get(self.group_id)
-        return BoundFilter.apply_where_to_query(query, u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]))
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
         return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
     def get_param_types(self):
         return ()
-GroupFilterIsNotInvited.internal_name="ginvited"
+GroupFilterIsNotInvited.internal_name="gnotinvited"
 GroupFilterIsNotInvited.human_name=u"has not been invited in group"
 
     
     
-class BoundFilter(object):
+class BaseBoundFilter(FilterHelper):
     """
     This is a full contact filter with both function and arguments
     """
-    @staticmethod
-    def apply_where_to_query(query, where, **kargs):
-        # kargs is a dictionnary of parameters to apply to where
-        # unicode parameters are escaped
-        # integers are expanded inline
-        params_where = { }
-        params_sql = { }
-        for k,v in kargs.iteritems():
-            #print k,"=",v
-            auto_param_name=u"autoparam_"+unicode(len(query._params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
-            if isinstance(v, unicode):
-                params_where[ k ] = u':'+auto_param_name+k
-                params_sql[ auto_param_name+k ] = v
-            elif isinstance(v, int):
-                params_where[ k ] = v
-            else:
-                raise Exception(u"Unsupported type "+unicode(type(v)))
-        where = where % params_where
-        #print "where=", where.encode("utf8")
-        #for k,v in params_sql.iteritems():
-        #    print '%s="%s"' % (k, v.encode("utf8"))
-        return query.filter(where).params(params_sql)
+    def apply_filter_to_query(self, query):
+        query, where = self.get_sql_query_where(query)
+        return query.filter(where)
+
+
+class BoundFilter(BaseBoundFilter):
+    # TODO: Rename to FieldBoundFilter
 
     def __init__(self, filter, *args):
         self.filter = filter
@@ -1134,27 +1158,40 @@ class BoundFilter(object):
         return "BoundFilter<" + \
             ",".join([repr(self.filter)]+[repr(arg) for arg in self.args]) \
             +">"
-    def apply_filter_to_query(self, query):
-        return self.filter.apply_filter_to_query(query, *self.args)
+    def get_sql_where_params(self):
+        return self.filter.get_sql_where_params(*self.args)
 
     def to_html(self):
         return self.filter.to_html(*self.args)
-
-class EmptyBoundFilter(object):
+    
+class EmptyBoundFilter(BaseBoundFilter):
     def apply_filter_to_query(self, query):
         return query
     def to_html(self):
         return u"All contacts"
 
-class AndBoundFilter(object):
+class AndBoundFilter(BaseBoundFilter):
     def __init__(self, f1, f2):
         self.f1 = f1
         self.f2 = f2
-    def apply_filter_to_query(self, query):
-        return self.f2.apply_filter_to_query(self.f1.apply_filter_to_query(query))
+    def get_sql_query_where(self, query, *args, **kargs):
+        query, where1 = self.f1.get_sql_query_where(query)
+        query, where2 = self.f2.get_sql_query_where(query)
+        return query, u"("+where1+u') AND ('+where2+u')'
     def to_html(self):
         return self.f1.to_html() + "<br> AND <br>" + self.f2.to_html()
 
+
+class OrBoundFilter(BaseBoundFilter):
+    def __init__(self, f1, f2):
+        self.f1 = f1
+        self.f2 = f2
+    def get_sql_query_where(self, query, *args, **kargs):
+        query, where1 = self.f1.get_sql_query_where(query)
+        query, where2 = self.f2.get_sql_query_where(query)
+        return query, u"("+where1+u') OR ('+where2+u')'
+    def to_html(self):
+        return self.f1.to_html() + "<br> OR <br>" + self.f2.to_html()
 
 
 class ContactFieldValue(NgwModel):
