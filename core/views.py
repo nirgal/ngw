@@ -18,7 +18,6 @@ from ngw.core.basicauth import *
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
 DISP_GROUP_PREFIX = u'group_'
-DEFAULT_INITIAL_FIELDS=[DISP_NAME, DISP_FIELD_PREFIX+u'7', DISP_FIELD_PREFIX+u'8', DISP_FIELD_PREFIX+u'10', DISP_FIELD_PREFIX+u'52', DISP_FIELD_PREFIX+u'53']
 NB_LINES_PER_PAGE=200
 
 FTYPE_TEXT='TEXT'
@@ -74,7 +73,12 @@ def ngw_auth(username, passwd):
 def get_default_display_fields():
     # check the field still exists
     result = []
-    for fname in DEFAULT_INITIAL_FIELDS:
+    default_fields = Query(Config).get('columns')
+    if default_fields:
+        default_fields = default_fields.text.split(',')
+    else:
+        default_fields = []
+    for fname in default_fields:
         if fname=='name':
             pass
         elif fname.startswith(DISP_GROUP_PREFIX):
@@ -99,6 +103,8 @@ def get_default_display_fields():
             print "Error in default fields: Invalid syntax in \"%s\"." % fname.encode('utf8')
             continue
         result.append(fname)
+    if not result:
+        result = [ DISP_NAME ]
     return result
 
 
