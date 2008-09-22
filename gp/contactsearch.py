@@ -381,8 +381,8 @@ def contactsearch_get_params(request, field, filtername):
         js+=u"+'"
     js+=u")'"
 
-    if previous_filter:
-        body += u"<form onsubmit=\"newfilter="+js+u"; newfilter='and('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
+    if previous_filter: # CLEAN ME
+        body += u"<form id='filter_param_form' onsubmit=\"newfilter="+js+u"; combine='and'; for (i=0; i<document.forms['filter_param_form']['filter_combine'].length; ++i) if (document.forms['filter_param_form']['filter_combine'][i].checked) combine=document.forms['filter_param_form']['filter_combine'][i].value; newfilter=combine+'('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
                 body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
@@ -393,12 +393,13 @@ def contactsearch_get_params(request, field, filtername):
                 body += u"</select>\n"
             else:
                 raise Exception(u"Unsupported filter parameter of type "+unicode(param_type))
+        body += u"Filter combinaison type: <input type=radio name='filter_combine' value=and checked>AND <input type=radio name='filter_combine' value=or>OR\n"
         body += u"<input type=submit value=\"Add and apply filter\" onclick=\"add_another_filter=false;\">\n"
         body += u"<input type=submit value=\"Continue adding conditions\" onclick=\"add_another_filter=true;\">\n"
         body += u"</form>\n"
         body += u"<br clear=all>\n"
     else:
-        body += u"<form onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
+        body += u"<form id='filter_param_form' onsubmit=\"newfilter="+js+u"; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
                 body += u"<input type=text id=\"filter_param_"+unicode(i)+u"\"><br>\n"
@@ -406,7 +407,7 @@ def contactsearch_get_params(request, field, filtername):
                 body += u"<select id=\"filter_param_"+unicode(i)+u"\">\n"
                 for choice_key, choice_value in param_type.ordered_choices:
                     body += "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)}
-                body += u"</select>\n"
+                body += u"</select><br>\n"
             else:
                 raise Exception(u"Unsupported filter parameter of type "+unicode(param_type))
         body += u"<input type=submit value=\"Apply filter\" onclick=\"add_another_filter=false;\">\n"
