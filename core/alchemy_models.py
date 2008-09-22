@@ -259,7 +259,7 @@ class Contact(NgwModel):
 
         street = self.get_fieldvalue_by_id(9)
         postal_code = self.get_fieldvalue_by_id(11)
-        city = self.get_fieldvalue_by_id(4)
+        city = self.get_fieldvalue_by_id(14)
         country = self.get_fieldvalue_by_id(5)
         vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
 
@@ -276,7 +276,7 @@ class Contact(NgwModel):
 
     def get_addr_semicol(self):
         #return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
-        return self.get_fieldvalue_by_id(9)+u";"+self.get_fieldvalue_by_id(4)+u";"+self.get_fieldvalue_by_id(5)
+        return self.get_fieldvalue_by_id(9)+u";"+self.get_fieldvalue_by_id(14)+u";"+self.get_fieldvalue_by_id(5)
 
     def push_message(self, message):
         ContactSysMsg(self.id, message)
