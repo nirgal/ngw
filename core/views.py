@@ -12,8 +12,8 @@ from django import forms
 from django.shortcuts import render_to_response
 from django.template import loader, RequestContext
 from ngw import settings
-from ngw.gp.alchemy_models import *
-from ngw.gp.basicauth import *
+from ngw.core.alchemy_models import *
+from ngw.core.basicauth import *
 
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
@@ -616,7 +616,7 @@ def contact_pass(request, id):
             #hash = b64encode(sha(password).digest())
             #contact.passwd = "{SHA}"+hash
             request.user.push_message("Password has been changed sucessfully!")
-            return HttpResponseRedirect(reverse('ngw.gp.views.contact_detail', args=(id,)))
+            return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(id,)))
     else: # GET
         form = ContactPasswordForm()
     args['form'] = form
@@ -628,7 +628,7 @@ def contact_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(Contact).get(id)
-    return generic_delete(request, o, reverse('ngw.gp.views.contact_list'))
+    return generic_delete(request, o, reverse('ngw.core.views.contact_list'))
 
 
 
@@ -831,7 +831,7 @@ def contactgroup_edit(request, id):
             elif request.POST.get("_addanother", None):
                 return HttpResponseRedirect(cg.get_class_absolute_url()+u"add")
             else:
-                return HttpResponseRedirect(reverse('ngw.gp.views.contactgroup_detail', args=(cg.id,)))
+                return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_detail', args=(cg.id,)))
 
     else: # GET
         if id:
@@ -869,7 +869,7 @@ def contactgroup_remove(request, gid, cid):
         return HttpResponse("Error, that contact is not a direct member. Please check subgroups")
     Session.delete(cig)
     request.user.push_message(u"%s has been removed for group %s." % (cig.contact.name, cig.group.name))
-    return HttpResponseRedirect(reverse('ngw.gp.views.contactgroup_detail', args=(gid,)))
+    return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_detail', args=(gid,)))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -878,7 +878,7 @@ def contactgroup_delete(request, id):
         return unauthorized(request)
     o = Query(ContactGroup).get(id)
     # TODO: delete static folder
-    return generic_delete(request, o, reverse('ngw.gp.views.contactgroup_list'))# args=(p.id,)))
+    return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'))# args=(p.id,)))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -919,7 +919,7 @@ def field_move_up(request, id):
     cf.sort_weight -= 15
     Session.commit()
     field_renumber()
-    return HttpResponseRedirect(reverse('ngw.gp.views.field_list'))
+    return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
 
 @http_authenticate(ngw_auth, 'ngw')
 def field_move_down(request, id):
@@ -929,7 +929,7 @@ def field_move_down(request, id):
     cf.sort_weight += 15
     Session.commit()
     field_renumber()
-    return HttpResponseRedirect(reverse('ngw.gp.views.field_list'))
+    return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
 
 def field_renumber():
     new_weigth = 0
@@ -1074,7 +1074,7 @@ def field_edit(request, id):
             elif request.POST.get("_addanother", None):
                 return HttpResponseRedirect(cf.get_class_absolute_url()+u"add")
             else:
-                return HttpResponseRedirect(reverse('ngw.gp.views.field_list')) # args=(p.id,)))
+                return HttpResponseRedirect(reverse('ngw.core.views.field_list')) # args=(p.id,)))
         # else validation error
     else:
         if id: # modify
@@ -1105,7 +1105,7 @@ def field_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(ContactField).get(id)
-    return generic_delete(request, o, reverse('ngw.gp.views.field_list'))
+    return generic_delete(request, o, reverse('ngw.core.views.field_list'))
 
 
 #######################################################################
@@ -1288,7 +1288,7 @@ def choicegroup_edit(request, id=None):
             elif request.POST.get("_addanother", None):
                 return HttpResponseRedirect(cg.get_class_absolute_url()+u"add")
             else:
-                return HttpResponseRedirect(reverse('ngw.gp.views.choicegroup_list'))
+                return HttpResponseRedirect(reverse('ngw.core.views.choicegroup_list'))
     else:
         form = ChoiceGroupForm(cg)
 
@@ -1307,5 +1307,5 @@ def choicegroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(ChoiceGroup).get(id)
-    return generic_delete(request, o, reverse('ngw.gp.views.choicegroup_list'))# args=(p.id,)))
+    return generic_delete(request, o, reverse('ngw.core.views.choicegroup_list'))# args=(p.id,)))
 

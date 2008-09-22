@@ -51,7 +51,7 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
-    'ngw.gp.alchemy_middleware.TransactionMiddleware',
+    'ngw.core.alchemy_middleware.TransactionMiddleware',
 #    'django.middleware.common.CommonMiddleware',
 #    'django.contrib.sessions.middleware.SessionMiddleware',
 #    'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -72,7 +72,7 @@ INSTALLED_APPS = (
 #    'django.contrib.sessions',
 #    'django.contrib.sites',
 #    'django.contrib.admin',
-    'ngw.gp',
+    'ngw.core',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -81,7 +81,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
     'django.core.context_processors.request',
-    'ngw.gp.banner_context.banner',
+    'ngw.core.banner_context.banner',
 )
 
 APPEND_SLASH = False

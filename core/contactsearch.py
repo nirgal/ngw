@@ -4,8 +4,8 @@ import pprint
 import urllib2
 from django.http import *
 from django.utils.safestring import mark_safe
-from ngw.gp.views import *
-from ngw.gp.alchemy_models import *
+from ngw.core.views import *
+from ngw.core.alchemy_models import *
 
 def no_br(txt):
     " Replaces all spaces by non-breaking spaces"

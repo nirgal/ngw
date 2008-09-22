@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-from ngw.gp.alchemy_models import *
+from ngw.core.alchemy_models import *
 
 PRINT_TRANSACTION_ENDS=False
 
