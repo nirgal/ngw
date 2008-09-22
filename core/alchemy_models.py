@@ -1085,7 +1085,7 @@ class GroupFilterIsMember(Filter):
         return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
-        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\""
+        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name="memberof"
@@ -1100,7 +1100,7 @@ class GroupFilterIsInvited(Filter):
         return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
-        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\""
+        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name="ginvited"
@@ -1115,7 +1115,7 @@ class GroupFilterIsNotMember(Filter):
         return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
-        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
+        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsNotMember.internal_name="notmemberof"
@@ -1130,7 +1130,7 @@ class GroupFilterIsNotInvited(Filter):
         return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
-        return self.__class__.human_name+u" \""+group.unicode_with_date()+"\"."
+        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsNotInvited.internal_name="gnotinvited"
@@ -1145,6 +1145,10 @@ class BaseBoundFilter(FilterHelper):
     def apply_filter_to_query(self, query):
         query, where = self.get_sql_query_where(query)
         return query.filter(where)
+
+    @staticmethod
+    def indent(indent_level):
+        return u"\u00a0"*4*indent_level
 
 
 class BoundFilter(BaseBoundFilter):
@@ -1161,14 +1165,14 @@ class BoundFilter(BaseBoundFilter):
     def get_sql_where_params(self):
         return self.filter.get_sql_where_params(*self.args)
 
-    def to_html(self):
-        return self.filter.to_html(*self.args)
+    def to_html(self, indent_level=0):
+        return self.indent(indent_level)+self.filter.to_html(*self.args)
     
 class EmptyBoundFilter(BaseBoundFilter):
     def apply_filter_to_query(self, query):
         return query
-    def to_html(self):
-        return u"All contacts"
+    def to_html(self, indent_level=0):
+        return self.indent(indent_level)+u"All contacts"
 
 class AndBoundFilter(BaseBoundFilter):
     def __init__(self, f1, f2):
@@ -1178,8 +1182,8 @@ class AndBoundFilter(BaseBoundFilter):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
         return query, u"("+where1+u') AND ('+where2+u')'
-    def to_html(self):
-        return self.f1.to_html() + "<br> AND <br>" + self.f2.to_html()
+    def to_html(self, indent_level=0):
+        return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"AND<br>"+ self.f2.to_html(indent_level+1)
 
 
 class OrBoundFilter(BaseBoundFilter):
@@ -1190,8 +1194,9 @@ class OrBoundFilter(BaseBoundFilter):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
         return query, u"("+where1+u') OR ('+where2+u')'
-    def to_html(self):
-        return self.f1.to_html() + "<br> OR <br>" + self.f2.to_html()
+    def to_html(self, indent_level=0):
+        return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"OR<br>"+ self.f2.to_html(indent_level+1)
+
 
 
 class ContactFieldValue(NgwModel):
