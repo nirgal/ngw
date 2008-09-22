@@ -17,19 +17,11 @@
     {% with cg.get_direct_invited.count as ci %}
         {{ ci }} contact{{ ci|pluralize }} {{ ci|pluralize:"have,has" }} been invited in that group, but {{ ci|pluralize:"are,is" }} not member yet.
     {% endwith %}
-
-    {% comment %}
-    {% for contact in cg.get_direct_invited %}
-    {% if forloop.first %}
-        <h1>Invited members</h1>
-        {% endif %}
-        ‣ <a href="{{ contact.get_link }}">{{ contact }}</a><br>
-    {% endfor %}
     {% endcomment %}
 
     {% if cg.direct_subgroups %}
         <h1>Sub groups</h1>
-        <p>People in sub-groups are automatically members.
+        <p>People in sub-groups automatically are members.
         <br>
         {% for sg in cg.direct_subgroups  %}
         ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includinghtml|safe}}<br>
@@ -39,7 +31,7 @@
     {% for f in files %}
         {% if forloop.first %}
             <h1 class=boxheader>Files</h1>
-            <div style="border: 1px solid #999; padding: 1ex;">
+            <div class=box>
         {% endif %}
         ‣ <a href="/static/g/{{cg.id}}/{{f}}">{{f}}</a><br>
         {% if forloop.last %}
