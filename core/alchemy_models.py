@@ -19,6 +19,7 @@ GROUP_ADMIN = 8
 FIELD_LOGIN = 1
 FIELD_PASSWORD = 2
 FIELD_LASTCONNECTION = 3
+FIELD_COLUMNS = 4
 
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
@@ -240,6 +241,54 @@ class Contact(NgwModel):
         if cfv == None:
             return u""
         return unicode(cfv)
+
+    def set_fieldvalue(self, user, field, newvalue):
+        """
+        Sets a field value and registers the change in the log table.
+        Field can be either a field id or a ContactField object.
+        New value must be text.
+        """
+        if type(field)==int:
+            field_id = field
+            field = Query(ContactField).get(field)
+        else:
+            assert isinstance(field, ContactField)
+            field_id = field.id
+        cfv = Query(ContactFieldValue).get((self.id, field_id))
+        if cfv == None:
+            if newvalue:
+                log = Log(user.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u"Contact "+unicode(self.id)
+                log.target_repr = u"Contact "+self.name
+                log.property = unicode(field_id)
+                log.property_repr = field.name
+                cfv = ContactFieldValue()
+                cfv.contact = self
+                cfv.field = field
+                cfv.value = newvalue
+                log.change = u"new value is "+unicode(cfv)
+        else: # There was a value
+            if newvalue:
+                if cfv.value!=newvalue:
+                    log = Log(user.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = u"Contact "+unicode(self.id)
+                    log.target_repr = u"Contact "+self.name
+                    log.property = unicode(field_id)
+                    log.property_repr = field.name
+                    log.change = u"change from "+unicode(cfv)
+                    cfv.value = newvalue
+                    log.change += u" to "+unicode(cfv)
+            else:
+                log = Log(user.id)
+                log.action = LOG_ACTION_DEL
+                log.target = u"Contact "+unicode(self.id)
+                log.target_repr = u"Contact "+self.name
+                log.property = unicode(field_id)
+                log.property_repr = field.name
+                log.change = u"old value was "+unicode(cfv)
+                Session.delete(cfv)
 
     def get_login(self):
         return self.get_fieldvalue_by_id(FIELD_LOGIN)

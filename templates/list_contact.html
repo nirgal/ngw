@@ -96,6 +96,10 @@ function submit_fields() {
         new_fields+=sel.options[i].value;
     }
     document.getElementById('fields').value = new_fields;
+    if (document.forms['field_selection_widget'].savecolumns.checked) {
+        p = document.getElementById('mainform');
+        savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
+    }
     document.forms['mainform'].submit();
 }
 function show_field_selection() {
@@ -112,7 +116,8 @@ function show_field_selection() {
     <table class=objchange>
         {{fields_form.as_table}}
     </table>
-    <div class=submitbar>
+    <div class=submitbar style="text-align:left;">
+        <input type=checkbox name=savecolumns id="field_selection_widget_save_default"><label for="field_selection_widget_save_default">Save column selection as my default</label><br>
         <input type=submit value="Set columns">
     </div>
     </form>

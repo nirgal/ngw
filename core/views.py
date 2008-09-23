@@ -70,15 +70,17 @@ def ngw_auth(username, passwd):
     return None # authentification failed
 
 
-def get_default_display_fields():
+def get_display_fields(user):
     # check the field still exists
     result = []
-    default_fields = Query(Config).get('columns')
-    if default_fields:
-        default_fields = default_fields.text.split(',')
-    else:
-        default_fields = []
-    for fname in default_fields:
+    default_fields = user.get_fieldvalue_by_id(FIELD_COLUMNS)
+    if not default_fields:
+        default_fields = Query(Config).get('columns')
+        if default_fields:
+            default_fields = default_fields.text
+    if not default_fields:
+        default_fields = u""
+    for fname in default_fields.split(','):
         if fname=='name':
             pass
         elif fname.startswith(DISP_GROUP_PREFIX):
@@ -268,10 +270,7 @@ def str_member_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
     return lambda c: c.str_member_of(gids)
 
-def contact_make_query_with_fields(fields=None):
-    if not fields:
-        fields = get_default_display_fields()
-
+def contact_make_query_with_fields(fields):
     q = Query(Contact)
     n_entities = 1
     j = contact_table
@@ -329,9 +328,12 @@ def contact_list(request):
         fields = strfields.split(u',')
         baseurl+='&fields='+strfields
     else:
-        fields = get_default_display_fields()
+        fields = get_display_fields(request.user)
         strfields = u",".join(fields)
    
+    if (request.REQUEST.get(u'savecolumns')):
+        request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
+
     #print "contact_list:", fields
     q, cols = contact_make_query_with_fields(fields)
     q = filter.apply_filter_to_query(q)
@@ -505,41 +507,7 @@ def contact_edit(request, id):
                 newvalue = data[unicode(cfid)]
                 if newvalue!=None:
                     newvalue = cf.formfield_value_to_db_value(newvalue)
-                cfv = Query(ContactFieldValue).get((id, cfid))
-                if cfv == None:
-                    if newvalue:
-                        log = Log(request.user.id)
-                        log.action = LOG_ACTION_CHANGE
-                        log.target = u"Contact "+unicode(contact.id)
-                        log.target_repr = u"Contact "+contact.name
-                        log.property = unicode(cfid)
-                        log.property_repr = cf.name
-                        cfv = ContactFieldValue()
-                        cfv.contact = contact
-                        cfv.field = cf
-                        cfv.value = newvalue
-                        log.change = u"new value is "+unicode(cfv)
-                else: # There was a value
-                    if newvalue:
-                        if cfv.value!=newvalue:
-                            log = Log(request.user.id)
-                            log.action = LOG_ACTION_CHANGE
-                            log.target = u"Contact "+unicode(contact.id)
-                            log.target_repr = u"Contact "+contact.name
-                            log.property = unicode(cfid)
-                            log.property_repr = cf.name
-                            log.change = u"change from "+unicode(cfv)
-                            cfv.value = newvalue
-                            log.change += u" to "+unicode(cfv)
-                    else:
-                        log = Log(request.user.id)
-                        log.action = LOG_ACTION_DEL
-                        log.target = u"Contact "+unicode(contact.id)
-                        log.target_repr = u"Contact "+contact.name
-                        log.property = unicode(cfid)
-                        log.property_repr = cf.name
-                        log.change = u"old value was "+unicode(cfv)
-                        Session.delete(cfv)
+                contact.set_fieldvalue(request.user, cf, newvalue)
             request.user.push_message(u"Contact %s has been saved sucessfully!" % contact.name)
             if request.POST.get("_continue", None):
                 if not id:
@@ -681,7 +649,7 @@ def contactgroup_list(request):
 def contactgroup_detail(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    fields = get_default_display_fields()
+    fields = get_display_fields(request.user)
     cg = Query(ContactGroup).get(id)
     if not cg:
         raise Http404
