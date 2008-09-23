@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "list_contact.html" %}
 
 {% block nav %}
-{{ block.super }}
+  <a href="/">Home</a>
 › <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
 › {{ cg.name }}
 {% endblock %}
@@ -10,8 +10,7 @@
     {% if cg.description %}{{ cg.description }}<br><br>{% endif %}
     {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
-    <br>
-    {% include "query_entities.html" %}
+    {{ block.super }}
 
     {% comment %}
     {% with cg.get_direct_invited.count as ci %}
@@ -39,23 +38,25 @@
         {% endif %}
     {% endfor %}
 
-    {% block submitbar %}
-    <div id=submitbar>
-        <a href="{{cg.get_absolute_url}}edit">Edit</a>
-        <a href="{{cg.get_absolute_url}}emails">Emails</a>
-        <a href="?display={{display}}&amp;output=vcard">Vcards</a>  
-        {% ifnotequal display "mi" %}
-            <a href="?display=mi">Show invited and members</a>  
-        {% endifnotequal %}
-        {% ifnotequal display "m" %}
-            <a href="?display=m">Show only members</a>  
-        {% endifnotequal %}
-        {% ifnotequal display "i" %}
-            <a href="?display=i">Show only invited</a>  
-        {% endifnotequal %}
-        {% if cg.field_group %}
-        <a href="/contacts/add?default_group={{cg.id}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
-        {% endif %}
-    </div>
-    {% endblock %}
+{% endblock %}
+    
+{% block submitbar %}
+<div id=submitbar>
+  <a href="javascript:show_field_selection();" id=default> Select displayed columns</a>
+    <a href="{{cg.get_absolute_url}}edit">Edit</a>
+    <a href="{{cg.get_absolute_url}}emails">Emails</a>
+    <a href="?display={{display}}&amp;output=vcard">Vcards</a>  
+    {% ifnotequal display "mi" %}
+        <a href="?display=mi">Show invited and members</a>  
+    {% endifnotequal %}
+    {% ifnotequal display "m" %}
+        <a href="?display=m">Show only members</a>  
+    {% endifnotequal %}
+    {% ifnotequal display "i" %}
+        <a href="?display=i">Show only invited</a>  
+    {% endifnotequal %}
+    {% if cg.field_group %}
+    <a href="/contacts/add?default_group={{cg.id}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
+    {% endif %}
+</div>
 {% endblock %}

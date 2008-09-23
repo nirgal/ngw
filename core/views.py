@@ -251,7 +251,7 @@ def logs(request):
     args['objtype'] = Log
     args['query'] = Query(Log)
     args['cols'] = [
-        ( "Date", None, "small_date", Log.c.dt),
+        ( "Date GMT", None, "small_date", Log.c.dt),
         ( "User", None, "contact", Log.c.contact_id),
         ( "Action", None, "action_txt", Log.c.action),
         ( "Target", None, "target_repr", Log.c.target_repr),
@@ -519,9 +519,13 @@ def contact_edit(request, id):
                     url+=u"?default_group="+unicode(default_group)
                 return HttpResponseRedirect(url)
             else:
-                if not id:
-                    Session.commit() # We need the id rigth now!
-                return HttpResponseRedirect(contact.get_absolute_url())
+                if default_group and request.user.is_admin():
+                    cg = Query(ContactGroup).get(default_group)
+                    return HttpResponseRedirect(cg.get_absolute_url())
+                else:
+                    if not id:
+                        Session.commit() # We need the id rigth now!
+                    return HttpResponseRedirect(contact.get_absolute_url())
         # else add/update failed validation
     else: # GET /  HEAD
         initialdata = {}
@@ -647,14 +651,31 @@ def contactgroup_list(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_detail(request, id):
+    import contactsearch # FIXME
     if not request.user.is_admin():
         return unauthorized(request)
-    fields = get_display_fields(request.user)
+
+    strfilter = request.REQUEST.get(u'filter', u'')
+    filter = contactsearch.parse_filterstring(strfilter)
+    baseurl=u'?filter='+strfilter
+
+    strfields = request.REQUEST.get(u'fields', None)
+    if strfields:
+        fields = strfields.split(u',')
+        baseurl+='&fields='+strfields
+    else:
+        fields = get_display_fields(request.user)
+        strfields = u",".join(fields)
+   
+    if (request.REQUEST.get(u'savecolumns')):
+        request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
+
+
+    args={}
     cg = Query(ContactGroup).get(id)
     if not cg:
         raise Http404
     #print cg.direct_subgroups
-    args={}
 
     display=request.REQUEST.get("display", "")
     if display=="mi":
@@ -678,8 +699,11 @@ def contactgroup_detail(request, id):
             result += contact.vcard()
         return HttpResponse(result.encode("utf-8"), mimetype="text/x-vcard")
 
-    cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove from group</a>', None))
-    args['baseurl'] = "?display="+display
+    #cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove from group</a>', None))
+    baseurl += u"&display="+display
+    q = filter.apply_filter_to_query(q)
+
+    args['baseurl'] = baseurl
     args['display'] = display
     args['query'] = q
     args['cols'] = cols
@@ -687,6 +711,12 @@ def contactgroup_detail(request, id):
     args['dir'] = cg.static_folder()
     args['files'] = os.listdir(args['dir'])
     args['files'].remove('.htaccess')
+    ####
+    args['objtype'] = ContactGroup
+    args['filter'] = strfilter
+    args['fields'] = strfields
+    args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
+    ####
     return query_print_entities(request, 'group_detail.html', args)
 
 
