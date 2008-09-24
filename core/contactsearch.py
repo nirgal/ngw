@@ -300,13 +300,30 @@ def contactsearch_get_fields(request, kind):
     elif kind==u"group":
         body += u"Add a group: "
         body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.c.date==None)])
-
     elif kind==u"event":
         body += u"Add an event: "
         body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.c.date!=None)])
+    elif kind==u"custom":
+        body += u"Add a custom filter: "
+        body += format_link_list([ (u"javascript:select_field('custom_user')", u"Custom filters for "+request.user.name, u'custom')])
     else:
         body += u"ERROR in get_fields: kind=="+kind
     return HttpResponse(body)
+
+def parse_filter_list_str(txt):
+    list = txt.split(u',')
+    for idx in xrange(len(list)-1, 0, -1):
+        if list[idx-1][-1]!=u'"' or list[idx][0]!=u'"':
+            print "merging elements ", idx-1, "and", idx, "of", repr(list)
+            list[idx-1]+=u","+list[idx]
+            del list[idx]
+    for idx in xrange(len(list)):
+        assert(list[idx][0]==u'"')
+        assert(list[idx][-1]==u'"')
+        list[idx]=list[idx][1:-1]
+    assert(len(list)%2==0)
+    return [ (list[2*i], list[2*i+1]) for i in range(len(list)/2) ]
+    
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactsearch_get_filters(request, field):
@@ -330,6 +347,15 @@ def contactsearch_get_filters(request, field):
         body += u"Add a filter for group/event : "
         body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in group.get_filters() ])
 
+    elif field.startswith(u"custom"):
+        filter_list_str = request.user.get_fieldvalue_by_id(FIELD_FILTERS)
+        if not filter_list_str:
+            body += u"No custom filter available"
+        else:
+            filter_list = parse_filter_list_str(filter_list_str)
+            body += u"Not implemented"
+            #body += u"Select a custom filter : "
+            #body += format_link_list([ (u"javascript:select_filtername('"+unicode(i)+u"')", no_br(filter[0]), u"usercustom_"+unicode(i)) for (i,filter) in enumerate(filter_list) ])
     else:
         body+=u"ERROR in get_filters: field=="+field
     
