@@ -110,19 +110,6 @@ def get_display_fields(user):
     return result
 
 
-def MultiValueDict_unicode(d):
-    "Create a copy of the dict, converting values to unicode when necessary"
-    def u(x):
-        if isinstance(x, str):
-            return unicode(x, "utf-8")
-        else:
-            return x
-    result = MultiValueDict()
-    for k,v in d.iteritems():
-        #print "kv=",k,v
-        result.setlist(k, [ u(vi) for vi in v ])
-    return result
-
 def unauthorized(request):
     return HttpResponseForbidden(
         loader.render_to_string('message.html',{
@@ -1138,8 +1125,8 @@ class ChoicesWidget(forms.MultiWidget):
         widgets = []
         attrs_value = attrs or {}
         attrs_key = attrs or {}
-        attrs_value['style'] = "width:90%"
-        attrs_key['style'] = "width:9%; margin-left:1ex;"
+        attrs_value['style'] = u"width:90%"
+        attrs_key['style'] = u"width:9%; margin-left:1ex;"
 
         for i in range(ndisplay):
             widgets.append(forms.TextInput(attrs=attrs_value))
@@ -1148,7 +1135,7 @@ class ChoicesWidget(forms.MultiWidget):
         self.ndisplay = ndisplay
     def decompress(self, value):
         if value:
-            return value.split(",")
+            return value.split(u",")
         nonelist = []
         for i in range(self.ndisplay):
             nonelist.append(None)
@@ -1165,8 +1152,24 @@ class ChoicesField(forms.MultiValueField):
         self.ndisplay = ndisplay
     def compress(self, data_list):
         if data_list:
-            return ",".join(data_list)
+            return u",".join(data_list)
         return None
+    def clean(self, value):
+        # check there is no duplicate keys
+        # necessary since keys are the id used in <select>
+        possibles_values = forms.MultiValueField.clean(self, value).split(u",")
+        #print "possibles_values=", repr(possibles_values)
+        keys = []
+        for i in range(len(possibles_values)/2):
+            v,k = possibles_values[2*i], possibles_values[2*i+1]
+            if not v:
+                continue # ignore lines without values
+            if not k:
+                continue # empty keys are ok
+            if k in keys:
+                raise forms.ValidationError("You cannot have two keys with the same value. Leave empty for automatic generation.")
+            keys.append(k)
+        return possibles_values
 
 
 class ChoiceGroupForm(forms.Form):
@@ -1189,29 +1192,12 @@ class ChoiceGroupForm(forms.Form):
                 ndisplay+=1
 
         for i in range(3): # add 3 blank lines to add data
-            self.initial['possible_values'].append("")
-            self.initial['possible_values'].append("")
+            self.initial['possible_values'].append(u"")
+            self.initial['possible_values'].append(u"")
             ndisplay+=1
         self.fields['possible_values'] = ChoicesField(required=False, widget=ChoicesWidget(ndisplay=ndisplay), ndisplay=ndisplay)
 
-    def clean(self):
-        # check there is no duplicate keys
-        # necessary since keys are the id used in <select>
-        possibles_values = self['possible_values']._data()
-        keys = []
-        for i in range(len(possibles_values)/2):
-            v,k = possibles_values[2*i], possibles_values[2*i+1]
-            if not v:
-                continue # ignore lines without values
-            if not k:
-                continue # empty keys are ok
-            if k in keys:
-                raise forms.ValidationError("You cannot have two keys with the same value. Leave empty for automatic generation.")
-            keys.append(k)
-        #print "clean() OK"
-        return self.cleaned_data
-
-
+    
     def save(self, cg, request):
         if cg:
             oldid = cg.id
@@ -1222,7 +1208,6 @@ class ChoiceGroupForm(forms.Form):
         cg.sort_by_key = self.clean()['sort_by_key']
         
         possibles_values = self['possible_values']._data()
-        #print "possibles_values=", self.clean_possible_values()
         choices={}
 
         # first ignore lines with empty keys, and update auto_key
@@ -1282,7 +1267,7 @@ def choicegroup_edit(request, id=None):
         title = u"Adding a new "+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
-        form = ChoiceGroupForm(cg, MultiValueDict_unicode(request.POST))
+        form = ChoiceGroupForm(cg, request.POST)
         if form.is_valid():
             cg = form.save(cg, request)
             if request.POST.get("_continue", None):
