@@ -596,6 +596,85 @@ def contact_delete(request, id):
     return generic_delete(request, o, reverse('ngw.core.views.contact_list'))
 
 
+@http_authenticate(ngw_auth, 'ngw')
+def contact_filters_add(request, cid):
+    from contactsearch import *
+    if not request.user.is_admin():
+        return unauthorized(request)
+    contact = Query(Contact).get(cid)
+    filter_str = request.GET['filterstr']
+    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
+    if filter_list_str:
+        filter_list = parse_filter_list_str(filter_list_str)
+    else:
+        filter_list = []
+    filter_list.append((u'No name', filter_str))
+    filter_list_str = u",".join([u'"'+name+u'","'+filterstr+u'"' for name, filterstr in filter_list])
+    contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
+    request.user.push_message("Filter has been added sucessfully!")
+    return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid,len(filter_list)-1)))
+
+@http_authenticate(ngw_auth, 'ngw')
+def contact_filters_list(request, cid):
+    from contactsearch import *
+    if not request.user.is_admin():
+        return unauthorized(request)
+    contact = Query(Contact).get(cid)
+    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
+    filters = []
+    if filter_list_str:
+        filter_list = parse_filter_list_str(filter_list_str)
+        filters = [ (filtername,parse_filterstring(filter_str).to_html()) for (filtername,filter_str) in filter_list]
+    args = {}
+    args['title'] = u"User custom filters"
+    args['contact'] = contact
+    args['filters'] = filters
+    return render_to_response('customfilters_user.html', args, RequestContext(request))
+
+
+class FilterEditForm(forms.Form):
+    name = forms.CharField(max_length=50)
+
+@http_authenticate(ngw_auth, 'ngw')
+def contact_filters_edit(request, cid, fid):
+    from contactsearch import *
+    if not request.user.is_admin():
+        return unauthorized(request)
+    contact = Query(Contact).get(cid)
+    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
+    if not filter_list_str:
+        return HttpResponse(u"ERROR: no custom filter for that user")
+    else:
+        filter_list = parse_filter_list_str(filter_list_str)
+    try:
+        filtername,filterstr = filter_list[int(fid)]
+    except IndexError, ValueError:
+        return HttpResponse(u"ERROR: Can't find filter #"+fid)
+
+    if request.method == 'POST':
+        form = FilterEditForm(request.POST)
+        if form.is_valid():
+            #print repr(filter_list)
+            #print repr(filter_list_str)
+            filter_list[int(fid)]=(form.clean()['name'],filterstr)
+            #print repr(filter_list)
+            filter_list_str = u",".join([u'"'+name+u'","'+filterstr+u'"' for name, filterstr in filter_list])
+            #print repr(filter_list_str)
+            contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
+            request.user.push_message("Filter has been renamed sucessfully!")
+            return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
+    else:
+        form = FilterEditForm(initial={ 'name': filtername })
+    args = {}
+    args['title'] = u"User custom filter renaming"
+    args['contact'] = contact
+    args['form'] = form
+    args['filtername'] = filtername
+    args['filter_html'] = parse_filterstring(filterstr).to_html()
+
+    return render_to_response('customfilter_user.html', args, RequestContext(request))
+
+
 
 #######################################################################
 #

@@ -10,6 +10,7 @@
 
 {% block body %}
     {% for n in news %}
+    <h1 class="boxheader">{{ n.title }}</h1>
     <div class=box>
     <b>{{ n.date|date:"D d M Y" }}</b> - by <a href="{{ n.author.get_absolute_url}}"> {{ n.author }}</a><br>
     {{ n.text|autobr|safe }}<br>

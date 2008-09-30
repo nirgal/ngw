@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load ngwtags %}
+
+{% block nav %}
+{{ block.super }}
+› <a href="{{ contact.get_class_absolute_url }}">{{ contact.get_class_verbose_name_plural }}</a>
+› <a href="{{ contact.get_absolute_url }}">{{ contact }}</a>
+› <a href="{{ contact.get_absolute_url }}filters/">custom filters</a>
+› {{ filtername }}
+{% endblock %}
+
+{% block body %}
+    {{form.media|safe}}
+    <form method="post">
+    <table class=objchange>
+    {{ form.as_table }}
+    <tr>
+    <th>Filter
+    <td>{{ filter_html|safe }}
+    </table>
+
+    {% block submitbar %}
+    <div id=submitbar>
+    <input type=submit value="Save" id="default">
+    {%comment%}<a href="./delete"><img src="/media/img/admin/icon_deletelink.gif" border=0 valign=middle> Delete</a>{%endcomment%}
+    </div>
+    {% endblock %}
+{% endblock %}

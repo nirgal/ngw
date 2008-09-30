@@ -12,6 +12,7 @@
 <div class=submitbar>
 <a href="javascript:document.forms['mainform'].submit();" id=default>Apply filter</a>
 <a href="javascript:set_filter('');select_grouptype(null);">Reset filter</a>
+<a href="javascript:document.location='{{user.get_absolute_url}}'+'filters/add?filterstr='+document.getElementById('filter').value;">Save filter</a>
 </div>
 
 

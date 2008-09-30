@@ -35,6 +35,7 @@
       <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
       {% if contact.get_login %}
       <a href="{{contact.get_absolute_url}}pass">Change password</a>
+      <a href="{{contact.get_absolute_url}}filters/">Filters</a>
       {% endif %}
     </div>
     {% endblock %}
