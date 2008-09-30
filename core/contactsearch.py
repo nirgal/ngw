@@ -305,7 +305,7 @@ def contactsearch_get_fields(request, kind):
         body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.c.date!=None)])
     elif kind==u"custom":
         body += u"Add a custom filter: "
-        body += format_link_list([ (u"javascript:select_field('custom_user')", u"Custom filters for "+request.user.name, u'custom')])
+        body += format_link_list([ (u"javascript:select_field('custom_user')", u"Custom filters for "+request.user.name, u'field_custom_user')])
     else:
         body += u"ERROR in get_fields: kind=="+kind
     return HttpResponse(body)
@@ -314,7 +314,7 @@ def parse_filter_list_str(txt):
     list = txt.split(u',')
     for idx in xrange(len(list)-1, 0, -1):
         if list[idx-1][-1]!=u'"' or list[idx][0]!=u'"':
-            print "merging elements ", idx-1, "and", idx, "of", repr(list)
+            #print "merging elements ", idx-1, "and", idx, "of", repr(list)
             list[idx-1]+=u","+list[idx]
             del list[idx]
     for idx in xrange(len(list)):
@@ -353,9 +353,9 @@ def contactsearch_get_filters(request, field):
             body += u"No custom filter available"
         else:
             filter_list = parse_filter_list_str(filter_list_str)
-            body += u"Not implemented"
-            #body += u"Select a custom filter : "
-            #body += format_link_list([ (u"javascript:select_filtername('"+unicode(i)+u"')", no_br(filter[0]), u"usercustom_"+unicode(i)) for (i,filter) in enumerate(filter_list) ])
+            #body += u"Not implemented"
+            body += u"Select a custom filter : "
+            body += format_link_list([ (u"javascript:select_filtername('"+unicode(i)+u"')", no_br(filter[0]), u"usercustom_"+unicode(i)) for (i,filter) in enumerate(filter_list) ])
     else:
         body+=u"ERROR in get_filters: field=="+field
     
@@ -368,6 +368,7 @@ def contactsearch_get_params(request, field, filtername):
         return unauthorized(request)
     
     previous_filter = request.GET.get("previous_filter", u"")
+    filter = None
 
     if field == u"name":
         filter = ContactNameMetaField.get_filter_by_name(filtername)
@@ -385,27 +386,43 @@ def contactsearch_get_params(request, field, filtername):
         filter = group.get_filter_by_name(filtername)
         filter_internal_beginin=u"gfilter("+unicode(group_id)+u","
 
+    elif field == u"custom_user":
+        pass
     else:
         return HttpResponse(u"ERROR: field "+field+" not supported")
 
-    parameter_types = filter.get_param_types()
 
     body = u""
 
-    js = u"'"+filter_internal_beginin
-    js+= filtername
-    for i, param_type in enumerate(parameter_types):
-        js+=u",'+"
-        if param_type==unicode:
-            js += u"escape_quote(document.getElementById('filter_param_"+unicode(i)+u"').value)"
-        elif param_type==int:
-            js+=u"document.getElementById('filter_param_"+unicode(i)+u"').value"
-        elif isinstance(param_type, ChoiceGroup):
-            js+=u"escape_quote(document.getElementById('filter_param_"+unicode(i)+u"').options[document.getElementById('filter_param_"+unicode(i)+u"').selectedIndex].value)"
+    if field==u"custom_user":
+        filter_list_str = request.user.get_fieldvalue_by_id(FIELD_FILTERS)
+        if not filter_list_str:
+            return HttpResponse(u"ERROR: no custom filter for that user")
         else:
-            raise Exception(u"Unsupported filter parameter of type "+unicode(param_type))
-        js+=u"+'"
-    js+=u")'"
+            filter_list = parse_filter_list_str(filter_list_str)
+        try:
+            filterstr = filter_list[int(filtername)][1]
+        except IndexError, ValueError:
+            return HttpResponse(u"ERROR: Can't find filter #"+filtername)
+        js = u"'"+filterstr.replace(u"\\",u"\\\\").replace(u"'", u"\\'")+u"'"
+        parameter_types = []
+    else:
+        parameter_types = filter.get_param_types()
+
+        js = u"'"+filter_internal_beginin
+        js+= filtername
+        for i, param_type in enumerate(parameter_types):
+            js+=u",'+"
+            if param_type==unicode:
+                js += u"escape_quote(document.getElementById('filter_param_"+unicode(i)+u"').value)"
+            elif param_type==int:
+                js+=u"document.getElementById('filter_param_"+unicode(i)+u"').value"
+            elif isinstance(param_type, ChoiceGroup):
+                js+=u"escape_quote(document.getElementById('filter_param_"+unicode(i)+u"').options[document.getElementById('filter_param_"+unicode(i)+u"').selectedIndex].value)"
+            else:
+                raise Exception(u"Unsupported filter parameter of type "+unicode(param_type))
+            js+=u"+'"
+        js+=u")'"
 
     if previous_filter: # CLEAN ME
         body += u"<form id='filter_param_form' onsubmit=\"newfilter="+js+u"; combine='and'; for (i=0; i<document.forms['filter_param_form']['filter_combine'].length; ++i) if (document.forms['filter_param_form']['filter_combine'][i].checked) combine=document.forms['filter_param_form']['filter_combine'][i].value; newfilter=combine+'('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"

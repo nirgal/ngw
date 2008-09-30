@@ -47,6 +47,7 @@ group_in_group_table = Table('group_in_group', meta, autoload=True)
 contact_sysmsg_table = Table('contact_sysmsg', meta, autoload=True)
 config_table = Table('config', meta, autoload=True)
 log_table = Table('log', meta, autoload=True)
+contact_group_news_table = Table('contact_group_news', meta, autoload=True)
 
 #print "meta analysis:"
 #for t in meta.table_iterator(reverse=True):
@@ -658,7 +659,7 @@ class ContactField(NgwModel):
 
 class TextContactField(ContactField):
     def get_form_fields(self):
-        return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint)
+        return forms.CharField(label=self.name, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
@@ -1280,6 +1281,11 @@ class ContactSysMsg(NgwModel):
     def __repr__(self):
         return "ContactSysMsg<%s,%s>"%(self.contact_id, self.message)
 
+class ContactGroupNews(NgwModel):
+    pass
+    #def __repr__(self):
+    #    return "ContactGroupNews<%s,%s>"%(self.contact_id, self.message)
+
 ########################################################################
 # Map the class to the tables
 ########################################################################
@@ -1296,6 +1302,7 @@ contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table
 contact_sysmsg_mapper = mapper(ContactSysMsg, contact_sysmsg_table)
 config_mapper = mapper(Config, config_table)
 log_mapper = mapper(Log, log_table)
+contact_group_news_mapper = mapper(ContactGroupNews, contact_group_news_table)
 
 #mapper(ContactInGroup,
 #    contact_in_group_table, properties={ \
@@ -1392,6 +1399,21 @@ log_mapper.add_property('contact', relation(
     primaryjoin=log_table.c.contact_id==contact_table.c.id,
     cascade="delete",
     backref='logs',
+    passive_deletes=True))
+
+# ContactGroupNews <-> Contact
+contact_group_news_mapper.add_property('author', relation(
+    Contact,
+    primaryjoin=contact_group_news_table.c.author_id==contact_table.c.id,
+    cascade="delete",
+    backref='news',
+    passive_deletes=True))
+# ContactGroupNews <-> ContactGroup
+contact_group_news_mapper.add_property('contact_group', relation(
+    ContactGroup,
+    primaryjoin=contact_group_news_table.c.contact_group_id==contact_group_table.c.id,
+    cascade="delete",
+    backref='news',
     passive_deletes=True))
 
 print "Alchemy initialized"
