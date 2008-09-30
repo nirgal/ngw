@@ -30,6 +30,7 @@ urlpatterns = patterns('',
     (r'^contactgroups/(?P<id>\d+)/delete$', 'ngw.core.views.contactgroup_delete'),
     (r'^contactgroups/(?P<gid>\d+)/remove/(?P<cid>\d+)$', 'ngw.core.views.contactgroup_remove'),
     (r'^contactgroups/(?P<gid>\d+)/(?P<cid>\d+)$', 'ngw.core.views.contactingroup_edit'),
+    (r'^contactgroups/(?P<gid>\d+)/news$', 'ngw.core.views.contactgroup_news'),
 
     (r'^contactfields/$', 'ngw.core.views.field_list'),
     (r'^contactfields/add$', 'ngw.core.views.field_edit', {'id': None}),
