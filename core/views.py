@@ -122,7 +122,7 @@ def index(request):
     return render_to_response('index.html', {
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
-        'changes': Query(Config).get('changes').text,
+        'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN)
     }, RequestContext(request))
 
 # Helper function that is never call directly, hence the lack of authentification check
