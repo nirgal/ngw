@@ -122,7 +122,7 @@ def index(request):
     return render_to_response('index.html', {
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
-        'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN)
+        'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN).order_by(desc(ContactGroupNews.date)).limit(5)
     }, RequestContext(request))
 
 # Helper function that is never call directly, hence the lack of authentification check
@@ -877,6 +877,17 @@ def contactingroup_edit(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
     return HttpResponse("Not implemented")
+
+@http_authenticate(ngw_auth, 'ngw')
+def contactgroup_news(request, gid):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    cg = Query(ContactGroup).get(gid)
+    args = {}
+    args['title'] = u"News for group "+cg.name
+    args['news'] = cg.news
+    args['cg'] = cg
+    return render_to_response('news.html', args, RequestContext(request))
 
 #######################################################################
 #

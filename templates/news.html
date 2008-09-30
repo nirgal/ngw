@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load ngwtags %}
+
+{% block nav %}
+{{ block.super }}
+› <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
+› <a href="{{ cg.get_absolute_url }}">{{ cg }}</a>
+› news
+{% endblock %}
+
+{% block body %}
+    {% for n in news %}
+    <div class=box>
+    <b>{{ n.date|date:"D d M Y" }}</b> - by <a href="{{ n.author.get_absolute_url}}"> {{ n.author }}</a><br>
+    {{ n.text|autobr|safe }}<br>
+    </div>
+    {% endfor %}
+
+    {% block submitbar %}
+    <div id=submitbar>
+    <a href="{{ cg.get_absolute_url}}" id=default>Back</a>
+    </div>
+    {% endblock %}
+{% endblock %}

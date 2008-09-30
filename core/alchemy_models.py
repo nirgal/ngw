@@ -1414,6 +1414,7 @@ contact_group_news_mapper.add_property('contact_group', relation(
     primaryjoin=contact_group_news_table.c.contact_group_id==contact_group_table.c.id,
     cascade="delete",
     backref='news',
-    passive_deletes=True))
+    passive_deletes=True,
+    order_by=desc(ContactGroupNews.date)))
 
 print "Alchemy initialized"
