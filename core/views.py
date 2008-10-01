@@ -964,9 +964,72 @@ def contactgroup_news(request, gid):
     cg = Query(ContactGroup).get(gid)
     args = {}
     args['title'] = u"News for group "+cg.name
-    args['news'] = cg.news
+    #args['news'] = cg.news #order doesn't work?!
+    args['news'] = Query(ContactGroupNews).filter(ContactGroupNews.contact_group==cg).order_by(desc(ContactGroupNews.date))
     args['cg'] = cg
+    args['objtype'] = ContactGroupNews
     return render_to_response('news.html', args, RequestContext(request))
+
+
+class NewsEditForm(forms.Form):
+    title = forms.CharField(max_length=50)
+    text = forms.CharField(widget=forms.Textarea)
+
+@http_authenticate(ngw_auth, 'ngw')
+def contactgroup_news_edit(request, gid, nid):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    cg = Query(ContactGroup).get(gid)
+    if nid:
+        news = Query(ContactGroupNews).get(nid)
+        if news.contact_group!=cg:
+            return HttpResponse(u"ERROR: Invalid group")
+
+    if request.method == 'POST':
+        form = NewsEditForm(request.POST)
+        if form.is_valid():
+            data = form.clean()
+            if not nid:
+                news = ContactGroupNews()
+                news.author = request.user
+                news.contact_group = cg
+                news.date = datetime.now()
+            news.title = data['title']
+            news.text = data['text']
+            request.user.push_message("News %s has been changed sucessfully!" % unicode(news))
+            Session.commit()
+            
+            if request.POST.get("_continue", None):
+                return HttpResponseRedirect(news.get_absolute_url())
+            elif request.POST.get("_addanother", None):
+                return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_news_edit', args=(cg.id,))) # 2nd parameter is None
+            else:
+                return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_news', args=(cg.id,)))
+    else:
+        initial={}
+        if nid:
+            initial['title'] = news.title
+            initial['text'] = news.text
+        form = NewsEditForm(initial=initial)
+    args = {}
+    args['title'] = u"News edition"
+    args['cg'] = cg
+    args['form'] = form
+    if nid:
+        args['o'] = news
+        args['id'] = nid
+
+    return render_to_response('news_edit.html', args, RequestContext(request))
+
+@http_authenticate(ngw_auth, 'ngw')
+def contactgroup_news_delete(request, gid, nid):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    cg = Query(ContactGroup).get(gid)
+    print cg
+    o = Query(ContactGroupNews).get(nid)
+    print o
+    return generic_delete(request, o, cg.get_absolute_url()+u"news/")
 
 #######################################################################
 #

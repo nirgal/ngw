@@ -311,7 +311,7 @@ class Contact(NgwModel):
         street = self.get_fieldvalue_by_id(9)
         postal_code = self.get_fieldvalue_by_id(11)
         city = self.get_fieldvalue_by_id(14)
-        country = self.get_fieldvalue_by_id(5)
+        country = self.get_fieldvalue_by_id(48)
         vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
 
         for cfid in (8, 10, 52): #'tel_mobile', 'tel_prive', 'tel_professionel'
@@ -1282,9 +1282,21 @@ class ContactSysMsg(NgwModel):
         return "ContactSysMsg<%s,%s>"%(self.contact_id, self.message)
 
 class ContactGroupNews(NgwModel):
-    pass
+    class Meta:
+        verbose_name = u"news"
+        verbose_name_plural = u"news"
     #def __repr__(self):
     #    return "ContactGroupNews<%s,%s>"%(self.contact_id, self.message)
+    def __unicode__(self):
+        return self.title + u" - " + self.date.strftime("%Y %m %d")
+    
+    @staticmethod
+    def get_class_absolute_url(cls):
+        raise Error("Not implemented")
+
+    #def get_link(self):
+    def get_absolute_url(self):
+        return self.contact_group.get_absolute_url()+u"news/"+str(self.id)+"/"
 
 ########################################################################
 # Map the class to the tables
@@ -1401,19 +1413,20 @@ log_mapper.add_property('contact', relation(
     backref='logs',
     passive_deletes=True))
 
-# ContactGroupNews <-> Contact
-contact_group_news_mapper.add_property('author', relation(
-    Contact,
+# Contact <-> ContactGroupNews
+contact_mapper.add_property('news', relation(
+    ContactGroupNews,
     primaryjoin=contact_group_news_table.c.author_id==contact_table.c.id,
-    cascade="delete",
-    backref='news',
-    passive_deletes=True))
-# ContactGroupNews <-> ContactGroup
-contact_group_news_mapper.add_property('contact_group', relation(
-    ContactGroup,
+    cascade="all,delete",
+    backref='author',
+    passive_deletes=True,
+    order_by=desc(ContactGroupNews.date)))
+# ContactGroup <-> ContactGroupNews 
+contact_group_mapper.add_property('news', relation(
+    ContactGroupNews,
     primaryjoin=contact_group_news_table.c.contact_group_id==contact_group_table.c.id,
-    cascade="delete",
-    backref='news',
+    cascade="all,delete",
+    backref='contact_group',
     passive_deletes=True,
     order_by=desc(ContactGroupNews.date)))
 

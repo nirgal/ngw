@@ -45,7 +45,7 @@
   <a href="javascript:show_field_selection();" id=default> Select displayed columns</a>
     <a href="{{cg.get_absolute_url}}edit">Edit</a>
     <a href="{{cg.get_absolute_url}}emails">Emails</a>
-    <a href="?display={{display}}&amp;output=vcard">Vcards</a>  
+    <a href="?display={{display}}&amp;output=vcard">Vcards</a> 
     {% ifnotequal display "mi" %}
         <a href="?display=mi">Show invited and members</a>  
     {% endifnotequal %}
@@ -58,5 +58,6 @@
     {% if cg.field_group %}
     <a href="/contacts/add?default_group={{cg.id}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
+    <a href="news/">News</a> 
 </div>
 {% endblock %}

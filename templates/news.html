@@ -10,7 +10,7 @@
 
 {% block body %}
     {% for n in news %}
-    <h1 class="boxheader">{{ n.title }}</h1>
+    <h1 class="boxheader"><a href="{{n.get_absolute_url}}">{{ n.title }}</a></h1>
     <div class=box>
     <b>{{ n.date|date:"D d M Y" }}</b> - by <a href="{{ n.author.get_absolute_url}}"> {{ n.author }}</a><br>
     {{ n.text|autobr|safe }}<br>
@@ -19,7 +19,7 @@
 
     {% block submitbar %}
     <div id=submitbar>
-    <a href="{{ cg.get_absolute_url}}" id=default>Back</a>
+    <a href="add"><img src="/media/img/admin/icon_addlink.gif" border=0> Add {{ objtype.get_class_verbose_name }}</a>
     </div>
     {% endblock %}
 {% endblock %}

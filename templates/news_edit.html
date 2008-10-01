@@ -1,0 +1,9 @@
+{% extends "edit.html" %}
+
+{% block nav %}
+<a href="/">Home</a>
+› <a href="{{cg.get_class_absolute_url}}">{{cg.get_class_verbose_name_plural}}</a>
+› <a href="{{cg.get_absolute_url}}">{{cg}}</a>
+› <a href="../">news</a>
+› {% if id %}{{ o }}{% else %}add{% endif %}
+{% endblock %}
