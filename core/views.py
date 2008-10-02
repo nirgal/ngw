@@ -1047,12 +1047,11 @@ def field_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
     args = {}
-    args['query'] = Query(ContactField).order_by([ContactField.c.sort_weight])
+    args['query'] = Query(ContactField).order_by([ContactField.c.sort_weight]) # FIXME
     args['cols'] = [
         ( "Name", None, "name", contact_field_table.c.name),
         ( "Type", None, "type_as_html", contact_field_table.c.type),
         ( "Only for", None, "contact_group", contact_field_table.c.contact_group_id),
-        #( "Display group", None, "display_group", contact_field_table.c.display_group),
         ( "System locked", None, "system", contact_field_table.c.system),
         #( "Move", None, lambda cf: "<a href="+str(cf.id)+"/moveup>Up</a> <a href="+str(cf.id)+"/movedown>Down</a>", None),
     ]
@@ -1266,7 +1265,11 @@ def field_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(ContactField).get(id)
-    return generic_delete(request, o, reverse('ngw.core.views.field_list'))
+    next_url = reverse('ngw.core.views.field_list')
+    if o.system:
+        request.user.push_message(u"Field %s is locked and CANNOT be deleted." % o.name)
+        return HttpResponseRedirect(next_url)
+    return generic_delete(request, o, next_url)
 
 
 #######################################################################
