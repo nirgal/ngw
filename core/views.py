@@ -140,6 +140,11 @@ def generic_delete(request, o, next_url):
         name = unicode(o)
         Session.delete(o)
         request.user.push_message("%s has been deleted sucessfully!"%name)
+        log = Log(request.user.id)
+        log.action = LOG_ACTION_DEL
+        pk = o._instance_key[1] # this is a tuple
+        log.target = unicode(o.__class__.__name__)+u" "+u" ".join([unicode(x) for x in pk])
+        log.target_repr = o.get_class_verbose_name()+u" "+name
         return HttpResponseRedirect(next_url)
     else:
         return render_to_response('delete.html', {'title':title, 'o': o}, RequestContext(request))
@@ -1047,7 +1052,8 @@ def field_list(request):
         ( "Name", None, "name", contact_field_table.c.name),
         ( "Type", None, "type_as_html", contact_field_table.c.type),
         ( "Only for", None, "contact_group", contact_field_table.c.contact_group_id),
-        ( "Display group", None, "display_group", contact_field_table.c.display_group),
+        #( "Display group", None, "display_group", contact_field_table.c.display_group),
+        ( "System locked", None, "system", contact_field_table.c.system),
         #( "Move", None, lambda cf: "<a href="+str(cf.id)+"/moveup>Up</a> <a href="+str(cf.id)+"/movedown>Down</a>", None),
     ]
     args['title'] = "Select an optionnal field"
@@ -1086,18 +1092,18 @@ def field_renumber():
 class FieldEditForm(forms.Form):
     name = forms.CharField()
     hint = forms.CharField(required=False, widget=forms.Textarea)
-    contact_group = forms.CharField(required=False, widget=forms.Select)
-    types_choices = [ (cls.db_type_id, cls.human_type_id) for cls in CONTACT_FIELD_TYPES_CLASSES ]
-    type = forms.CharField(widget=forms.Select(choices=types_choices), initial="")
+    contact_group = forms.CharField(label=u"Only for", required=False, widget=forms.Select)
+    type = forms.CharField(widget=forms.Select)
     choicegroup = forms.CharField(required=False, widget=forms.Select)
     move_after = forms.IntegerField(widget=forms.Select())
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, cf, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
     
         contacttypes = Query(ContactGroup).filter(ContactGroup.c.field_group==True)
-        self.fields['contact_group'].widget.choices = [('', 'Everyone')] + [ (g.id, g.name) for g in contacttypes ]
+        self.fields['contact_group'].widget.choices = [('', u'Everyone')] + [ (g.id, g.name) for g in contacttypes ]
 
+        self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id) for cls in CONTACT_FIELD_TYPES_CLASSES ]
         js_test_type_has_choice = u" || ".join([ u"this.value=='"+cls.db_type_id+"'" for cls in CONTACT_FIELD_TYPES_CLASSES if cls.has_choice ])
         self.fields['type'].widget.attrs = { "onchange": "if (0 || "+js_test_type_has_choice+") { document.forms[0]['choicegroup'].disabled = 0; } else { document.forms[0]['choicegroup'].value = ''; document.forms[0]['choicegroup'].disabled = 1; }" }
     
@@ -1111,19 +1117,26 @@ class FieldEditForm(forms.Form):
         if cls_contact_field.has_choice:
             if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
                 del self.fields['choicegroup'].widget.attrs['disabled']
+            self.fields['choicegroup'].required = True
         else:
             self.fields['choicegroup'].widget.attrs['disabled'] = 1
-        
-        self.fields['choicegroup'].required = False
-        
-        self.fields['move_after'].widget.choices = [ (5, "Name") ] + [ (cf.sort_weight + 5, cf.name) for cf in Query(ContactField).order_by('sort_weight') ]
+            self.fields['choicegroup'].required = False
+       
+        self.fields['move_after'].widget.choices = [ (5, "Name") ] + [ (field.sort_weight + 5, field.name) for field in Query(ContactField).order_by('sort_weight') ]
 
+        if cf and cf.system:
+            self.fields['contact_group'].widget.attrs['disabled'] = 1
+            self.fields['type'].widget.attrs['disabled'] = 1
+            self.fields['type'].required = False
+            self.fields['choicegroup'].widget.attrs['disabled'] = 1
 
     def clean(self):
-        t = self.cleaned_data['type']
-        cls_contact_field = get_contact_field_type_by_dbid(t)
-        if cls_contact_field.has_choice and not self.cleaned_data['choicegroup']:
-            raise forms.ValidationError("You must select a choice group for that type.")
+        t = self.cleaned_data.get('type', None)
+        if t:
+            # system fields have type disabled, this is ok
+            cls_contact_field = get_contact_field_type_by_dbid(t)
+            if cls_contact_field.has_choice and not self.cleaned_data['choicegroup']:
+                raise forms.ValidationError("You must select a choice group for that type.")
         return self.cleaned_data
 
 
@@ -1132,14 +1145,23 @@ def field_edit(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     objtype=ContactField
+    initial = {}
     if id:
         cf = Query(ContactField).get(id)
         title = u"Editing "+unicode(cf)
+        initial['name'] = cf.name
+        initial['hint'] = cf.hint
+        initial['contact_group'] = cf.contact_group_id
+        initial['type'] = cf.type
+        initial['choicegroup'] = cf.choice_group_id
+        initial['move_after'] = cf.sort_weight-5
     else:
+        cf = None
         title = u"Adding a new "+objtype.get_class_verbose_name()
     
     if request.method == 'POST':
-        form = FieldEditForm(request.POST)
+        form = FieldEditForm(cf, request.POST, initial=initial)
+        print request.POST
         if form.is_valid():
             data = form.clean()
             if not id:
@@ -1164,7 +1186,7 @@ def field_edit(request, id):
                 Session.expunge(cf)
                 cf = Query(ContactField).get(cfid)
             else:
-                if cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']:
+                if not cf.system and (cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']):
                     deletion_details=[]
                     cls = get_contact_field_type_by_dbid(data['type'])
                     choice_group_id = None
@@ -1196,15 +1218,17 @@ def field_edit(request, id):
                     cf = Query(ContactField).get(id)
                 cf.name = data['name']
                 cf.hint = data['hint']
-                if data['contact_group']:
-                    cf.contact_group_id = int(data['contact_group'])
-                else:
-                    cf.contact_group_id = None
-                cf.type = data['type'] # BUG can't change polymorphic type
-                if data['choicegroup']:
-                    cf.choice_group_id = int(data['choicegroup'])
-                else:
-                    cf.choice_group_id = None
+                if not cf.system:
+                    # system fields have some properties disabled
+                    if data['contact_group']:
+                        cf.contact_group_id = int(data['contact_group'])
+                    else:
+                        cf.contact_group_id = None
+                    cf.type = data['type'] # BUG can't change polymorphic type
+                    if data['choicegroup']:
+                        cf.choice_group_id = int(data['choicegroup'])
+                    else:
+                        cf.choice_group_id = None
                 cf.sort_weight = int(data['move_after'])
 
 
@@ -1222,16 +1246,9 @@ def field_edit(request, id):
         # else validation error
     else:
         if id: # modify
-            initial = {}
-            initial['name'] = cf.name
-            initial['hint'] = cf.hint
-            initial['contact_group'] = cf.contact_group_id
-            initial['type'] = cf.type
-            initial['choicegroup'] = cf.choice_group_id
-            initial['move_after'] = cf.sort_weight-5
-            form = FieldEditForm(initial=initial)
+            form = FieldEditForm(cf, initial=initial)
         else: # add
-            form = FieldEditForm()
+            form = FieldEditForm(None, initial=initial)
 
 
     args={}

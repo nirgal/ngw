@@ -383,6 +383,7 @@ class Contact(NgwModel):
     @staticmethod
     def check_login_created(logged_contact):
         # Create login for people member of group 2
+        # FIXME use GROUP_USER not 2
         for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(2))) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=1) WHERE contact_field_value.value IS NULL"):
             contact = Query(Contact).get(uid)
             new_login = contact.generate_login()
