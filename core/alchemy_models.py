@@ -22,6 +22,11 @@ FIELD_LASTCONNECTION = 3
 FIELD_COLUMNS = 4
 FIELD_FILTERS = 5
 
+FIELD_STREET = 9
+FIELD_POSTCODE = 11
+FIELD_CITY = 14
+FIELD_COUNTRY = 48
+
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
 # Ends with a /
@@ -238,6 +243,19 @@ class Contact(NgwModel):
         #print "contactgroupids=", contactgroupids
         return Query(ContactField).filter(or_(ContactField.c.contact_group_id.in_(contactgroupids),ContactField.c.contact_group_id == None)).order_by(ContactField.c.sort_weight)
 
+    def get_fieldvalues_by_type(self, type_):
+        if issubclass(type_, ContactField):
+            type_ = type_.db_type_id
+        assert type_.__class__ == unicode
+        fields = Query(ContactField).filter(ContactField.c.type==type_).order_by(ContactField.c.sort_weight)
+        # TODO: check authority
+        result = []
+        for field in fields:
+            v = self.get_fieldvalue_by_id(field.id)
+            if v:
+                result.append(v)
+        return result
+
     def get_fieldvalue_by_id(self, field_id):
         cfv = Query(ContactFieldValue).get((self.id, field_id))
         if cfv == None:
@@ -308,26 +326,24 @@ class Contact(NgwModel):
         vcf += line(u"FN", self.name)
         vcf += line(u"N", self.name)
 
-        street = self.get_fieldvalue_by_id(9)
-        postal_code = self.get_fieldvalue_by_id(11)
-        city = self.get_fieldvalue_by_id(14)
-        country = self.get_fieldvalue_by_id(48)
+
+        street = self.get_fieldvalue_by_id(FIELD_STREET)
+        postal_code = self.get_fieldvalue_by_id(FIELD_POSTCODE)
+        city = self.get_fieldvalue_by_id(FIELD_CITY)
+        country = self.get_fieldvalue_by_id(FIELD_COUNTRY)
         vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
 
-        for cfid in (8, 10, 52): #'tel_mobile', 'tel_prive', 'tel_professionel'
-            phone = self.get_fieldvalue_by_id(cfid)
+        for phone in self.get_fieldvalues_by_type(PhoneContactField):
             vcf += line(u"TEL", phone)
 
-        email = self.get_fieldvalue_by_id(7)
-        if email:
+        for email in self.get_fieldvalues_by_type(EmailContactField):
             vcf += line(u"EMAIL", email)
 
         vcf += line(u"END", u"VCARD")
         return vcf
 
     def get_addr_semicol(self):
-        #return self.get_value_by_keyname("street")+u";"+self.get_value_by_keyname("city")+u";"+self.get_value_by_keyname("country")
-        return self.get_fieldvalue_by_id(9)+u";"+self.get_fieldvalue_by_id(14)+u";"+self.get_fieldvalue_by_id(5)
+        return self.get_fieldvalue_by_id(FIELD_STREET)+u";"+self.get_fieldvalue_by_id(FIELD_CITY)+u";"+self.get_fieldvalue_by_id(FIELD_COUNTRY)
 
     def push_message(self, message):
         ContactSysMsg(self.id, message)

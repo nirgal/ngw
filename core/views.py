@@ -795,9 +795,9 @@ def contactgroup_emails(request, id):
     emails = []
     noemails = []
     for c in members:
-        email = c.get_fieldvalue_by_id(7)
-        if email:
-            emails.append((c, email))
+        c_emails = c.get_fieldvalues_by_type(EmailContactField)
+        if c_emails:
+            emails.append((c, c_emails[0])) # only the first
         else:
             noemails.append(c)
 
