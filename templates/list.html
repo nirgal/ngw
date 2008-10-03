@@ -8,6 +8,9 @@
 {% block body %}
 {% include "query_entities.html" %}
 
+    {% block presubmitbar %}
+    {% endblock %}
+
     {% block submitbar %}
     <div id=submitbar>
     <a href="{{ objtype.get_class_absolute_url}}add"><img src="/media/img/admin/icon_addlink.gif" border=0> Add {{ objtype.get_class_verbose_name }}</a>

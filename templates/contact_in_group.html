@@ -1,0 +1,17 @@
+{% extends "edit.html" %}
+{% load ngwtags %}
+
+{% block nav %}
+{{ block.super }}
+› <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
+› <a href="{{ cg.get_absolute_url }}">{{ cg }}</a>
+› members
+› {{ contact }}
+{% endblock %}
+
+{% block submitbar %}
+<div id=submitbar>
+    <input type=submit value="Save" id="default">
+    <a href="{{o.get_absolute_url}}delete"><img src="/media/img/admin/icon_deletelink.gif" border=0 valign=middle> Remove from group</a>
+</div>
+{% endblock %}

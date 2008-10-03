@@ -10,6 +10,7 @@
     {% if cg.description %}{{ cg.description }}<br><br>{% endif %}
     {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
+
     {{ block.super }}
 
     {% comment %}
@@ -17,14 +18,18 @@
         {{ ci }} contact{{ ci|pluralize }} {{ ci|pluralize:"have,has" }} been invited in that group, but {{ ci|pluralize:"are,is" }} not member yet.
     {% endwith %}
     {% endcomment %}
+{% endblock %}
 
+{% block presubmitbar %}
     {% if cg.direct_subgroups %}
-        <h1>Sub groups</h1>
-        <p>People in sub-groups automatically are members.
+        <h1 class=boxheader>Sub groups</h1>
+        <div class=box>
+        People in sub-groups automatically are members.
         <br>
         {% for sg in cg.direct_subgroups  %}
         ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includinghtml|safe}}<br>
         {% endfor %}
+        </div>
     {% endif %}
     
     {% for f in files %}
@@ -37,8 +42,8 @@
             </div>
         {% endif %}
     {% endfor %}
-
 {% endblock %}
+
     
 {% block submitbar %}
 <div id=submitbar>

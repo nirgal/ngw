@@ -119,6 +119,7 @@ def unauthorized(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def index(request):
+    # Birthdates: select contact_id, substring(value from 6) as md from contact_field_value where contact_field_id=6 order by md;
     return render_to_response('index.html', {
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
@@ -225,7 +226,7 @@ def logout(request):
         scheme = "https"
     else:
         scheme = "http"
-    return render_to_response("message.html", {"message": mark_safe("Have a nice day!<br><a href=\""+scheme+"://"+request.META["HTTP_HOST"]+"\">Login again</a>")}, RequestContext(request))
+    return render_to_response("message.html", {"message": mark_safe("Have a nice day!<br><a href=\""+scheme+"://"+request.META["HTTP_HOST"]+"/\">Login again</a>")}, RequestContext(request))
 
 #######################################################################
 #
@@ -261,8 +262,11 @@ def logs(request):
 def str_member_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
     return lambda c: c.str_member_of(gids)
+def str_action_of_factory(contact_group):
+    gids = [ g.id for g in contact_group.self_and_subgroups ]
+    return lambda c: c.str_member_of(gids)#+u" <a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/\">edit</a>"
 
-def contact_make_query_with_fields(fields):
+def contact_make_query_with_fields(fields, current_cg=None):
     q = Query(Contact)
     n_entities = 1
     j = contact_table
@@ -286,6 +290,9 @@ def contact_make_query_with_fields(fields):
         else:
             raise ValueError(u"Invalid field "+prop)
 
+    if current_cg is not None:
+        cols.append( ("Status", 0, str_action_of_factory(current_cg), None) )
+        
     q = q.select_from(j)
     return q, cols
 
@@ -741,27 +748,27 @@ def contactgroup_detail(request, id):
     if (request.REQUEST.get(u'savecolumns')):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
-
-    args={}
     cg = Query(ContactGroup).get(id)
     if not cg:
         raise Http404
-    #print cg.direct_subgroups
 
-    display=request.REQUEST.get("display", "")
-    if display=="mi":
-        args['title'] = "Members and invited contacts of group "+cg.unicode_with_date()
-        fields.append(DISP_GROUP_PREFIX+unicode(id))
-        q, cols = contact_make_query_with_fields(fields)
+    #print cg.direct_subgroups
+    args={}
+    args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
+    q, cols = contact_make_query_with_fields(fields, cg)
+
+
+
+    display=request.REQUEST.get("display", u"")
+    if display==u"mi":
+        args['title'] = u"Members and invited contacts of group "+cg.unicode_with_date()
         q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND (member=\'t\' OR invited=\'t\'))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
-    elif display=="i":
-        args['title'] = "Contact invited in group "+cg.unicode_with_date()
-        q, cols = contact_make_query_with_fields(fields)
+    elif display==u"i":
+        args['title'] = u"Contact invited in group "+cg.unicode_with_date()
         q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     else:
         display='m'
-        args['title'] = "Members of group "+cg.unicode_with_date()
-        q, cols = contact_make_query_with_fields(fields)
+        args['title'] = u"Members of group "+cg.unicode_with_date()
         q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     if request.REQUEST.get("output", "")=="vcard":
         result=u""
@@ -786,7 +793,6 @@ def contactgroup_detail(request, id):
     args['objtype'] = ContactGroup
     args['filter'] = strfilter
     args['fields'] = strfields
-    args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
     ####
     return query_print_entities(request, 'group_detail.html', args)
 
@@ -818,14 +824,16 @@ class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
     field_group = forms.BooleanField(required=False, help_text=u"Does that group yield specific fields to its members?")
-    date = forms.DateField(required=False)
+    date = forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format.")
     budget_code = forms.CharField(required=False, max_length=10)
+    #invited_members = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("contacts", False))
     direct_members = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("contacts", False))
     direct_subgroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("groups", False))
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
         
+        #self.fields['invited_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
         self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
         self.fields['direct_subgroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
 
@@ -874,15 +882,19 @@ def contactgroup_edit(request, id):
             cg.date = data['date']
             cg.budget_code = data['budget_code']
             
-            # we need to add/remove people without destroying their admin flags
+            # we need to add/remove people without destroying their flags
+            #new_invited_ids = [ int(id) for id in data['invited_members']]
             new_member_ids = [ int(id) for id in data['direct_members']]
+            #print "WANTED INVITED=", new_invited_ids
             print "WANTED MEMBERS=", new_member_ids
+            #TODO
             for cid in new_member_ids:
                 c = Query(Contact).get(cid)
                 if not Query(ContactInGroup).get((c.id, cg.id)):
                     #print "ADDING", c.name, "(", c.id, ") to group"
                     cig = ContactInGroup(c.id, cg.id)
                     cig.member = True
+
             # Search members to remove:
             for cig in Query(ContactInGroup).filter(ContactInGroup.c.group_id==cg.id):
                 c = cig.contact
@@ -956,11 +968,34 @@ def contactgroup_delete(request, id):
     return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'))# args=(p.id,)))
 
 
+
+class ContactInGroupForm(forms.Form):
+    invited = forms.BooleanField()
+    declined_invitation = forms.BooleanField()
+    member = forms.BooleanField()
+    operator = forms.BooleanField()
+
+    def __init__(self, *args, **kargs):
+        forms.Form.__init__(self, *args, **kargs)
+        
+        #self.fields['invited_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
+        #self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
+        #self.fields['direct_subgroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
+
+
 @http_authenticate(ngw_auth, 'ngw')
 def contactingroup_edit(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    return HttpResponse("Not implemented")
+    cg = Query(ContactGroup).get(gid)
+    contact = Query(Contact).get(cid)
+    args = {}
+    args['title'] = u"Contact "+unicode(contact)+u" in group "+cg.unicode_with_date()
+    args['cg'] = cg
+    args['contact'] = contact
+    #args['objtype'] = ContactGroupNews
+    args['form'] = ContactInGroupForm()
+    return render_to_response('contact_in_group.html', args, RequestContext(request))
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_news(request, gid):
