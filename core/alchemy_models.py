@@ -190,12 +190,16 @@ class Contact(NgwModel):
         gid = gids[0]
         cig = Query(ContactInGroup).get((self.id, gid))
         if cig:
-            if cig.member:
+            if cig.operator:
+                return u"Operator"
+            elif cig.member:
                 return u"Member"
             elif cig.invited:
                 return u"Invited"
+            elif cig.declined_invitation:
+                return u"Declined"
             else:
-                return u"ERROR: not member and not invited"
+                return u"ERROR: invalid contact_in_group flag combinaision"
 
         elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids))).execute().fetchone(): 
             return u"Member"+u" "+AUTOMATIC_MEMBER_INDICATOR

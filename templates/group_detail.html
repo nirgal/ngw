@@ -60,6 +60,12 @@
     {% ifnotequal display "i" %}
         <a href="?display=i">Show only invited</a>  
     {% endifnotequal %}
+    {% ifnotequal display "d" %}
+        <a href="?display=d">Show only declined invitation</a>  
+    {% endifnotequal %}
+    {% ifnotequal display "o" %}
+        <a href="?display=o">Show only operators</a>  
+    {% endifnotequal %}
     {% if cg.field_group %}
     <a href="/contacts/add?default_group={{cg.id}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}

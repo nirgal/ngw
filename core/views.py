@@ -264,7 +264,7 @@ def str_member_of_factory(contact_group):
     return lambda c: c.str_member_of(gids)
 def str_action_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: c.str_member_of(gids)#+u" <a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/\">edit</a>"
+    return lambda c: c.str_member_of(gids)+u" <a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/\">edit</a>"
 
 def contact_make_query_with_fields(fields, current_cg=None):
     q = Query(Contact)
@@ -762,15 +762,21 @@ def contactgroup_detail(request, id):
     display=request.REQUEST.get("display", u"")
     if display==u"mi":
         args['title'] = u"Members and invited contacts of group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND (member=\'t\' OR invited=\'t\'))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND (member=True OR invited=True))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     elif display==u"i":
-        args['title'] = u"Contact invited in group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+        args['title'] = u"Contacts invited in group "+cg.unicode_with_date()
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    elif display==u"d":
+        args['title'] = u"Contacts who declined invitation in group "+cg.unicode_with_date()
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND declined_invitation=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    elif display==u"o":
+        args['title'] = u"Contacts who declined invitation in group "+cg.unicode_with_date()
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND operator=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
     else:
-        display='m'
+        display=u'm'
         args['title'] = u"Members of group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
-    if request.REQUEST.get("output", "")=="vcard":
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    if request.REQUEST.get("output", u"")==u"vcard":
         result=u""
         for row in q:
             contact = row[0]
@@ -948,7 +954,85 @@ def contactgroup_edit(request, id):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contactgroup_remove(request, gid, cid):
+def contactgroup_delete(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    o = Query(ContactGroup).get(id)
+    # TODO: delete static folder
+    return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'))# args=(p.id,)))
+
+
+#######################################################################
+#
+# Contact In Group
+#
+#######################################################################
+
+
+class ContactInGroupForm(forms.Form):
+    invited = forms.BooleanField(required=False)
+    declined_invitation = forms.BooleanField(required=False)
+    member = forms.BooleanField(required=False)
+    operator = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kargs):
+        forms.Form.__init__(self, *args, **kargs)
+        #self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
+        self.fields['invited'].widget.attrs = { "onchange": "if (this.checked) { this.form.declined_invitation.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}"}
+        self.fields['declined_invitation'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}"}
+        self.fields['member'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; }"}
+        self.fields['operator'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; this.form.member.checked=true; }"}
+
+    def clean(self):
+        data = self.cleaned_data
+        if  (data['invited'] and data['declined_invitation']) \
+         or (data['declined_invitation'] and data['member']) \
+         or (data['invited'] and data['member']):
+            raise forms.ValidationError("Invalid flags combinaison")
+        return data
+
+@http_authenticate(ngw_auth, 'ngw')
+def contactingroup_edit(request, gid, cid):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    cg = Query(ContactGroup).get(gid)
+    contact = Query(Contact).get(cid)
+    cig = Query(ContactInGroup).get((cid, gid))
+    args = {}
+    args['title'] = u"Contact "+unicode(contact)+u" in group "+cg.unicode_with_date()
+    args['cg'] = cg
+    args['contact'] = contact
+    args['objtype'] = ContactInGroup
+    initial={}
+    if cig:
+        initial['invited'] = cig.invited
+        initial['declined_invitation'] = cig.declined_invitation
+        initial['member'] = cig.member
+        initial['operator'] = cig.operator
+
+    if request.method == 'POST':
+        form = ContactInGroupForm(request.POST, initial=initial)
+        if form.is_valid():
+            data = form.cleaned_data
+            if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator']:
+                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(cg.id,cid)))
+            if not cig:
+                cig = ContactInGroup(contact.id, cg.id)
+            cig.invited = data['invited']
+            cig.declined_invitation = data['declined_invitation']
+            cig.member = data['member']
+            cig.operator = data['operator']
+            request.user.push_message(u"Member %s of group %s has been changed sucessfully!" % (contact.name, cg.name))
+            return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_detail', args=(cg.id,)))
+    else:
+        form = ContactInGroupForm(initial=initial)
+
+    args['form'] = form
+    return render_to_response('contact_in_group.html', args, RequestContext(request))
+
+
+@http_authenticate(ngw_auth, 'ngw')
+def contactingroup_delete(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
     cig = Query(ContactInGroup).get((cid, gid))
@@ -959,43 +1043,11 @@ def contactgroup_remove(request, gid, cid):
     return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_detail', args=(gid,)))
 
 
-@http_authenticate(ngw_auth, 'ngw')
-def contactgroup_delete(request, id):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    o = Query(ContactGroup).get(id)
-    # TODO: delete static folder
-    return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'))# args=(p.id,)))
-
-
-
-class ContactInGroupForm(forms.Form):
-    invited = forms.BooleanField()
-    declined_invitation = forms.BooleanField()
-    member = forms.BooleanField()
-    operator = forms.BooleanField()
-
-    def __init__(self, *args, **kargs):
-        forms.Form.__init__(self, *args, **kargs)
-        
-        #self.fields['invited_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
-        #self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
-        #self.fields['direct_subgroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
-
-
-@http_authenticate(ngw_auth, 'ngw')
-def contactingroup_edit(request, gid, cid):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    cg = Query(ContactGroup).get(gid)
-    contact = Query(Contact).get(cid)
-    args = {}
-    args['title'] = u"Contact "+unicode(contact)+u" in group "+cg.unicode_with_date()
-    args['cg'] = cg
-    args['contact'] = contact
-    #args['objtype'] = ContactGroupNews
-    args['form'] = ContactInGroupForm()
-    return render_to_response('contact_in_group.html', args, RequestContext(request))
+#######################################################################
+#
+# ContactGroup News
+#
+#######################################################################
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_news(request, gid):
