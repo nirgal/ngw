@@ -980,14 +980,15 @@ class ContactInGroupForm(forms.Form):
         #self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
         self.fields['invited'].widget.attrs = { "onchange": "if (this.checked) { this.form.declined_invitation.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}"}
         self.fields['declined_invitation'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}"}
-        self.fields['member'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; }"}
+        self.fields['member'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; } else { this.form.operator.checked=false;}"}
         self.fields['operator'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; this.form.member.checked=true; }"}
 
     def clean(self):
         data = self.cleaned_data
         if  (data['invited'] and data['declined_invitation']) \
          or (data['declined_invitation'] and data['member']) \
-         or (data['invited'] and data['member']):
+         or (data['invited'] and data['member']) \
+         or (data['operator'] and not data['member']):
             raise forms.ValidationError("Invalid flags combinaison")
         return data
 
