@@ -120,9 +120,12 @@ def unauthorized(request):
 @http_authenticate(ngw_auth, 'ngw')
 def index(request):
     # Birthdates: select contact_id, substring(value from 6) as md from contact_field_value where contact_field_id=6 order by md;
+    operator_groups_ids = [ cig.group_id for cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==request.user.id).filter(ContactInGroup.operator==True) ]
+    operator_groups = Query(ContactGroup).filter(ContactGroup.id.in_(operator_groups_ids)).order_by(ContactGroup.name)
     return render_to_response('index.html', {
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
+        'operator_groups': operator_groups,
         'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN).order_by(desc(ContactGroupNews.date)).limit(5)
     }, RequestContext(request))
 

@@ -18,6 +18,17 @@
 </div>
 {% endif %}
 
+{% for g in operator_groups %}
+{% if forloop.first %}
+    <h1 class="boxheader">You are operator of theses groups:</h1>
+    <div class=box>
+{% endif %}
+‣ <a href="{{g.get_absolute_url}}">{{ g.unicode_with_date }}</a><br>
+{% if forloop.last %}
+    </div>
+{% endif %}
+{% endfor %}
+
 <h1 class="boxheader">Please select an operation:</h1>
 <div id=submitbar style="margin-top:0px;">
 <a href="contacts/{{user.id}}/">My information</a>
