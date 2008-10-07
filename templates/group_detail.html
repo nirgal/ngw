@@ -11,6 +11,27 @@
     {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
 
+    <p>
+    <script>
+    function submit_display(form) {
+        display="";
+        if (form.id_display_member.checked) display+="m";
+        if (form.id_display_invited.checked) display+="i";
+        if (form.id_display_declined.checked) display+="d";
+        if (form.id_display_operator.checked) display+="o";
+        if (form.id_display_subgroups.checked) display+="g";
+        document.forms['mainform'].display.value=display;
+        document.forms['mainform'].submit();
+    }
+    </script>
+    <form>Show:
+    <input type=checkbox name="display_member" id="id_display_member" {% if display_member %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">Members</label>
+    <input type=checkbox name="display_invited" id="id_display_invited" {% if display_invited %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">Invited people</label>
+    <input type=checkbox name="display_declined" id="id_display_declined" {% if display_declined %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">Declined invitations</label>
+    <input type=checkbox name="display_operator" id="id_display_operator" {% if display_operator %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_operator">Operators</label>
+    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">Include subgroups</label>
+    </form>
+    <br>
     {{ block.super }}
 
     {% comment %}
@@ -51,21 +72,6 @@
     <a href="{{cg.get_absolute_url}}edit">Edit</a>
     <a href="{{cg.get_absolute_url}}emails">Emails</a>
     <a href="?display={{display}}&amp;output=vcard">Vcards</a> 
-    {% ifnotequal display "mi" %}
-        <a href="?display=mi">Show invited and members</a>  
-    {% endifnotequal %}
-    {% ifnotequal display "m" %}
-        <a href="?display=m">Show only members</a>  
-    {% endifnotequal %}
-    {% ifnotequal display "i" %}
-        <a href="?display=i">Show only invited</a>  
-    {% endifnotequal %}
-    {% ifnotequal display "d" %}
-        <a href="?display=d">Show only declined invitation</a>  
-    {% endifnotequal %}
-    {% ifnotequal display "o" %}
-        <a href="?display=o">Show only operators</a>  
-    {% endifnotequal %}
     {% if cg.field_group %}
     <a href="/contacts/add?default_group={{cg.id}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}

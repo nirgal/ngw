@@ -535,7 +535,7 @@ class ContactGroup(NgwModel):
             f.close()
 
     def get_filters_classes(self):
-        return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, )
+        return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, )
 
     def get_filters(self):
         return [ cls(self.id) for cls in self.get_filters_classes() ]
@@ -1154,7 +1154,7 @@ class GroupFilterIsMember(Filter):
         self.group_id = group_id
     def get_sql_where_params(self):
         group = Query(ContactGroup).get(self.group_id)
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
@@ -1164,27 +1164,12 @@ GroupFilterIsMember.internal_name="memberof"
 GroupFilterIsMember.human_name=u"is member of group"
 
     
-class GroupFilterIsInvited(Filter):
-    def __init__(self, group_id):
-        self.group_id = group_id
-    def get_sql_where_params(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
-    def to_html(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
-    def get_param_types(self):
-        return ()
-GroupFilterIsInvited.internal_name="ginvited"
-GroupFilterIsInvited.human_name=u"has been invited in group"
-
-    
 class GroupFilterIsNotMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
         group = Query(ContactGroup).get(self.group_id)
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
@@ -1194,12 +1179,27 @@ GroupFilterIsNotMember.internal_name="notmemberof"
 GroupFilterIsNotMember.human_name=u"is not member of group"
 
     
+class GroupFilterIsInvited(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+    def get_sql_where_params(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+    def to_html(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+    def get_param_types(self):
+        return ()
+GroupFilterIsInvited.internal_name="ginvited"
+GroupFilterIsInvited.human_name=u"has been invited in group"
+
+    
 class GroupFilterIsNotInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
         group = Query(ContactGroup).get(self.group_id)
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=\'t\')' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
     def to_html(self):
         group = Query(ContactGroup).get(self.group_id)
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
@@ -1207,6 +1207,36 @@ class GroupFilterIsNotInvited(Filter):
         return ()
 GroupFilterIsNotInvited.internal_name="gnotinvited"
 GroupFilterIsNotInvited.human_name=u"has not been invited in group"
+
+    
+class GroupFilterDeclinedInvitation(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+    def get_sql_where_params(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND declined_invitation=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+    def to_html(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+    def get_param_types(self):
+        return ()
+GroupFilterDeclinedInvitation.internal_name="gdeclined"
+GroupFilterDeclinedInvitation.human_name=u"has declined invitation in group"
+
+    
+class GroupFilterNotDeclinedInvitation(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+    def get_sql_where_params(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND declined_invitation=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+    def to_html(self):
+        group = Query(ContactGroup).get(self.group_id)
+        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+    def get_param_types(self):
+        return ()
+GroupFilterNotDeclinedInvitation.internal_name="gnotdeclined"
+GroupFilterNotDeclinedInvitation.human_name=u"has not declined invitation in group"
 
     
     

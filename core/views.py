@@ -762,23 +762,35 @@ def contactgroup_detail(request, id):
 
 
 
-    display=request.REQUEST.get("display", u"")
-    if display==u"mi":
-        args['title'] = u"Members and invited contacts of group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND (member=True OR invited=True))' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
-    elif display==u"i":
-        args['title'] = u"Contacts invited in group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
-    elif display==u"d":
-        args['title'] = u"Contacts who declined invitation in group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND declined_invitation=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
-    elif display==u"o":
-        args['title'] = u"Contacts who declined invitation in group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND operator=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+    display=request.REQUEST.get(u"display", u"mg")
+    args['title'] = u"Contacts of group "+cg.unicode_with_date()
+    cig_conditions_flags = []
+    if u"m" in display:
+        cig_conditions_flags.append(u"member=True")
+        args['display_member'] = 1
+    if u"i" in display:
+        cig_conditions_flags.append(u"invited=True")
+        args['display_invited'] = 1
+    if u"d" in display:
+        cig_conditions_flags.append(u"declined_invitation=True")
+        args['display_declined'] = 1
+    if u"o" in display:
+        cig_conditions_flags.append(u"operator=True")
+        args['display_operator'] = 1
+
+    if cig_conditions_flags:
+        cig_conditions_flags = u" AND (%s)" % u" OR ".join(cig_conditions_flags)
     else:
-        display=u'm'
-        args['title'] = u"Members of group "+cg.unicode_with_date()
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=True)' % ",".join([str(g.id) for g in cg.self_and_subgroups]))
+        cig_conditions_flags = u" AND False" # display nothing
+
+    if u"g" in display:
+        cig_conditions_group = u"group_id IN (%s)" % u",".join([unicode(g.id) for g in cg.self_and_subgroups])
+        args['display_subgroups'] = 1
+    else:
+        cig_conditions_group = u"group_id=%d" % cg.id
+
+    q = q.filter(u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND '+cig_conditions_group+cig_conditions_flags+u')')
+
     if request.REQUEST.get("output", u"")==u"vcard":
         result=u""
         for row in q:
