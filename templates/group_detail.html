@@ -45,7 +45,7 @@
     {% if cg.direct_subgroups %}
         <h1 class=boxheader>Sub groups</h1>
         <div class=box>
-        People in sub-groups automatically are members.
+        People in sub-groups automatically are members / invited.
         <br>
         {% for sg in cg.direct_subgroups  %}
         ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includinghtml|safe}}<br>
