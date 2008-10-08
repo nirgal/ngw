@@ -10,7 +10,7 @@
     <br>There are {{ ncontacts }} contacts in the database.
     
     <p>
-    <form id=realform action="/contacts/"><input type=hidden name=filter value=""></form>
+    <form id=realform action="/contactgroups/1/"><input type=hidden name=filter value=""></form>
     <form id=displayedform action="#" onsubmit="javascript:document.forms['realform']['filter'].value='nfilter(startswith,'+escape_quote(document.forms['displayedform']['filter'].value)+')'; document.forms['realform'].submit(); return false;">
     Quick contact search: <input name=filter id=defaultfocus>
     </form>
@@ -34,7 +34,6 @@
 <a href="contacts/{{user.id}}/">My information</a>
 {% if user.is_admin %}
 <a href="contactgroups/">Contact Groups</a>
-<a href="contacts/">All contacts</a>
 <a href="contactfields/">Setup of optional fields</a>
 <a href="choicegroups/">Setup of choice lists</a>
 <a href="logs?_order=-0">Logs</a>

@@ -130,7 +130,7 @@ def index(request):
     }, RequestContext(request))
 
 # Helper function that is never call directly, hence the lack of authentification check
-def generic_delete(request, o, next_url):
+def generic_delete(request, o, next_url, ondelete_function=None):
     if not request.user.is_admin():
         return unauthorized(request)
 
@@ -141,6 +141,8 @@ def generic_delete(request, o, next_url):
 
     confirm = request.GET.get("confirm", "")
     if confirm:
+        if ondelete_function:
+            ondelete_function(o)
         name = unicode(o)
         Session.delete(o)
         request.user.push_message("%s has been deleted sucessfully!"%name)
@@ -267,7 +269,7 @@ def str_member_of_factory(contact_group):
     return lambda c: c.str_member_of(gids)
 def str_action_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: c.str_member_of(gids)+u" <a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/\">edit</a>"
+    return lambda c: u"<a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/\">"+c.str_member_of(gids)+u"</a>"
 
 def contact_make_query_with_fields(fields, current_cg=None):
     q = Query(Contact)
@@ -924,9 +926,23 @@ def contactgroup_edit(request, id):
                     print "REMOVING", c.name.encode('utf-8'), "(", c.id, ") from group:", c.id, "not in", new_member_ids
                     Session.delete(cig)
 
+            old_direct_subgroups = cg.direct_subgroups
+            old_direct_subgroups_ids = [ g.id for g in old_direct_subgroups ] # TODO: fine a better algo!
+            new_direct_subgroups_id = data['direct_subgroups']
+
             # subgroups have no properties: just recreate the array with brute force
-            cg.direct_subgroups = [ Query(ContactGroup).get(id) for id in form.clean()['direct_subgroups']]
+            cg.direct_subgroups = [ Query(ContactGroup).get(id) for id in new_direct_subgroups_id]
             request.user.push_message(u"Group %s has been changed sucessfully!" % cg.name)
+
+            for subid in old_direct_subgroups_ids:
+                if subid not in new_direct_subgroups_id:
+                    # that subgroups no longer is a subgroups
+                    subcg = Query(ContactGroup).get(subid)
+                    if not subcg.direct_supergroups:
+                        subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
+
+            if not cg.direct_supergroups:
+                cg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
 
             cg.check_static_folder_created()
             Session.commit()
@@ -968,13 +984,18 @@ def contactgroup_edit(request, id):
     return render_to_response('edit.html', args, RequestContext(request))
 
 
+def on_contactgroup_delete(cg):
+    for subcg in cg.direct_subgroups:
+        if not subcg.direct_supergroups:
+            subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
+
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(ContactGroup).get(id)
     # TODO: delete static folder
-    return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'))# args=(p.id,)))
+    return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'), ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
 
 #######################################################################
@@ -1134,9 +1155,7 @@ def contactgroup_news_delete(request, gid, nid):
     if not request.user.is_admin():
         return unauthorized(request)
     cg = Query(ContactGroup).get(gid)
-    print cg
     o = Query(ContactGroupNews).get(nid)
-    print o
     return generic_delete(request, o, cg.get_absolute_url()+u"news/")
 
 #######################################################################

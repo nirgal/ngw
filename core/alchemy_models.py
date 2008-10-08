@@ -13,6 +13,7 @@ from itertools import chain
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
 import decorated_letters
 
+GROUP_EVERYBODY = 1
 GROUP_USER = 2
 GROUP_ADMIN = 8
 

@@ -48,7 +48,7 @@
         People in sub-groups automatically are members / invited.
         <br>
         {% for sg in cg.direct_subgroups  %}
-        ‣ <a href="{{ sg.get_link }}">{{ sg.name }}</a>{{sg.subgroups_includinghtml|safe}}<br>
+        ‣ <a href="{{ sg.get_link }}">{{ sg.unicode_with_date }}</a>{{sg.subgroups_includinghtml|safe}}<br>
         {% endfor %}
         </div>
     {% endif %}
