@@ -269,7 +269,7 @@ def str_member_of_factory(contact_group):
     return lambda c: c.str_member_of(gids)
 def str_action_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: u"<a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/\">"+c.str_member_of(gids)+u"</a>"
+    return lambda c: u"<a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/membership\">"+c.str_member_of(gids)+u"</a>"
 
 def contact_make_query_with_fields(fields, current_cg=None):
     q = Query(Contact)
@@ -279,7 +279,7 @@ def contact_make_query_with_fields(fields, current_cg=None):
     
     for prop in fields:
         if prop==u"name":
-            cols.append( (u"Name", 0, "name", contact_table.c.name) )
+            cols.append( (u"Name", 0, "name_with_relative_link", contact_table.c.name) )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
             cg = Query(ContactGroup).get(groupid)
@@ -358,14 +358,14 @@ def contact_list(request):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contact_detail(request, id):
-    id = int(id)
-    if id!=request.user.id and not request.user.is_admin():
+def contact_detail(request, gid=None, cid=None):
+    cid = int(cid)
+    if cid!=request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    c = Query(Contact).get(id)
+    c = Query(Contact).get(cid)
     rows = []
     for cf in c.get_allfields():
-        cfv = Query(ContactFieldValue).get((id, cf.id))
+        cfv = Query(ContactFieldValue).get((cid, cf.id))
         if cfv:
             rows.append((cf.name, mark_safe(cfv.as_html())))
     
@@ -379,11 +379,11 @@ def contact_detail(request, id):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contact_vcard(request, id):
-    id = int(id)
-    if id!=request.user.id and not request.user.is_admin():
+def contact_vcard(request, gid=None, cid=None):
+    cid = int(cid)
+    if cid!=request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    c = Query(Contact).get(id)
+    c = Query(Contact).get(cid)
     return HttpResponse(c.vcard().encode("utf-8"), mimetype="text/x-vcard")
 
 
@@ -392,19 +392,17 @@ def contact_vcard(request, id):
 class ContactEditForm(forms.Form):
     name = forms.CharField()
 
-    def __init__(self, request_user, id=None, default_group=None, *args, **kargs):
+    def __init__(self, request_user, id=None, contactgroup=None, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
         contactid = id # FIXME
 
         if contactid:
             contact = Query(Contact).get(contactid)
             contactgroupids = [ g.id for g in contact.get_allgroups_withfields()] 
-        elif default_group:
-            contactgroupids = [ g.id for g in Query(ContactGroup).get(default_group).self_and_supergroups ] 
-            self.fields['default_group'] = forms.CharField(widget=forms.HiddenInput())
+        elif contactgroup:
+            contactgroupids = [ g.id for g in contactgroup.self_and_supergroups ] 
         else:
             contactgroupids = [ ]
-
 
         # Add all extra fields
         for cf in Query(ContactField).order_by(ContactField.c.sort_weight):
@@ -422,28 +420,30 @@ class ContactEditForm(forms.Form):
         
 
 @http_authenticate(ngw_auth, 'ngw')
-def contact_edit(request, id):
-    if id:
-        id = int(id)
-        if id!=request.user.id and not request.user.is_admin():
+def contact_edit(request, gid=None, cid=None):
+    if cid: # edit existing contact
+        cid = int(cid)
+        if cid!=request.user.id and not request.user.is_admin():
             return unauthorized(request)
     else: # add
         if not request.user.is_admin():
             return unauthorized(request)
-        
+ 
+    if gid: # edit/add in a group
+        gid = int(gid)
+        cg = Query(ContactGroup).get(gid)
+    else: # edit out of a group
+        cg = None
+
     objtype = Contact;
-    if id:
-        contact = Query(Contact).get(id)
+    if cid:
+        contact = Query(Contact).get(cid)
         title = u"Editing "+unicode(contact)
     else:
         title = u"Adding a new "+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
-        if 'default_group' in request.POST:
-            default_group = request.POST['default_group']
-        else:
-            default_group = None
-        form = ContactEditForm(id=id, data=request.POST, default_group=default_group, request_user=request.user)
+        form = ContactEditForm(id=cid, data=request.POST, contactgroup=cg, request_user=request.user) # FIXME
         if form.is_valid():
             data = form.clean()
             # print "saving", repr(form.data)
@@ -451,7 +451,7 @@ def contact_edit(request, id):
             # record the values
 
             # 1/ In contact
-            if id:
+            if cid:
                 contactgroupids = [ g.id for g in contact.get_allgroups_withfields()]  # Need to keep a record of initial groups
                 if contact.name != data['name']:
                     log = Log(request.user.id)
@@ -479,23 +479,21 @@ def contact_edit(request, id):
                 log.property_repr = u"Name"
                 log.change = u"new value is "+contact.name
 
-                default_group = data.get('default_group', "") # Direct requested group
-                if default_group:
-                    default_group = int(default_group)
-                    contactgroupids = [ g.id for g in Query(ContactGroup).get(default_group).self_and_supergroups ]
+                if cg:
+                    contactgroupids = [ g.id for g in cg.self_and_supergroups ]
                 else:
                     contactgroupids = [ ]
 
             if request.user.is_admin():
                 newgroups = data.get('groups', [])
                 registeredgroups = []
-                for gid in newgroups:
-                    cig = Query(ContactInGroup).get((contact.id, gid))
+                for new_gid in newgroups:
+                    cig = Query(ContactInGroup).get((contact.id, new_gid))
                     if cig==None: # Was not a member
-                        cig = ContactInGroup(contact.id, gid)
+                        cig = ContactInGroup(contact.id, new_gid)
                         cig.member = True
-                    registeredgroups.append(gid)
-                for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==id, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
+                    registeredgroups.append(new_gid)
+                for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==cid, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
                     # TODO optimize me
                     print "Deleting", cig
                     Session.delete(cig)
@@ -513,27 +511,25 @@ def contact_edit(request, id):
                     newvalue = cf.formfield_value_to_db_value(newvalue)
                 contact.set_fieldvalue(request.user, cf, newvalue)
             request.user.push_message(u"Contact %s has been saved sucessfully!" % contact.name)
-            if request.POST.get("_continue", None):
-                if not id:
-                    Session.commit() # We need the id rigth now!
-                return HttpResponseRedirect(contact.get_absolute_url()+u"edit")
-            elif request.POST.get("_addanother", None):
-                url = contact.get_class_absolute_url()+u"add"
-                if default_group:
-                    url+=u"?default_group="+unicode(default_group)
-                return HttpResponseRedirect(url)
+                
+            if not cid:
+                Session.commit() # We need the id rigth now!
+
+            if cg:
+                base_url=cg.get_absolute_url()+u"members/"+unicode(contact.id)+u"/"
             else:
-                if default_group and request.user.is_admin():
-                    cg = Query(ContactGroup).get(default_group)
-                    return HttpResponseRedirect(cg.get_absolute_url())
-                else:
-                    if not id:
-                        Session.commit() # We need the id rigth now!
-                    return HttpResponseRedirect(contact.get_absolute_url())
+                base_url=contact.get_class_absolute_url()
+
+            if request.POST.get("_continue", None):
+                return HttpResponseRedirect(base_url+u"edit")
+            elif request.POST.get("_addanother", None):
+                return HttpResponseRedirect(base_url+u"../add")
+            else:
+                return HttpResponseRedirect(base_url)
         # else add/update failed validation
     else: # GET /  HEAD
         initialdata = {}
-        if id: # modify existing
+        if cid: # modify existing
             initialdata['groups'] = [ group.id for group in contact.get_directgroups_member() ]
             initialdata['name'] = contact.name
 
@@ -541,23 +537,21 @@ def contact_edit(request, id):
                 cf = cfv.field
                 if cf.type != FTYPE_PASSWORD:
                     initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
-            form = ContactEditForm(id=id, initial=initialdata, request_user=request.user)
+            form = ContactEditForm(id=cid, initial=initialdata, request_user=request.user, contactgroup=cg)
 
         else:
-            if 'default_group' in request.GET:
-                default_group = request.GET['default_group']
-                initialdata['default_group'] = default_group
-                initialdata['groups'] = [ int(default_group) ]
-                form = ContactEditForm(id=id, initial=initialdata, default_group=default_group, request_user=request.user)
+            if cg:
+                initialdata['groups'] = [ cg.id ]
+                form = ContactEditForm(id=cid, initial=initialdata, contactgroup=cg, request_user=request.user)
             else:
-                form = ContactEditForm(id=id, request_user=request.user)
+                form = ContactEditForm(id=cid, request_user=request.user)
 
     args={}
     args['form'] = form
     args['title'] = title
-    args['id'] = id
+    args['id'] = cid
     args['objtype'] = objtype
-    if id:
+    if cid:
         args['o'] = contact
 
     return render_to_response('edit.html', args, RequestContext(request))
@@ -707,7 +701,7 @@ def contactgroup_list(request):
         if cg.field_group:
             fields = cg.contact_fields
             if fields:
-                return u", ".join(['<a href="'+f.get_link()+'">'+html.escape(f.name)+"</a>" for f in fields])
+                return u", ".join(['<a href="'+f.get_absolute_url()+'">'+html.escape(f.name)+"</a>" for f in fields])
             else:
                 return u"Yes (but none yet)"
         else:
@@ -734,6 +728,13 @@ def contactgroup_list(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_detail(request, id):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(id,)))
+
+
+@http_authenticate(ngw_auth, 'ngw')
+def contactgroup_members(request, gid):
     import contactsearch # FIXME
     if not request.user.is_admin():
         return unauthorized(request)
@@ -753,7 +754,7 @@ def contactgroup_detail(request, id):
     if (request.REQUEST.get(u'savecolumns')):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
-    cg = Query(ContactGroup).get(id)
+    cg = Query(ContactGroup).get(gid)
     if not cg:
         raise Http404
 
@@ -761,8 +762,6 @@ def contactgroup_detail(request, id):
     args={}
     args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
     q, cols = contact_make_query_with_fields(fields, cg)
-
-
 
     display=request.REQUEST.get(u"display", u"mg")
     args['title'] = u"Contacts of group "+cg.unicode_with_date()
@@ -800,7 +799,6 @@ def contactgroup_detail(request, id):
             result += contact.vcard()
         return HttpResponse(result.encode("utf-8"), mimetype="text/x-vcard")
 
-    #cols.append(("Action", 0, lambda c:'<a href="remove/'+str(c.id)+'">remove from group</a>', None))
     baseurl += u"&display="+display
     q = filter.apply_filter_to_query(q)
 
@@ -818,7 +816,6 @@ def contactgroup_detail(request, id):
     args['fields'] = strfields
     ####
     return query_print_entities(request, 'group_detail.html', args)
-
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_emails(request, id):
@@ -955,7 +952,7 @@ def contactgroup_edit(request, id):
             elif request.POST.get("_addanother", None):
                 return HttpResponseRedirect(cg.get_class_absolute_url()+u"add")
             else:
-                return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_detail', args=(cg.id,)))
+                return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(cg.id,)))
 
     else: # GET
         if id:
@@ -1060,7 +1057,7 @@ def contactingroup_edit(request, gid, cid):
             cig.member = data['member']
             cig.operator = data['operator']
             request.user.push_message(u"Member %s of group %s has been changed sucessfully!" % (contact.name, cg.name))
-            return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_detail', args=(cg.id,)))
+            return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(cg.id,)))
     else:
         form = ContactInGroupForm(initial=initial)
 
@@ -1077,7 +1074,7 @@ def contactingroup_delete(request, gid, cid):
         return HttpResponse("Error, that contact is not a direct member. Please check subgroups")
     Session.delete(cig)
     request.user.push_message(u"%s has been removed for group %s." % (cig.contact.name, cig.group.name))
-    return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_detail', args=(gid,)))
+    return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(gid,)))
 
 
 #######################################################################

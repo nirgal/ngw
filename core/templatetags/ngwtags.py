@@ -10,25 +10,25 @@ register = template.Library()
 def autobr(txt):
     return txt.replace('\n', '<br>');
 
-@register.filter
-def row_get_value_by_key(alchemy_entity, column_name):
-    return alchemy_entity.__getattribute__(column_name)
+#@register.filter
+#def row_get_value_by_key(alchemy_entity, column_name):
+#    return alchemy_entity.__getattribute__(column_name)
     
-@register.filter
-def iter_alchemy_tuple(row):
-    """ That filter iterate entities when row is a tuple.
-    When it's now, it iterates once yielding the one value"""
-    if isinstance(row, tuple):
-        for entity in row:
-            yield entity
-    else:
-        yield row
+#@register.filter
+#def iter_alchemy_tuple(row):
+#    """ That filter iterate entities when row is a tuple.
+#    When it's now, it iterates once yielding the one value"""
+#    if isinstance(row, tuple):
+#        for entity in row:
+#            yield entity
+#    else:
+#        yield row
 
-@register.filter
-def ngw_unicode(o):
-    if o:
-        return unicode(o)
-    return u""
+#@register.filter
+#def ngw_unicode(o):
+#    if o:
+#        return unicode(o)
+#    return u""
 
 
 @register.filter

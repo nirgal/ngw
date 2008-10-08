@@ -4,6 +4,7 @@
   <a href="/">Home</a>
 › <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
 › {{ cg.name }}
+› members
 {% endblock %}
 
 {% block body %}
@@ -48,7 +49,7 @@
         People in sub-groups automatically are members / invited.
         <br>
         {% for sg in cg.direct_subgroups  %}
-        ‣ <a href="{{ sg.get_link }}">{{ sg.unicode_with_date }}</a>{{sg.subgroups_includinghtml|safe}}<br>
+        ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a>{{sg.subgroups_includinghtml|safe}}<br>
         {% endfor %}
         </div>
     {% endif %}
@@ -73,7 +74,7 @@
     <a href="{{cg.get_absolute_url}}emails">Emails</a>
     <a href="?display={{display}}&amp;output=vcard">Vcards</a> 
     {% if cg.field_group %}
-    <a href="/contacts/add?default_group={{cg.id}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
+    <a href="add"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
     <a href="news/">News</a> 
 </div>

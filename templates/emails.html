@@ -15,7 +15,7 @@
     {% if noemails %}
         <p>Warning, the following people does not have any email adress:<br>
         {% for contact in noemails %}
-        <a href="{{ contact.get_link }}">{{ contact.name }}</a><br>
+        <a href="{{ contact.get_absolute_url }}">{{ contact.name }}</a><br>
         {% endfor %}
     {% endif %}
     {% block submitbar %}

@@ -16,11 +16,11 @@
     {% endfor %}
     {% for g in contact.get_directgroups_member %}
         {% if not forloop.counter0 %}Member of groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_link }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
     {% endfor %}
     {% for g in contact.get_allgroups_invited %}
         {% if not forloop.counter0 %}Invited in groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_link }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
     {% endfor %}
 
     </table>
@@ -30,12 +30,12 @@
       {% if user.is_admin %}
       <a id=default href="{{contact.get_class_absolute_url}}">Contact list</a>
       {% endif %}
-      <a href="{{contact.get_absolute_url}}edit">Edit</a>
-      <a href="{{contact.get_absolute_url}}vcard">VCard</a>
+      <a href="edit">Edit</a>
+      <a href="vcard">VCard</a>
       <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
       {% if contact.get_login %}
-      <a href="{{contact.get_absolute_url}}pass">Change password</a>
-      <a href="{{contact.get_absolute_url}}filters/">Filters</a>
+      <a href="pass">Change password</a>
+      <a href="filters/">Filters</a>
       {% endif %}
     </div>
     {% endblock %}

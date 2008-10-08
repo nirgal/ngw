@@ -167,9 +167,7 @@ class ChoiceGroup(NgwModel):
             q = q.order_by([choice_table.c.value])
         return [(c.key, c.value) for c in q]
 
-    def get_link(self):
-        return u"/choicegroups/"+str(self.id)+"/edit"
-    get_link_name=get_link # templatetags
+    get_link_name=NgwModel.get_absolute_url
 
 
 class Contact(NgwModel):
@@ -207,9 +205,9 @@ class Contact(NgwModel):
         else:
             return u""
 
-    def get_link(self):
-        return u"/contacts/"+str(self.id)+"/"
-    get_link_name=get_link # templatetags
+    #get_link_name=NgwModel.get_absolute_url
+    def name_with_relative_link(self):
+        return u"<a href=\"%(id)d/\">%(name)s</a>" % { 'id': self.id, 'name': html.escape(self.name) }
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is direct member of."
@@ -491,21 +489,19 @@ class ContactGroup(NgwModel):
 
     members = property(_get_members)
 
-    def get_link(self):
-        return u"/contactgroups/"+str(self.id)+"/"
-    get_link_name=get_link # templatetags
+    get_link_name=NgwModel.get_absolute_url
 
     def supergroups_includinghtml(self):
         sgs = self.supergroups
         if not sgs:
             return u""
-        return u" (implies "+u", ".join(['<a href="'+g.get_link()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
+        return u" (implies "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
     def subgroups_includinghtml(self):
         sgs = self.subgroups
         if not sgs:
             return u""
-        return u" (including "+u", ".join(['<a href="'+g.get_link()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
+        return u" (including "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
     def unicode_with_date(self):
         """ Returns the name of the group, and the date if there's one"""
@@ -654,9 +650,7 @@ class ContactField(NgwModel):
     def format_value_html(self, value):
         return self.format_value_unicode(value)
 
-    def get_link(self):
-        return u"/contactfields/"+unicode(self.id)+u"/edit"
-    get_link_name=get_link # templatetags
+    get_link_name=NgwModel.get_absolute_url
 
     def formfield_value_to_db_value(self, value):
         return unicode(value)
@@ -762,7 +756,7 @@ register_contact_field_type(RibContactField, u"RIB", u"French bank account", has
 
 class ChoiceContactField(ContactField):
     def type_as_html(self):
-        return self.str_type_base() + u" (<a href='"+self.choice_group.get_link()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
+        return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
     def format_value_unicode(self, value):
         chg = self.choice_group
         if chg == None:
@@ -784,7 +778,7 @@ register_contact_field_type(ChoiceContactField, u"CHOICE", u"Choice", has_choice
 
 class MultipleChoiceContactField(ContactField):
     def type_as_html(self):
-        return self.str_type_base() + u" (<a href='"+self.choice_group.get_link()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
+        return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
     def format_value_unicode(self, value):
         chg = self.choice_group
         if chg == None:
@@ -1346,7 +1340,6 @@ class ContactGroupNews(NgwModel):
     def get_class_absolute_url(cls):
         raise Error("Not implemented")
 
-    #def get_link(self):
     def get_absolute_url(self):
         return self.contact_group.get_absolute_url()+u"news/"+str(self.id)+"/"
 
