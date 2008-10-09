@@ -89,7 +89,7 @@ class NgwModel(object):
     
     @classmethod
     def get_class_absolute_url(cls):
-        return u"/"+unicode(cls.__name__.lower(), "utf-8-")+u"s/"
+        return u"/"+unicode(cls.__name__.lower(), "utf8")+u"s/"
 
     def get_absolute_url(self):
         return self.get_class_absolute_url()+unicode(self.id)+u"/"

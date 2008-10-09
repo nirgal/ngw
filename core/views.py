@@ -71,11 +71,20 @@ def ngw_auth(username, passwd):
 
 
 class navbar(object):
-    #def __init__(self):
-    components = [ (u"", u"Home") ]
-    
+    def __init__(self, *args):
+        self.components = [ (u"", u"Home") ]
+        for arg in args:
+            self.add_component(arg)
+
+    def add_component(self, arg):
+        if isinstance(arg, tuple):
+            self.components.append(arg)
+        else:
+            assert isinstance(arg, unicode)
+            self.components.append((arg,arg))
+        
     def geturl(self, idx):
-        return u"/".join(components[i][0] for i in range(idx+1))
+        return u"".join(u"/"+self.components[i][0] for i in range(idx+1))
 
     def getfragment(self, idx):
         result = u""
@@ -84,10 +93,11 @@ class navbar(object):
         result += html.escape(self.components[idx][1])
         if idx!=len(self.components)-1:
             result += u"</a>"
+        return result
 
-    def unicode(self):
-        return u" › ".join([self.getfragment(i) for i in range(len(self.components)) ]
-    
+    def __unicode__(self):
+        return u" › ".join([self.getfragment(i) for i in range(len(self.components)) ])
+
 
 def get_display_fields(user):
     # check the field still exists
@@ -142,6 +152,7 @@ def index(request):
     operator_groups_ids = [ cig.group_id for cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==request.user.id).filter(ContactInGroup.operator==True) ]
     operator_groups = Query(ContactGroup).filter(ContactGroup.id.in_(operator_groups_ids)).order_by(ContactGroup.name)
     return render_to_response('index.html', {
+        'nav': navbar(),
         'title':'Action DB',
         'ncontacts': Query(Contact).count(),
         'operator_groups': operator_groups,
@@ -153,7 +164,7 @@ def generic_delete(request, o, next_url, ondelete_function=None):
     if not request.user.is_admin():
         return unauthorized(request)
 
-    title = "Please confirm deletetion"
+    title = u"Please confirm deletetion"
 
     if not o:
         raise Http404()
@@ -250,7 +261,7 @@ def logout(request):
         scheme = "https"
     else:
         scheme = "http"
-    return render_to_response("message.html", {"message": mark_safe("Have a nice day!<br><a href=\""+scheme+"://"+request.META["HTTP_HOST"]+"/\">Login again</a>")}, RequestContext(request))
+    return render_to_response("message.html", {"message": mark_safe("Have a nice day!<br><a href=\""+scheme+"://"+request.META["HTTP_HOST"]+"/\">Login again</a>") }, RequestContext(request))
 
 #######################################################################
 #
@@ -265,6 +276,7 @@ def logs(request):
 
     args={}
     args['title'] = "Global log"
+    args['nav'] = navbar(u'logs')
     args['objtype'] = Log
     args['query'] = Query(Log)
     args['cols'] = [
@@ -362,9 +374,10 @@ def contact_list(request):
     q = filter.apply_filter_to_query(q)
 
     args={}
-    args['title'] = "Contact list"
+    args['title'] = u"Contact list"
     args['baseurl'] = baseurl
     args['objtype'] = Contact
+    args['nav'] = navbar(args['objtype'].get_class_absolute_url().split(u'/')[1])
     args['query'] = q
     args['cols'] = cols
     args['filter'] = strfilter

@@ -230,7 +230,7 @@ form {
 <div id=nav>
 {% block nav %}
 {% if user.id %}
-<a href="/">Home</a>
+{{ nav|safe }}
 {% endif %}
 {% endblock %}
 </div>
