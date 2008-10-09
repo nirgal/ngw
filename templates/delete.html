@@ -11,8 +11,8 @@
 You are about to delete {{ o.get_class_verbose_name }} {{ o }}. Are you sure ?
     {% block submitbar %}
     <div id=submitbar>
-    <a href="{{o.get_absolute_url}}delete?confirm=1">Yes I'm Sure</a>
-    <a href="{{o.get_absolute_url}}edit">Cancel</a>
+    <a href="?confirm=1">Yes I'm Sure</a>
+    <a href=".">Cancel</a>
     </div>
     {% endblock %}
 

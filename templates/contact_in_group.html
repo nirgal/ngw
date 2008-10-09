@@ -5,13 +5,13 @@
 <a href="/">Home</a>
 › <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
 › <a href="{{ cg.get_absolute_url }}">{{ cg }}</a>
-› members
+› <a href="{{ cg.get_absolute_url }}members/">members</a>
 › {{ contact }}
 {% endblock %}
 
 {% block submitbar %}
 <div id=submitbar>
     <input type=submit value="Save" id="default">
-    <a href="{{o.get_absolute_url}}delete"><img src="/media/img/admin/icon_deletelink.gif" border=0 valign=middle> Remove from group</a>
+    <a href="{{o.get_absolute_url}}remove"><img src="/media/img/admin/icon_deletelink.gif" border=0 valign=middle> Remove from group</a>
 </div>
 {% endblock %}

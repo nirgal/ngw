@@ -23,6 +23,7 @@ FIELD_LASTCONNECTION = 3
 FIELD_COLUMNS = 4
 FIELD_FILTERS = 5
 
+FIELD_BIRTHDAY = 6
 FIELD_STREET = 9
 FIELD_POSTCODE = 11
 FIELD_CITY = 14
@@ -341,6 +342,10 @@ class Contact(NgwModel):
 
         for email in self.get_fieldvalues_by_type(EmailContactField):
             vcf += line(u"EMAIL", email)
+
+        bday = self.get_fieldvalue_by_id(FIELD_BIRTHDAY)
+        if bday:
+            vcf += line(u"BDAY", unicode(bday))
 
         vcf += line(u"END", u"VCARD")
         return vcf

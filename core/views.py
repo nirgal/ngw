@@ -70,6 +70,25 @@ def ngw_auth(username, passwd):
     return None # authentification failed
 
 
+class navbar(object):
+    #def __init__(self):
+    components = [ (u"", u"Home") ]
+    
+    def geturl(self, idx):
+        return u"/".join(components[i][0] for i in range(idx+1))
+
+    def getfragment(self, idx):
+        result = u""
+        if idx!=len(self.components)-1:
+            result += u"<a href=\""+self.geturl(idx)+"\">"
+        result += html.escape(self.components[idx][1])
+        if idx!=len(self.components)-1:
+            result += u"</a>"
+
+    def unicode(self):
+        return u" › ".join([self.getfragment(i) for i in range(len(self.components)) ]
+    
+
 def get_display_fields(user):
     # check the field still exists
     result = []
@@ -80,8 +99,8 @@ def get_display_fields(user):
             default_fields = default_fields.text
     if not default_fields:
         default_fields = u""
-    for fname in default_fields.split(','):
-        if fname=='name':
+    for fname in default_fields.split(u','):
+        if fname==u'name':
             pass
         elif fname.startswith(DISP_GROUP_PREFIX):
             try:
@@ -568,11 +587,13 @@ class ContactPasswordForm(forms.Form):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contact_pass(request, id):
-    id = int(id)
-    if id!=request.user.id and not request.user.is_admin():
+def contact_pass(request, gid=None, cid=None):
+    if gid is not None:
+        gid = int(gid)
+    cid = int(cid)
+    if cid!=request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    contact = Query(Contact).get(id)
+    contact = Query(Contact).get(cid)
     args={}
     args['title'] = "Change password"
     args['contact'] = contact
@@ -592,7 +613,11 @@ def contact_pass(request, id):
             #hash = b64encode(sha(password).digest())
             #contact.passwd = "{SHA}"+hash
             request.user.push_message("Password has been changed sucessfully!")
-            return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(id,)))
+            if gid:
+                cg = Query(ContactGroup).get(gid)
+                return HttpResponseRedirect(cg.get_absolute_url()+u"members/"+unicode(cid)+u"/")
+            else:
+                return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else: # GET
         form = ContactPasswordForm()
     args['form'] = form
@@ -600,11 +625,15 @@ def contact_pass(request, id):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contact_delete(request, id):
+def contact_delete(request, gid=None, cid=None):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = Query(Contact).get(id)
-    return generic_delete(request, o, reverse('ngw.core.views.contact_list'))
+    o = Query(Contact).get(cid)
+    if gid:
+        next_url = Query(ContactGroup).get(gid).get_absolute_url()+u"members/"
+    else:
+        next_url = reverse('ngw.core.views.contact_list')
+    return generic_delete(request, o, next_url)
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1049,7 +1078,7 @@ def contactingroup_edit(request, gid, cid):
         if form.is_valid():
             data = form.cleaned_data
             if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator']:
-                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(cg.id,cid)))
+                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id),cid)))
             if not cig:
                 cig = ContactInGroup(contact.id, cg.id)
             cig.invited = data['invited']
