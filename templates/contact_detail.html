@@ -1,12 +1,6 @@
 {% extends "base.html" %}
 {% load ngwtags %}
 
-{% block nav %}
-{{ block.super }}
-› <a href="{{contact.get_class_absolute_url}}">{{ contact.get_class_verbose_name_plural }}</a>
-› {{ contact.name }}
-{% endblock %}
-
 {% block body %}
     <table class=objlist>
     <tr><td>

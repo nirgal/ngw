@@ -84,7 +84,7 @@ class navbar(object):
             self.components.append((arg,arg))
         
     def geturl(self, idx):
-        return u"".join(u"/"+self.components[i][0] for i in range(idx+1))
+        return u"".join(self.components[i][0]+u"/" for i in range(idx+1))
 
     def getfragment(self, idx):
         result = u""
@@ -404,6 +404,8 @@ def contact_detail(request, gid=None, cid=None):
     is_admin = c.is_admin()
     args={}
     args['title'] = u"Details for "+unicode(c)
+    args['nav'] = navbar(u'contacts', (unicode(c.id), c.name))
+    args['objtype'] = Log
     args['contact'] = c
     args['rows'] = rows
     return render_to_response('contact_detail.html', args, RequestContext(request))
@@ -583,6 +585,19 @@ def contact_edit(request, gid=None, cid=None):
     args['title'] = title
     args['id'] = cid
     args['objtype'] = objtype
+    if gid:
+        args['nav'] = navbar(ContactGroup.get_class_navcomponent())
+        args['nav'].add_component(cg)
+        args['nav'].add_component(u'members')
+    else:
+        args['nav'] = navbar(Contact.get_class_navcomponent())
+
+    if cid:
+        args['nav'].add_component((unicode(contact.id), contact.name))
+        args['nav'].add_component(u"edit")
+    else:
+        args['nav'].add_component(u"add")
+
     if cid:
         args['o'] = contact
 

@@ -88,11 +88,26 @@ class NgwModel(object):
             return cls.get_class_verbose_name()+u"s"
     
     @classmethod
+    def get_class_urlfragment(cls):
+        return unicode(cls.__name__.lower(), "utf8")+u"s"
+
+    def get_urlfragment(self):
+        return unicode(self.id)
+
+    @classmethod
+    def get_class_navcomponent(cls):
+        return cls.get_class_urlfragment(), cls.get_class_verbose_name_plural()
+    
+    def get_navcomponent(self):
+        return self.get_urlfragment(), unicode(self)
+
+    @classmethod
     def get_class_absolute_url(cls):
-        return u"/"+unicode(cls.__name__.lower(), "utf8")+u"s/"
+        return u"/"+cls.get_class_urlfragment()+u"/"
 
     def get_absolute_url(self):
         return self.get_class_absolute_url()+unicode(self.id)+u"/"
+
 
 ########################################################################
 # Define classes to be mapped to the above tables.

@@ -1,11 +1,5 @@
 {% extends "base.html" %}
 
-{% block nav %}
-{{ block.super }}
-› <a href="{{objtype.get_class_absolute_url}}">{{objtype.get_class_verbose_name_plural}}</a>
-› {% if id %}{{ o }}{% else %}add{% endif %}
-{% endblock %}
-
 {% block body %}
 {{form.media|safe}}
 {% comment %}{{ form.errors }}{% endcomment %}
