@@ -1,13 +1,6 @@
 {% extends "base.html" %}
 {% load ngwtags %}
 
-{% block nav %}
-{{ block.super }}
-› <a href="{{ contact.get_class_absolute_url }}">{{ contact.get_class_verbose_name_plural }}</a>
-› <a href="{{ contact.get_absolute_url }}">{{ contact }}</a>
-› custom filters
-{% endblock %}
-
 {% block body %}
     <div class=box>
     {% if filters %}

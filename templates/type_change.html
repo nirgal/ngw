@@ -1,14 +1,6 @@
 {% extends "base.html" %}
 {% load ngwtags %}
 
-{% block nav %}
-{{ block.super }}
-› <a href="{{cf.get_class_absolute_url}}">{{ cf.get_class_verbose_name_plural }}</a>
-› <a href="{{cf.get_absolute_url}}">{{ cf }}</a>
-› delete incompatible data
-
-{% endblock %}
-
 {% block body %}
 <form method=post>
 <input type=hidden name=id value="{{id}}">

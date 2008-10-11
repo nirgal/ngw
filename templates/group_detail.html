@@ -1,12 +1,5 @@
 {% extends "list_contact.html" %}
 
-{% block nav %}
-  <a href="/">Home</a>
-› <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
-› {{ cg.name }}
-› members
-{% endblock %}
-
 {% block body %}
     {% if cg.description %}{{ cg.description }}<br><br>{% endif %}
     {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
@@ -76,6 +69,6 @@
     {% if cg.field_group %}
     <a href="add"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
-    <a href="news/">News</a> 
+    <a href="../news/">News</a> 
 </div>
 {% endblock %}

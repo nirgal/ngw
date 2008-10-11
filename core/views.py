@@ -160,7 +160,7 @@ def index(request):
     }, RequestContext(request))
 
 # Helper function that is never call directly, hence the lack of authentification check
-def generic_delete(request, o, next_url, ondelete_function=None):
+def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
     if not request.user.is_admin():
         return unauthorized(request)
 
@@ -169,7 +169,7 @@ def generic_delete(request, o, next_url, ondelete_function=None):
     if not o:
         raise Http404()
 
-    confirm = request.GET.get("confirm", "")
+    confirm = request.GET.get("confirm", u"")
     if confirm:
         if ondelete_function:
             ondelete_function(o)
@@ -183,7 +183,10 @@ def generic_delete(request, o, next_url, ondelete_function=None):
         log.target_repr = o.get_class_verbose_name()+u" "+name
         return HttpResponseRedirect(next_url)
     else:
-        return render_to_response('delete.html', {'title':title, 'o': o}, RequestContext(request))
+        nav = base_nav or navbar(o.get_class_navcomponent())
+        nav.add_component(o.get_navcomponent())
+        nav.add_component(u"delete")
+        return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
         
 
 class FilterMultipleSelectWidget(forms.SelectMultiple):
@@ -276,7 +279,7 @@ def logs(request):
 
     args={}
     args['title'] = "Global log"
-    args['nav'] = navbar(u'logs')
+    args['nav'] = navbar(Log.get_class_navcomponent())
     args['objtype'] = Log
     args['query'] = Query(Log)
     args['cols'] = [
@@ -348,6 +351,7 @@ class FieldSelectForm(forms.Form):
         forms.Form.__init__(self, *args, **kargs)
         self.fields[u'selected_fields']=forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Fields", False), choices=get_available_fields())
 
+
 @http_authenticate(ngw_auth, 'ngw')
 def contact_list(request):
     import contactsearch # FIXME
@@ -404,8 +408,13 @@ def contact_detail(request, gid=None, cid=None):
     is_admin = c.is_admin()
     args={}
     args['title'] = u"Details for "+unicode(c)
-    args['nav'] = navbar(u'contacts', (unicode(c.id), c.name))
-    args['objtype'] = Log
+    if gid:
+        cg = Query(ContactGroup).get(gid)
+        args['nav'] = navbar(ContactGroup.get_class_navcomponent(), cg.get_navcomponent(), u"members")
+    else:
+        args['nav'] = navbar(Contact.get_class_navcomponent())
+    args['nav'].add_component(c.get_navcomponent())
+    args['objtype'] = Contact
     args['contact'] = c
     args['rows'] = rows
     return render_to_response('contact_detail.html', args, RequestContext(request))
@@ -586,18 +595,14 @@ def contact_edit(request, gid=None, cid=None):
     args['id'] = cid
     args['objtype'] = objtype
     if gid:
-        args['nav'] = navbar(ContactGroup.get_class_navcomponent())
-        args['nav'].add_component(cg)
-        args['nav'].add_component(u'members')
+        args['nav'] = navbar(ContactGroup.get_class_navcomponent(), cg.get_navcomponent(), u"members")
     else:
         args['nav'] = navbar(Contact.get_class_navcomponent())
-
     if cid:
-        args['nav'].add_component((unicode(contact.id), contact.name))
+        args['nav'].add_component(contact.get_navcomponent())
         args['nav'].add_component(u"edit")
     else:
         args['nav'].add_component(u"add")
-
     if cid:
         args['o'] = contact
 
@@ -649,6 +654,13 @@ def contact_pass(request, gid=None, cid=None):
     else: # GET
         form = ContactPasswordForm()
     args['form'] = form
+    if gid:
+        cg = Query(ContactGroup).get(gid)
+        args['nav'] = navbar(ContactGroup.get_class_navcomponent(), cg.get_navcomponent(), u"members")
+    else:
+        args['nav'] = navbar(Contact.get_class_navcomponent())
+    args['nav'].add_component(contact.get_navcomponent())
+    args['nav'].add_component(u"password")
     return render_to_response('password.html', args, RequestContext(request))
 
 
@@ -661,11 +673,16 @@ def contact_delete(request, gid=None, cid=None):
         next_url = Query(ContactGroup).get(gid).get_absolute_url()+u"members/"
     else:
         next_url = reverse('ngw.core.views.contact_list')
-    return generic_delete(request, o, next_url)
+    if gid:
+        cg = Query(ContactGroup).get(gid)
+        base_nav = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members")
+    else:
+        base_nav = None
+    return generic_delete(request, o, next_url, base_nav=base_nav)
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contact_filters_add(request, cid):
+def contact_filters_add(request, cid=None):
     from contactsearch import *
     if not request.user.is_admin():
         return unauthorized(request)
@@ -682,8 +699,9 @@ def contact_filters_add(request, cid):
     request.user.push_message("Filter has been added sucessfully!")
     return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid,len(filter_list)-1)))
 
+
 @http_authenticate(ngw_auth, 'ngw')
-def contact_filters_list(request, cid):
+def contact_filters_list(request, cid=None):
     from contactsearch import *
     if not request.user.is_admin():
         return unauthorized(request)
@@ -697,6 +715,9 @@ def contact_filters_list(request, cid):
     args['title'] = u"User custom filters"
     args['contact'] = contact
     args['filters'] = filters
+    args['nav'] = navbar(Contact.get_class_navcomponent())
+    args['nav'].add_component(contact.get_navcomponent())
+    args['nav'].add_component((u"filters", u"custom filters"))
     return render_to_response('customfilters_user.html', args, RequestContext(request))
 
 
@@ -704,7 +725,7 @@ class FilterEditForm(forms.Form):
     name = forms.CharField(max_length=50)
 
 @http_authenticate(ngw_auth, 'ngw')
-def contact_filters_edit(request, cid, fid):
+def contact_filters_edit(request, cid=None, fid=None):
     from contactsearch import *
     if not request.user.is_admin():
         return unauthorized(request)
@@ -739,6 +760,10 @@ def contact_filters_edit(request, cid, fid):
     args['form'] = form
     args['filtername'] = filtername
     args['filter_html'] = parse_filterstring(filterstr).to_html()
+    args['nav'] = navbar(Contact.get_class_navcomponent())
+    args['nav'].add_component(contact.get_navcomponent())
+    args['nav'].add_component((u"filters", u"custom filters"))
+    args['nav'].add_component((unicode(fid), filtername))
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
 
@@ -780,6 +805,7 @@ def contactgroup_list(request):
     args['query'] = q
     args['cols'] = cols
     args['objtype'] = ContactGroup
+    args['nav'] = navbar(ContactGroup.get_class_navcomponent())
     return query_print_entities(request, 'list.html', args)
 
 
@@ -872,7 +898,9 @@ def contactgroup_members(request, gid):
     args['filter'] = strfilter
     args['fields'] = strfields
     ####
+    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members")
     return query_print_entities(request, 'group_detail.html', args)
+
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_emails(request, id):
@@ -894,6 +922,7 @@ def contactgroup_emails(request, id):
     args['cg'] = cg
     args['emails'] = emails
     args['noemails'] = noemails
+    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", u"emails")
     return render_to_response('emails.html', args, RequestContext(request))
 
 
@@ -1035,6 +1064,13 @@ def contactgroup_edit(request, id):
     args['form'] = form
     if id:
         args['o'] = cg
+    args['nav'] = navbar(ContactGroup.get_class_navcomponent())
+    if id:
+        args['nav'].add_component(cg.get_navcomponent())
+        args['nav'].add_component(u"edit")
+    else:
+        args['nav'].add_component(u"add")
+
     return render_to_response('edit.html', args, RequestContext(request))
 
 
@@ -1119,6 +1155,7 @@ def contactingroup_edit(request, gid, cid):
         form = ContactInGroupForm(initial=initial)
 
     args['form'] = form
+    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", contact.get_navcomponent(), u"membership")
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
 
@@ -1151,6 +1188,7 @@ def contactgroup_news(request, gid):
     args['news'] = Query(ContactGroupNews).filter(ContactGroupNews.contact_group==cg).order_by(desc(ContactGroupNews.date))
     args['cg'] = cg
     args['objtype'] = ContactGroupNews
+    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"news")
     return render_to_response('news.html', args, RequestContext(request))
 
 
@@ -1201,8 +1239,14 @@ def contactgroup_news_edit(request, gid, nid):
     if nid:
         args['o'] = news
         args['id'] = nid
+    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"news")
+    if nid:
+        args['nav'].add_component(news.get_navcomponent())
+        args['nav'].add_component(u"edit")
+    else:
+        args['nav'].add_component(u"add")
 
-    return render_to_response('news_edit.html', args, RequestContext(request))
+    return render_to_response('edit.html', args, RequestContext(request))
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_news_delete(request, gid, nid):
@@ -1233,6 +1277,7 @@ def field_list(request):
     ]
     args['title'] = "Select an optionnal field"
     args['objtype'] = ContactField
+    args['nav'] = navbar(ContactField.get_class_navcomponent())
     return query_print_entities(request, 'list.html', args)
 
 
@@ -1383,6 +1428,7 @@ def field_edit(request, id):
                             args['deletion_details'] = deletion_details
                             for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
                                 args[k] = data[k]
+                            args['nav'] = navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), (u"edit", u"delete imcompatible data"))
                             return render_to_response('type_change.html', args, RequestContext(request))
                     
                     # Needed work around sqlalchemy polymorphic feature
@@ -1433,6 +1479,12 @@ def field_edit(request, id):
     args['objtype'] = objtype
     if id:
         args['o'] = cf
+    args['nav'] = navbar(ContactField.get_class_navcomponent())
+    if id:
+        args['nav'].add_component(cf.get_navcomponent())
+        args['nav'].add_component(u"edit")
+    else:
+        args['nav'].add_component(u"add")
     return render_to_response('edit.html', args, RequestContext(request))
 
 
@@ -1466,6 +1518,7 @@ def choicegroup_list(request):
     ]
     args['title'] = "Select a choice group"
     args['objtype'] = ChoiceGroup
+    args['nav'] = navbar(ChoiceGroup.get_class_navcomponent())
     return query_print_entities(request, 'list.html', args)
 
 
@@ -1637,6 +1690,12 @@ def choicegroup_edit(request, id=None):
     args['form'] = form
     if id:
         args['o'] = cg
+    args['nav'] = navbar(ChoiceGroup.get_class_navcomponent())
+    if id:
+        args['nav'].add_component(cg.get_navcomponent())
+        args['nav'].add_component(u"edit")
+    else:
+        args['nav'].add_component(u"add")
     return render_to_response('edit.html', args, RequestContext(request))
 
 

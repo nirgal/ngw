@@ -1,18 +1,11 @@
 {% extends "base.html" %}
 {% load ngwtags %}
 
-{% block nav %}
-{{ block.super }}
-› <a href="{{ cg.get_class_absolute_url }}">{{ cg.get_class_verbose_name_plural }}</a>
-› <a href="{{ cg.get_absolute_url }}">{{ cg }}</a>
-› news
-{% endblock %}
-
 {% block body %}
     {% for n in news %}
     <h1 class="boxheader"><a href="{{n.get_absolute_url}}">{{ n.title }}</a></h1>
     <div class=box>
-    <b>{{ n.date|date:"D d M Y" }}</b> - by <a href="{{ n.author.get_absolute_url}}"> {{ n.author }}</a><br>
+    <b>{{ n.date|date:"D d M Y" }}</b> - by <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
     {{ n.text|autobr|safe }}<br>
     </div>
     {% endfor %}

@@ -228,11 +228,9 @@ form {
 </table>
 
 <div id=nav>
-{% block nav %}
 {% if user.id %}
 {{ nav|safe }}
 {% endif %}
-{% endblock %}
 </div>
 
 {% for msg in messages %}
