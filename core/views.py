@@ -1021,10 +1021,10 @@ def contactgroup_edit(request, id):
                 if subid not in new_direct_subgroups_id:
                     # that subgroups no longer is a subgroups
                     subcg = Query(ContactGroup).get(subid)
-                    if not subcg.direct_supergroups:
+                    if not cg.id != GROUP_EVERYBODY and subcg.direct_supergroups:
                         subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
 
-            if not cg.direct_supergroups:
+            if cg.id != GROUP_EVERYBODY and not cg.direct_supergroups:
                 cg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
 
             cg.check_static_folder_created()
