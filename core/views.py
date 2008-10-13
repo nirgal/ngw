@@ -874,6 +874,7 @@ def contactgroup_members(request, gid):
         cig_conditions_group = u"group_id=%d" % cg.id
 
     q = q.filter(u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND '+cig_conditions_group+cig_conditions_flags+u')')
+    q = filter.apply_filter_to_query(q)
 
     if request.REQUEST.get("output", u"")==u"vcard":
         result=u""
@@ -883,7 +884,6 @@ def contactgroup_members(request, gid):
         return HttpResponse(result.encode("utf-8"), mimetype="text/x-vcard")
 
     baseurl += u"&display="+display
-    q = filter.apply_filter_to_query(q)
 
     args['baseurl'] = baseurl
     args['display'] = display
