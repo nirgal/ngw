@@ -1329,7 +1329,10 @@ class ContactFieldValue(NgwModel):
     def as_html(self):
         return self.field.format_value_html(self.value)
 
+
 class ContactInGroup(NgwModel):
+    class Meta:
+        verbose_name = u"membership"
     def __init__(self, contact_id, group_id):
         NgwModel.__init__(self)
         self.contact_id = contact_id
@@ -1337,6 +1340,16 @@ class ContactInGroup(NgwModel):
 
     def __repr__(self):
         return "ContactInGroup<%s,%s>"%(self.contact_id, self.group_id)
+    
+    def __unicode__(self):
+        return u"contact %(contactname)s in group %(groupname)s" % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
+
+    @classmethod
+    def get_class_navcomponent(cls):
+        raise Exception("NotImplemented")
+    
+    def get_navcomponent(self):
+        return Query(Contact).get(self.contact_id).get_navcomponent()
 
 
 class ContactSysMsg(NgwModel):

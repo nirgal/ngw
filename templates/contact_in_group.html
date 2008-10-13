@@ -1,6 +1,11 @@
 {% extends "edit.html" %}
 {% load ngwtags %}
 
+{% block body %}
+{{ inherited_info }}
+{{ block.super }}
+{% endblock %}
+
 {% block submitbar %}
 <div id=submitbar>
     <input type=submit value="Save" id="default">

@@ -1078,13 +1078,13 @@ def on_contactgroup_delete(cg):
     for subcg in cg.direct_subgroups:
         if not subcg.direct_supergroups:
             subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
+    # TODO: delete static folder
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactgroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(ContactGroup).get(id)
-    # TODO: delete static folder
     return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'), ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
 
@@ -1155,6 +1155,29 @@ def contactingroup_edit(request, gid, cid):
         form = ContactInGroupForm(initial=initial)
 
     args['form'] = form
+
+    subgroups = cg.subgroups
+    subgroup_ids = [ subg.id for subg in subgroups ]
+    auto_member = []
+    auto_invited = []
+    for sub_cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==cid).filter(ContactInGroup.group_id.in_(subgroup_ids)).filter(ContactInGroup.member==True):
+        sub_cg = Query(ContactGroup).get(sub_cig.group_id)
+        auto_member.append(sub_cg)
+    for sub_cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==cid).filter(ContactInGroup.group_id.in_(subgroup_ids)).filter(ContactInGroup.invited==True):
+        sub_cg = Query(ContactGroup).get(sub_cig.group_id)
+        auto_invited.append(sub_cg)
+    inherited_info = u""
+    if auto_member:
+        inherited_info += u"Automatically member because member of subgroup(s):<br>"
+        for sub_cg in auto_member:
+            inherited_info += u"<li><a href=\"%(url)s\">%(name)s</a>" % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
+        inherited_info += u"<br>"
+    if auto_invited:
+        inherited_info += u"Automatically invited because invited in subgroup(s):<br>"
+        for sub_cg in auto_invited:
+            inherited_info += u"<li><a href=\"%(url)s\">%(name)s</a>" % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
+    args['inherited_info'] = mark_safe(inherited_info)
+
     args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", contact.get_navcomponent(), u"membership")
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
@@ -1163,12 +1186,13 @@ def contactingroup_edit(request, gid, cid):
 def contactingroup_delete(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cig = Query(ContactInGroup).get((cid, gid))
-    if not cig:
+    cg = Query(ContactGroup).get(gid)
+    o = Query(ContactInGroup).get((cid, gid))
+    if not o:
         return HttpResponse("Error, that contact is not a direct member. Please check subgroups")
-    Session.delete(cig)
-    request.user.push_message(u"%s has been removed for group %s." % (cig.contact.name, cig.group.name))
-    return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(gid,)))
+    #request.user.push_message(u"%s has been removed for group %s." % (cig.contact.name, cig.group.name))
+    return generic_delete(request, o, next_url=cg.get_absolute_url()+u"members/", base_nav=navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members"))
+    # TODO: realnav bar is "remove", not "delete"
 
 
 #######################################################################
