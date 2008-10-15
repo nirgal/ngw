@@ -29,6 +29,16 @@ CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
 $$ LANGUAGE SQL STABLE;
 
 
+
+-- CREATE FUNCTION subgroups_append2(integer, integer[]) RETURNS SETOF integer AS $$
+--    SELECT subgroup_id FROM group_in_group WHERE father_id=$1 AND NOT subgroup_id=ANY($2)
+-- $$ LANGUAGE SQL STABLE;
+-- select arraycontains(array[1,2,3], array[2]);a
+-- select array_lower('{7,8,9}'::int[], 1);
+-- select array_upper('{7,8,9}'::int[], 1);
+-- select ('{7,8,9}'::int[])[2];
+
+
 -- select contact_group.id, contact_group.name, array(select self_and_subgroups(id)) from contact_group;
 
 -- admins:
