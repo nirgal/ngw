@@ -817,7 +817,7 @@ def contactgroup_detail(request, id):
 
 
 @http_authenticate(ngw_auth, 'ngw')
-def contactgroup_members(request, gid):
+def contactgroup_members(request, gid, output_format=""):
     import contactsearch # FIXME
     if not request.user.is_admin():
         return unauthorized(request)
@@ -833,6 +833,7 @@ def contactgroup_members(request, gid):
     else:
         fields = get_display_fields(request.user)
         strfields = u",".join(fields)
+        #baseurl doesn't need to have default fields
    
     if (request.REQUEST.get(u'savecolumns')):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
@@ -841,13 +842,11 @@ def contactgroup_members(request, gid):
     if not cg:
         raise Http404
 
-    #print cg.direct_subgroups
     args={}
     args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
     q, cols = contact_make_query_with_fields(fields, cg)
 
     display=request.REQUEST.get(u"display", u"mg")
-    args['title'] = u"Contacts of group "+cg.unicode_with_date()
     cig_conditions_flags = []
     if u"m" in display:
         cig_conditions_flags.append(u"member=True")
@@ -858,9 +857,6 @@ def contactgroup_members(request, gid):
     if u"d" in display:
         cig_conditions_flags.append(u"declined_invitation=True")
         args['display_declined'] = 1
-    if u"o" in display:
-        cig_conditions_flags.append(u"operator=True")
-        args['display_operator'] = 1
 
     if cig_conditions_flags:
         cig_conditions_flags = u" AND (%s)" % u" OR ".join(cig_conditions_flags)
@@ -876,16 +872,36 @@ def contactgroup_members(request, gid):
     q = q.filter(u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND '+cig_conditions_group+cig_conditions_flags+u')')
     q = filter.apply_filter_to_query(q)
 
-    if request.REQUEST.get("output", u"")==u"vcard":
+    if output_format == u"vcards":
         result=u""
         for row in q:
             contact = row[0]
             result += contact.vcard()
         return HttpResponse(result.encode("utf-8"), mimetype="text/x-vcard")
+    elif output_format == u"emails":
+        emails = []
+        noemails = []
+        for row in q:
+            contact = row[0]
+            c_emails = contact.get_fieldvalues_by_type(EmailContactField)
+            if c_emails:
+                emails.append((contact, c_emails[0])) # only the first email
+            else:
+                noemails.append(c)
+
+        args['title'] = u"Emails for "+cg.name
+        args['strfilter'] = strfilter
+        args['filter'] = filter
+        args['cg'] = cg
+        args['emails'] = emails
+        args['noemails'] = noemails
+        args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", u"emails")
+        return render_to_response('emails.html', args, RequestContext(request))
 
     baseurl += u"&display="+display
 
-    args['baseurl'] = baseurl
+    args['title'] = u"Contacts of group "+cg.unicode_with_date()
+    args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
     args['display'] = display
     args['query'] = q
     args['cols'] = cols
@@ -900,30 +916,6 @@ def contactgroup_members(request, gid):
     ####
     args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members")
     return query_print_entities(request, 'group_detail.html', args)
-
-
-@http_authenticate(ngw_auth, 'ngw')
-def contactgroup_emails(request, id):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    cg = Query(ContactGroup).get(id)
-    members = cg.members
-    emails = []
-    noemails = []
-    for c in members:
-        c_emails = c.get_fieldvalues_by_type(EmailContactField)
-        if c_emails:
-            emails.append((c, c_emails[0])) # only the first
-        else:
-            noemails.append(c)
-
-    args = {}
-    args['title'] = u"Emails for "+cg.name
-    args['cg'] = cg
-    args['emails'] = emails
-    args['noemails'] = noemails
-    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", u"emails")
-    return render_to_response('emails.html', args, RequestContext(request))
 
 
 class ContactGroupForm(forms.Form):

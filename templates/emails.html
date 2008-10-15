@@ -2,6 +2,19 @@
 {% load ngwtags %}
 
 {% block body %}
+    <h1 class=boxheader>Memberships</h1>
+    <div class=box>
+    Include members: {% if display_member %}Yes{% else %}No{% endif %} -
+    Include invited: {% if display_invited %}Yes{% else %}No{% endif %} -
+    Include declined invitations: {% if display_declined %}Yes{% else %}No{% endif %} -
+    Include subgroups: {% if display_subgroups %}Yes{% else %}No{% endif %}
+    </div>
+    {% if strfilter %}
+    <h1 class=boxheader>Filter</h1>
+    <div class=box>
+    {{filter.to_html|safe}}<br>
+    </div>
+    {% endif %}
     {% for email in emails %}
     {{ email|get:0 }} &lt;{{ email|get:1 }}&gt;<br>
     {% endfor %}

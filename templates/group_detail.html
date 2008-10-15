@@ -12,7 +12,6 @@
         if (form.id_display_member.checked) display+="m";
         if (form.id_display_invited.checked) display+="i";
         if (form.id_display_declined.checked) display+="d";
-        if (form.id_display_operator.checked) display+="o";
         if (form.id_display_subgroups.checked) display+="g";
         document.forms['mainform'].display.value=display;
         document.forms['mainform'].submit();
@@ -22,7 +21,6 @@
     <input type=checkbox name="display_member" id="id_display_member" {% if display_member %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">Members</label>
     <input type=checkbox name="display_invited" id="id_display_invited" {% if display_invited %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">Invited people</label>
     <input type=checkbox name="display_declined" id="id_display_declined" {% if display_declined %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">Declined invitations</label>
-    <input type=checkbox name="display_operator" id="id_display_operator" {% if display_operator %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_operator">Operators</label>
     <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">Include subgroups</label>
     </form>
     <br>
@@ -62,10 +60,10 @@
     
 {% block submitbar %}
 <div id=submitbar>
-  <a href="javascript:show_field_selection();" id=default> Select displayed columns</a>
+    <a href="javascript:show_field_selection();" id=default> Select displayed columns</a>
     <a href="{{cg.get_absolute_url}}edit">Edit</a>
-    <a href="{{cg.get_absolute_url}}emails">Emails</a>
-    <a href="?display={{display}}&amp;output=vcard">Vcards</a> 
+    <a href="emails{{baseurl}}">Emails</a>
+    <a href="vcards{{baseurl}}">Vcards</a> 
     {% if cg.field_group %}
     <a href="add"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
