@@ -887,7 +887,7 @@ def contactgroup_members(request, gid, output_format=""):
             if c_emails:
                 emails.append((contact, c_emails[0])) # only the first email
             else:
-                noemails.append(c)
+                noemails.append(contact)
 
         args['title'] = u"Emails for "+cg.name
         args['strfilter'] = strfilter
