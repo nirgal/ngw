@@ -14,6 +14,7 @@ from django.template import loader, RequestContext
 from ngw import settings
 from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
+from ngw.core.decorated_letters import remove_decoration
 
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
@@ -888,6 +889,11 @@ def contactgroup_members(request, gid, output_format=""):
                 emails.append((contact, c_emails[0])) # only the first email
             else:
                 noemails.append(contact)
+        print emails
+        def email_sort(a,b):
+            return cmp(remove_decoration(a[0].name.lower()), remove_decoration(b[0].name.lower()))
+        emails.sort(email_sort)
+        print emails
 
         args['title'] = u"Emails for "+cg.name
         args['strfilter'] = strfilter
