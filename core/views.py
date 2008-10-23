@@ -889,11 +889,9 @@ def contactgroup_members(request, gid, output_format=""):
                 emails.append((contact, c_emails[0])) # only the first email
             else:
                 noemails.append(contact)
-        print emails
         def email_sort(a,b):
             return cmp(remove_decoration(a[0].name.lower()), remove_decoration(b[0].name.lower()))
         emails.sort(email_sort)
-        print emails
 
         args['title'] = u"Emails for "+cg.name
         args['strfilter'] = strfilter
