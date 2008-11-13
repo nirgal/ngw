@@ -2,7 +2,7 @@ Installation
 ============
 It is recommanded to use Debian Lenny or above
 
-python-django python-sqlalchemy python-psycopg2 postgresql libapache2-mod-auth-psql
+python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql
 
 Apache
 ======
@@ -15,11 +15,11 @@ openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 
 Listen on port 443
 Add a new line "Listen 443" to /etc/apache2/ports.conf"
 
-Thougths
+Postgres
 ========
+createdb ngw -E unicode
 
-Create a root group for all contacts?
-=> No more users page, see /contactgroups/gid/members
-=> No more fields page, see /contactgroups/gid/contactfields
-=> Operator of group 1 / Can add / Can delete ... / Can see list
+See http://developer.postgresql.org/pgdocs/postgres/contrib.html, as postgres user, run
+postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/int_aggregate.sql
+postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/_int.sql
 

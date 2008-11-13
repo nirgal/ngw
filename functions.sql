@@ -1,7 +1,9 @@
+-- Make sure contrib modules _int.sql and int_aggregate.sql are loaded. See ngw README
 DROP VIEW auth_users;
 DROP VIEW auth_user_groups;
 DROP FUNCTION self_and_subgroups(integer);
 DROP FUNCTION subgroups_append(integer, integer[]);
+DROP FUNCTION subgroups_append_direct(integer, integer[]);
 
 CREATE VIEW auth_users (login, password) AS
     SELECT login_values.value, password_values.value
@@ -9,34 +11,47 @@ CREATE VIEW auth_users (login, password) AS
     JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
     WHERE login_values.contact_field_id=1;
 
+-- $1: group id
+-- $2: results
+-- That function adds direct children that weren't allready members of result
+-- returns a array of group id
+CREATE FUNCTION subgroups_append_direct(integer, integer[]) RETURNS integer[] AS $$
+    SELECT int_array_aggregate(subgroup_id) | $2 FROM group_in_group WHERE father_id=$1 AND NOT subgroup_id=ANY($2)
+$$ LANGUAGE SQL STABLE;
+
+
+-- $1: group id
+-- $2: results
+-- That function adds childrens in result array that is returned
 CREATE FUNCTION subgroups_append(integer, integer[]) RETURNS SETOF integer AS $$
-    -- Get $2 as a setof (this sucks!)
-    SELECT id FROM contact_group WHERE id=ANY($2)
+    SELECT int_array_enum(subgroups_append_direct($1, $2))
     UNION
-    -- Add direct children
-    SELECT subgroup_id FROM group_in_group WHERE father_id=$1 AND NOT subgroup_id=ANY($2)
-    UNION
-    -- Add all familly of direct children's
---#TODO: create function self_and_directsubgroups pour éviter l'appel récursif si un enfant est enfant de lui même!
-    SELECT subgroups_append(subgroup_id, $2) FROM group_in_group WHERE father_id=$1 AND NOT subgroup_id=ANY($2)
+    SELECT subgroups_append(subgroup_id, subgroups_append_direct($1, $2)) FROM group_in_group WHERE father_id=$1 AND NOT arraycontains($2, array[subgroup_id])
 $$ LANGUAGE SQL STABLE;
 
-
-CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
-    SELECT $1
-    UNION
-    SELECT subgroups_append($1, '{}'::integer[]);
-$$ LANGUAGE SQL STABLE;
-
-
-
--- CREATE FUNCTION subgroups_append2(integer, integer[]) RETURNS SETOF integer AS $$
---    SELECT subgroup_id FROM group_in_group WHERE father_id=$1 AND NOT subgroup_id=ANY($2)
+-- CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
+--     SELECT int_array_enum(subgroups_append_2($1, '{}'::integer[]) | $1)
 -- $$ LANGUAGE SQL STABLE;
--- select arraycontains(array[1,2,3], array[2]);a
+CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
+    SELECT subgroups_append($1, '{}'::integer[])
+    UNION
+    SELECT $1
+$$ LANGUAGE SQL STABLE;
+
+
+-- select arraycontains(array[1,2,3], array[2]);
 -- select array_lower('{7,8,9}'::int[], 1);
 -- select array_upper('{7,8,9}'::int[], 1);
 -- select ('{7,8,9}'::int[])[2];
+-- select array_lower(v,1),  from (select '{7,8,9}'::int[] as v) as dummy1;
+-- select array_lower(v,1),array_upper(v,1)  from (select '{7,8,9,33}'::int[]) as dummy1(v);
+-- select * from generate_series(1, (select array_upper(v,1) from (select '{7,8,9,33}'::int[]) as dummy1(v)));
+-- select * from int_array_enum('{7,8,9,33}'::int[]);
+-- select int_array_aggregate(id) from contact_group;
+-- select array[1,2,3] + array[2,6]; --> {1,2,3,2,6}
+-- select array[1,2,3] | array[2,6]; --> {1,2,3,6}
+
+
 
 
 -- select contact_group.id, contact_group.name, array(select self_and_subgroups(id)) from contact_group;
