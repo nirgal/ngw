@@ -25,12 +25,6 @@
     </form>
     <br>
     {{ block.super }}
-
-    {% comment %}
-    {% with cg.get_direct_invited.count as ci %}
-        {{ ci }} contact{{ ci|pluralize }} {{ ci|pluralize:"have,has" }} been invited in that group, but {{ ci|pluralize:"are,is" }} not member yet.
-    {% endwith %}
-    {% endcomment %}
 {% endblock %}
 
 {% block presubmitbar %}
@@ -64,7 +58,8 @@
     <a href="{{cg.get_absolute_url}}edit">Edit</a>
     <a href="emails{{baseurl}}">Emails</a>
     <a href="vcards{{baseurl}}">Vcards</a> 
-    {% if cg.field_group %}
+    {% if cg.date %}
+    {% else %}
     <a href="add"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
     <a href="../news/">News</a> 

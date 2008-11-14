@@ -799,7 +799,7 @@ def contactgroup_list(request):
         ( u"Super\u00a0groups", None, lambda cg: u", ".join([sg.name for sg in cg.direct_supergroups]), None ),
         ( u"Sub\u00a0groups", None, lambda cg: u", ".join([html.escape(sg.name) for sg in cg.direct_subgroups]), None ),
         ( u"Budget\u00a0code", None, "budget_code", contact_group_table.c.budget_code ),
-        #( "Members", None, lambda cg: str(len(cg.members)), None ),
+        ( "Members", None, lambda cg: str(len(cg.get_members())), None ),
     ]
     args={}
     args['title'] = "Select a contact group"
@@ -942,7 +942,7 @@ class ContactGroupForm(forms.Form):
     def flag_inherited_members(self, g):
         has_automembers = False
         choices = []
-        members = g.members
+        members = g.get_members()
         direct_members = g.get_direct_members()
         for c in Query(Contact).order_by(Contact.c.name):
             cname = c.name

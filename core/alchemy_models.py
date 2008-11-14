@@ -226,13 +226,13 @@ class Contact(NgwModel):
         return u"<a href=\"%(id)d/\">%(name)s</a>" % { 'id': self.id, 'name': html.escape(self.name) }
 
     def get_directgroups_member(self):
-        "returns the list of groups that contact is direct member of."
+        "returns the list of groups that contact is a direct member of."
         q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.member==True)
         groupids = [cig.group_id for cig in q]
         return Query(ContactGroup).filter(ContactGroup.c.id.in_(groupids))
 
     def get_allgroups_member(self):
-        "returns the list of groups that contact is member of."
+        "returns the list of groups that contact is a member of."
         q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.member==True)
         groups = []
         for cig in q:
@@ -243,7 +243,7 @@ class Contact(NgwModel):
         return groups
 
     def get_allgroups_invited(self):
-        "returns the list of groups that contact is in invited list."
+        "returns the list of groups that contact has been invited to."
         q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.invited==True)
         groups = []
         for cig in q:
@@ -449,17 +449,17 @@ class ContactGroup(NgwModel):
                 result.append(g)
                 g._append_subgroups(result)
         
-    def _get_subgroups(self):
+    @property
+    def subgroups(self):
         result = []
         self._append_subgroups(result)
         return result
-    subgroups = property(_get_subgroups)
 
-    def _get_self_and_subgroups(self):
-        result = [self ]
+    @property
+    def self_and_subgroups(self):
+        result = [ self ]
         self._append_subgroups(result)
         return result
-    self_and_subgroups = property(_get_self_and_subgroups)
 
     def _append_supergroups(self, result):
         for g in self.direct_supergroups:
@@ -467,17 +467,17 @@ class ContactGroup(NgwModel):
                 result.append(g)
                 g._append_supergroups(result)
         
-    def _get_supergroups(self):
+    @property
+    def supergroups(self):
         result = []
         self._append_supergroups(result)
         return result
-    supergroups = property(_get_supergroups)
 
-    def _get_self_and_supergroups(self):
+    @property
+    def self_and_supergroups(self):
         result = [self ]
         self._append_supergroups(result)
         return result
-    self_and_supergroups = property(_get_self_and_supergroups)
 
     def get_direct_members(self):
         cigs = Query(ContactInGroup).filter(and_(ContactInGroup.c.group_id==self.id, ContactInGroup.c.member==True))
@@ -489,25 +489,18 @@ class ContactGroup(NgwModel):
         cids = [ cig.contact_id for cig in cigs ]
         return Query(Contact).filter(Contact.c.id.in_(cids))
 
-    def _get_members(self):
-        gids = [ ]
-        for g in self.self_and_subgroups:
-            gids.append(g.id)
-        #print "gids=", gids
-        #s = select([contact_in_group_table], contact_in_group_table.c.group_id.in_(gids))
-        #print "members=", s, ":"
-        #for c in Session.execute(s):
-        #    print c
-        s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
-        #print "members=", s, ":"
-        result =  []
+    #    s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
+    #    #print "members=", s, ":"
+    #    result =  []
+    #    for cid in Session.execute(s):
+    #        result.append(Query(Contact).get(cid[0]))
+    #        #print cid[0]
+    #    return result
+    def get_members(self):
+        gids = [ g.id for g in self.self_and_subgroups ]
         #TODO optimize me
-        for cid in Session.execute(s):
-            result.append(Query(Contact).get(cid[0]))
-            #print cid[0]
-        return result
-
-    members = property(_get_members)
+        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True).all()
+    members = property(get_members)
 
     get_link_name=NgwModel.get_absolute_url
 
@@ -559,6 +552,11 @@ class ContactGroup(NgwModel):
 
     def get_filter_by_name(self, name):
         return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
+
+    def get_birthday_members(self):
+        """select * from contact_field_value where contact_field_id=6 and value like '%-11-%';"""
+        return Query
+
 
 ########################################
 # Contact Fields
