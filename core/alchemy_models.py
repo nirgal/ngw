@@ -497,8 +497,8 @@ class ContactGroup(NgwModel):
     #        #print cid[0]
     #    return result
     def get_members(self):
-        gids = [ g.id for g in self.self_and_subgroups ]
         #TODO optimize me
+        gids = [ g.id for g in self.self_and_subgroups ]
         return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True).all()
     members = property(get_members)
 
@@ -555,7 +555,11 @@ class ContactGroup(NgwModel):
 
     def get_birthday_members(self):
         """select * from contact_field_value where contact_field_id=6 and value like '%-11-%';"""
-        return Query
+        #TODO optimize me
+        gids = [ g.id for g in self.self_and_subgroups ]
+        #TODO: localize timezone
+        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True) \
+                             .filter(ContactFieldValue.contact_id==Contact.id).filter(ContactFieldValue.contact_field_id==FIELD_BIRTHDAY).filter(ContactFieldValue.value.like(datetime.today().strftime('%%-%m-%d')))
 
 
 ########################################

@@ -49,6 +49,19 @@
             </div>
         {% endif %}
     {% endfor %}
+    
+    {{comment}}
+    {% for p in cg.get_birthday_members %}
+        {% if forloop.first %}
+            <h1 class=boxheader>Happy birthday to</h1>
+            <div class=box>
+        {% endif %}
+        ‣ {{ p }}<br>
+        {% if forloop.last %}
+            </div>
+        {% endif %}
+    {% endfor %}
+    {{endcomment}}
 {% endblock %}
 
     
