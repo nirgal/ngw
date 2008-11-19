@@ -1,4 +1,5 @@
 {% extends "list_contact.html" %}
+{% load ngwtags %}
 
 {% block body %}
     {% if cg.description %}{{ cg.description }}<br><br>{% endif %}
@@ -75,6 +76,6 @@
     {% else %}
     <a href="add"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
+    <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Add in a group</a>
     <a href="../news/">News</a> 
-</div>
-{% endblock %}
+</div>{% endblock %}

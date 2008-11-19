@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block body %}
+<form method="post">
+<h1 class="boxheader">Selected people</h1>
+<div class=box>
+{% for c in query %}
+<input type=checkbox name="contact_{{c.id}}" id="contact_{{c.id}}" checked> <label for="contact_{{c.id}}">{{c}}</label><br>
+{% endfor %}
+</div>
+
+<h1 class="boxheader">Select a group</h1>
+<div class=box>
+<select name=group>
+{% for g in groups %}
+<option value={{g.id}}>{{g.unicode_with_date}}
+{% endfor %}
+</select>
+</div>
+
+{% block submitbar %}
+<div id=submitbar>
+    {% comment %}WARNING these 3 values are handled by the view{% endcomment %}
+    <input type=submit name="type" value="Invite" id=default>
+    <input type=submit name="type" value="Member">
+    <input type=submit name="type" value="Declined invitation">
+</div>
+{% endblock %}
+</form>
+{% endblock %}

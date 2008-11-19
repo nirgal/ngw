@@ -10,6 +10,10 @@ register = template.Library()
 def autobr(txt):
     return txt.replace('\n', '<br>');
 
+@register.filter
+def escape_amp_query(txt):
+    return txt.replace(u'&', u'%26')
+
 #@register.filter
 #def row_get_value_by_key(alchemy_entity, column_name):
 #    return alchemy_entity.__getattribute__(column_name)
@@ -29,6 +33,7 @@ def autobr(txt):
 #    if o:
 #        return unicode(o)
 #    return u""
+
 
 
 @register.filter

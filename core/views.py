@@ -1084,6 +1084,138 @@ def contactgroup_delete(request, id):
     return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'), ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
 
+
+@http_authenticate(ngw_auth, 'ngw')
+def contactgroup_add_contacts_to(request):
+    import contactsearch # FIXME
+    if not request.user.is_admin():
+        return unauthorized(request)
+
+    if request.method == 'POST':
+        target_gid = request.POST[u'group']
+        target_group = Query(ContactGroup).get(target_gid)
+        assert target_group
+        t = request.REQUEST.get('type', u'')
+        added_contacts = []
+        changed_contacts = []
+        for param in request.POST:
+            if not param.startswith(u'contact_'):
+                continue
+            contact_id = param[len(u'contact_'):]
+            contact = Query(Contact).get(contact_id)
+            assert contact
+            cig = Query(ContactInGroup).get((contact_id, target_gid))
+            isAdded = False
+            if not cig:
+                cig = ContactInGroup(contact_id, target_gid)
+                added_contacts.append(contact)
+                isAdded = True
+                log = Log(request.user.id)
+                log.action = LOG_ACTION_ADD
+                log.target = u"ContactInGroup "+unicode(contact.id)+u" "+unicode(target_gid)
+                log.target_repr = u"Membership contact "+contact.name+u" in group "+target_group.unicode_with_date()
+            if t == u"Invite":
+                if not cig.invited:
+                    if not isAdded:
+                        changed_contacts.append(contact)
+                    log = Log(request.user.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = u"ContactInGroup "+unicode(contact.id)+u" "+unicode(target_gid)
+                    log.target_repr = u"Membership contact "+contact.name+u" in group "+target_group.unicode_with_date()
+                    log.property = u"invited"
+                    log.property_repr = u"Invited"
+                    log.change = u"new value is true"
+                cig.invited = True
+                cig.member = False
+                cig.declined_invitation = False
+            elif t == u"Member":
+                if not cig.member:
+                    if not isAdded:
+                        changed_contacts.append(contact)
+                    log = Log(request.user.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = u"ContactInGroup "+unicode(contact.id)+u" "+unicode(target_gid)
+                    log.target_repr = u"Membership contact "+contact.name+u" in group "+target_group.unicode_with_date()
+                    log.property = u"member"
+                    log.property_repr = u"Member"
+                    log.change = u"new value is true"
+                cig.invited = False
+                cig.member = True
+                cig.declined_invitation = False
+            elif t == u"Declined invitation":
+                if not cig.declined_invitation:
+                    if not isAdded:
+                        changed_contacts.append(contact)
+                    log = Log(request.user.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = u"ContactInGroup "+unicode(contact.id)+u" "+unicode(target_gid)
+                    log.target_repr = u"Membership contact "+contact.name+u" in group "+target_group.unicode_with_date()
+                    log.property = u"declined_invitation"
+                    log.property_repr = u"Declined invitation"
+                    log.change = u"new value is true"
+                cig.invited = False
+                cig.member = False
+                cig.declined_invitation = True
+            else:
+                raise Exception("Unsupported membership type "+t.encode('utf8'))
+        if added_contacts:
+            msgpart_contacts = u", ".join([c.name for c in added_contacts])
+            if len(added_contacts)==1:
+                msg = u"Contact %s has been added in %s with status %s."
+            else:
+                msg = u"Contacts %s have been added in %s with status %s."
+            request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
+        if changed_contacts:
+            msgpart_contacts = u", ".join([c.name for c in changed_contacts])
+            if len(changed_contacts)==1:
+                msg = u"Contact %s allready was in %s. Status has been changed to %s."
+            else:
+                msg = u"Contacts %s allready were in %s. Status have been changed to %s."
+            request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
+
+        return HttpResponseRedirect(target_group.get_absolute_url())
+
+    gid = request.REQUEST.get(u'gid', u'')
+    assert gid
+    cg = Query(ContactGroup).get(gid)
+    if not cg:
+        raise Http404
+
+    strfilter = request.REQUEST.get(u'filter', u'')
+    filter = contactsearch.parse_filterstring(strfilter)
+
+    q, cols = contact_make_query_with_fields([], cg)
+
+    display=request.REQUEST.get(u"display", u"mg")
+    cig_conditions_flags = []
+    if u"m" in display:
+        cig_conditions_flags.append(u"member=True")
+    if u"i" in display:
+        cig_conditions_flags.append(u"invited=True")
+    if u"d" in display:
+        cig_conditions_flags.append(u"declined_invitation=True")
+
+    if cig_conditions_flags:
+        cig_conditions_flags = u" AND (%s)" % u" OR ".join(cig_conditions_flags)
+    else:
+        cig_conditions_flags = u" AND False" # display nothing
+
+    if u"g" in display:
+        cig_conditions_group = u"group_id IN (%s)" % u",".join([unicode(g.id) for g in cg.self_and_subgroups])
+    else:
+        cig_conditions_group = u"group_id=%d" % cg.id
+
+    q = q.filter(u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND '+cig_conditions_group+cig_conditions_flags+u')')
+    q = filter.apply_filter_to_query(q)
+
+    args = {}
+    args['title'] = "Add contacts to a group"
+    args['nav'] = navbar(ContactGroup.get_class_navcomponent(), (u"add_contacts_to", u"add contacts to"))
+    args['groups'] = Query(ContactGroup).order_by((desc(ContactGroup.date), ContactGroup.name))
+    args['query'] = q
+    return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
+
+
 #######################################################################
 #
 # Contact In Group
