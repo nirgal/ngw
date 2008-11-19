@@ -44,8 +44,8 @@ def pagenumber_iterator(page, npages):
 
 @register.filter
 def order_absmatch(order, column_index):
-    if not order:
-        return column_index==0
+    if order==u"":
+        return False
     if order[0]!="-":
         return int(order)==column_index
     else:

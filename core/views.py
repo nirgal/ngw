@@ -210,22 +210,35 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
 
 
 
-def query_print_entities(request, template_name, args):
+def query_print_entities(request, template_name, args, extrasort=None):
     q = args['query']
     cols = args['cols']
 
     # get sort column name
-    order = request.REQUEST.get("_order", 0)
-    try:
-        intorder=int(order)
-    except ValueError:
-        intorder = 0
+    nosort = False
+    order = request.REQUEST.get("_order", u"")
 
-    sort_col = cols[abs(intorder)][3]
-    if not order or order[0]!="-":
-        q = q.order_by(sort_col)
-    else:
-        q = q.order_by(sort_col.desc())
+    if order or not extrasort:
+        # disable default sort on column 0 if there's an extrasort parameter
+        try:
+            intorder=int(order)
+        except ValueError:
+            if extrasort:
+                order=u""
+                nosort=True
+            else:
+                order=u"0"
+                intorder=0
+        if not nosort:
+            sort_col = cols[abs(intorder)][3]
+            if not order or order[0]!="-":
+                q = q.order_by(sort_col)
+            else:
+                q = q.order_by(sort_col.desc())
+    else: # no order and extrasort
+        order=u""
+    if extrasort:
+        q = extrasort(q)
 
     totalcount = q.count()
 
@@ -794,11 +807,12 @@ def contactgroup_list(request):
         ( u"Date", None, "date", contact_group_table.c.date ),
         ( u"Name", None, "name", contact_group_table.c.name ),
         ( u"Description", None, "description", contact_group_table.c.description ),
-        ( u"Contact fields", None, print_fields, contact_group_table.c.field_group ),
+        #( u"Contact fields", None, print_fields, contact_group_table.c.field_group ),
         ( u"Super\u00a0groups", None, lambda cg: u", ".join([sg.name for sg in cg.direct_supergroups]), None ),
         ( u"Sub\u00a0groups", None, lambda cg: u", ".join([html.escape(sg.name) for sg in cg.direct_subgroups]), None ),
-        ( u"Budget\u00a0code", None, "budget_code", contact_group_table.c.budget_code ),
-        ( "Members", None, lambda cg: str(len(cg.get_members())), None ),
+        #( u"Budget\u00a0code", None, "budget_code", contact_group_table.c.budget_code ),
+        #( "Members", None, lambda cg: str(len(cg.get_members())), None ),
+        ( u"System\u00a0locked", None, "system", contact_group_table.c.system ),
     ]
     args={}
     args['title'] = "Select a contact group"
@@ -1080,8 +1094,11 @@ def contactgroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = Query(ContactGroup).get(id)
-    return generic_delete(request, o, reverse('ngw.core.views.contactgroup_list'), ondelete_function=on_contactgroup_delete)# args=(p.id,)))
-
+    next_url = reverse('ngw.core.views.contactgroup_list')
+    if o.system:
+        request.user.push_message(u"Group %s is locked and CANNOT be deleted." % o.name)
+        return HttpResponseRedirect(next_url)
+    return generic_delete(request, o, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1418,7 +1435,7 @@ def field_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
     args = {}
-    args['query'] = Query(ContactField).order_by([ContactField.c.sort_weight]) # FIXME
+    args['query'] = Query(ContactField)#.order_by([ContactField.c.sort_weight]) # FIXME
     args['cols'] = [
         ( "Name", None, "name", contact_field_table.c.name),
         ( "Type", None, "type_as_html", contact_field_table.c.type),
@@ -1429,7 +1446,9 @@ def field_list(request):
     args['title'] = "Select an optionnal field"
     args['objtype'] = ContactField
     args['nav'] = navbar(ContactField.get_class_navcomponent())
-    return query_print_entities(request, 'list.html', args)
+    def extrasort(query):
+        return query.order_by([ContactField.c.sort_weight])
+    return query_print_entities(request, 'list.html', args, extrasort=extrasort)
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1850,4 +1869,3 @@ def choicegroup_delete(request, id):
         return unauthorized(request)
     o = Query(ChoiceGroup).get(id)
     return generic_delete(request, o, reverse('ngw.core.views.choicegroup_list'))# args=(p.id,)))
-
