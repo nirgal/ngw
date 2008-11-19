@@ -450,9 +450,8 @@ class ContactEditForm(forms.Form):
 
         # Add all extra fields
         for cf in Query(ContactField).order_by(ContactField.c.sort_weight):
-            if cf.contact_group_id:
-                if cf.contact_group_id not in contactgroupids:
-                    continue # some fields are excluded
+            if cf.contact_group_id not in contactgroupids:
+                continue # some fields are excluded
             fields = cf.get_form_fields()
             if fields:
                 self.fields[unicode(cf.id)] = fields
@@ -546,7 +545,7 @@ def contact_edit(request, gid=None, cid=None):
             
             # 2/ In ContactFields
             for cf in Query(ContactField):
-                if cf.contact_group_id and cf.contact_group_id not in contactgroupids or cf.type==FTYPE_PASSWORD:
+                if cf.contact_group_id not in contactgroupids or cf.type==FTYPE_PASSWORD:
                     continue
                 cfname = cf.name
                 cfid = cf.id
@@ -1473,7 +1472,7 @@ class FieldEditForm(forms.Form):
         forms.Form.__init__(self, *args, **kargs)
     
         contacttypes = Query(ContactGroup).filter(ContactGroup.c.field_group==True)
-        self.fields['contact_group'].widget.choices = [('', u'Everyone')] + [ (g.id, g.name) for g in contacttypes ]
+        self.fields['contact_group'].widget.choices = [ (g.id, g.name) for g in contacttypes ]
 
         self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id) for cls in CONTACT_FIELD_TYPES_CLASSES ]
         js_test_type_has_choice = u" || ".join([ u"this.value=='"+cls.db_type_id+"'" for cls in CONTACT_FIELD_TYPES_CLASSES if cls.has_choice ])
@@ -1541,10 +1540,7 @@ def field_edit(request, id):
                 
                 cf.name = data['name']
                 cf.hint = data['hint']
-                if data['contact_group']:
-                    cf.contact_group_id = int(data['contact_group'])
-                else:
-                    cf.contact_group_id = None
+                cf.contact_group_id = int(data['contact_group'])
                 cf.type = data['type'] # BUG can't change polymorphic type
                 if data['choicegroup']:
                     cf.choice_group_id = int(data['choicegroup'])
@@ -1593,10 +1589,7 @@ def field_edit(request, id):
                 cf.hint = data['hint']
                 if not cf.system:
                     # system fields have some properties disabled
-                    if data['contact_group']:
-                        cf.contact_group_id = int(data['contact_group'])
-                    else:
-                        cf.contact_group_id = None
+                    cf.contact_group_id = int(data['contact_group'])
                     cf.type = data['type'] # BUG can't change polymorphic type
                     if data['choicegroup']:
                         cf.choice_group_id = int(data['choicegroup'])

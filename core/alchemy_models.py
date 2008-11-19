@@ -258,9 +258,10 @@ class Contact(NgwModel):
         return [ g for g in self.get_allgroups_member() if g.field_group ]
 
     def get_allfields(self):
+        #TODO check that
         contactgroupids = [ g.id for g in self.get_allgroups_withfields()] 
         #print "contactgroupids=", contactgroupids
-        return Query(ContactField).filter(or_(ContactField.c.contact_group_id.in_(contactgroupids),ContactField.c.contact_group_id == None)).order_by(ContactField.c.sort_weight)
+        return Query(ContactField).filter(ContactField.c.contact_group_id.in_(contactgroupids)).order_by(ContactField.c.sort_weight)
 
     def get_fieldvalues_by_type(self, type_):
         if issubclass(type_, ContactField):
