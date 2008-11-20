@@ -242,6 +242,12 @@ class Contact(NgwModel):
             g._append_supergroups(groups)
         return groups
 
+    def get_directgroups_invited(self):
+        "returns the list of groups that contact has been invited to."
+        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.invited==True)
+        groupids = [cig.group_id for cig in q]
+        return Query(ContactGroup).filter(ContactGroup.c.id.in_(groupids))
+
     def get_allgroups_invited(self):
         "returns the list of groups that contact has been invited to."
         q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.invited==True)
@@ -252,6 +258,12 @@ class Contact(NgwModel):
                 groups.append(g)
             g._append_supergroups(groups)
         return groups
+
+    def get_directgroups_declinedinvitation(self):
+        "returns the list of groups that contact has been invited to."
+        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.declined_invitation==True)
+        groupids = [cig.group_id for cig in q]
+        return Query(ContactGroup).filter(ContactGroup.c.id.in_(groupids))
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."

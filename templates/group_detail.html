@@ -51,7 +51,6 @@
         {% endif %}
     {% endfor %}
     
-    {{comment}}
     {% for p in cg.get_birthday_members %}
         {% if forloop.first %}
             <h1 class=boxheader>Happy birthday to</h1>
@@ -62,7 +61,6 @@
             </div>
         {% endif %}
     {% endfor %}
-    {{endcomment}}
 {% endblock %}
 
     
