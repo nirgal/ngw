@@ -317,7 +317,8 @@ def str_member_of_factory(contact_group):
     return lambda c: c.str_member_of(gids)
 def str_action_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: u"<a href=\""+contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/membership\">"+c.str_member_of(gids)+u"</a>"
+    #return lambda c: u'<a href="#" onclick="document.getElementById(\'membership_%(cid)d\').style.display=\'block\'">%(membership_str)s</a><div class=membershipextra id="membership_%(cid)d"><form><input type=checkbox name=invited id="contact_%(cid)d_invited"><label for="contact_%(cid)d_invited">Invited</label><input type=checkbox name=member id="contact_%(cid)d_member"><label for="contact_%(cid)d_member">Member</label><input type=checkbox name=declined_invitation id="contact_%(cid)d_declined_invitation"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a></div>'%{'cid':c.id, 'membership_str':c.str_member_of(gids), 'membership_url':contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/membership",}
+    return lambda c: u'<a href="%(membership_url)s">%(membership_str)s</a>'%{'cid':c.id, 'membership_str':c.str_member_of(gids), 'membership_url':contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/membership",}
 
 def contact_make_query_with_fields(fields, current_cg=None):
     q = Query(Contact)
@@ -424,6 +425,8 @@ def contact_detail(request, gid=None, cid=None):
     args['title'] = u"Details for "+unicode(c)
     if gid:
         cg = Query(ContactGroup).get(gid)
+        #args['title'] += u" in group "+cg.unicode_with_date()
+        args['contact_group'] = cg
         args['nav'] = navbar(ContactGroup.get_class_navcomponent(), cg.get_navcomponent(), u"members")
     else:
         args['nav'] = navbar(Contact.get_class_navcomponent())
@@ -849,7 +852,7 @@ def contactgroup_members(request, gid, output_format=""):
         strfields = u",".join(fields)
         #baseurl doesn't need to have default fields
    
-    if (request.REQUEST.get(u'savecolumns')):
+    if request.REQUEST.get(u'savecolumns'):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
     cg = Query(ContactGroup).get(gid)
@@ -1247,7 +1250,6 @@ class ContactInGroupForm(forms.Form):
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        #self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
         self.fields['invited'].widget.attrs = { "onchange": "if (this.checked) { this.form.declined_invitation.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}"}
         self.fields['declined_invitation'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}"}
         self.fields['member'].widget.attrs = { "onchange": "if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; } else { this.form.operator.checked=false;}"}
