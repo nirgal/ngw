@@ -931,7 +931,7 @@ class Filter(FilterHelper):
 class NameFilterStartsWith(Filter):
     def get_sql_where_params(self, value):
         value = decorated_letters.str_match_withdecoration(value.lower())
-        return u'contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s', { 'value_name1':u"^"+value, 'value_name2':u" "+value }
+        return u'(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', { 'value_name1':u"^"+value, 'value_name2':u" "+value }
     def to_html(self, value):
         return u"<b>Name</b> "+self.__class__.human_name+u" \""+unicode(value)+u"\""
 
