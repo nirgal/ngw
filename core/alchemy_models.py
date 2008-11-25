@@ -216,10 +216,14 @@ class Contact(NgwModel):
             else:
                 return u"ERROR: invalid contact_in_group flag combinaision"
 
-        elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids))).execute().fetchone(): 
+        elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).execute().fetchone(): 
             return u"Member"+u" "+AUTOMATIC_MEMBER_INDICATOR
+        elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.invited==True)).execute().fetchone(): 
+            return u"Invited"+u" "+AUTOMATIC_MEMBER_INDICATOR
+        elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.declined_invitation==True)).execute().fetchone(): 
+            return u"Declined"+u" "+AUTOMATIC_MEMBER_INDICATOR
         else:
-            return u""
+            return u"no"
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):

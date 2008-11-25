@@ -315,12 +315,41 @@ def logs(request):
 def str_member_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
     return lambda c: c.str_member_of(gids)
+
+def str_extendedmembership_factory(contact_group, base_url):
+    def str_extendedmembership(contact_group, gids, c):
+        cig = Query(ContactInGroup).get((c.id, contact_group.id))
+        params = {}
+        params['cid'] = c.id
+        params['membership_str'] = c.str_member_of(gids)
+        params['membership_url'] = contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/membership"
+        params['title'] = c.name+u' in group '+contact_group.unicode_with_date()
+        params['base_url'] = base_url
+
+        if cig and cig.member:
+            params['is_member_checked'] = u" checked"
+        else:
+            params['is_member_checked'] = u""
+        if cig and cig.invited:
+            params['is_invited_checked'] = u" checked"
+        else:
+            params['is_invited_checked'] = u""
+        if cig and cig.declined_invitation:
+            params['has_declined_invitation_checked'] = u" checked"
+        else:
+            params['has_declined_invitation_checked'] = u""
+        
+        return  u'<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a><div class=membershipextra id="membership_%(cid)d">%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>'%params
+    gids = [ g.id for g in contact_group.self_and_subgroups ]
+    return lambda c: str_extendedmembership(contact_group, gids, c)
+
 def str_action_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
-    #return lambda c: u'<a href="#" onclick="document.getElementById(\'membership_%(cid)d\').style.display=\'block\'">%(membership_str)s</a><div class=membershipextra id="membership_%(cid)d"><form><input type=checkbox name=invited id="contact_%(cid)d_invited"><label for="contact_%(cid)d_invited">Invited</label><input type=checkbox name=member id="contact_%(cid)d_member"><label for="contact_%(cid)d_member">Member</label><input type=checkbox name=declined_invitation id="contact_%(cid)d_declined_invitation"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a></div>'%{'cid':c.id, 'membership_str':c.str_member_of(gids), 'membership_url':contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/membership",}
     return lambda c: u'<a href="%(membership_url)s">%(membership_str)s</a>'%{'cid':c.id, 'membership_str':c.str_member_of(gids), 'membership_url':contact_group.get_absolute_url()+u"members/"+unicode(c.id)+u"/membership",}
 
-def contact_make_query_with_fields(fields, current_cg=None):
+
+
+def contact_make_query_with_fields(fields, current_cg=None, base_url=None):
     q = Query(Contact)
     n_entities = 1
     j = contact_table
@@ -345,7 +374,9 @@ def contact_make_query_with_fields(fields, current_cg=None):
             raise ValueError(u"Invalid field "+prop)
 
     if current_cg is not None:
-        cols.append( ("Status", 0, str_action_of_factory(current_cg), None) )
+        #cols.append( ("Status", 0, str_action_of_factory(current_cg), None) )
+        assert base_url
+        cols.append( ("Status", 0, str_extendedmembership_factory(current_cg, base_url), None) )
         
     q = q.select_from(j)
     return q, cols
@@ -861,7 +892,7 @@ def contactgroup_members(request, gid, output_format=""):
 
     args={}
     args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
-    q, cols = contact_make_query_with_fields(fields, cg)
+    q, cols = contact_make_query_with_fields(fields, current_cg=cg, base_url=baseurl)
 
     display=request.REQUEST.get(u"display", u"mg")
     cig_conditions_flags = []
@@ -1203,7 +1234,7 @@ def contactgroup_add_contacts_to(request):
     strfilter = request.REQUEST.get(u'filter', u'')
     filter = contactsearch.parse_filterstring(strfilter)
 
-    q, cols = contact_make_query_with_fields([], cg)
+    q, cols = contact_make_query_with_fields([]) #, current_cg=cg)
 
     display=request.REQUEST.get(u"display", u"mg")
     cig_conditions_flags = []
@@ -1327,6 +1358,35 @@ def contactingroup_edit(request, gid, cid):
     args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", contact.get_navcomponent(), u"membership")
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
+@http_authenticate(ngw_auth, 'ngw')
+def contactingroup_edit_inline(request, gid, cid):
+    if not request.user.is_admin():
+        return unauthorized(request)
+    cg = Query(ContactGroup).get(gid)
+    contact = Query(Contact).get(cid)
+    cig = Query(ContactInGroup).get((cid, gid))
+    if not cig:
+        cig = ContactInGroup(contact.id, cg.id)
+    newmembership = request.POST['membership']
+    if newmembership==u"invited":
+        cig.invited = True
+        cig.declined_invitation = False
+        cig.member = False
+        cig.operator = False
+    elif newmembership==u"member":
+        cig.invited = False
+        cig.declined_invitation = False
+        cig.member = True
+        # cig.operator can be any value
+    elif newmembership==u"declined_invitation":
+        cig.invited = False
+        cig.declined_invitation = True
+        cig.member = False
+        cig.operator = False
+    else:
+        raise Exception(u"invalid membership "+request.POST['membership'])
+    request.user.push_message(u"Member %s of group %s has been changed sucessfully!" % (contact.name, cg.name))
+    return HttpResponseRedirect(request.POST['next_url'])
 
 @http_authenticate(ngw_auth, 'ngw')
 def contactingroup_delete(request, gid, cid):

@@ -4,6 +4,17 @@
 <script src="{{MEDIA_URL}}/ngw.js"></script>
 
 <script>
+shown_membership_extrainfo_id=null;
+function show_membership_extrainfo(cid) {
+    if (shown_membership_extrainfo_id)
+        document.getElementById('membership_'+shown_membership_extrainfo_id).style.display='none';
+    if (cid)
+        document.getElementById('membership_'+cid).style.display='block';
+    shown_membership_extrainfo_id = cid;
+}
+</script>
+
+<script>
 {%comment%}
 For some obscure reason, that block of functions cannot be loaded via rpc
 {%endcomment%}
