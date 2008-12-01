@@ -1236,6 +1236,8 @@ def contactgroup_add_contacts_to(request):
 
     q, cols = contact_make_query_with_fields([]) #, current_cg=cg)
 
+    q = q.order_by(Contact.c.name)
+
     display=request.REQUEST.get(u"display", u"mg")
     cig_conditions_flags = []
     if u"m" in display:
