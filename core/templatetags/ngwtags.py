@@ -7,10 +7,6 @@ from django.utils import html
 register = template.Library()
 
 @register.filter
-def autobr(txt):
-    return txt.replace('\n', '<br>');
-
-@register.filter
 def escape_amp_query(txt):
     return txt.replace(u'&', u'%26')
 

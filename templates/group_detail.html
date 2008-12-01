@@ -12,7 +12,7 @@
     padding: 1ex;
 }
 </style>
-    {% if cg.description %}{{ cg.description }}<br><br>{% endif %}
+    {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
     {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
 

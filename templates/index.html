@@ -45,7 +45,7 @@
 <div class=box>
 {% for article in news %}
 <b>{{ article.date|date:"D d M Y" }}</b><br>
-{{ article.text|autobr|safe }}<br><br>
+{{ article.text|linebreaksbr }}<br><br>
 {% endfor %}
 <a href="/contactgroups/8/news/">Toutes les news...</a>
 </div>
