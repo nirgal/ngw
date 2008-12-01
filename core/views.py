@@ -890,11 +890,13 @@ def contactgroup_members(request, gid, output_format=""):
     if not cg:
         raise Http404
 
+    display=request.REQUEST.get(u"display", u"mg")
+    baseurl += u"&display="+display
+
     args={}
     args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
     q, cols = contact_make_query_with_fields(fields, current_cg=cg, base_url=baseurl)
 
-    display=request.REQUEST.get(u"display", u"mg")
     cig_conditions_flags = []
     if u"m" in display:
         cig_conditions_flags.append(u"member=True")
@@ -948,8 +950,6 @@ def contactgroup_members(request, gid, output_format=""):
         args['noemails'] = noemails
         args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", u"emails")
         return render_to_response('emails.html', args, RequestContext(request))
-
-    baseurl += u"&display="+display
 
     args['title'] = u"Contacts of group "+cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
