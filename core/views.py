@@ -518,6 +518,7 @@ def contact_edit(request, gid=None, cid=None):
     else: # add
         if not request.user.is_admin():
             return unauthorized(request)
+        assert gid, "Missing required parameter groupid"
  
     if gid: # edit/add in a group
         gid = int(gid)
@@ -569,10 +570,11 @@ def contact_edit(request, gid=None, cid=None):
                 log.property_repr = u"Name"
                 log.change = u"new value is "+contact.name
 
-                if cg:
-                    contactgroupids = [ g.id for g in cg.self_and_supergroups ]
-                else:
-                    contactgroupids = [ ]
+                contactgroupids = [ g.id for g in cg.self_and_supergroups ]
+
+                cig = ContactInGroup(contact.id, gid)
+                cig.member = True
+                # TODO: Log
 
             #if request.user.is_admin():
             #    newgroups = data.get('groups', [])
