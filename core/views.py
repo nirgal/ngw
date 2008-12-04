@@ -503,10 +503,10 @@ class ContactEditForm(forms.Form):
             if fields:
                 self.fields[unicode(cf.id)] = fields
         
-        if request_user.is_admin():
-            # sql "_" means "any character" and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by ...
-            contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]) ]
-            self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Group", False), choices=contactgroupchoices)
+        #if request_user.is_admin():
+        #    # sql "_" means "any character" and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith("\\_"))).order_by ...
+        #    contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]) ]
+        #    self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("Group", False), choices=contactgroupchoices)
         
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -574,21 +574,19 @@ def contact_edit(request, gid=None, cid=None):
                 else:
                     contactgroupids = [ ]
 
-            if request.user.is_admin():
-                newgroups = data.get('groups', [])
-                registeredgroups = []
-                for new_gid in newgroups:
-                    cig = Query(ContactInGroup).get((contact.id, new_gid))
-                    if cig==None: # Was not a member
-                        cig = ContactInGroup(contact.id, new_gid)
-                        cig.member = True
-                    registeredgroups.append(new_gid)
-                for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==cid, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
-                    # TODO optimize me
-                    print "Deleting", cig
-                    Session.delete(cig)
-                #print "newgroups =", newgroups
-                #contact.direct_groups = newgroups
+            #if request.user.is_admin():
+            #    newgroups = data.get('groups', [])
+            #    registeredgroups = []
+            #    for new_gid in newgroups:
+            #        cig = Query(ContactInGroup).get((contact.id, new_gid))
+            #        if cig==None: # Was not a member
+            #            cig = ContactInGroup(contact.id, new_gid)
+            #            cig.member = True
+            #        registeredgroups.append(new_gid)
+            #    for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==cid, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
+            #        # TODO optimize me
+            #        print "Deleting", cig
+            #        Session.delete(cig)
             
             # 2/ In ContactFields
             for cf in Query(ContactField):
@@ -620,7 +618,6 @@ def contact_edit(request, gid=None, cid=None):
     else: # GET /  HEAD
         initialdata = {}
         if cid: # modify existing
-            initialdata['groups'] = [ group.id for group in contact.get_directgroups_member() ]
             initialdata['name'] = contact.name
 
             for cfv in contact.values:
