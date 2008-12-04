@@ -975,33 +975,26 @@ class ContactGroupForm(forms.Form):
     field_group = forms.BooleanField(required=False, help_text=u"Does that group yield specific fields to its members?")
     date = forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format.")
     budget_code = forms.CharField(required=False, max_length=10)
-    #invited_members = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("contacts", False))
-    direct_members = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("contacts", False))
     direct_subgroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("groups", False))
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        
-        #self.fields['invited_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
-        self.fields['direct_members'].choices = [ (c.id, c.name) for c in Query(Contact).order_by([Contact.c.name]) ]
         self.fields['direct_subgroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
-
-    def flag_inherited_members(self, g):
-        has_automembers = False
-        choices = []
-        members = g.get_members()
-        direct_members = g.get_direct_members()
-        for c in Query(Contact).order_by(Contact.c.name):
-            cname = c.name
-            if c in members and c not in direct_members:
-                cname += " "+AUTOMATIC_MEMBER_INDICATOR
-                has_automembers = True
-            choices.append( (c.id, cname) )
-
-        self.fields['direct_members'].choices = choices
-        if has_automembers:
-            help_text = AUTOMATIC_MEMBER_INDICATOR + " = Automatic members from " + ", ".join([ sg.name+" ("+str(sg.get_direct_members().count())+")" for sg in g.subgroups ])
-            self.fields['direct_members'].help_text = help_text
+    #def flag_inherited_members(self, g):
+    #    has_automembers = False
+    #    choices = []
+    #    members = g.get_members()
+    #    direct_members = g.get_direct_members()
+    #    for c in Query(Contact).order_by(Contact.c.name):
+    #        cname = c.name
+    #        if c in members and c not in direct_members:
+    #            cname += " "+AUTOMATIC_MEMBER_INDICATOR
+    #            has_automembers = True
+    #        choices.append( (c.id, cname) )
+    #    self.fields['direct_members'].choices = choices
+    #    if has_automembers:
+    #        help_text = AUTOMATIC_MEMBER_INDICATOR + " = Automatic members from " + ", ".join([ sg.name+" ("+str(sg.get_direct_members().count())+")" for sg in g.subgroups ])
+    #        self.fields['direct_members'].help_text = help_text
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1031,26 +1024,25 @@ def contactgroup_edit(request, id):
             cg.date = data['date']
             cg.budget_code = data['budget_code']
             
-            # we need to add/remove people without destroying their flags
-            #new_invited_ids = [ int(id) for id in data['invited_members']]
-            new_member_ids = [ int(id) for id in data['direct_members']]
-            #print "WANTED INVITED=", new_invited_ids
-            print "WANTED MEMBERS=", new_member_ids
-            #TODO
-            for cid in new_member_ids:
-                c = Query(Contact).get(cid)
-                if not Query(ContactInGroup).get((c.id, cg.id)):
-                    #print "ADDING", c.name, "(", c.id, ") to group"
-                    cig = ContactInGroup(c.id, cg.id)
-                    cig.member = True
+            ## we need to add/remove people without destroying their flags
+            ##new_invited_ids = [ int(id) for id in data['invited_members']]
+            #new_member_ids = [ int(id) for id in data['direct_members']]
+            #print "WANTED MEMBERS=", new_member_ids
+            ##TODO
+            #for cid in new_member_ids:
+            #    c = Query(Contact).get(cid)
+            #    if not Query(ContactInGroup).get((c.id, cg.id)):
+            #        #print "ADDING", c.name, "(", c.id, ") to group"
+            #        cig = ContactInGroup(c.id, cg.id)
+            #        cig.member = True
 
-            # Search members to remove:
-            for cig in Query(ContactInGroup).filter(ContactInGroup.c.group_id==cg.id):
-                c = cig.contact
-                print "Considering", c.name.encode('utf-8')
-                if c.id not in new_member_ids:
-                    print "REMOVING", c.name.encode('utf-8'), "(", c.id, ") from group:", c.id, "not in", new_member_ids
-                    Session.delete(cig)
+            ## Search members to remove:
+            #for cig in Query(ContactInGroup).filter(ContactInGroup.c.group_id==cg.id):
+            #    c = cig.contact
+            #    print "Considering", c.name.encode('utf-8')
+            #    if c.id not in new_member_ids:
+            #        print "REMOVING", c.name.encode('utf-8'), "(", c.id, ") from group:", c.id, "not in", new_member_ids
+            #        Session.delete(cig)
 
             old_direct_subgroups = cg.direct_subgroups
             old_direct_subgroups_ids = [ g.id for g in old_direct_subgroups ] # TODO: fine a better algo!
@@ -1092,12 +1084,12 @@ def contactgroup_edit(request, id):
                 'field_group': cg.field_group,
                 'date': cg.date,
                 'budget_code': cg.budget_code,
-                'direct_members': [ c.id for c in cg.get_direct_members() ],
+                #'direct_members': [ c.id for c in cg.get_direct_members() ],
                 'direct_subgroups': [ g.id for g in cg.direct_subgroups ],
             }
             
             form = ContactGroupForm(initialdata)
-            form.flag_inherited_members(cg)
+            #form.flag_inherited_members(cg)
         else: # add new one
             form = ContactGroupForm()
     args={}
