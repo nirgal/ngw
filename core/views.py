@@ -853,7 +853,10 @@ def contactgroup_list(request):
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = navbar(ContactGroup.get_class_navcomponent())
-    return query_print_entities(request, 'list.html', args)
+    header = Query(Config).get(u'groups header')
+    if header:
+        args['header'] = header.text
+    return query_print_entities(request, 'list_groups.html', args)
 
 
 @http_authenticate(ngw_auth, 'ngw')

@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block body %}
-{% include "query_entities.html" %}
+    
+    {% block prequerylist %}{% endblock %}
+    {% include "query_entities.html" %}
 
     {% block presubmitbar %}
     {% endblock %}
