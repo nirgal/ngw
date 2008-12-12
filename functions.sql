@@ -1,15 +1,11 @@
 -- Make sure contrib modules _int.sql and int_aggregate.sql are loaded. See ngw README
+DROP VIEW auth_users_ngw;
+DROP VIEW auth_users_bb;
 DROP VIEW auth_users;
 DROP VIEW auth_user_groups;
 DROP FUNCTION self_and_subgroups(integer);
 DROP FUNCTION subgroups_append(integer, integer[]);
 DROP FUNCTION subgroups_append_direct(integer, integer[]);
-
-CREATE VIEW auth_users (login, password) AS
-    SELECT login_values.value, password_values.value
-    FROM contact_field_value AS login_values
-    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
-    WHERE login_values.contact_field_id=1;
 
 -- $1: group id
 -- $2: results
@@ -91,3 +87,24 @@ CREATE VIEW auth_user_groups ( login, gid ) AS
         JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
         (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
         WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
+
+CREATE VIEW auth_users (login, password) AS
+    SELECT login_values.value, password_values.value
+    FROM contact_field_value AS login_values
+    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
+    WHERE login_values.contact_field_id=1;
+
+CREATE VIEW auth_users_ngw (login, password) AS
+    SELECT login_values.value, password_values.value
+    FROM contact_field_value AS login_values
+    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
+    WHERE login_values.contact_field_id=1
+        AND EXISTS (SELECT * FROM auth_user_groups WHERE auth_user_groups.login=login_values.value AND auth_user_groups.gid=52);
+
+CREATE VIEW auth_users_bb (login, password) AS
+    SELECT login_values.value, password_values.value
+    FROM contact_field_value AS login_values
+    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
+    WHERE login_values.contact_field_id=1
+        AND EXISTS (SELECT * FROM auth_user_groups WHERE auth_user_groups.login=login_values.value AND auth_user_groups.gid=53);
+
