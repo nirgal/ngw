@@ -863,7 +863,7 @@ def contactgroup_list(request):
 def contactgroup_detail(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(id,)))
+    return HttpResponseRedirect(u"./members/")
 
 
 @http_authenticate(ngw_auth, 'ngw')
