@@ -42,7 +42,7 @@ def ngw_auth(username, passwd):
     if not login_value:
         return None
     c = login_value.contact
-    dbpasswd=Query(ContactFieldValue).get((c.id, 2)).value
+    dbpasswd=Query(ContactFieldValue).get((c.id, FIELD_PASSWORD)).value
     if not dbpasswd:
         return None
     if dbpasswd.startswith(u"{SHA}"):
@@ -683,11 +683,11 @@ def contact_pass(request, gid=None, cid=None):
             password = form.clean()['new_password']
             hash=subprocess.Popen(["openssl", "passwd", "-crypt", password], stdout=subprocess.PIPE).communicate()[0]
             hash=hash[:-1] # remove extra "\n"
-            cfv = Query(ContactFieldValue).get((contact.id, 2))
+            cfv = Query(ContactFieldValue).get((contact.id, FIELD_PASSWORD))
             if not cfv:
                 cfv = ContactFieldValue()
                 cfv.contact_id = contact.id
-                cfv.contact_field_id = 2
+                cfv.contact_field_id = FIELD_PASSWORD
             cfv.value = hash
             #hash = b64encode(sha(password).digest())
             #contact.passwd = "{SHA}"+hash
