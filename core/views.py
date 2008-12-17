@@ -1066,7 +1066,7 @@ def contactgroup_edit(request, id):
 
             cg.check_static_folder_created()
             Session.commit()
-            Contact.check_login_created(request.user)
+            Contact.check_login_created(request.user) # subgroups change
 
             if request.POST.get("_continue", None):
                 if not id:
@@ -1075,7 +1075,7 @@ def contactgroup_edit(request, id):
             elif request.POST.get("_addanother", None):
                 return HttpResponseRedirect(cg.get_class_absolute_url()+u"add")
             else:
-                return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(cg.id,)))
+                return HttpResponseRedirect(cg.get_absolute_url())
 
     else: # GET
         if id:
@@ -1217,6 +1217,7 @@ def contactgroup_add_contacts_to(request):
                 msg = u"Contacts %s allready were in %s. Status have been changed to %s."
             request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
 
+        Contact.check_login_created(request.user)
         return HttpResponseRedirect(target_group.get_absolute_url())
 
     gid = request.REQUEST.get(u'gid', u'')
@@ -1315,7 +1316,7 @@ def contactingroup_edit(request, gid, cid):
         if form.is_valid():
             data = form.cleaned_data
             if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator']:
-                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id),cid)))
+                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id),cid))) # TODO update logins deletion
             if not cig:
                 cig = ContactInGroup(contact.id, cg.id)
             cig.invited = data['invited']
@@ -1323,6 +1324,7 @@ def contactingroup_edit(request, gid, cid):
             cig.member = data['member']
             cig.operator = data['operator']
             request.user.push_message(u"Member %s of group %s has been changed sucessfully!" % (contact.name, cg.name))
+            Contact.check_login_created(request.user)
             return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(cg.id,)))
     else:
         form = ContactInGroupForm(initial=initial)

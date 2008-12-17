@@ -425,7 +425,8 @@ class Contact(NgwModel):
 
     @staticmethod
     def check_login_created(logged_contact):
-        # Create login for people member of GROUP_USER
+        Session.commit()
+        # Create login for all members of GROUP_USER
         for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d))) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL"%{"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN}):
             contact = Query(Contact).get(uid)
             new_login = contact.generate_login()
@@ -438,6 +439,12 @@ class Contact(NgwModel):
         for cfv in Query(ContactFieldValue).filter("contact_field_value.contact_field_id=1 AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member='t')"%{"GROUP_USER":GROUP_USER}):
             logged_contact.push_message("Delete login information for User %s."%(cfv.contact.name))
             Session.delete(cfv)
+
+    def is_member_of(self, group_id):
+        # TODO commit?
+        cfv = Query(ContactInGroup).filter("contact_id=%(contact_id)d AND group_id IN (SELECT * FROM self_and_subgroups(%(group_id)d)) AND member" % {'contact_id': self.id, 'group_id': group_id}).all()
+        #print cfv, len(cfv)
+        return len(cfv)!=0
 
     def is_admin(self):
         adminsubgroups = Query(ContactGroup).get(GROUP_ADMIN).self_and_subgroups
