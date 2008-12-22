@@ -24,13 +24,6 @@ def escape_amp_query(txt):
 #    else:
 #        yield row
 
-#@register.filter
-#def ngw_unicode(o):
-#    if o:
-#        return unicode(o)
-#    return u""
-
-
 
 @register.filter
 def pagenumber_iterator(page, npages):

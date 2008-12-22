@@ -12,6 +12,7 @@ from django.forms.util import smart_unicode
 from itertools import chain
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
 import decorated_letters
+from ngw.extensions import hooks
 
 GROUP_EVERYBODY = 1
 GROUP_USER = 2
@@ -33,6 +34,7 @@ FIELD_COUNTRY = 48
 FIELD_PHPBB_USERID = 73
 
 AUTOMATIC_MEMBER_INDICATOR = u"⁂"
+
 
 # Ends with a /
 GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
@@ -327,6 +329,7 @@ class Contact(NgwModel):
                 cfv.field = field
                 cfv.value = newvalue
                 log.change = u"new value is "+unicode(cfv)
+                hooks.contact_field_changed(user, field_id, self)
         else: # There was a value
             if newvalue:
                 if cfv.value!=newvalue:
@@ -339,6 +342,7 @@ class Contact(NgwModel):
                     log.change = u"change from "+unicode(cfv)
                     cfv.value = newvalue
                     log.change += u" to "+unicode(cfv)
+                    hooks.contact_field_changed(user, field_id, self)
             else:
                 log = Log(user.id)
                 log.action = LOG_ACTION_DEL
@@ -348,6 +352,7 @@ class Contact(NgwModel):
                 log.property_repr = field.name
                 log.change = u"old value was "+unicode(cfv)
                 Session.delete(cfv)
+                hooks.contact_field_changed(user, field_id, self)
 
     def get_login(self):
         return self.get_fieldvalue_by_id(FIELD_LOGIN)

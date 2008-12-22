@@ -1218,6 +1218,12 @@ def contactgroup_add_contacts_to(request):
             request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
 
         Contact.check_login_created(request.user)
+        Session.flush() # CHECK ME
+        for c in added_contacts:
+            hooks.membership_changed(request.user, c, target_group)
+        for c in changed_contacts:
+            hooks.membership_changed(request.user, c, target_group)
+
         return HttpResponseRedirect(target_group.get_absolute_url())
 
     gid = request.REQUEST.get(u'gid', u'')
@@ -1316,7 +1322,7 @@ def contactingroup_edit(request, gid, cid):
         if form.is_valid():
             data = form.cleaned_data
             if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator']:
-                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id),cid))) # TODO update logins deletion
+                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id),cid))) # TODO update logins deletion, call membership hooks
             if not cig:
                 cig = ContactInGroup(contact.id, cg.id)
             cig.invited = data['invited']
@@ -1325,7 +1331,9 @@ def contactingroup_edit(request, gid, cid):
             cig.operator = data['operator']
             request.user.push_message(u"Member %s of group %s has been changed sucessfully!" % (contact.name, cg.name))
             Contact.check_login_created(request.user)
-            return HttpResponseRedirect(reverse('ngw.core.views.contactgroup_members', args=(cg.id,)))
+            Session.flush()
+            hooks.membership_changed(request.user, contact, cg)
+            return HttpResponseRedirect(cg.get_absolute_url())
     else:
         form = ContactInGroupForm(initial=initial)
 
@@ -1384,6 +1392,7 @@ def contactingroup_edit_inline(request, gid, cid):
     else:
         raise Exception(u"invalid membership "+request.POST['membership'])
     request.user.push_message(u"Member %s of group %s has been changed sucessfully!" % (contact.name, cg.name))
+    hooks.membership_changed(request.user, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
 
 @http_authenticate(ngw_auth, 'ngw')
