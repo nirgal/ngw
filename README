@@ -19,6 +19,8 @@ Postgres
 ========
 createdb ngw -E unicode
 
+Rigth now, it's not possible to start from an empty database. You need to restore a backup.
+
 See http://developer.postgresql.org/pgdocs/postgres/contrib.html, as postgres user, run
 postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/int_aggregate.sql
 postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/_int.sql

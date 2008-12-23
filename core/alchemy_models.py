@@ -10,9 +10,10 @@ from django.utils import html
 from django import forms
 from django.forms.util import smart_unicode
 from itertools import chain
-from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
+from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, MEDIA_URL
 import decorated_letters
 from ngw.extensions import hooks
+from ngw.core import gpg
 
 GROUP_EVERYBODY = 1
 GROUP_USER = 2
@@ -771,7 +772,11 @@ register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False
 
 class EmailContactField(ContactField):
     def format_value_html(self, value):
-        return u'<a href="mailto:%(value)s">%(value)s</a>' % {'value':value}
+        if gpg.is_email_secure(value):
+            gpg_indicator = u' <img src="'+MEDIA_URL+'/static/key.jpeg" alt=key title="GPG key available">'
+        else:
+            gpg_indicator = u""
+        return u'<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s' % {'value':value, 'gpg_indicator':gpg_indicator}
     def get_form_fields(self):
         return forms.EmailField(label=self.name, required=False, help_text=self.hint)
     @classmethod
