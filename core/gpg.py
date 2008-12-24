@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-KEYRING = "/usr/lib/ngw/gpgkeyring"
+GPG_HOME = "/var/lib/ngw/"
 
 import subprocess
 
@@ -39,15 +39,16 @@ def parse_pgp_listkey(output):
 def is_email_secure(mail_address):
     if mail_address.startswith("-"):
         return False # Possible hack attempt
-    ret, out, err = subprocess_run("gpg", "--no-default-keyring", "--keyring", KEYRING, "--list-keys", mail_address)
+    ret, out, err = subprocess_run("gpg", "--homedir", GPG_HOME, "--list-keys", mail_address)
     if ret:
         return False # gpg error
     keyring_1 = parse_pgp_listkey(out)
     return len(keyring_1)>0
     
 def loadkeyring():
-    ret, out, err = subprocess_run("gpg", "--no-default-keyring", "--keyring", KEYRING, "--list-keys")
+    ret, out, err = subprocess_run("gpg", "--homedir", GPG_HOME, "--list-keys")
     if ret:
+        print err
         print "gpg failed."
     return parse_pgp_listkey(out)
 

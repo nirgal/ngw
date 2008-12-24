@@ -25,3 +25,9 @@ See http://developer.postgresql.org/pgdocs/postgres/contrib.html, as postgres us
 postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/int_aggregate.sql
 postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/_int.sql
 
+GPG
+===
+mkdir /var/lib/ngw
+chown www-data /var/lib/ngw
+
+Right now, keys needs to be imported by hand: gpg --homedir /var/lib/ngw/ --import akey.key
