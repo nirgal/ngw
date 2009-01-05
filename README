@@ -6,8 +6,8 @@ python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib li
 
 Apache
 ======
-Enable ssl and auth_pgsql in apache:
-a2enmod ssl 000_auth_pgsql
+Enable ssl, auth_pgsql and rewrite in apache:
+a2enmod ssl 000_auth_pgsql rewrite
 
 Generate self-signed certificate:
 openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 -keyout nike.key -out nike.crt
