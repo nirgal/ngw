@@ -64,4 +64,6 @@ urlpatterns = patterns('',
     (r'^choicegroups/(?P<id>\d+)/$', 'django.views.generic.simple.redirect_to', {'url': '/choicegroups/%(id)s/edit'}),
     (r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choicegroup_edit'),
     (r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choicegroup_delete'),
+
+    (r'^pks/lookup$', 'ngw.core.gpg.lookup'),
 )

@@ -6,7 +6,7 @@ from datetime import *
 from sqlalchemy import *
 from sqlalchemy.orm import *
 import sqlalchemy.engine.url
-from django.utils import html
+from django.utils import html, http
 from django import forms
 from django.forms.util import smart_unicode
 from itertools import chain
@@ -773,7 +773,7 @@ register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False
 class EmailContactField(ContactField):
     def format_value_html(self, value):
         if gpg.is_email_secure(value):
-            gpg_indicator = u' <img src="'+MEDIA_URL+'/static/key.jpeg" alt=key title="GPG key available">'
+            gpg_indicator = u' <a href="/pks/lookup?op=get&options=mr&extact=on&search='+http.urlquote_plus(value)+'"><img src="'+MEDIA_URL+'/static/key.jpeg" alt=key title="GPG key available" border=0></a>'
         else:
             gpg_indicator = u""
         return u'<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s' % {'value':value, 'gpg_indicator':gpg_indicator}
