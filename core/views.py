@@ -87,23 +87,13 @@ class require_group:
         return wrapped
     
 
-def _change_password(contactid, newpassword_plain):
+def _change_password(contact, user, newpassword_plain):
     hash=subprocess.Popen(["openssl", "passwd", "-crypt", newpassword_plain], stdout=subprocess.PIPE).communicate()[0]
     hash=hash[:-1] # remove extra "\n"
-    cfv = Query(ContactFieldValue).get((contactid, FIELD_PASSWORD))
-    if not cfv:
-        cfv = ContactFieldValue()
-        cfv.contact_id = contactid
-        cfv.contact_field_id = FIELD_PASSWORD
-    cfv.value = hash
-    cfv = Query(ContactFieldValue).get((contactid, FIELD_PASSWORD_PLAIN))
-    if not cfv:
-        cfv = ContactFieldValue()
-        cfv.contact_id = contactid
-        cfv.contact_field_id = FIELD_PASSWORD_PLAIN
-    cfv.value = newpassword_plain
     #hash = b64encode(sha(password).digest())
     #contact.passwd = "{SHA}"+hash
+    contact.set_fieldvalue(user, FIELD_PASSWORD, hash)
+    contact.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
 
 
 
@@ -318,7 +308,7 @@ def hook_change_password(request):
     if not newpassword_plain:
         return HttpResponse(u"Missing password POST parameter")
     #TODO: check strength
-    _change_password(request.user.id, newpassword_plain)
+    _change_password(request.user, request.user, newpassword_plain)
     return HttpResponse("OK")
 
 def logout(request):
@@ -735,7 +725,7 @@ def contact_pass(request, gid=None, cid=None):
         if form.is_valid():
             # record the value
             password = form.clean()['new_password']
-            _change_password(cid, password)
+            _change_password(contact, request.user, password)
             request.user.push_message("Password has been changed sucessfully!")
             if gid:
                 cg = Query(ContactGroup).get(gid)
