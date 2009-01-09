@@ -96,6 +96,12 @@ def _change_password(contactid, newpassword_plain):
         cfv.contact_id = contactid
         cfv.contact_field_id = FIELD_PASSWORD
     cfv.value = hash
+    cfv = Query(ContactFieldValue).get((contactid, FIELD_PASSWORD_PLAIN))
+    if not cfv:
+        cfv = ContactFieldValue()
+        cfv.contact_id = contactid
+        cfv.contact_field_id = FIELD_PASSWORD_PLAIN
+    cfv.value = newpassword_plain
     #hash = b64encode(sha(password).digest())
     #contact.passwd = "{SHA}"+hash
 
