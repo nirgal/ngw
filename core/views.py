@@ -32,13 +32,15 @@ FTYPE_CHOICE='CHOICE'
 FTYPE_MULTIPLECHOICE='MULTIPLECHOICE'
 FTYPE_PASSWORD='PASSWORD'
 
-
+# call back function for http_authenticate decorator
+# Note that it does NOT verify the membership of any groups, not even users
+# Do use @require_group
 def ngw_auth(username, passwd):
     username = unicode(username, 'utf-8', 'replace')
     passwd = unicode(passwd, 'utf-8', 'replace')
     if not username or not passwd:
         return None
-    login_value = Query(ContactFieldValue).filter(ContactFieldValue.c.contact_field_id==1).filter(ContactFieldValue.c.value==username).first()
+    login_value = Query(ContactFieldValue).filter(ContactFieldValue.c.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.c.value==username).first()
     if not login_value:
         return None
     c = login_value.contact
@@ -69,6 +71,34 @@ def ngw_auth(username, passwd):
     #    print "Unsupported password algorithm", algo.encode('utf-8')
     #    return None
     return None # authentification failed
+
+
+# decorator for requests
+class require_group:
+    def __init__(self, required_group):
+        self.required_group = required_group
+    def __call__(self, func):
+        def wrapped(*args, **kwargs):
+            request = args[0]
+            user = request.user
+            if not user.is_member_of(self.required_group):
+                return unauthorized(request)
+            return func(*args, **kwargs)
+        return wrapped
+    
+
+def _change_password(contactid, newpassword_plain):
+    hash=subprocess.Popen(["openssl", "passwd", "-crypt", newpassword_plain], stdout=subprocess.PIPE).communicate()[0]
+    hash=hash[:-1] # remove extra "\n"
+    cfv = Query(ContactFieldValue).get((contactid, FIELD_PASSWORD))
+    if not cfv:
+        cfv = ContactFieldValue()
+        cfv.contact_id = contactid
+        cfv.contact_field_id = FIELD_PASSWORD
+    cfv.value = hash
+    #hash = b64encode(sha(password).digest())
+    #contact.passwd = "{SHA}"+hash
+
 
 
 class navbar(object):
@@ -148,6 +178,7 @@ def unauthorized(request):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def index(request):
     # Birthdates: select contact_id, substring(value from 6) as md from contact_field_value where contact_field_id=6 order by md;
     operator_groups_ids = [ cig.group_id for cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==request.user.id).filter(ContactInGroup.operator==True) ]
@@ -263,6 +294,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def test(request):
     args={
         "title": "Test",
@@ -272,6 +304,16 @@ def test(request):
     }
     #raise Exception(u"Boum")
     return render_to_response("test.html", args, RequestContext(request))
+
+@http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER) # not GROUP_USER_NGW
+def hook_change_password(request):
+    newpassword_plain = request.POST.get(u'password')
+    if not newpassword_plain:
+        return HttpResponse(u"Missing password POST parameter")
+    #TODO: check strength
+    _change_password(request.user.id, newpassword_plain)
+    return HttpResponse("OK")
 
 def logout(request):
     if os.environ.has_key('HTTPS'):
@@ -287,6 +329,8 @@ def logout(request):
 #######################################################################
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
+@require_group(GROUP_ADMIN)
 def logs(request):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -399,6 +443,7 @@ class FieldSelectForm(forms.Form):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_list(request):
     import contactsearch # FIXME
     if not request.user.is_admin():
@@ -440,6 +485,7 @@ def contact_list(request):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_detail(request, gid=None, cid=None):
     cid = int(cid)
     if cid!=request.user.id and not request.user.is_admin():
@@ -470,6 +516,7 @@ def contact_detail(request, gid=None, cid=None):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_vcard(request, gid=None, cid=None):
     cid = int(cid)
     if cid!=request.user.id and not request.user.is_admin():
@@ -510,6 +557,7 @@ class ContactEditForm(forms.Form):
         
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_edit(request, gid=None, cid=None):
     if cid: # edit existing contact
         cid = int(cid)
@@ -664,8 +712,8 @@ class ContactPasswordForm(forms.Form):
             raise forms.ValidationError("The passwords must match!")
         return self.cleaned_data
 
-
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_pass(request, gid=None, cid=None):
     if gid is not None:
         gid = int(gid)
@@ -681,16 +729,7 @@ def contact_pass(request, gid=None, cid=None):
         if form.is_valid():
             # record the value
             password = form.clean()['new_password']
-            hash=subprocess.Popen(["openssl", "passwd", "-crypt", password], stdout=subprocess.PIPE).communicate()[0]
-            hash=hash[:-1] # remove extra "\n"
-            cfv = Query(ContactFieldValue).get((contact.id, FIELD_PASSWORD))
-            if not cfv:
-                cfv = ContactFieldValue()
-                cfv.contact_id = contact.id
-                cfv.contact_field_id = FIELD_PASSWORD
-            cfv.value = hash
-            #hash = b64encode(sha(password).digest())
-            #contact.passwd = "{SHA}"+hash
+            _change_password(cid, password)
             request.user.push_message("Password has been changed sucessfully!")
             if gid:
                 cg = Query(ContactGroup).get(gid)
@@ -711,6 +750,7 @@ def contact_pass(request, gid=None, cid=None):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_delete(request, gid=None, cid=None):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -728,6 +768,7 @@ def contact_delete(request, gid=None, cid=None):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_filters_add(request, cid=None):
     from contactsearch import *
     if not request.user.is_admin():
@@ -747,6 +788,7 @@ def contact_filters_add(request, cid=None):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_filters_list(request, cid=None):
     from contactsearch import *
     if not request.user.is_admin():
@@ -771,6 +813,7 @@ class FilterEditForm(forms.Form):
     name = forms.CharField(max_length=50)
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contact_filters_edit(request, cid=None, fid=None):
     from contactsearch import *
     if not request.user.is_admin():
@@ -822,6 +865,7 @@ def contact_filters_edit(request, cid=None, fid=None):
 #######################################################################
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -860,6 +904,7 @@ def contactgroup_list(request):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_detail(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -867,6 +912,7 @@ def contactgroup_detail(request, id):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_members(request, gid, output_format=""):
     import contactsearch # FIXME
     if not request.user.is_admin():
@@ -1000,6 +1046,7 @@ class ContactGroupForm(forms.Form):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_edit(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1118,6 +1165,7 @@ def on_contactgroup_delete(cg):
     # TODO: delete static folder
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1130,6 +1178,7 @@ def contactgroup_delete(request, id):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_add_contacts_to(request):
     import contactsearch # FIXME
     if not request.user.is_admin():
@@ -1299,6 +1348,7 @@ class ContactInGroupForm(forms.Form):
         return data
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactingroup_edit(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1365,6 +1415,7 @@ def contactingroup_edit(request, gid, cid):
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactingroup_edit_inline(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1396,6 +1447,7 @@ def contactingroup_edit_inline(request, gid, cid):
     return HttpResponseRedirect(request.POST['next_url'])
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactingroup_delete(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1415,6 +1467,7 @@ def contactingroup_delete(request, gid, cid):
 #######################################################################
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_news(request, gid):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1434,6 +1487,7 @@ class NewsEditForm(forms.Form):
     text = forms.CharField(widget=forms.Textarea)
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_news_edit(request, gid, nid):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1486,6 +1540,7 @@ def contactgroup_news_edit(request, gid, nid):
     return render_to_response('edit.html', args, RequestContext(request))
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def contactgroup_news_delete(request, gid, nid):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1500,6 +1555,7 @@ def contactgroup_news_delete(request, gid, nid):
 #######################################################################
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def field_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1521,6 +1577,7 @@ def field_list(request):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def field_move_up(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1531,6 +1588,7 @@ def field_move_up(request, id):
     return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def field_move_down(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1600,6 +1658,7 @@ class FieldEditForm(forms.Form):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def field_edit(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1722,6 +1781,7 @@ def field_edit(request, id):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def field_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1740,6 +1800,7 @@ def field_delete(request, id):
 #######################################################################
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def choicegroup_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1890,6 +1951,7 @@ class ChoiceGroupForm(forms.Form):
             
         
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def choicegroup_edit(request, id=None):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -1933,6 +1995,7 @@ def choicegroup_edit(request, id=None):
 
 
 @http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
 def choicegroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)

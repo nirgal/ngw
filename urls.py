@@ -3,7 +3,7 @@ from django.conf.urls.defaults import *
 urlpatterns = patterns('',
     (r'^$', 'ngw.core.views.index'),
 
-    #(r'^test$', 'ngw.core.views.test'),
+    (r'^hook_change_password$', 'ngw.core.views.hook_change_password'),
 
     (r'^logout$', 'ngw.core.views.logout'),
 
