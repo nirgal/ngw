@@ -94,7 +94,10 @@ def _change_password(contact, user, newpassword_plain):
     #contact.passwd = "{SHA}"+hash
     contact.set_fieldvalue(user, FIELD_PASSWORD, hash)
     contact.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
-
+    if contact.id==user.id:
+        contact.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'3')
+    else:
+        contact.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1')
 
 
 class navbar(object):

@@ -1,4 +1,5 @@
 -- Make sure contrib modules _int.sql and int_aggregate.sql are loaded. See ngw README
+DROP VIEW mailinginfo;
 DROP VIEW auth_users_ngw;
 DROP VIEW auth_users_bb;
 DROP VIEW auth_users;
@@ -107,4 +108,18 @@ CREATE VIEW auth_users_bb (login, password) AS
     JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
     WHERE login_values.contact_field_id=1
         AND EXISTS (SELECT * FROM auth_user_groups WHERE auth_user_groups.login=login_values.value AND auth_user_groups.gid=53);
+
+CREATE VIEW mailinginfo AS
+    SELECT contact.name AS name, rue.value AS rue, codepostal.value AS codepostal, ville.value AS ville, pays.value AS pays, login.value AS login, password.value AS password
+        FROM contact
+        LEFT JOIN contact_field_value AS rue ON contact.id=rue.contact_id AND rue.contact_field_id=9
+        LEFT JOIN contact_field_value AS codepostal ON contact.id=codepostal.contact_id AND codepostal.contact_field_id=11
+        LEFT JOIN contact_field_value AS ville ON contact.id=ville.contact_id AND ville.contact_field_id=14
+        LEFT JOIN contact_field_value AS paysid ON contact.id=paysid.contact_id AND paysid.contact_field_id=48
+        LEFT JOIN choice AS pays ON pays.choice_group_id=1 AND pays.key=paysid.value
+        LEFT JOIN contact_field_value AS login ON contact.id=login.contact_id AND login.contact_field_id=1
+        LEFT JOIN contact_field_value AS password ON contact.id=password.contact_id AND password.contact_field_id=74
+        LEFT JOIN contact_field_value AS password_status ON contact.id=password_status.contact_id AND password_status.contact_field_id=75
+        WHERE password_status.value='1'
+        ;
 
