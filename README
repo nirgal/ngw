@@ -2,7 +2,7 @@ Installation
 ============
 It is recommanded to use Debian Lenny or above
 
-python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql
+python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql pwgen
 
 Apache
 ======

@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-import os, copy, traceback, time, subprocess
+import os, traceback, subprocess
 from md5 import md5
 from sha import sha
 from random import random
@@ -86,19 +86,6 @@ class require_group:
             return func(*args, **kwargs)
         return wrapped
     
-
-def _change_password(contact, user, newpassword_plain):
-    hash=subprocess.Popen(["openssl", "passwd", "-crypt", newpassword_plain], stdout=subprocess.PIPE).communicate()[0]
-    hash=hash[:-1] # remove extra "\n"
-    #hash = b64encode(sha(password).digest())
-    #contact.passwd = "{SHA}"+hash
-    contact.set_fieldvalue(user, FIELD_PASSWORD, hash)
-    contact.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
-    if contact.id==user.id:
-        contact.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'3')
-    else:
-        contact.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1')
-
 
 class navbar(object):
     def __init__(self, *args):
@@ -311,7 +298,7 @@ def hook_change_password(request):
     if not newpassword_plain:
         return HttpResponse(u"Missing password POST parameter")
     #TODO: check strength
-    _change_password(request.user, request.user, newpassword_plain)
+    request.user.set_password(request.user, newpassword_plain)
     return HttpResponse("OK")
 
 def logout(request):
@@ -728,7 +715,7 @@ def contact_pass(request, gid=None, cid=None):
         if form.is_valid():
             # record the value
             password = form.clean()['new_password']
-            _change_password(contact, request.user, password)
+            contact.set_password(request.user, password)
             request.user.push_message("Password has been changed sucessfully!")
             if gid:
                 cg = Query(ContactGroup).get(gid)

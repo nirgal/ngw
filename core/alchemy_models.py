@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-import os
+import os, subprocess
 from datetime import *
 from sqlalchemy import *
 from sqlalchemy.orm import *
@@ -432,19 +432,37 @@ class Contact(NgwModel):
             i+=1
 
     @staticmethod
+    def generate_password():
+        random_password = subprocess.Popen(['pwgen', '-N', '1'], stdout=subprocess.PIPE).communicate()[0]
+        random_password = random_password[:-1] # remove extra "\n"
+        return random_password
+
+
+    def set_password(self, user, newpassword_plain):
+        # TODO check password strength
+        hash=subprocess.Popen(["openssl", "passwd", "-crypt", newpassword_plain], stdout=subprocess.PIPE).communicate()[0]
+        hash=hash[:-1] # remove extra "\n"
+        #hash = b64encode(sha(password).digest())
+        #self.passwd = "{SHA}"+hash
+        self.set_fieldvalue(user, FIELD_PASSWORD, hash)
+        self.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
+        if self.id==user.id:
+            self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'3')
+        else:
+            self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1')
+
+    @staticmethod
     def check_login_created(logged_contact):
         Session.commit()
         # Create login for all members of GROUP_USER
         for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d))) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL"%{"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN}):
             contact = Query(Contact).get(uid)
             new_login = contact.generate_login()
-            cfv = ContactFieldValue()
-            cfv.contact_id = uid
-            cfv.contact_field_id = FIELD_LOGIN
-            cfv.value = new_login
+            contact.set_fieldvalue(logged_contact, FIELD_LOGIN, new_login)
+            contact.set_password(logged_contact, contact.generate_password())
             logged_contact.push_message("Login information generated for User %s."%(contact.name))
         
-        for cfv in Query(ContactFieldValue).filter("contact_field_value.contact_field_id=1 AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member='t')"%{"GROUP_USER":GROUP_USER}):
+        for cfv in Query(ContactFieldValue).filter("contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member='t')"%{"GROUP_USER":GROUP_USER, "FIELD_LOGIN":FIELD_LOGIN}):
             logged_contact.push_message("Delete login information for User %s."%(cfv.contact.name))
             Session.delete(cfv)
 
@@ -1522,7 +1540,8 @@ contact_mapper.add_property('sysmsg', relation(
     ContactSysMsg,
     primaryjoin=contact_sysmsg_table.c.contact_id==contact_table.c.id,
     cascade="delete",
-    passive_deletes=True))
+    passive_deletes=True,
+    order_by=ContactSysMsg.c.id))
 
 # Log <-> Contact
 log_mapper.add_property('contact', relation(
