@@ -110,7 +110,7 @@ CREATE VIEW auth_users_bb (login, password) AS
         AND EXISTS (SELECT * FROM auth_user_groups WHERE auth_user_groups.login=login_values.value AND auth_user_groups.gid=53);
 
 CREATE VIEW mailinginfo AS
-    SELECT contact.name AS name, rue.value AS rue, codepostal.value AS codepostal, ville.value AS ville, pays.value AS pays, login.value AS login, password.value AS password
+    SELECT contact.id AS id, contact.name AS name, rue.value AS rue, codepostal.value AS codepostal, ville.value AS ville, pays.value AS pays, login.value AS login, password.value AS password
         FROM contact
         LEFT JOIN contact_field_value AS rue ON contact.id=rue.contact_id AND rue.contact_field_id=9
         LEFT JOIN contact_field_value AS codepostal ON contact.id=codepostal.contact_id AND codepostal.contact_field_id=11

@@ -2,7 +2,9 @@ Installation
 ============
 It is recommanded to use Debian Lenny or above
 
-python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql pwgen
+python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql pwgen openoffice.org-sdbc-postgresql oomailing
+
+oomailing package can be get at http://www.nirgal.com/debian/
 
 Apache
 ======
@@ -14,6 +16,15 @@ openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 
 
 Listen on port 443
 Add a new line "Listen 443" to /etc/apache2/ports.conf"
+
+Oomailing
+=========
+
+Launch openoffice setup a database:
+Connect to an existing database using postgresql
+Database url should be something like "dbname=ngw host=localhost password=secretpassord" and username should be setup correctly
+Save the file as /usr/lib/ngw/ngw.odb 
+Then create a "ngw" data source in the oomailing account poingting at /usr/lib/ngw/ngw.odb
 
 Postgres
 ========
