@@ -16,6 +16,7 @@ urlpatterns = patterns('',
     (r'^contacts/search/filters/(?P<field>\w+)$', 'ngw.core.contactsearch.contactsearch_get_filters'),
     (r'^contacts/search/params/(?P<field>\w+)/(?P<filtername>\w+)$', 'ngw.core.contactsearch.contactsearch_get_params'),
     (r'^contacts/search/filter_to_html$', 'ngw.core.contactsearch.contactsearch_filter_to_html'),
+    (r'^contacts/make_login_mailing$', 'ngw.core.views.contact_make_login_mailing'),
 
     (r'^contacts/(?P<cid>\d+)/$', 'ngw.core.views.contact_detail'),
     (r'^contacts/(?P<cid>\d+)/edit$', 'ngw.core.views.contact_edit'),

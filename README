@@ -21,10 +21,11 @@ Oomailing
 =========
 
 Launch openoffice setup a database:
+ssh oomailing@localhost soffice (you migth need to turn off oomailing first, using /etc/init.d/oomailing stop)
 Connect to an existing database using postgresql
 Database url should be something like "dbname=ngw host=localhost password=secretpassord" and username should be setup correctly
 Save the file as /usr/lib/ngw/ngw.odb 
-Then create a "ngw" data source in the oomailing account poingting at /usr/lib/ngw/ngw.odb
+Then create a "ngw" data source in the oomailing account poingting at /usr/lib/ngw/mailing/ngw.odb
 
 Postgres
 ========

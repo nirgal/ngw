@@ -20,7 +20,7 @@ def get_outputprefix():
     raise ValueError("Can't generate a random prefix")
 
     
-def ogm_mailmerge(filename_in, ids):
+def ngw_mailmerge(filename_in, ids):
     outputprefix = get_outputprefix()
 
     local = uno.getComponentContext()
@@ -49,6 +49,6 @@ def ogm_mailmerge(filename_in, ids):
 if __name__ == "__main__":
     ids = [ sys.argv[x] for x in range(1,len(sys.argv)) ]
     #xcontext = oo_bootstrap()
-    result = ogm_mailmerge("/usr/lib/ngw/welcome.odt", ids)
+    result = ngw_mailmerge("/usr/lib/ngw/mailing/forms/welcome.odt", ids)
     print result
     

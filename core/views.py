@@ -15,6 +15,7 @@ from ngw import settings
 from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
 from ngw.core.decorated_letters import remove_decoration
+from ngw.core.mailmerge import *
 
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
@@ -842,6 +843,37 @@ def contact_filters_edit(request, cid=None, fid=None):
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
 
+from sqlalchemy.orm.util import AliasedClass
+@http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_ADMIN)
+def contact_make_login_mailing(request):
+    # select contacts whose password is in state "Registered", with both "Adress" and "City" not null
+    q = Query(Contact)
+    passwordstatus_obj = AliasedClass(ContactFieldValue)
+    q = q.add_entity(passwordstatus_obj).filter(Contact.id==passwordstatus_obj.contact_id).filter(passwordstatus_obj.contact_field_id == FIELD_PASSWORD_STATUS).filter(passwordstatus_obj.value == u'1')
+    address_obj = AliasedClass(ContactFieldValue)
+    q = q.add_entity(address_obj).filter(Contact.id==address_obj.contact_id).filter(address_obj.contact_field_id == FIELD_STREET)
+    city_obj = AliasedClass(ContactFieldValue)
+    q = q.add_entity(city_obj).filter(Contact.id==city_obj.contact_id).filter(city_obj.contact_field_id == FIELD_CITY) # implies not null, TODO addentity->outerjoin
+    ids = [ row[0].id for row in q ]
+    if not ids:
+        return HttpResponse('No waiting mail')
+        
+    result = ngw_mailmerge('/usr/lib/ngw/mailing/forms/welcome.odt', [str(id) for id in ids])
+    if not result:
+        return HttpResponse("File generation failed")
+    print result
+    filename = os.path.basename(result)
+    if subprocess.call(["sudo", "/usr/bin/mvoomail", os.path.splitext(filename)[0], "/usr/lib/ngw/mailing/generated/"]):
+        return HttpResponse("File move failed")
+    for row in q:
+        contact = row[0]
+        contact.set_fieldvalue(request.user, FIELD_PASSWORD_STATUS, u'2')
+
+    return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')
+    #loader.render_to_string('message.html',{
+    #    'message': "Sorry. You are not authorized to browse that page."},
+    #    RequestContext(request)))
 
 
 #######################################################################
