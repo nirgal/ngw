@@ -5,6 +5,7 @@ from md5 import md5
 from sha import sha
 from random import random
 from base64 import b64encode
+from decoratedstr import remove_decoration
 from django.http import *
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
@@ -14,7 +15,6 @@ from django.template import loader, RequestContext
 from ngw import settings
 from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
-from ngw.core.decorated_letters import remove_decoration
 from ngw.core.mailmerge import *
 
 DISP_NAME = u'name'

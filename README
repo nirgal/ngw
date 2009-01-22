@@ -2,14 +2,14 @@ Installation
 ============
 It is recommanded to use Debian Lenny or above
 
-python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql pwgen openoffice.org-sdbc-postgresql oomailing
+python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql pwgen openoffice.org-sdbc-postgresql oomailing python-decoratedstr
 
-oomailing package can be get at http://www.nirgal.com/debian/
+oomailing and python-decoratedstr packages can be get at http://www.nirgal.com/debian/
 
 Apache
 ======
-Enable ssl, auth_pgsql and rewrite in apache:
-a2enmod ssl 000_auth_pgsql rewrite
+Enable ssl, auth_pgsql in apache:
+a2enmod ssl 000_auth_pgsql
 
 Generate self-signed certificate:
 openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 -keyout nike.key -out nike.crt
@@ -19,7 +19,6 @@ Add a new line "Listen 443" to /etc/apache2/ports.conf"
 
 Oomailing
 =========
-
 Launch openoffice setup a database:
 ssh oomailing@localhost soffice (you migth need to turn off oomailing first, using /etc/init.d/oomailing stop)
 Connect to an existing database using postgresql
@@ -43,3 +42,12 @@ mkdir /var/lib/ngw
 chown www-data /var/lib/ngw
 
 Right now, keys needs to be imported by hand: gpg --homedir /var/lib/ngw/ --import akey.key
+
+Phpbb3 extension (optional)
+===========================
+aptitude install phpbb3
+aptitude hold phpbb3
+
+** phpbb3 documentation incomplete!
+
+

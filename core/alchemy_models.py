@@ -11,7 +11,7 @@ from django import forms
 from django.forms.util import smart_unicode
 from itertools import chain
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, MEDIA_URL
-import decorated_letters
+import decoratedstr
 from ngw.extensions import hooks
 from ngw.core import gpg
 
@@ -415,7 +415,7 @@ class Contact(NgwModel):
         words=self.name.split(" ")
         login=[w[0].lower() for w in words[:-1] ] + [ words[-1].lower() ]
         login = "".join(login)
-        login = decorated_letters.remove_decoration(login)
+        login = decoratedstr.remove_decoration(login)
         def get_logincfv_by_login(ref_uid, login):
             " return first login cfv where loginname=login and not uid!=ref_uid "
             return Query(ContactFieldValue).filter(ContactFieldValue.c.contact_field_id==FIELD_LOGIN) \
@@ -974,7 +974,7 @@ class Filter(FilterHelper):
 
 class NameFilterStartsWith(Filter):
     def get_sql_where_params(self, value):
-        value = decorated_letters.str_match_withdecoration(value.lower())
+        value = decoratedstr.decorated_match(value)
         return u'(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', { 'value_name1':u"^"+value, 'value_name2':u" "+value }
     def to_html(self, value):
         return u"<b>Name</b> "+self.__class__.human_name+u" \""+unicode(value)+u"\""
@@ -1010,7 +1010,7 @@ class FieldFilterOp1(FieldFilter):
 
 class FieldFilterStartsWith(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        value = decorated_letters.str_match_withdecoration(value.lower())
+        value = decoratedstr.decorated_match(value)
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', { 'field_id':self.field_id, 'value1':u"^"+value, 'value2':u" "+value}
     def get_param_types(self):
         return (unicode,)
