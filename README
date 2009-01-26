@@ -15,7 +15,7 @@ Generate self-signed certificate:
 openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 -keyout nike.key -out nike.crt
 
 Listen on port 443
-Add a new line "Listen 443" to /etc/apache2/ports.conf"
+Add a new line "Listen 443" to /etc/apache2/ports.conf" if it's now there allready
 
 Oomailing
 =========
@@ -45,9 +45,83 @@ Right now, keys needs to be imported by hand: gpg --homedir /var/lib/ngw/ --impo
 
 Phpbb3 extension (optional)
 ===========================
-aptitude install phpbb3
+Note: This section documentation is incomplete
+
+Create a specific postgres user and database:
+
+As user postgres:
+postgres@localhost:~$ createuser
+Saisissez le nom du rôle à ajouter : phpbb3
+Le nouveau rôle est-il super-utilisateur ? (o/n) n
+Le nouveau rôle est-il autorisé à créer des bases de données ? (o/n) o
+Le nouveau rôle est-il autorisé à créer de nouveaux rôles ? (o/n) n
+
+Change this user's password:
+postgres@localhost:~$ psql template1
+template1=# ALTER USER phpbb3 PASSWORD 'secretpassword';
+template1=# \q
+
+Create an empty database:
+postgres@localhost:~$ createdb phpbb3 -h localhost -U phpbb3 -W
+
+Install the packages:
+aptitude install phpbb3 php5-pgsql php5-curl
+
+You will want to setup things manually.
+/etc/phpbb3/database.inc.php should contain something like:
+<?php
+##
+## database access settings in php format
+## automatically generated from /etc/dbconfig-common/phpbb3.conf
+## by /usr/sbin/dbconfig-generate-include
+## Mon, 08 Dec 2008 12:28:45 +0100
+##
+## by default this file is managed via ucf, so you shouldn't have to
+## worry about manual changes being silently discarded.  *however*,
+## you'll probably also want to edit the configuration file mentioned
+## above too.
+##
+$dbuser='phpbb3';
+$dbpass='superpassword';
+$basepath='';
+$dbname='phpbb3';
+$dbserver='127.0.0.1';
+$dbport='5432';
+$dbtype='pgsql';
+?>
+
+There's a nasty bug in lenny version of php5-pgsql. The simpliest workaround is to disable SSL:
+In /etc/postgresql/8.3/main/postgresql.conf
+change ssl = true
+into ssl = false
+and "invoke-rc.d postgresql-8.3 restart"
+All connections are local, so it shouldn't be a security problem.
+
+The first time you install the database, you'll need to initialise it:
+psql phpbb3  -h localhost -U phpbb3 -W -f /usr/share/dbconfig-common/data/phpbb3/install/pgsql
+But you will generally prefer to restore a backup of phpbb3 database with that command:
+psql phpbb3 -h localhost -U phpbb3 -f backup_phpbb3.sql
+You also will need to synchronise the 2 databases:
+/usr/lib/ngw/extensions/phpbb.py full
+Add to purge the cache:
+sudo /usr/lib/ngw/extensions/phpbb_clearcache.php
+
+Install french packs:
+wget http://www.phpbb.com/files/language_packs_30x/lang_fr.tar.gz
+wget http://www.phpbb.com/files/language_packs_30x/prosilver_fr.tar.gz
+wget http://www.phpbb.com/files/language_packs_30x/subsilver2_fr.tar.gz
+tar xvfz lang_fr.tar.gz -C /usr/share/phpbb3/www/language/
+tar xvfz prosilver_fr.tar.gz -C /usr/share/phpbb3/styles/
+tar xvfz subsilver2_fr.tar.gz -C /usr/share/phpbb3/styles/
+If you retore a database, you have nothing more to do. If this is a fresh install, you'll need to log in the administrator control panel, go to system, then install the language, and set it as default.
+
+
+
+You need to patch phpbb3 in order to forward password change requests to ngw database:
+
+First make sure apt-get upgrades won't erase the patches automatically:
 aptitude hold phpbb3
 
-** phpbb3 documentation incomplete!
+Apply the patches:
 
 

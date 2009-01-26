@@ -1,3 +1,4 @@
+-- Rigth now, NGW can only be installed from a backup. So you'll probably never user this file
 -- Make sure contrib modules _int.sql and int_aggregate.sql are loaded. See ngw README
 DROP VIEW mailinginfo;
 DROP VIEW auth_users_ngw;
