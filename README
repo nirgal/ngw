@@ -97,6 +97,21 @@ into ssl = false
 and "invoke-rc.d postgresql-8.3 restart"
 All connections are local, so it shouldn't be a security problem.
 
+The password to the phpbb database should be set in the ~/.pgpass file.
+This is nice not to have it in many places, but this is a problem for the www-data user since its home directory is available to public.
+So you must explicitly forbid its download. I suggest you add a file in /etc/apache2/conf.d/ containing:
+<Files ~ "^\.pgpass">
+    Order allow,deny
+    Deny from all
+</Files>
+
+The .pgpass file syntax is available at http://www.postgresql.org/docs/8.3/interactive/libpq-pgpass.html
+It might be something like:
+localhost:5432:phpbb3:phpbb3:XXXXXXXX
+Make sure the file is also protected locally:
+localhost:~# chown www-data:www-data /var/www/.pgpass
+localhost:~# chmod 600 /var/www/.pgpass
+
 The first time you install the database, you'll need to initialise it:
 psql phpbb3  -h localhost -U phpbb3 -W -f /usr/share/dbconfig-common/data/phpbb3/install/pgsql
 But you will generally prefer to restore a backup of phpbb3 database with that command:
@@ -113,15 +128,17 @@ wget http://www.phpbb.com/files/language_packs_30x/subsilver2_fr.tar.gz
 tar xvfz lang_fr.tar.gz -C /usr/share/phpbb3/www/language/
 tar xvfz prosilver_fr.tar.gz -C /usr/share/phpbb3/styles/
 tar xvfz subsilver2_fr.tar.gz -C /usr/share/phpbb3/styles/
-If you retore a database, you have nothing more to do. If this is a fresh install, you'll need to log in the administrator control panel, go to system, then install the language, and set it as default.
+If you retore a database, you have nothing more to do. If this is a fresh install, you'll need to log in the administrator control panel, go to system, then install the language, and set it as default. Many settings should be customized, such as "activation du compte" in "Réglage des inscriptions"; the fact that groups are closed; and so on...
 
 
-
-You need to patch phpbb3 in order to forward password change requests to ngw database:
+You need to patch phpbb3 in order to forward password change requests to ngw main database:
 
 First make sure apt-get upgrades won't erase the patches automatically:
 aptitude hold phpbb3
 
-Apply the patches:
+Apply the phpbb patches:
+cd /usr/share/phpbb3/
+patch -p1 < /home/admin/ngw/extensions/phpbb_ngw.patch
 
+If there is phpbb3 updates, you'll have to reapply the patch after the update.
 
