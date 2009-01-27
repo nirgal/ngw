@@ -116,10 +116,6 @@ The first time you install the database, you'll need to initialise it:
 psql phpbb3  -h localhost -U phpbb3 -W -f /usr/share/dbconfig-common/data/phpbb3/install/pgsql
 But you will generally prefer to restore a backup of phpbb3 database with that command:
 psql phpbb3 -h localhost -U phpbb3 -f backup_phpbb3.sql
-You also will need to synchronise the 2 databases:
-/usr/lib/ngw/extensions/phpbb.py full
-Add to purge the cache:
-sudo /usr/lib/ngw/extensions/phpbb_clearcache.php
 
 Install french packs:
 wget http://www.phpbb.com/files/language_packs_30x/lang_fr.tar.gz
@@ -131,6 +127,7 @@ tar xvfz subsilver2_fr.tar.gz -C /usr/share/phpbb3/styles/
 If you retore a database, you have nothing more to do. If this is a fresh install, you'll need to log in the administrator control panel, go to system, then install the language, and set it as default. Many settings should be customized, such as "activation du compte" in "Réglage des inscriptions"; the fact that groups are closed; and so on...
 
 
+
 You need to patch phpbb3 in order to forward password change requests to ngw main database:
 
 First make sure apt-get upgrades won't erase the patches automatically:
@@ -138,7 +135,20 @@ aptitude hold phpbb3
 
 Apply the phpbb patches:
 cd /usr/share/phpbb3/
-patch -p1 < /home/admin/ngw/extensions/phpbb_ngw.patch
+patch -p1 < /home/admin/ngw/extensions/phpbb/phpbb_ngw.patch
 
-If there is phpbb3 updates, you'll have to reapply the patch after the update.
+If there is phpbb3 updates, you'll have to reapply the patch after each update.
 
+
+The synchronisation between the 2 databases, the main one and the phpbb one require the auxiliary base to full its cache.
+
+Right now, this is done with a sudo command. So you need to allow it. With visudo command as root, add this line:
+ALL     ALL=(www-data) NOPASSWD: /usr/lib/ngw/extensions/phpbb/clearcache.php
+
+You also will need to synchronise the 2 databases:
+/usr/lib/ngw/extensions/phpbb/__init__.py full
+Add to purge the cache:
+sudo -u www-data /usr/lib/ngw/extensions/phpbb/clearcache.php
+
+NOT DOCUMENTED YET:
+phpbb3 apache set up

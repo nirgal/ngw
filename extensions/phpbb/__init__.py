@@ -180,7 +180,7 @@ def phpbb_hook_membership_changed(user, contact, ngw_group):
         phpbb_changed = sync_user_in_group(contact, phpbb_user_id, phpbb_id, ngw_group_id) or phpbb_changed
      
     if phpbb_changed:
-        print_and_call("sudo", "/usr/lib/ngw/extensions/phpbb_clearcache.php")
+        print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
         user.push_message("PHPBB database updated; Cache flushed.")
     # TODO commit ?
 
@@ -202,7 +202,7 @@ def login_updated(user, contact):
     main_phpbb_changed = sync_user_all(contact)
     get_common_db().commit()
     if main_phpbb_changed:
-        print_and_call("sudo", "/usr/lib/ngw/extensions/phpbb_clearcache.php")
+        print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
         user.push_message("PHPBB database updated; Cache flushed.")
 
 #######
@@ -246,7 +246,7 @@ if __name__ == "__main__":
             get_common_db().commit()
         
         if main_phpbb_changed:
-            print_and_call("sudo", "/usr/lib/ngw/extensions/phpbb_clearcache.php")
+            print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
 
 if __name__ != "__main__":
     print "PHPBB forum synchronisation extension for NGW loaded."
