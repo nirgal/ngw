@@ -2,7 +2,7 @@ Installation
 ============
 It is recommanded to use Debian Lenny or above
 
-python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-psql pwgen openoffice.org-sdbc-postgresql oomailing python-decoratedstr
+python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-pgsql pwgen openoffice.org-sdbc-postgresql python-uno oomailing python-decoratedstr
 
 oomailing and python-decoratedstr packages can be get at http://www.nirgal.com/debian/
 
@@ -16,6 +16,9 @@ openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=nike.fr.gl3 
 
 Listen on port 443
 Add a new line "Listen 443" to /etc/apache2/ports.conf" if it's now there allready
+
+Enable virtual hosts on https:
+Add a new line "NameVirtualHost *:443" before "Listen 443"
 
 Oomailing
 =========
@@ -65,7 +68,7 @@ Create an empty database:
 postgres@localhost:~$ createdb phpbb3 -h localhost -U phpbb3 -W
 
 Install the packages:
-aptitude install phpbb3 php5-pgsql php5-curl
+aptitude install phpbb3 php5-pgsql php5-curl php5-cli sudo
 
 You will want to setup things manually.
 /etc/phpbb3/database.inc.php should contain something like:
@@ -150,5 +153,6 @@ You also will need to synchronise the 2 databases:
 Add to purge the cache:
 sudo -u www-data /usr/lib/ngw/extensions/phpbb/clearcache.php
 
-NOT DOCUMENTED YET:
-phpbb3 apache set up
+Right now, the phpbb forum runs on a different virtual host, so you'll need to enable it:
+ln -s /usr/lib/ngw/extensions/phpbb/apache.conf /etc/apache/site-enabled/phpbb.conf
+Don't forget to set up the main ngw databse in this file.
