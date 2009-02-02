@@ -1470,7 +1470,7 @@ choice_group_mapper.add_property('choices', relation(
     cascade="delete",
     passive_deletes=True))
 
-# ContactInGroup <-> Contact
+# ContactInGroup -> Contact
 contact_mapper.add_property('in_group', relation(
     ContactInGroup,
     primaryjoin=contact_table.c.id==contact_in_group_table.c.contact_id,
@@ -1478,7 +1478,7 @@ contact_mapper.add_property('in_group', relation(
     backref="contact",
     passive_deletes=True))
 
-# ContactInGroup <-> Contact
+# ContactInGroup -> Group
 contact_group_mapper.add_property('in_group', relation(
     ContactInGroup,
     primaryjoin=contact_group_table.c.id==contact_in_group_table.c.group_id,
@@ -1505,7 +1505,7 @@ contact_group_mapper.add_property('direct_subgroups', relation(
     backref='direct_supergroups',
     passive_deletes=True))
 
-# ContactField <-> ContactGroup
+# ContactField -> ContactGroup
 contact_group_mapper.add_property('contact_fields', relation(
     ContactField,
     primaryjoin=contact_group_table.c.id==contact_field_table.c.contact_group_id,
@@ -1513,7 +1513,7 @@ contact_group_mapper.add_property('contact_fields', relation(
     backref='contact_group',
     passive_deletes=True))
 
-# ContactField <-> ChoiceGroup
+# ContactField -> ChoiceGroup
 choice_group_mapper.add_property('contact_field', relation(
     ContactField,
     primaryjoin=choice_group_table.c.id==contact_field_table.c.choice_group_id,
@@ -1521,14 +1521,14 @@ choice_group_mapper.add_property('contact_field', relation(
     backref='choice_group',
     passive_deletes=True))
 
-# ContactFieldValue <-> Contact
+# ContactFieldValue -> Contact
 contact_mapper.add_property('values', relation(
     ContactFieldValue,
     cascade="delete",
     backref="contact",
     passive_deletes=True))
 
-# ContactFieldValue <-> ContactField
+# ContactFieldValue -> ContactField
 contact_field_mapper.add_property('values', relation(
     ContactFieldValue,
     cascade="delete",
@@ -1543,12 +1543,12 @@ contact_mapper.add_property('sysmsg', relation(
     passive_deletes=True,
     order_by=ContactSysMsg.c.id))
 
-# Log <-> Contact
-log_mapper.add_property('contact', relation(
-    Contact,
+# Log -> Contact
+contact_mapper.add_property('logs', relation(
+    Log,
     primaryjoin=log_table.c.contact_id==contact_table.c.id,
     cascade="delete",
-    backref='logs',
+    backref='contact',
     passive_deletes=True))
 
 # Contact <-> ContactGroupNews
