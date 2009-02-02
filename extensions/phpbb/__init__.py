@@ -23,7 +23,7 @@ def get_common_db():
     global __db
     if not __db:
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-        for line in file(os.path.sep.join([os.getenv('HOME'), '.pgpass'])):
+        for line in file(os.path.sep.join([os.getenv('HOME', '/var/www'), '.pgpass'])):
             line = line[:-1] # remove \n
             host,port,user,database,password = line.split(':')
             if database==DATABASE_NAME:
