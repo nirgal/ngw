@@ -1177,6 +1177,16 @@ def contactgroup_edit(request, id):
 
 
 def on_contactgroup_delete(cg):
+    supers = cg.direct_supergroups # never empty, there's allways at least GROUP_EVERYBODY
+    for cig in cg.in_group: # for all members/invited/...
+        for superg in supers:
+            cisg = Query(ContactInGroup).get((cig.contact_id,superg.id)) # supergroup membership
+            if not cisg: # was not a member
+                cisg = ContactInGroup(cig.contact_id,superg.id)
+                cisg.invited = cig.invited
+                cisg.member = cig.member
+                cisg.declined_invitation = cig.declined_invitation
+            # FIXME else what? Move from invited to member automatically?
     for subcg in cg.direct_subgroups:
         if not subcg.direct_supergroups:
             subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
