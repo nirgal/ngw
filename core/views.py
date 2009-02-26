@@ -172,7 +172,7 @@ def index(request):
     operator_groups = Query(ContactGroup).filter(ContactGroup.id.in_(operator_groups_ids)).order_by(ContactGroup.name)
     return render_to_response('index.html', {
         'nav': navbar(),
-        'title':'Action DB',
+        'title': 'Home page',
         'ncontacts': Query(Contact).count(),
         'operator_groups': operator_groups,
         'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN).order_by(desc(ContactGroupNews.date)).limit(5)
@@ -1039,29 +1039,13 @@ class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
     field_group = forms.BooleanField(required=False, help_text=u"Does that group yield specific fields to its members?")
-    date = forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format.")
+    date = forms.DateField(required=False, help_text=u"Use YYYY-MM-DD format. Leave empty for permanent groups.")
     budget_code = forms.CharField(required=False, max_length=10)
-    direct_subgroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("groups", False))
+    direct_supergroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget("groups", False))
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['direct_subgroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
-    #def flag_inherited_members(self, g):
-    #    has_automembers = False
-    #    choices = []
-    #    members = g.get_members()
-    #    direct_members = g.get_direct_members()
-    #    for c in Query(Contact).order_by(Contact.c.name):
-    #        cname = c.name
-    #        if c in members and c not in direct_members:
-    #            cname += " "+AUTOMATIC_MEMBER_INDICATOR
-    #            has_automembers = True
-    #        choices.append( (c.id, cname) )
-    #    self.fields['direct_members'].choices = choices
-    #    if has_automembers:
-    #        help_text = AUTOMATIC_MEMBER_INDICATOR + " = Automatic members from " + ", ".join([ sg.name+" ("+str(sg.get_direct_members().count())+")" for sg in g.subgroups ])
-    #        self.fields['direct_members'].help_text = help_text
-
+        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
 
 @http_authenticate(ngw_auth, 'ngw')
 @require_group(GROUP_USER_NGW)
@@ -1091,43 +1075,16 @@ def contactgroup_edit(request, id):
             cg.date = data['date']
             cg.budget_code = data['budget_code']
             
-            ## we need to add/remove people without destroying their flags
-            ##new_invited_ids = [ int(id) for id in data['invited_members']]
-            #new_member_ids = [ int(id) for id in data['direct_members']]
-            #print "WANTED MEMBERS=", new_member_ids
-            ##TODO
-            #for cid in new_member_ids:
-            #    c = Query(Contact).get(cid)
-            #    if not Query(ContactInGroup).get((c.id, cg.id)):
-            #        #print "ADDING", c.name, "(", c.id, ") to group"
-            #        cig = ContactInGroup(c.id, cg.id)
-            #        cig.member = True
+            old_direct_supergroups = cg.direct_supergroups
+            old_direct_supergroups_ids = [ g.id for g in old_direct_supergroups ] # TODO: fine a better algo!
+            new_direct_supergroups_id = data['direct_supergroups']
+            if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
+                new_direct_supergroups_id = [ GROUP_EVERYBODY ]
 
-            ## Search members to remove:
-            #for cig in Query(ContactInGroup).filter(ContactInGroup.c.group_id==cg.id):
-            #    c = cig.contact
-            #    print "Considering", c.name.encode('utf-8')
-            #    if c.id not in new_member_ids:
-            #        print "REMOVING", c.name.encode('utf-8'), "(", c.id, ") from group:", c.id, "not in", new_member_ids
-            #        Session.delete(cig)
+            # supergroups have no properties (yet!): just recreate the array with brute force
+            cg.direct_supergroups = [ Query(ContactGroup).get(id) for id in new_direct_supergroups_id]
 
-            old_direct_subgroups = cg.direct_subgroups
-            old_direct_subgroups_ids = [ g.id for g in old_direct_subgroups ] # TODO: fine a better algo!
-            new_direct_subgroups_id = data['direct_subgroups']
-
-            # subgroups have no properties: just recreate the array with brute force
-            cg.direct_subgroups = [ Query(ContactGroup).get(id) for id in new_direct_subgroups_id]
-            request.user.push_message(u"Group %s has been changed sucessfully!" % cg.name)
-
-            for subid in old_direct_subgroups_ids:
-                if subid not in new_direct_subgroups_id:
-                    # that subgroups no longer is a subgroups
-                    subcg = Query(ContactGroup).get(subid)
-                    if not cg.id != GROUP_EVERYBODY and subcg.direct_supergroups:
-                        subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
-
-            if cg.id != GROUP_EVERYBODY and not cg.direct_supergroups:
-                cg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
+            request.user.push_message(u"Group %s has been changed sucessfully!" % cg.unicode_with_date())
 
             cg.check_static_folder_created()
             Session.commit()
@@ -1151,12 +1108,9 @@ def contactgroup_edit(request, id):
                 'field_group': cg.field_group,
                 'date': cg.date,
                 'budget_code': cg.budget_code,
-                #'direct_members': [ c.id for c in cg.get_direct_members() ],
-                'direct_subgroups': [ g.id for g in cg.direct_subgroups ],
+                'direct_supergroups': [ g.id for g in cg.direct_supergroups ],
             }
-            
             form = ContactGroupForm(initialdata)
-            #form.flag_inherited_members(cg)
         else: # add new one
             form = ContactGroupForm()
     args={}

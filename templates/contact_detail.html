@@ -29,11 +29,15 @@
       <a id=default href="..">Contact list</a>
       {% endif %}
       <a href="edit">Edit</a>
+      {% if user.is_admin %}
       <a href="vcard">VCard</a>
       <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>
+      {% endif %}
       {% if contact.get_login %}
       <a href="pass">Change password</a>
+      {% if user.is_admin %}
       <a href="{{contact.get_absolute_url}}filters/">Filters</a>
+      {% endif %}
       {% endif %}
     </div>
     {% endblock %}
