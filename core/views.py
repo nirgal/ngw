@@ -611,20 +611,6 @@ def contact_edit(request, gid=None, cid=None):
                 cig.member = True
                 # TODO: Log
 
-            #if request.user.is_admin():
-            #    newgroups = data.get('groups', [])
-            #    registeredgroups = []
-            #    for new_gid in newgroups:
-            #        cig = Query(ContactInGroup).get((contact.id, new_gid))
-            #        if cig==None: # Was not a member
-            #            cig = ContactInGroup(contact.id, new_gid)
-            #            cig.member = True
-            #        registeredgroups.append(new_gid)
-            #    for cig in Query(ContactInGroup).filter(and_(ContactInGroup.c.contact_id==cid, not_(ContactInGroup.c.group_id.in_(registeredgroups)))):
-            #        # TODO optimize me
-            #        print "Deleting", cig
-            #        Session.delete(cig)
-            
             # 2/ In ContactFields
             for cf in Query(ContactField):
                 if cf.contact_group_id not in contactgroupids or cf.type==FTYPE_PASSWORD:
@@ -649,8 +635,11 @@ def contact_edit(request, gid=None, cid=None):
                 return HttpResponseRedirect(base_url+u"edit")
             elif request.POST.get("_addanother", None):
                 return HttpResponseRedirect(base_url+u"../add")
-            else:
+            elif request.user.is_admin(): # FIXME can read user list is better
                 return HttpResponseRedirect(base_url)
+            else:
+                return HttpResponseRedirect(u"/")
+
         # else add/update failed validation
     else: # GET /  HEAD
         initialdata = {}
