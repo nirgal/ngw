@@ -790,6 +790,20 @@ class DateContactField(ContactField):
         return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE,  FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False)
 
+class DateTimeContactField(ContactField):
+    def get_form_fields(self):
+        return forms.DateTimeField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD HH:MM:SS format."+u" "+self.hint)
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        try:
+            datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            return False
+        return True
+    def get_filters_classes(self):
+        return (FieldFilterEQ, FieldFilterNull, FieldFilterNotNull,)
+register_contact_field_type(DateTimeContactField, u"DATETIME", u"DateTime", has_choice=False)
+
 class EmailContactField(ContactField):
     def format_value_html(self, value):
         if gpg.is_email_secure(value):
