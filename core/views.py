@@ -175,7 +175,9 @@ def index(request):
         'title': 'Home page',
         'ncontacts': Query(Contact).count(),
         'operator_groups': operator_groups,
-        'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN).order_by(desc(ContactGroupNews.date)).limit(5)
+        'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN).order_by(desc(ContactGroupNews.date)).limit(5),
+        'GroupContact': Query(ContactGroup).get(GROUP_EVERYBODY),
+        'GroupAdmin': Query(ContactGroup).get(GROUP_ADMIN),
     }, RequestContext(request))
 
 # Helper function that is never call directly, hence the lack of authentification check
