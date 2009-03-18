@@ -483,7 +483,8 @@ class Contact(NgwModel):
             cfv = ContactFieldValue()
             cfv.contact_id = self.id
             cfv.contact_field_id = FIELD_LASTCONNECTION
-        cfv.value = datetime.utcnow().date().isoformat()
+        # cfv.value = datetime.utcnow().date().isoformat()
+        cfv.value = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
 
 class ContactGroup(NgwModel):
