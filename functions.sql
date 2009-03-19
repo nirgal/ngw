@@ -5,6 +5,7 @@ DROP VIEW auth_users_ngw;
 DROP VIEW auth_users_bb;
 DROP VIEW auth_users;
 DROP VIEW auth_user_groups;
+DROP VIEW apache_log;
 DROP FUNCTION self_and_subgroups(integer);
 DROP FUNCTION subgroups_append(integer, integer[]);
 DROP FUNCTION subgroups_append_direct(integer, integer[]);
@@ -123,4 +124,35 @@ CREATE VIEW mailinginfo AS
         LEFT JOIN contact_field_value AS password_status ON contact.id=password_status.contact_id AND password_status.contact_field_id=75
         WHERE password_status.value='1'
         ;
+
+CREATE VIEW apache_log (login, lastconnection) AS
+    SELECT login_values.value, lastconnection_values.value
+    FROM contact_field_value AS login_values
+    JOIN contact_field_value AS lastconnection_values ON (login_values.contact_id=lastconnection_values.contact_id AND lastconnection_values.contact_field_id=3)
+    WHERE login_values.contact_field_id=1;
+
+CREATE RULE apache_log_ins AS ON INSERT TO apache_log
+    DO INSTEAD
+    (
+        -- Create lastconnection value if missing
+        INSERT INTO contact_field_value
+            SELECT login_values.contact_id, 3, NULL
+                FROM contact_field_value AS login_values
+                WHERE login_values.value = NEW.login
+                AND NOT EXISTS ( 
+                    SELECT *
+                    FROM contact_field_value AS probe_login JOIN contact_field_value AS probe_lastconnection
+                    ON (probe_login.contact_id = probe_lastconnection.contact_id AND probe_login.contact_field_id=1 AND probe_lastconnection.contact_field_id=3)
+                    WHERE probe_login.value = NEW.login
+                );
+        -- Update lastconnection value
+        UPDATE contact_field_value
+            SET value = NEW.lastconnection
+            WHERE contact_field_id=3
+            AND contact_id = (
+                SELECT login_values.contact_id FROM contact_field_value AS login_values
+                WHERE login_values.value = NEW.login
+                    AND login_values.contact_field_id=1);
+    );
+
 

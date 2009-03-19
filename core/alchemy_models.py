@@ -478,6 +478,7 @@ class Contact(NgwModel):
         return cig!=None
 
     def update_lastconnection(self):
+        # see ENABLE_LASTCONNECTION_UPDATES
         cfv = Query(ContactFieldValue).get((self.id, FIELD_LASTCONNECTION))
         if not cfv:
             cfv = ContactFieldValue()
