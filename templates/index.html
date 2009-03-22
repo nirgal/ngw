@@ -11,7 +11,7 @@
     
     <p>
     <form id=realform action="{{ GroupContact.get_absolute_url }}members/"><input type=hidden name=filter value=""></form>
-    <form id=displayedform action="#" onsubmit="javascript:document.forms['realform']['filter'].value='nfilter(startswith,'+escape_quote(document.forms['displayedform']['filter'].value)+')'; document.forms['realform'].submit(); return false;">
+    <form id=displayedform action="#" onsubmit="javascript:v=escape_quote(document.forms['displayedform']['filter'].value); document.forms['realform']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; document.forms['realform'].submit(); return false;">
     Quick contact search: <input name=filter id=defaultfocus>
     </form>
     <script>document.forms['displayedform'].filter.focus();</script>
