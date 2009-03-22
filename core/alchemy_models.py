@@ -394,7 +394,7 @@ class Contact(NgwModel):
         return vcf
 
     def get_addr_semicol(self):
-        return self.get_fieldvalue_by_id(FIELD_STREET)+u";"+self.get_fieldvalue_by_id(FIELD_CITY)+u";"+self.get_fieldvalue_by_id(FIELD_COUNTRY)
+        return self.get_fieldvalue_by_id(FIELD_STREET)+u";"+self.get_fieldvalue_by_id(FIELD_POSTCODE)+u";"+self.get_fieldvalue_by_id(FIELD_CITY)+u";"+self.get_fieldvalue_by_id(FIELD_COUNTRY)
 
     def push_message(self, message):
         ContactSysMsg(self.id, message)
