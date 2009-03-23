@@ -5,7 +5,7 @@
     {% for n in news %}
     <h1 class="boxheader"><a href="{{n.get_absolute_url}}">{{ n.title }}</a></h1>
     <div class=box>
-    <b>{{ n.date|date:"D d M Y" }}</b> - by <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
+    <b>{{ n.date|ngw_date_format}}</b> - by <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
     {{ n.text|linebreaksbr }}<br>
     </div>
     {% endfor %}

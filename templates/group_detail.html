@@ -13,7 +13,7 @@
 }
 </style>
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
-    {% if cg.date %}Date: <b>{{ cg.date }}</b><br>{% endif %}
+    {% if cg.date %}Date: <b>{{ cg.date|ngw_date_format }}</b><br>{% endif %}
     {% if cg.budget_code %}Budget code: {{ cg.budget_code }}<br>{% endif %}
 
     <p>

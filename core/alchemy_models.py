@@ -14,6 +14,7 @@ from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABA
 import decoratedstr
 from ngw.extensions import hooks
 from ngw.core import gpg
+from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format
 
 GROUP_EVERYBODY = 1
 GROUP_USER = 2
@@ -571,11 +572,16 @@ class ContactGroup(NgwModel):
             return u""
         return u" (including "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
+    def html_date(self):
+        if self.date:
+            return ngw_date_format(self.date)
+        else:
+            return u''
     def unicode_with_date(self):
         """ Returns the name of the group, and the date if there's one"""
         result = self.name
         if self.date:
-            result += u" "+str(self.date)
+            result += u' • '+ngw_date_format(self.date)
         return result
 
     def static_folder(self):
@@ -781,6 +787,9 @@ register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice
 class DateContactField(ContactField):
     def get_form_fields(self):
         return forms.DateField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint)
+    def format_value_html(self, value):
+        value = datetime.strptime(value, '%Y-%m-%d')
+        return ngw_date_format(value)
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -795,6 +804,9 @@ register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False
 class DateTimeContactField(ContactField):
     def get_form_fields(self):
         return forms.DateTimeField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD HH:MM:SS format."+u" "+self.hint)
+    def format_value_html(self, value):
+        value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+        return ngw_datetime_format(value)
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -1442,7 +1454,9 @@ class ContactGroupNews(NgwModel):
     #def __repr__(self):
     #    return "ContactGroupNews<%s,%s>"%(self.contact_id, self.message)
     def __unicode__(self):
-        return self.title + u" - " + self.date.strftime("%Y %m %d")
+        return self.title + u" - " + ngw_date_format(self.date)
+        #CONFIG_DATE_FORMAT = '%a %d %b %Y' #'%Y %m %d'
+        #return self.title + u" - " + self.date.strftime(CONFIG_DATE_FORMAT)
     
     @staticmethod
     def get_class_absolute_url(cls):

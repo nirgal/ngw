@@ -903,7 +903,7 @@ def contactgroup_list(request):
 
     q = Query(ContactGroup)
     cols = [
-        ( u"Date", None, "date", contact_group_table.c.date ),
+        ( u"Date", None, "html_date", contact_group_table.c.date ),
         ( u"Name", None, "name", contact_group_table.c.name ),
         ( u"Description", None, "description", contact_group_table.c.description ),
         #( u"Contact fields", None, print_fields, contact_group_table.c.field_group ),

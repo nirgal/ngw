@@ -44,7 +44,7 @@
 <h1 class="boxheader">Derniers développements</h1>
 <div class=box>
 {% for article in news %}
-<b>{{ article.date|date:"D d M Y" }}</b><br>
+<b>{{ article.date|ngw_date_format }}</b><br>
 {{ article.text|linebreaksbr }}<br><br>
 {% endfor %}
 <a href="{{ GroupAdmin.get_absolute_url }}news/">Toutes les news...</a>

@@ -10,15 +10,15 @@
     {% endfor %}
     {% for g in contact.get_directgroups_member %}
         {% if not forloop.counter0 %}Member of groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date|ngw_date_format }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
     {% endfor %}
     {% for g in contact.get_directgroups_invited %}
         {% if not forloop.counter0 %}Invited in groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date|ngw_date_format }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
     {% endfor %}
     {% for g in contact.get_directgroups_declinedinvitation %}
         {% if not forloop.counter0 %}Declined invitation in groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date|ngw_date_format }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
     {% endfor %}
 
     </table>
