@@ -889,6 +889,11 @@ def contact_make_login_mailing(request):
 @http_authenticate(ngw_auth, 'ngw')
 @require_group(GROUP_USER_NGW)
 def contactgroup_list(request):
+    def _trucate_list(l):
+        LIST_PREVIEW_LEN=5
+        if len(l)>LIST_PREVIEW_LEN:
+            return l[:LIST_PREVIEW_LEN]+[u'…']
+        return l
     if not request.user.is_admin():
         return unauthorized(request)
     def print_fields(cg):
@@ -907,8 +912,8 @@ def contactgroup_list(request):
         ( u'Name', None, 'name', contact_group_table.c.name ),
         ( u'Description', None, 'description', contact_group_table.c.description ),
         #( u'Contact fields', None, print_fields, contact_group_table.c.field_group ),
-        ( u'Super\u00a0groups', None, lambda cg: u', '.join([sg.name for sg in cg.direct_supergroups]), None ),
-        ( u'Sub\u00a0groups', None, lambda cg: u', '.join([html.escape(sg.name) for sg in cg.direct_subgroups]), None ),
+        ( u'Super\u00a0groups', None, lambda cg: u', '.join(_trucate_list([sg.name for sg in cg.direct_supergroups])), None ),
+        ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.name) for sg in cg.direct_subgroups])), None ),
         #( u'Budget\u00a0code', None, 'budget_code', contact_group_table.c.budget_code ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
         ( u'System\u00a0locked', None, 'system', contact_group_table.c.system ),
