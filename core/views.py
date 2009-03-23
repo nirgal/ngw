@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-import os, traceback, subprocess
+import os, traceback, subprocess, inspect
 from md5 import md5
 from sha import sha
 from random import random
@@ -386,7 +386,7 @@ def str_action_of_factory(contact_group):
 
 
 
-def contact_make_query_with_fields(fields, current_cg=None, base_url=None):
+def contact_make_query_with_fields(fields, current_cg=None, base_url=None, format=u'html'):
     q = Query(Contact)
     n_entities = 1
     j = contact_table
@@ -394,7 +394,10 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None):
     
     for prop in fields:
         if prop==u"name":
-            cols.append( (u"Name", 0, "name_with_relative_link", contact_table.c.name) )
+            if format==u'html':
+                cols.append( (u"Name", 0, "name_with_relative_link", contact_table.c.name) )
+            else:
+                cols.append( (u"Name", 0, "__unicode__", contact_table.c.name) )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
             cg = Query(ContactGroup).get(groupid)
@@ -405,7 +408,10 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None):
             a = contact_field_value_table.alias()
             q = q.add_entity(ContactFieldValue, alias=a)
             j = outerjoin(j, a, and_(contact_table.c.id==a.c.contact_id, a.c.contact_field_id==cf.id ))
-            cols.append( (cf.name, n_entities, "as_html", a.c.value) )
+            if format==u'html':
+                cols.append( (cf.name, n_entities, "as_html", a.c.value) )
+            else:
+                cols.append( (cf.name, n_entities, "__unicode__", a.c.value) )
             n_entities += 1
         else:
             raise ValueError(u"Invalid field "+prop)
@@ -413,7 +419,10 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None):
     if current_cg is not None:
         #cols.append( ("Status", 0, str_action_of_factory(current_cg), None) )
         assert base_url
-        cols.append( ("Status", 0, str_extendedmembership_factory(current_cg, base_url), None) )
+        if format==u'html':
+            cols.append( ("Status", 0, str_extendedmembership_factory(current_cg, base_url), None) )
+        else:
+            cols.append( ("Status", 0, str_member_of_factory(current_cg), None) )
         
     q = q.select_from(j)
     return q, cols
@@ -458,7 +467,7 @@ def contact_list(request):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
     #print "contact_list:", fields
-    q, cols = contact_make_query_with_fields(fields)
+    q, cols = contact_make_query_with_fields(fields, format=u'html')
     q = filter.apply_filter_to_query(q)
 
     args={}
@@ -951,12 +960,16 @@ def contactgroup_members(request, gid, output_format=""):
     if not cg:
         raise Http404
 
-    display=request.REQUEST.get(u"display", u"mg")
+    display=request.REQUEST.get(u'display', u'mg')
     baseurl += u"&display="+display
 
     args={}
     args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
-    q, cols = contact_make_query_with_fields(fields, current_cg=cg, base_url=baseurl)
+    if output_format == u'csv':
+        query_format = u'text'
+    else:
+        query_format = u'html'
+    q, cols = contact_make_query_with_fields(fields, current_cg=cg, base_url=baseurl, format=query_format)
 
     cig_conditions_flags = []
     if u"m" in display:
@@ -984,7 +997,7 @@ def contactgroup_members(request, gid, output_format=""):
     q = filter.apply_filter_to_query(q)
 
     if output_format == u"vcards":
-        result=u""
+        result=u''
         for row in q:
             contact = row[0]
             result += contact.vcard()
@@ -1011,6 +1024,37 @@ def contactgroup_members(request, gid, output_format=""):
         args['noemails'] = noemails
         args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u"members", u"emails")
         return render_to_response('emails.html', args, RequestContext(request))
+    elif output_format == u"csv":
+        result = u''
+        def _quote_csv(u):
+            return u'"'+u.replace(u'"', u'\\"')+u'"'
+        for i, col in enumerate(cols):
+            if i: # not first column
+                result += u','
+            result += _quote_csv(col[0])
+        result += '\n'
+        for row in q:
+            for i, col in enumerate(cols):
+                if i: # not first column
+                    result += u','
+                # see templatetags/ngwtags ngw_display
+                entity_id = col[1]
+                entity = row[entity_id]
+                if not entity:
+                    continue # result +=u''
+                if inspect.isfunction(col[2]):
+                    result += _quote_csv(col[2](entity))
+                    continue
+                attribute_name = col[2]
+                v = entity.__getattribute__(attribute_name)
+                if inspect.ismethod(v):
+                    v = v()
+                if v==None:
+                    continue
+                result += _quote_csv(v)
+            result += '\n'
+        return HttpResponse(result, mimetype="text/csv; charset=utf-8")
+        
 
     args['title'] = u"Contacts of group "+cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
@@ -1261,7 +1305,7 @@ def contactgroup_add_contacts_to(request):
     strfilter = request.REQUEST.get(u'filter', u'')
     filter = contactsearch.parse_filterstring(strfilter)
 
-    q, cols = contact_make_query_with_fields([]) #, current_cg=cg)
+    q, cols = contact_make_query_with_fields([], format=u'html') #, current_cg=cg)
 
     q = q.order_by(Contact.c.name)
 
