@@ -581,7 +581,7 @@ class ContactGroup(NgwModel):
         """ Returns the name of the group, and the date if there's one"""
         result = self.name
         if self.date:
-            result += u' • '+ngw_date_format(self.date)
+            result += u' ‧ '+ngw_date_format(self.date)
         return result
 
     def static_folder(self):
