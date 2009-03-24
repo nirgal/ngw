@@ -354,6 +354,9 @@ def str_member_of_factory(contact_group):
     gids = [ g.id for g in contact_group.self_and_subgroups ]
     return lambda c: c.str_member_of(gids)
 
+def str_member_of_note_factory(contact_group):
+    return lambda c: c.str_member_of_note(contact_group.id)
+
 def str_extendedmembership_factory(contact_group, base_url):
     def str_extendedmembership(contact_group, gids, c):
         cig = Query(ContactInGroup).get((c.id, contact_group.id))
@@ -428,6 +431,7 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
             cols.append( ('Status', 0, str_extendedmembership_factory(current_cg, base_url), None) )
         else:
             cols.append( ('Status', 0, str_member_of_factory(current_cg), None) )
+            cols.append( ('Note', 0, str_member_of_note_factory(current_cg), None) )
         
     q = q.select_from(j)
     return q, cols

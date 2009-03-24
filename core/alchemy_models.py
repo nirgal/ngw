@@ -234,6 +234,16 @@ class Contact(NgwModel):
             return u"Declined"+u" "+AUTOMATIC_MEMBER_INDICATOR
         else:
             return u"no"
+    
+    def str_member_of_note(self, contact_group_id):
+        cig = Query(ContactInGroup).get((self.id, contact_group_id))
+        if not cig:
+            return u''
+        else:
+            note = cig.note
+            if not note:
+                return u''
+            return note
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
