@@ -360,6 +360,10 @@ def str_extendedmembership_factory(contact_group, base_url):
         params = {}
         params['cid'] = c.id
         params['membership_str'] = c.str_member_of(gids)
+        if cig and cig.note:
+            params['note'] = u'<br>'+html.escape(cig.note)
+        else:
+            params['note'] = u''
         params['membership_url'] = contact_group.get_absolute_url()+u'members/'+unicode(c.id)+u'/membership'
         params['title'] = c.name+u' in group '+contact_group.unicode_with_date()
         params['base_url'] = base_url
@@ -377,7 +381,7 @@ def str_extendedmembership_factory(contact_group, base_url):
         else:
             params['has_declined_invitation_checked'] = u''
         
-        return  u'<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a><div class=membershipextra id="membership_%(cid)d">%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>'%params
+        return  u'<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s<div class=membershipextra id="membership_%(cid)d">%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>'%params
     gids = [ g.id for g in contact_group.self_and_subgroups ]
     return lambda c: str_extendedmembership(contact_group, gids, c)
 
@@ -1357,6 +1361,7 @@ class ContactInGroupForm(forms.Form):
     declined_invitation = forms.BooleanField(required=False)
     member = forms.BooleanField(required=False)
     operator = forms.BooleanField(required=False)
+    note = forms.CharField(required=False)
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
@@ -1393,6 +1398,7 @@ def contactingroup_edit(request, gid, cid):
         initial['declined_invitation'] = cig.declined_invitation
         initial['member'] = cig.member
         initial['operator'] = cig.operator
+        initial['note'] = cig.note
 
     if request.method == 'POST':
         form = ContactInGroupForm(request.POST, initial=initial)
@@ -1406,6 +1412,7 @@ def contactingroup_edit(request, gid, cid):
             cig.declined_invitation = data['declined_invitation']
             cig.member = data['member']
             cig.operator = data['operator']
+            cig.note = data['note']
             request.user.push_message(u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
             Session.flush()
