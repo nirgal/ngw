@@ -5,8 +5,18 @@ function dump(o) {
     document.writeln("<hr>"+txt);
 }
 
+//-------- dummy i18n.js
+function gettext(txt) {
+    return txt;
+}
 
 //-------- core.js
+// Core javascript helper functions
+
+// basic browser identification & version
+var isOpera = (navigator.userAgent.indexOf("Opera")>=0) && parseFloat(navigator.appVersion);
+var isIE = ((document.all) && (!isOpera)) && parseFloat(navigator.appVersion.split("MSIE ")[1].split(";")[0]);
+
 // Cross-browser event handlers.
 function addEvent(obj, evType, fn) {
     if (obj.addEventListener) {
@@ -47,6 +57,113 @@ function quickElement() {
     return obj;
 }
 
+// ----------------------------------------------------------------------------
+// Find-position functions by PPK
+// See http://www.quirksmode.org/js/findpos.html
+// ----------------------------------------------------------------------------
+function findPosX(obj) {
+    var curleft = 0;
+    if (obj.offsetParent) {
+        while (obj.offsetParent) {
+            curleft += obj.offsetLeft - ((isOpera) ? 0 : obj.scrollLeft);
+            obj = obj.offsetParent;
+        }
+        // IE offsetParent does not include the top-level 
+        if (isIE && obj.parentElement){
+            curleft += obj.offsetLeft - obj.scrollLeft;
+        }
+    } else if (obj.x) {
+        curleft += obj.x;
+    }
+    return curleft;
+}
+
+function findPosY(obj) {
+    var curtop = 0;
+    if (obj.offsetParent) {
+        while (obj.offsetParent) {
+            curtop += obj.offsetTop - ((isOpera) ? 0 : obj.scrollTop);
+            obj = obj.offsetParent;
+        }
+        // IE offsetParent does not include the top-level 
+        if (isIE && obj.parentElement){
+            curtop += obj.offsetTop - obj.scrollTop;
+        }
+    } else if (obj.y) {
+        curtop += obj.y;
+    }
+    return curtop;
+}
+
+//-----------------------------------------------------------------------------
+// Date object extensions
+// ----------------------------------------------------------------------------
+Date.prototype.getCorrectYear = function() {
+    // Date.getYear() is unreliable --
+    // see http://www.quirksmode.org/js/introdate.html#year
+    var y = this.getYear() % 100;
+    return (y < 38) ? y + 2000 : y + 1900;
+}
+
+Date.prototype.getTwoDigitMonth = function() {
+    return (this.getMonth() < 9) ? '0' + (this.getMonth()+1) : (this.getMonth()+1);
+}
+
+Date.prototype.getTwoDigitDate = function() {
+    return (this.getDate() < 10) ? '0' + this.getDate() : this.getDate();
+}
+
+Date.prototype.getTwoDigitHour = function() {
+    return (this.getHours() < 10) ? '0' + this.getHours() : this.getHours();
+}
+
+Date.prototype.getTwoDigitMinute = function() {
+    return (this.getMinutes() < 10) ? '0' + this.getMinutes() : this.getMinutes();
+}
+
+Date.prototype.getTwoDigitSecond = function() {
+    return (this.getSeconds() < 10) ? '0' + this.getSeconds() : this.getSeconds();
+}
+
+Date.prototype.getISODate = function() {
+    return this.getCorrectYear() + '-' + this.getTwoDigitMonth() + '-' + this.getTwoDigitDate();
+}
+
+Date.prototype.getHourMinute = function() {
+    return this.getTwoDigitHour() + ':' + this.getTwoDigitMinute();
+}
+
+Date.prototype.getHourMinuteSecond = function() {
+    return this.getTwoDigitHour() + ':' + this.getTwoDigitMinute() + ':' + this.getTwoDigitSecond();
+}
+
+// ----------------------------------------------------------------------------
+// String object extensions
+// ----------------------------------------------------------------------------
+String.prototype.pad_left = function(pad_length, pad_string) {
+    var new_string = this;
+    for (var i = 0; new_string.length < pad_length; i++) {
+        new_string = pad_string + new_string;
+    }
+    return new_string;
+}
+
+// ----------------------------------------------------------------------------
+// Get the computed style for and element
+// ----------------------------------------------------------------------------
+function getStyle(oElm, strCssRule){
+    var strValue = "";
+    if(document.defaultView && document.defaultView.getComputedStyle){
+        strValue = document.defaultView.getComputedStyle(oElm, "").getPropertyValue(strCssRule);
+    }
+    else if(oElm.currentStyle){
+        strCssRule = strCssRule.replace(/\-(\w)/g, function (strMatch, p1){
+            return p1.toUpperCase();
+        });
+        strValue = oElm.currentStyle[strCssRule];
+    }
+    return strValue;
+}
 //-------- selectbox.js
 var SelectBox = {
     cache: new Object(),

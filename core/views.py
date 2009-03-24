@@ -16,6 +16,7 @@ from ngw import settings
 from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
 from ngw.core.mailmerge import *
+from ngw.core.widgets import *
 
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
@@ -1083,7 +1084,7 @@ class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
     field_group = forms.BooleanField(required=False, help_text=u'Does that group yield specific fields to its members?')
-    date = forms.DateField(required=False, help_text=u'Use YYYY-MM-DD format. Leave empty for permanent groups.')
+    date = forms.DateField(required=False, help_text=u'Use YYYY-MM-DD format. Leave empty for permanent groups.', widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
     budget_code = forms.CharField(required=False, max_length=10)
     direct_supergroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('groups', False))
 

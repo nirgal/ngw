@@ -14,6 +14,7 @@ from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABA
 import decoratedstr
 from ngw.extensions import hooks
 from ngw.core import gpg
+from ngw.core.widgets import *
 from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format
 
 GROUP_EVERYBODY = 1
@@ -785,8 +786,10 @@ class NumberContactField(ContactField):
 register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice=False)
 
 class DateContactField(ContactField):
+
     def get_form_fields(self):
-        return forms.DateField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint)
+        return forms.DateField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint, widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
+
     def format_value_html(self, value):
         value = datetime.strptime(value, '%Y-%m-%d')
         return ngw_date_format(value)
