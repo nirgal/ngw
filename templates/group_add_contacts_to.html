@@ -1,12 +1,22 @@
 {% extends "base.html" %}
 
 {% block body %}
-<form method="post">
+<form id="contact_list" method="post">
 <h1 class="boxheader">Selected people</h1>
 <div class=box>
 {% for c in query %}
 <input type=checkbox name="contact_{{c.id}}" id="contact_{{c.id}}" checked> <label for="contact_{{c.id}}">{{c}}</label><br>
 {% endfor %}
+<script>
+function selectAll(target_checked) {
+    inputs = document.getElementById("contact_list").elements;
+    for (i=0; i<inputs.length; i++) {
+        input = inputs[i];
+        input.checked = target_checked;
+    }
+}
+</script>
+<a href="javascript:selectAll(true)">Select all</a> - <a href="javascript:selectAll(false)">Unselect all</a>
 </div>
 
 <h1 class="boxheader">Select a group</h1>
