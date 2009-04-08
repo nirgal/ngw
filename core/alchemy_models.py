@@ -572,7 +572,7 @@ class ContactGroup(NgwModel):
     get_link_name=NgwModel.get_absolute_url
 
     def supergroups_includinghtml(self):
-        sgs = self.supergroups
+        sgs = [ g for g in self.supergroups if g.id != GROUP_EVERYBODY ]
         if not sgs:
             return u""
         return u" (implies "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
