@@ -633,6 +633,9 @@ class ContactGroup(NgwModel):
         return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True) \
                              .filter(ContactFieldValue.contact_id==Contact.id).filter(ContactFieldValue.contact_field_id==FIELD_BIRTHDAY).filter(ContactFieldValue.value.like(datetime.today().strftime('%%-%m-%d')))
 
+    def is_event(self):
+        return self.date is not None
+
 
 ########################################
 # Contact Fields
