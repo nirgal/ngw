@@ -925,7 +925,7 @@ def contactgroup_list(request):
         ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.direct_subgroups])), None ),
         #( u'Budget\u00a0code', None, 'budget_code', contact_group_table.c.budget_code ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
-        ( u'System\u00a0locked', None, 'system', contact_group_table.c.system ),
+        #( u'System\u00a0locked', None, 'system', contact_group_table.c.system ),
     ]
     args={}
     args['title'] = 'Select a contact group'
