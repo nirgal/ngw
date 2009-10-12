@@ -572,6 +572,7 @@ class ContactGroup(NgwModel):
     get_link_name=NgwModel.get_absolute_url
 
     def supergroups_includinghtml(self):
+        # don't display "everybody"
         sgs = [ g for g in self.supergroups if g.id != GROUP_EVERYBODY ]
         if not sgs:
             return u""
@@ -615,6 +616,12 @@ class ContactGroup(NgwModel):
             f = open(htaccess_path, 'w')
             f.write("Require group %i\n" % self.id)
             f.close()
+
+    def get_default_display_mode(self):
+        if self.date and datetime.utcnow().date() < self.date():
+            return u'mig' # show invited for future events
+        else:
+            return u'mg' # only members otherwise
 
     def get_filters_classes(self):
         return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, )

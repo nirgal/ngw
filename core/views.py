@@ -974,7 +974,7 @@ def contactgroup_members(request, gid, output_format=''):
     if not cg:
         raise Http404
 
-    display=request.REQUEST.get(u'display', u'mg')
+    display=request.REQUEST.get(u'display', cg.get_default_display_mode())
     baseurl += u'&display='+display
 
     args={}
@@ -1323,7 +1323,7 @@ def contactgroup_add_contacts_to(request):
 
     q = q.order_by(Contact.c.name)
 
-    display=request.REQUEST.get(u'display', u'mg')
+    display=request.REQUEST.get(u'display', cg.get_default_display_mode())
     cig_conditions_flags = []
     if u'm' in display:
         cig_conditions_flags.append(u'member=True')
