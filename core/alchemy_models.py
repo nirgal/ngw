@@ -618,7 +618,7 @@ class ContactGroup(NgwModel):
             f.close()
 
     def get_default_display_mode(self):
-        if self.date and datetime.utcnow().date() < self.date():
+        if self.date and datetime.utcnow().date() < self.date:
             return u'mig' # show invited for future events
         else:
             return u'mg' # only members otherwise
