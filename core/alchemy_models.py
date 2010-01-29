@@ -467,7 +467,7 @@ class Contact(NgwModel):
     def check_login_created(logged_contact):
         Session.commit()
         # Create login for all members of GROUP_USER
-        for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d))) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL"%{"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN}):
+        for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member='t') AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL"%{"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN}):
             contact = Query(Contact).get(uid)
             new_login = contact.generate_login()
             contact.set_fieldvalue(logged_contact, FIELD_LOGIN, new_login)
