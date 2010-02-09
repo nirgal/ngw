@@ -78,7 +78,7 @@ def sync_user_base(u):
     phpbb_changed = False
 
     f_login = u.get_fieldvalue_by_id(FIELD_LOGIN)
-    assert login, u"Login is empty for user "+u.name
+    assert f_login, u"Login is empty for user "+u.name
     phpbb_user_id = u.get_fieldvalue_by_id(FIELD_PHPBB_USERID)
     print "Checking", f_login, " :",
     if not phpbb_user_id:
