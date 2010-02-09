@@ -172,6 +172,11 @@ def phpbb_hook_membership_changed(user, contact, ngw_group):
         print "Contact is not member of GROUP_USER_PHPBB, and phpbb_user_id is undefined: nothing to do!"
         return # nothing to do
     
+    if not contact.get_fieldvalue_by_id(FIELD_LOGIN):
+        print "Error: Can't synchronise user with empty login" # FIXME
+        user.push_message(u"ERROR: Can't synchronise PHPBB user "+ contact.name +u" with empty login.")
+        return
+        
     phpbb_user_id, phpbb_changed = sync_user_base(contact)
     ngw_group_id = ngw_group.id
     for phpbb_id, ngw_id in get_phpbb_acl_dictionary():
