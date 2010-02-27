@@ -21,7 +21,6 @@ from ngw.core.widgets import *
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
 DISP_GROUP_PREFIX = u'group_'
-NB_LINES_PER_PAGE=200
 
 FTYPE_TEXT='TEXT'
 FTYPE_LONGTEXT='LONGTEXT'
@@ -236,6 +235,12 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
 
 
 def query_print_entities(request, template_name, args, extrasort=None):
+    try:
+        object_query_page_length = Query(Config).get(u'query_page_length')
+        NB_LINES_PER_PAGE = int(object_query_page_length.text) 
+    except (AttributeError, ValueError):
+        NB_LINES_PER_PAGE = 200
+
     q = args['query']
     cols = args['cols']
 
@@ -925,7 +930,7 @@ def contactgroup_list(request):
         ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.direct_subgroups])), None ),
         #( u'Budget\u00a0code', None, 'budget_code', contact_group_table.c.budget_code ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
-        #( u'System\u00a0locked', None, 'system', contact_group_table.c.system ),
+        ( u'System\u00a0locked', None, 'system', contact_group_table.c.system ),
     ]
     args={}
     args['title'] = 'Select a contact group'
@@ -974,7 +979,7 @@ def contactgroup_members(request, gid, output_format=''):
     if not cg:
         raise Http404
 
-    display=request.REQUEST.get(u'display', cg.get_default_display_mode())
+    display=request.REQUEST.get(u'display', u'mg')
     baseurl += u'&display='+display
 
     args={}
@@ -1323,7 +1328,7 @@ def contactgroup_add_contacts_to(request):
 
     q = q.order_by(Contact.c.name)
 
-    display=request.REQUEST.get(u'display', cg.get_default_display_mode())
+    display=request.REQUEST.get(u'display', u'mg')
     cig_conditions_flags = []
     if u'm' in display:
         cig_conditions_flags.append(u'member=True')
