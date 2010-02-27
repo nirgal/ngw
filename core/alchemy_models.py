@@ -467,7 +467,7 @@ class Contact(NgwModel):
     def check_login_created(logged_contact):
         Session.commit()
         # Create login for all members of GROUP_USER
-        for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member='t') AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL"%{"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN}):
+        for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d))) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL"%{"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN}):
             contact = Query(Contact).get(uid)
             new_login = contact.generate_login()
             contact.set_fieldvalue(logged_contact, FIELD_LOGIN, new_login)
@@ -563,17 +563,20 @@ class ContactGroup(NgwModel):
     #        result.append(Query(Contact).get(cid[0]))
     #        #print cid[0]
     #    return result
-    def get_members(self):
+
+    def get_members_query(self):
         #TODO optimize me
         gids = [ g.id for g in self.self_and_subgroups ]
-        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True).all()
+        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True)
+
+    def get_members(self):
+        return get_members_query.all()
     members = property(get_members)
 
     get_link_name=NgwModel.get_absolute_url
 
     def supergroups_includinghtml(self):
-        # don't display "everybody"
-        sgs = [ g for g in self.supergroups if g.id != GROUP_EVERYBODY ]
+        sgs = self.supergroups
         if not sgs:
             return u""
         return u" (implies "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
@@ -617,12 +620,6 @@ class ContactGroup(NgwModel):
             f.write("Require group %i\n" % self.id)
             f.close()
 
-    def get_default_display_mode(self):
-        if self.date and datetime.utcnow().date() < self.date:
-            return u'mig' # show invited for future events
-        else:
-            return u'mg' # only members otherwise
-
     def get_filters_classes(self):
         return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, )
 
@@ -639,9 +636,6 @@ class ContactGroup(NgwModel):
         #TODO: localize timezone
         return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True) \
                              .filter(ContactFieldValue.contact_id==Contact.id).filter(ContactFieldValue.contact_field_id==FIELD_BIRTHDAY).filter(ContactFieldValue.value.like(datetime.today().strftime('%%-%m-%d')))
-
-    def is_event(self):
-        return self.date is not None
 
 
 ########################################
@@ -1408,7 +1402,7 @@ class AndBoundFilter(BaseBoundFilter):
     def get_sql_query_where(self, query, *args, **kargs):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
-        return query, u"(("+where1+u') AND ('+where2+u'))'
+        return query, u"("+where1+u') AND ('+where2+u')'
     def to_html(self, indent_level=0):
         return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"AND<br>"+ self.f2.to_html(indent_level+1)
 
@@ -1420,7 +1414,7 @@ class OrBoundFilter(BaseBoundFilter):
     def get_sql_query_where(self, query, *args, **kargs):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
-        return query, u"(("+where1+u') OR ('+where2+u'))'
+        return query, u"("+where1+u') OR ('+where2+u')'
     def to_html(self, indent_level=0):
         return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"OR<br>"+ self.f2.to_html(indent_level+1)
 
