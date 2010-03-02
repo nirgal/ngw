@@ -570,7 +570,7 @@ class ContactGroup(NgwModel):
         return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True)
 
     def get_members(self):
-        return self.get_members_query.all()
+        return self.get_members_query().all()
     members = property(get_members)
 
     get_link_name=NgwModel.get_absolute_url
