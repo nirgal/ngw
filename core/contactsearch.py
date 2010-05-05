@@ -212,7 +212,7 @@ def filter_parse_expression(lexer):
 
         params = [ ]
 
-        while 1:
+        while True:
             lexem = lexer.next()
             if lexem.type==FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
