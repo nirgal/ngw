@@ -931,7 +931,7 @@ class MultipleChoiceContactField(ContactField):
                 return False
         return True
     def get_filters_classes(self):
-        return (FieldFilterMultiChoiceHAS, FieldFilterNull, FieldFilterNotNull,)
+        return (FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(MultipleChoiceContactField, u"MULTIPLECHOICE", u"Multiple choice", has_choice=True)
 
 class PasswordContactField(ContactField):
@@ -1278,6 +1278,21 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
         return (field.choice_group,)
 FieldFilterMultiChoiceHAS.internal_name="mchas"
 FieldFilterMultiChoiceHAS.human_name=u"contains"
+
+
+
+class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
+    def get_sql_where_params(self, value):
+        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
+    def to_html(self, value):
+        field = Query(ContactField).get(self.field_id)
+        cfv = Query(Choice).get((field.choice_group_id, value))
+        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+    def get_param_types(self):
+        field = Query(ContactField).get(self.field_id)
+        return (field.choice_group,)
+FieldFilterMultiChoiceHASNOT.internal_name="mchasnot"
+FieldFilterMultiChoiceHASNOT.human_name=u"doesn't contain"
 
 
 
