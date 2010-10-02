@@ -889,9 +889,6 @@ def contact_make_login_mailing(request):
         contact.set_fieldvalue(request.user, FIELD_PASSWORD_STATUS, u'2')
 
     return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')
-    #loader.render_to_string('message.html',{
-    #    'message': 'Sorry. You are not authorized to browse that page.'},
-    #    RequestContext(request)))
 
 
 #######################################################################
