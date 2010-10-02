@@ -963,6 +963,19 @@ class ContactNameMetaField(object):
         return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
 
     
+class AllEventsMetaField(object):
+    @classmethod
+    def get_filters_classes(cls):
+        return (AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore, )
+
+    @classmethod
+    def get_filters(cls):
+        return [ filter() for filter in cls.get_filters_classes() ]
+
+    @classmethod
+    def get_filter_by_name(cls, name):
+        return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
+
 
 class FilterHelper(object):
     @staticmethod
@@ -1358,6 +1371,36 @@ GroupFilterNotDeclinedInvitation.internal_name="gnotdeclined"
 GroupFilterNotDeclinedInvitation.human_name=u"has not declined invitation in group"
 
     
+class AllEventsNotReactedSince(Filter):
+    def get_sql_where_params(self, value):
+        value = decoratedstr.decorated_match(value)
+        return u'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(date)s AND (operator OR member OR declined_invitation))', { 'date':value }
+    def to_html(self, value):
+        return self.__class__.human_name+u" \""+unicode(value)+u"\""
+    def get_param_types(self):
+        return (unicode,) # TODO
+AllEventsNotReactedSince.internal_name="notreactedsince"
+AllEventsNotReactedSince.human_name=u"has not reacted to any invitation since"
+    
+class AllEventsReactionYearRatioLess(Filter):
+    def get_sql_where_params(self, value):
+        return u'(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) < '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
+    def to_html(self, value):
+        return self.__class__.human_name+u" \""+unicode(value)+u"\""
+    def get_param_types(self):
+        return (int,)
+AllEventsReactionYearRatioLess.internal_name="yearreactionratioless"
+AllEventsReactionYearRatioLess.human_name=u"1 year invitation reaction % less than"
+    
+class AllEventsReactionYearRatioMore(Filter):
+    def get_sql_where_params(self, value):
+        return u'(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) > '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
+    def to_html(self, value):
+        return self.__class__.human_name+u" \""+unicode(value)+u"\""
+    def get_param_types(self):
+        return (int,)
+AllEventsReactionYearRatioMore.internal_name="yearreactionratiomore"
+AllEventsReactionYearRatioMore.human_name=u"1 year invitation reaction % more than"
     
 class BaseBoundFilter(FilterHelper):
     """

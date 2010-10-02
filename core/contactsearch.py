@@ -175,7 +175,7 @@ def filter_parse_expression(lexer):
 
         params = [ ]
 
-        while 1:
+        while True:
             lexem = lexer.next()
             if lexem.type==FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
@@ -240,7 +240,7 @@ def filter_parse_expression(lexer):
 
         params = [ ]
 
-        while 1:
+        while True:
             lexem = lexer.next()
             if lexem.type==FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
@@ -254,6 +254,34 @@ def filter_parse_expression(lexer):
                 params.append(int(lexem.str))
                 
         filter = ContactNameMetaField.get_filter_by_name(name_filter_name)
+        return filter.bind(*params)
+
+    elif lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"allevents":
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.LPARENTHESIS:
+            raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected '('.")
+
+        lexem = lexer.next()
+        if lexem.type!=FilterLexer.Lexem.Type.WORD:
+            raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected word.")
+        allevents_filter_name = lexem.str
+
+        params = [ ]
+
+        while True:
+            lexem = lexer.next()
+            if lexem.type==FilterLexer.Lexem.Type.RPARENTHESIS:
+                break
+            if lexem.type!=FilterLexer.Lexem.Type.COMMA:
+                raise FilterSyntaxError(u"Unexpected "+unicode(repr(lexem), 'utf8')+u". Expected ','.")
+
+            lexem = lexer.next()
+            if lexem.type==FilterLexer.Lexem.Type.STRING:
+                params.append(lexem.str)
+            elif lexem.type==FilterLexer.Lexem.Type.INT:
+                params.append(int(lexem.str))
+                
+        filter = AllEventsMetaField.get_filter_by_name(allevents_filter_name)
         return filter.bind(*params)
 
     else:
@@ -302,7 +330,9 @@ def contactsearch_get_fields(request, kind):
         body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.c.date==None)])
     elif kind==u"event":
         body += u"Add an event: "
-        body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.c.date!=None)])
+        body += format_link_list(
+            [ (u"javascript:select_field('allevents')", no_br('All events'), u"field_allevents") ] +
+            [ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.c.date!=None)])
     elif kind==u"custom":
         body += u"Add a custom filter: "
         body += format_link_list([ (u"javascript:select_field('custom_user')", u"Custom filters for "+request.user.name, u'field_custom_user')])
@@ -347,6 +377,10 @@ def contactsearch_get_filters(request, field):
         body += u"Add a filter for group/event : "
         body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in group.get_filters() ])
 
+    elif field.startswith(u"allevents"):
+        body += u"Add a filter for all events : "
+        body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in AllEventsMetaField.get_filters() ])
+
     elif field.startswith(u"custom"):
         filter_list_str = request.user.get_fieldvalue_by_id(FIELD_FILTERS)
         if not filter_list_str:
@@ -385,6 +419,10 @@ def contactsearch_get_params(request, field, filtername):
         group = Query(ContactGroup).get(group_id)
         filter = group.get_filter_by_name(filtername)
         filter_internal_beginin=u"gfilter("+unicode(group_id)+u","
+
+    elif field == u"allevents":
+        filter = AllEventsMetaField.get_filter_by_name(filtername)
+        filter_internal_beginin=u"allevents("
 
     elif field == u"custom_user":
         pass
