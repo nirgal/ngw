@@ -976,7 +976,9 @@ def contactgroup_members(request, gid, output_format=''):
     if not cg:
         raise Http404
 
-    display=request.REQUEST.get(u'display', u'mg')
+    display=request.REQUEST.get(u'display', None)
+    if display is None:
+        display = cg.get_default_display()
     baseurl += u'&display='+display
 
     args={}
@@ -1071,7 +1073,6 @@ def contactgroup_members(request, gid, output_format=''):
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
         
-
     args['title'] = u'Contacts of group '+cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
     args['display'] = display
@@ -1325,7 +1326,9 @@ def contactgroup_add_contacts_to(request):
 
     q = q.order_by(Contact.c.name)
 
-    display=request.REQUEST.get(u'display', u'mg')
+    display=request.REQUEST.get(u'display', None)
+    if display is None:
+        display = cg.get_default_display()
     cig_conditions_flags = []
     if u'm' in display:
         cig_conditions_flags.append(u'member=True')

@@ -637,6 +637,14 @@ class ContactGroup(NgwModel):
         return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True) \
                              .filter(ContactFieldValue.contact_id==Contact.id).filter(ContactFieldValue.contact_field_id==FIELD_BIRTHDAY).filter(ContactFieldValue.value.like(datetime.today().strftime('%%-%m-%d')))
 
+    def get_default_display(self):
+        if not self.date:
+            return u'mg'
+        if self.date > datetime.utcnow().date():
+            return u'mig'
+        else:
+            return u'mg'
+
 
 ########################################
 # Contact Fields
@@ -1460,7 +1468,7 @@ class AndBoundFilter(BaseBoundFilter):
     def get_sql_query_where(self, query, *args, **kargs):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
-        return query, u"("+where1+u') AND ('+where2+u')'
+        return query, u"((" + where1 + u') AND (' + where2 + u'))'
     def to_html(self, indent_level=0):
         return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"AND<br>"+ self.f2.to_html(indent_level+1)
 
@@ -1472,7 +1480,7 @@ class OrBoundFilter(BaseBoundFilter):
     def get_sql_query_where(self, query, *args, **kargs):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
-        return query, u"("+where1+u') OR ('+where2+u')'
+        return query, u"((" + where1 + u') OR (' + where2 + u'))'
     def to_html(self, indent_level=0):
         return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"OR<br>"+ self.f2.to_html(indent_level+1)
 
