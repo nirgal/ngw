@@ -8,7 +8,7 @@ from sqlalchemy.orm import *
 import sqlalchemy.engine.url
 from django.utils import html, http
 from django import forms
-from django.forms.util import smart_unicode
+from django.utils.encoding import smart_unicode
 from itertools import chain
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, MEDIA_URL
 import decoratedstr
