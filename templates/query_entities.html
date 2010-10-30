@@ -19,9 +19,9 @@ Optionnal parameters:
         <thead><tr>
         {% for col in cols %}
             <th>
-            {% if col|get:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
+            {% if col|get_notnull:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
             {{col|get:0}}
-            {% if col|get:3 %}</a>{% endif %}
+            {% if col|get_notnull:3 %}</a>{% endif %}
             {% if order|order_absmatch:forloop.counter0 %}{% if order|order_isreverted %} ▼{% else %} ▲{% endif %}{% endif %}
         {% endfor %}
         <tbody>

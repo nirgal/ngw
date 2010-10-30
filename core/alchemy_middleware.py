@@ -2,7 +2,7 @@
 
 from ngw.core.alchemy_models import *
 
-PRINT_TRANSACTION_ENDS=False
+PRINT_TRANSACTION_ENDS=True
 
 class TransactionMiddleware(object):
     def process_request(self, request):
@@ -14,8 +14,8 @@ class TransactionMiddleware(object):
             print "Session.rollback"
         Session.rollback()
         if PRINT_TRANSACTION_ENDS:
-            print "Session.clear"
-        Session.clear() # removed pending saves
+            print "Session.expunge_all"
+        Session.expunge_all() # removed pending saves
         return None
 
     def process_response(self, request, response):
@@ -24,14 +24,14 @@ class TransactionMiddleware(object):
                 print "Session.commit"
             Session.commit() # This does a flush too
             if PRINT_TRANSACTION_ENDS:
-                print "Session.clear"
-            Session.clear()
+                print "Session.expunge_all"
+            Session.expunge_all()
         except:
             if PRINT_TRANSACTION_ENDS:
                 print "Session.rollback"
             Session.rollback()
             if PRINT_TRANSACTION_ENDS:
-                print "Session.clear"
-            Session.clear()
+                print "Session.expunge_all"
+            Session.expunge_all()
             raise
         return response

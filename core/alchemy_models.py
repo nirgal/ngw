@@ -5,6 +5,7 @@ import os, subprocess
 from datetime import *
 from sqlalchemy import *
 from sqlalchemy.orm import *
+from sqlalchemy.orm import mapper
 import sqlalchemy.engine.url
 from django.utils import html, http
 from django import forms
@@ -44,11 +45,13 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 # Ends with a /
 GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
 
-dburl = sqlalchemy.engine.url.URL("postgres", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
-engine = create_engine(dburl, convert_unicode=True) #, echo=True)
+dburl = sqlalchemy.engine.url.URL("postgresql", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
+engine = create_engine(dburl, convert_unicode=True, echo=True)
 
-Session = scoped_session(sessionmaker(bind=engine, autoflush=True, transactional=True))
+Session = scoped_session(sessionmaker(bind=engine, autoflush=False))
 meta = MetaData(engine)
+#FIXME
+Query = Session.query
 
 ########################################################################
 # create the table objects, using the existing database
@@ -83,6 +86,8 @@ contact_group_news_table = Table('contact_group_news', meta, autoload=True)
 
 
 class NgwModel(object):
+    def __init__(self):
+        Session.add(self)
     @classmethod
     def get_class_verbose_name(cls):
         try:
@@ -257,7 +262,7 @@ class Contact(NgwModel):
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
-        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.member==True)
+        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.member==True)
         groups = []
         for cig in q:
             g = Query(ContactGroup).get(cig.group_id)
@@ -297,13 +302,13 @@ class Contact(NgwModel):
         #TODO check that
         contactgroupids = [ g.id for g in self.get_allgroups_withfields()] 
         #print "contactgroupids=", contactgroupids
-        return Query(ContactField).filter(ContactField.c.contact_group_id.in_(contactgroupids)).order_by(ContactField.c.sort_weight)
+        return Query(ContactField).filter(ContactField.contact_group_id.in_(contactgroupids)).order_by(ContactField.sort_weight)
 
     def get_fieldvalues_by_type(self, type_):
         if issubclass(type_, ContactField):
             type_ = type_.db_type_id
         assert type_.__class__ == unicode
-        fields = Query(ContactField).filter(ContactField.c.type==type_).order_by(ContactField.c.sort_weight)
+        fields = Query(ContactField).filter(ContactField.type==type_).order_by(ContactField.sort_weight)
         # TODO: check authority
         result = []
         for field in fields:
@@ -430,9 +435,9 @@ class Contact(NgwModel):
         login = decoratedstr.remove_decoration(login)
         def get_logincfv_by_login(ref_uid, login):
             " return first login cfv where loginname=login and not uid!=ref_uid "
-            return Query(ContactFieldValue).filter(ContactFieldValue.c.contact_field_id==FIELD_LOGIN) \
-                                   .filter(ContactFieldValue.c.value==login) \
-                                   .filter(ContactFieldValue.c.contact_id!=ref_uid) \
+            return Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN) \
+                                   .filter(ContactFieldValue.value==login) \
+                                   .filter(ContactFieldValue.contact_id!=ref_uid) \
                                    .first()
         if not get_logincfv_by_login(self.id, login):
             return login
@@ -486,7 +491,7 @@ class Contact(NgwModel):
 
     def is_admin(self):
         adminsubgroups = Query(ContactGroup).get(GROUP_ADMIN).self_and_subgroups
-        cig = Query(ContactInGroup).filter(ContactInGroup.c.contact_id==self.id).filter(ContactInGroup.c.group_id.in_([g.id for g in adminsubgroups])).first()
+        cig = Query(ContactInGroup).filter(ContactInGroup.contact_id==self.id).filter(ContactInGroup.group_id.in_([g.id for g in adminsubgroups])).first()
         return cig!=None
 
     def update_lastconnection(self):
@@ -1551,7 +1556,7 @@ class ContactGroupNews(NgwModel):
 ########################################################################
 # Map the class to the tables
 ########################################################################
-mapper = Session.mapper
+#mapper = Session.mapper
 choice_mapper=mapper(Choice, choice_table)
 choice_group_mapper = mapper(ChoiceGroup, choice_group_table)
 contact_mapper = mapper(Contact, contact_table)
@@ -1654,7 +1659,7 @@ contact_mapper.add_property('sysmsg', relation(
     primaryjoin=contact_sysmsg_table.c.contact_id==contact_table.c.id,
     cascade="delete",
     passive_deletes=True,
-    order_by=ContactSysMsg.c.id))
+    order_by=contact_sysmsg_table.c.id))
 
 # Log -> Contact
 contact_mapper.add_property('logs', relation(

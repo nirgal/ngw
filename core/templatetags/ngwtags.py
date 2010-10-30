@@ -58,7 +58,15 @@ def get(object, index):
     return object[index]
 
 @register.filter
+def get_notnull(object, index):
+    # That fixes query_entities.html template use of {% if col|get:3 %} crash
+    # because field is not bound on table(mapper) columns
+    return object[index] is not None
+
+
+@register.filter
 def ngw_display(row, col):
+    #return u"ngwtags.py disabled"
     if isinstance(row, tuple):
         entity_id = col[1]
         entity = row[entity_id]

@@ -43,11 +43,11 @@ def ngw_auth(username, passwd):
     passwd = unicode(passwd, 'utf-8', 'replace')
     if not username or not passwd:
         return None
-    login_value = Query(ContactFieldValue).filter(ContactFieldValue.c.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.c.value==username).first()
+    login_value = Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.value==username).first()
     if not login_value:
         return None
     c = login_value.contact
-    dbpasswd=Query(ContactFieldValue).get((c.id, FIELD_PASSWORD)).value
+    dbpasswd = Query(ContactFieldValue).get((c.id, FIELD_PASSWORD)).value
     if not dbpasswd:
         return None
     if dbpasswd.startswith(u'{SHA}'):
@@ -203,9 +203,10 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
         request.user.push_message('%s has been deleted sucessfully!'%name)
         log = Log(request.user.id)
         log.action = LOG_ACTION_DEL
-        pk = o._instance_key[1] # this is a tuple
+        pk = o._sa_instance_state.key[1] # this is a tuple. TODO: use primary_key_from_instance
         log.target = unicode(o.__class__.__name__)+u' '+u' '.join([unicode(x) for x in pk])
         log.target_repr = o.get_class_verbose_name()+u' '+name
+        #FIXME log doesn't work??
         return HttpResponseRedirect(next_url)
     else:
         nav = base_nav or navbar(o.get_class_navcomponent())
@@ -340,12 +341,12 @@ def logs(request):
     args['objtype'] = Log
     args['query'] = Query(Log)
     args['cols'] = [
-        ( 'Date GMT', None, 'small_date', Log.c.dt),
-        ( 'User', None, 'contact', Log.c.contact_id),
-        ( 'Action', None, 'action_txt', Log.c.action),
-        ( 'Target', None, 'target_repr', Log.c.target_repr),
-        ( 'Property', None, 'property_repr', Log.c.property_repr),
-        ( 'Change', None, 'change', Log.c.change),
+        ( 'Date GMT', None, 'small_date', Log.dt),
+        ( 'User', None, 'contact', Log.contact_id),
+        ( 'Action', None, 'action_txt', Log.action),
+        ( 'Target', None, 'target_repr', Log.target_repr),
+        ( 'Property', None, 'property_repr', Log.property_repr),
+        ( 'Change', None, 'change', Log.change),
     ]
     return query_print_entities(request, 'list_log.html', args)
 
@@ -408,9 +409,9 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
     for prop in fields:
         if prop==u'name':
             if format==u'html':
-                cols.append( (u'Name', 0, 'name_with_relative_link', contact_table.c.name) )
+                cols.append( (u'Name', 0, 'name_with_relative_link', Contact.name) )
             else:
-                cols.append( (u'Name', 0, '__unicode__', contact_table.c.name) )
+                cols.append( (u'Name', 0, '__unicode__', Contact.name) )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
             cg = Query(ContactGroup).get(groupid)
@@ -421,7 +422,7 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
             a = contact_field_value_table.alias()
             q = q.add_entity(ContactFieldValue, alias=a)
             j = outerjoin(j, a, and_(contact_table.c.id==a.c.contact_id, a.c.contact_field_id==cf.id ))
-            if format==u'html':
+            if format == u'html':
                 cols.append( (cf.name, n_entities, 'as_html', a.c.value) )
             else:
                 cols.append( (cf.name, n_entities, '__unicode__', a.c.value) )
@@ -444,7 +445,7 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
 
 def get_available_fields():
     result = [ (DISP_NAME, u'Name') ]
-    for cf in Query(ContactField).order_by(ContactField.c.sort_weight):
+    for cf in Query(ContactField).order_by(ContactField.sort_weight):
         result.append((DISP_FIELD_PREFIX+unicode(cf.id), cf.name))
     for cg in Query(ContactGroup):
         result.append((DISP_GROUP_PREFIX+unicode(cg.id), cg.unicode_with_date()))
@@ -559,7 +560,7 @@ class ContactEditForm(forms.Form):
             contactgroupids = [ ]
 
         # Add all extra fields
-        for cf in Query(ContactField).order_by(ContactField.c.sort_weight):
+        for cf in Query(ContactField).order_by(ContactField.sort_weight):
             if cf.contact_group_id not in contactgroupids:
                 continue # some fields are excluded
             fields = cf.get_form_fields()
@@ -567,8 +568,8 @@ class ContactEditForm(forms.Form):
                 self.fields[unicode(cf.id)] = fields
         
         #if request_user.is_admin():
-        #    # sql '_' means 'any character' and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.c.name.startswith('\\_'))).order_by ...
-        #    contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date.desc(), ContactGroup.c.name]) ]
+        #    # sql '_' means 'any character' and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.name.startswith('\\_'))).order_by ...
+        #    contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.date.desc(), ContactGroup.name]) ]
         #    self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Group', False), choices=contactgroupchoices)
         
 
@@ -919,15 +920,15 @@ def contactgroup_list(request):
 
     q = Query(ContactGroup)
     cols = [
-        ( u'Date', None, 'html_date', contact_group_table.c.date ),
-        ( u'Name', None, 'name', contact_group_table.c.name ),
-        ( u'Description', None, 'description', contact_group_table.c.description ),
-        #( u'Contact fields', None, print_fields, contact_group_table.c.field_group ),
+        ( u'Date', None, 'html_date', ContactGroup.date ),
+        ( u'Name', None, 'name', ContactGroup.name ),
+        ( u'Description', None, 'description', ContactGroup.description ),
+        #( u'Contact fields', None, print_fields, ContactGroup.field_group ),
         ( u'Super\u00a0groups', None, lambda cg: u', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.direct_supergroups])), None ),
         ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.direct_subgroups])), None ),
-        #( u'Budget\u00a0code', None, 'budget_code', contact_group_table.c.budget_code ),
+        #( u'Budget\u00a0code', None, 'budget_code', ContactGroup.budget_code ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
-        ( u'System\u00a0locked', None, 'system', contact_group_table.c.system ),
+        ( u'System\u00a0locked', None, 'system', ContactGroup.system ),
     ]
     args={}
     args['title'] = 'Select a contact group'
@@ -1101,7 +1102,7 @@ class ContactGroupForm(forms.Form):
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.c.date, ContactGroup.c.name]) ]
+        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.date, ContactGroup.name]) ]
 
 @http_authenticate(ngw_auth, 'ngw')
 @require_group(GROUP_USER_NGW)
@@ -1324,7 +1325,7 @@ def contactgroup_add_contacts_to(request):
 
     q, cols = contact_make_query_with_fields([], format=u'html') #, current_cg=cg)
 
-    q = q.order_by(Contact.c.name)
+    q = q.order_by(Contact.name)
 
     display=request.REQUEST.get(u'display', None)
     if display is None:
@@ -1353,7 +1354,7 @@ def contactgroup_add_contacts_to(request):
     args = {}
     args['title'] = 'Add contacts to a group'
     args['nav'] = navbar(ContactGroup.get_class_navcomponent(), (u'add_contacts_to', u'add contacts to'))
-    args['groups'] = Query(ContactGroup).order_by((desc(ContactGroup.date), ContactGroup.name))
+    args['groups'] = Query(ContactGroup).order_by(desc(ContactGroup.date), ContactGroup.name)
     args['query'] = q
     return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
 
@@ -1603,19 +1604,19 @@ def field_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
     args = {}
-    args['query'] = Query(ContactField)#.order_by([ContactField.c.sort_weight]) # FIXME
+    args['query'] = Query(ContactField).order_by([ContactField.sort_weight])
     args['cols'] = [
-        ( 'Name', None, 'name', contact_field_table.c.name),
-        ( 'Type', None, 'type_as_html', contact_field_table.c.type),
-        ( 'Only for', None, 'contact_group', contact_field_table.c.contact_group_id),
-        ( 'System locked', None, 'system', contact_field_table.c.system),
+        ( 'Name', None, 'name', ContactField.name),
+        ( 'Type', None, 'type_as_html', ContactField.type),
+        ( 'Only for', None, 'contact_group', ContactField.contact_group_id),
+        ( 'System locked', None, 'system', ContactField.system),
         #( 'Move', None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     args['title'] = 'Select an optionnal field'
     args['objtype'] = ContactField
     args['nav'] = navbar(ContactField.get_class_navcomponent())
     def extrasort(query):
-        return query.order_by([ContactField.c.sort_weight])
+        return query.order_by([ContactField.sort_weight])
     return query_print_entities(request, 'list.html', args, extrasort=extrasort)
 
 
@@ -1660,14 +1661,14 @@ class FieldEditForm(forms.Form):
     def __init__(self, cf, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
     
-        contacttypes = Query(ContactGroup).filter(ContactGroup.c.field_group==True)
+        contacttypes = Query(ContactGroup).filter(ContactGroup.field_group==True)
         self.fields['contact_group'].widget.choices = [ (g.id, g.name) for g in contacttypes ]
 
         self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id) for cls in CONTACT_FIELD_TYPES_CLASSES ]
         js_test_type_has_choice = u' || '.join([ u"this.value=='"+cls.db_type_id+"'" for cls in CONTACT_FIELD_TYPES_CLASSES if cls.has_choice ])
         self.fields['type'].widget.attrs = { 'onchange': 'if (0 || '+js_test_type_has_choice+") { document.forms[0]['choicegroup'].disabled = 0; } else { document.forms[0]['choicegroup'].value = ''; document.forms[0]['choicegroup'].disabled = 1; }" }
     
-        self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in Query(ChoiceGroup).order_by(ChoiceGroup.c.name)]
+        self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in Query(ChoiceGroup).order_by(ChoiceGroup.name)]
  
         t = self.data.get('type', '') or self.initial.get('type', '')
         if t:
@@ -1850,7 +1851,7 @@ def choicegroup_list(request):
     args = {}
     args['query'] = Query(ChoiceGroup)
     args['cols'] = [
-        ( 'Name', None, 'name', ChoiceGroup.c.name),
+        ( 'Name', None, 'name', ChoiceGroup.name),
         ( 'Choices', None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
     args['title'] = 'Select a choice group'
@@ -2000,7 +2001,7 @@ def choicegroup_edit(request, id=None):
         return unauthorized(request)
     objtype = ChoiceGroup
     if id:
-        cg = Session.get(ChoiceGroup, id)
+        cg = Query(ChoiceGroup).get(id)
         title = u'Editing '+unicode(cg)
     else:
         cg = None
