@@ -2,7 +2,7 @@ Installation
 ============
 It is recommanded to use Debian Lenny or above
 
-aptitude install python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-auth-pgsql pwgen openoffice.org-sdbc-postgresql python-uno oomailing python-decoratedstr
+aptitude install python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-python libapache2-mod-auth-pgsql pwgen openoffice.org-sdbc-postgresql python-uno oomailing python-decoratedstr
 
 python-django >= 1.0
 python-sqlalchemy >= 0.4
