@@ -1,17 +1,6 @@
-diff -Naur -x '*schemas*' -x '*language*' -x '*styles*' phpbb3.orig/www/config.php phpbb3/www/config.php
---- phpbb3.orig/www/config.php	2008-09-06 09:13:04.000000000 +0200
-+++ phpbb3/www/config.php	2008-12-08 17:29:27.000000000 +0100
-@@ -33,5 +33,7 @@
- 	$load_extensions = '';
- 
- 	define ( 'PHPBB_INSTALLED', true );
-+//	define ( 'DEBUG', true );
-+//	define ( 'DEBUG_EXTRA', true );
- }
- 
-diff -Naur -x '*schemas*' -x '*language*' -x '*styles*' phpbb3.orig/www/includes/ucp/ucp_profile.php phpbb3/www/includes/ucp/ucp_profile.php
---- phpbb3.orig/www/includes/ucp/ucp_profile.php	2008-07-06 18:32:57.000000000 +0200
-+++ phpbb3/www/includes/ucp/ucp_profile.php	2009-01-27 11:24:48.000000000 +0100
+diff -Naur phpbb3.orig/www/includes/ucp/ucp_profile.php phpbb3/www/includes/ucp/ucp_profile.php
+--- phpbb3.orig/www/includes/ucp/ucp_profile.php	2010-03-05 21:37:22.000000000 +0100
++++ phpbb3/www/includes/ucp/ucp_profile.php	2010-11-14 20:19:12.000000000 +0100
 @@ -83,6 +83,7 @@
  						$error[] = 'NEW_PASSWORD_ERROR';
  					}
@@ -63,16 +52,16 @@ diff -Naur -x '*schemas*' -x '*language*' -x '*styles*' phpbb3.orig/www/includes
  					if (!sizeof($error))
  					{
  						$sql_ary = array(
-@@ -633,4 +663,4 @@
+@@ -646,4 +676,4 @@
  	}
  }
  
 -?>
-\ Pas de fin de ligne à la fin du fichier.
+\ No newline at end of file
 +?>
-diff -Naur -x '*schemas*' -x '*language*' -x '*styles*' phpbb3.orig/www/ucp.php phpbb3/www/ucp.php
---- phpbb3.orig/www/ucp.php	2008-07-06 18:32:58.000000000 +0200
-+++ phpbb3/www/ucp.php	2009-01-15 17:07:14.000000000 +0100
+diff -Naur phpbb3.orig/www/ucp.php phpbb3/www/ucp.php
+--- phpbb3.orig/www/ucp.php	2010-03-05 21:37:23.000000000 +0100
++++ phpbb3/www/ucp.php	2010-11-14 20:19:12.000000000 +0100
 @@ -87,12 +87,35 @@
  			$user->session_kill();
  			$user->session_begin();
@@ -110,10 +99,10 @@ diff -Naur -x '*schemas*' -x '*language*' -x '*styles*' phpbb3.orig/www/ucp.php 
  
  		$message = $message . '<br /><br />' . sprintf($user->lang['RETURN_INDEX'], '<a href="' . append_sid("{$phpbb_root_path}index.$phpEx") . '">', '</a> ');
  		trigger_error($message);
-@@ -335,4 +358,4 @@
+@@ -346,4 +369,4 @@
  	}
  }
  
 -?>
-\ Pas de fin de ligne à la fin du fichier.
+\ No newline at end of file
 +?>
