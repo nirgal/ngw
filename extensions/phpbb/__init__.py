@@ -48,6 +48,8 @@ def get_phpbb_acl_dictionary():
     this means phpbb usergroup 10 matches ngw group 55, phpbb group 7 matches ngw 5, and so on...
     """
     strdict = Query(Config).get(u'phpbb acl dictionary').text
+    if not strdict:
+        return []
     return [ [ int(i) for i in pair.split(',')] for pair in strdict.split(';') ]
 
 
