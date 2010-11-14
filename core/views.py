@@ -93,6 +93,9 @@ class require_group:
     
 
 class navbar(object):
+    '''
+    This is a breadcrumb builder, to build a navigation bar.
+    '''
     def __init__(self, *args):
         self.components = [ (u'', u'Home') ]
         for arg in args:
@@ -1123,10 +1126,11 @@ def contactgroup_edit(request, id):
         if form.is_valid():
             # record the values
 
-            if not id:
-                cg = ContactGroup()
             data = form.clean()
-            cg.name = data['name']
+            if not id:
+                cg = ContactGroup(data['name'])
+            else:
+                cg.name = data['name']
             cg.description = data['description']
             cg.field_group = data['field_group']
             cg.date = data['date']

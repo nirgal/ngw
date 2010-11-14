@@ -96,6 +96,8 @@ $dbport='5432';
 $dbtype='pgsql';
 ?>
 
+If you get a white page, make sure you restart apache, not just reload it.
+
 There's a nasty bug in lenny version of php5-pgsql. The simpliest workaround is to disable SSL:
 In /etc/postgresql/8.3/main/postgresql.conf
 change ssl = true
@@ -122,6 +124,20 @@ The first time you install the database, you'll need to initialise it:
 psql phpbb3  -h localhost -U phpbb3 -W -f /usr/share/dbconfig-common/data/phpbb3/install/pgsql
 But you will generally prefer to restore a backup of phpbb3 database with that command:
 psql phpbb3 -h localhost -U phpbb3 -f backup_phpbb3.sql
+
+Make sure you have the same password in the two systems (ngw & phpbb3)
+
+Then:
+rm /etc/apache2/conf.d/phpbb3.conf
+
+Add to your ngw/apache.conf:
+    Include "/etc/phpbb3/apache2.conf"
+    <Location "/phpbb/">
+        require valid-user
+    </Location>
+
+In the admin control panel, in general, in client communication, in authentication, change authentication method from "Db" to "Apache".
+
 
 Install french packs:
 wget http://www.phpbb.com/files/language_packs_30x/lang_fr.tar.gz

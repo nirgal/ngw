@@ -46,7 +46,7 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
 
 dburl = sqlalchemy.engine.url.URL("postgresql", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
-engine = create_engine(dburl, convert_unicode=True, echo=True)
+engine = create_engine(dburl, convert_unicode=True) #, echo=True)
 
 Session = scoped_session(sessionmaker(bind=engine, autoflush=False))
 meta = MetaData(engine)
@@ -88,6 +88,7 @@ contact_group_news_table = Table('contact_group_news', meta, autoload=True)
 class NgwModel(object):
     def __init__(self):
         Session.add(self)
+    
     @classmethod
     def get_class_verbose_name(cls):
         try:
@@ -256,9 +257,9 @@ class Contact(NgwModel):
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is a direct member of."
-        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.member==True)
+        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.member==True)
         groupids = [cig.group_id for cig in q]
-        return Query(ContactGroup).filter(ContactGroup.c.id.in_(groupids))
+        return Query(ContactGroup).filter(ContactGroup.id.in_(groupids))
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
@@ -273,13 +274,13 @@ class Contact(NgwModel):
 
     def get_directgroups_invited(self):
         "returns the list of groups that contact has been invited to."
-        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.invited==True)
+        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.invited==True)
         groupids = [cig.group_id for cig in q]
-        return Query(ContactGroup).filter(ContactGroup.c.id.in_(groupids))
+        return Query(ContactGroup).filter(ContactGroup.id.in_(groupids))
 
     def get_allgroups_invited(self):
         "returns the list of groups that contact has been invited to."
-        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.invited==True)
+        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.invited==True)
         groups = []
         for cig in q:
             g = Query(ContactGroup).get(cig.group_id)
@@ -290,9 +291,9 @@ class Contact(NgwModel):
 
     def get_directgroups_declinedinvitation(self):
         "returns the list of groups that contact has been invited to."
-        q = Query(ContactInGroup).filter(ContactInGroup.c.contact_id == self.id ).filter(ContactInGroup.c.declined_invitation==True)
+        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.declined_invitation==True)
         groupids = [cig.group_id for cig in q]
-        return Query(ContactGroup).filter(ContactGroup.c.id.in_(groupids))
+        return Query(ContactGroup).filter(ContactGroup.id.in_(groupids))
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
@@ -509,6 +510,10 @@ class ContactGroup(NgwModel):
     class Meta:
         verbose_name = u"contacts group"
 
+    def __init__(self, name):
+        NgwModel.__init__(self)
+        self.name = name
+
     def __unicode__(self):
         return self.name
 
@@ -552,14 +557,14 @@ class ContactGroup(NgwModel):
         return result
 
     def get_direct_members(self):
-        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.c.group_id==self.id, ContactInGroup.c.member==True))
+        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.member==True))
         cids = [ cig.contact_id for cig in cigs ]
-        return Query(Contact).filter(Contact.c.id.in_(cids))
+        return Query(Contact).filter(Contact.id.in_(cids))
 
     def get_direct_invited(self):
-        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.c.group_id==self.id, ContactInGroup.c.invited==True))
+        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.invited==True))
         cids = [ cig.contact_id for cig in cigs ]
-        return Query(Contact).filter(Contact.c.id.in_(cids))
+        return Query(Contact).filter(Contact.id.in_(cids))
 
     #    s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
     #    #print "members=", s, ":"
@@ -907,7 +912,7 @@ class ChoiceContactField(ContactField):
         return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[(u'', u"Unknown")]+self.choice_group.ordered_choices))
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
-        return Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==value).count() == 1
+        return Query(Choice).filter(Choice.choice_group_id==choice_group_id).filter(Choice.key==value).count() == 1
     def get_filters_classes(self):
         return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterNull, FieldFilterNotNull,)
 
@@ -940,7 +945,7 @@ class MultipleChoiceContactField(ContactField):
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         for v in value.split(','):
-            if Query(Choice).filter(Choice.c.choice_group_id==choice_group_id).filter(Choice.c.key==v).count() != 1:
+            if Query(Choice).filter(Choice.choice_group_id==choice_group_id).filter(Choice.key==v).count() != 1:
                 return False
         return True
     def get_filters_classes(self):
