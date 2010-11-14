@@ -2,7 +2,7 @@
 
 from ngw.core.alchemy_models import *
 
-PRINT_TRANSACTION_ENDS=True
+PRINT_TRANSACTION_ENDS=False
 
 class TransactionMiddleware(object):
     def process_request(self, request):
