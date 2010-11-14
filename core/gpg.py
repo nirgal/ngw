@@ -41,6 +41,8 @@ def parse_pgp_listkey(output):
 
 
 def is_email_secure(mail_address):
+    #mail_address = mail_address.replace(u'(',u'').replace(u')',u'').replace(u' ', u'')
+    mail_address = mail_address.encode('utf-8', 'replace')
     ret, out, err = subprocess_run("gpg", "--homedir", GPG_HOME, "--list-keys", "--with-colons", "<"+mail_address+">")
     if ret:
         return False # gpg error
