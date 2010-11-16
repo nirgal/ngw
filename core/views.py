@@ -1101,6 +1101,7 @@ class ContactGroupForm(forms.Form):
     field_group = forms.BooleanField(required=False, help_text=u'Does that group yield specific fields to its members?')
     date = forms.DateField(required=False, help_text=u'Use YYYY-MM-DD format. Leave empty for permanent groups.', widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
     budget_code = forms.CharField(required=False, max_length=10)
+    mailman_address = forms.CharField(required=False, max_length=255)
     direct_supergroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, *args, **kargs):
@@ -1135,6 +1136,7 @@ def contactgroup_edit(request, id):
             cg.field_group = data['field_group']
             cg.date = data['date']
             cg.budget_code = data['budget_code']
+            cg.mailman_address = data['mailman_address']
             
             old_direct_supergroups = cg.direct_supergroups
             old_direct_supergroups_ids = [ g.id for g in old_direct_supergroups ] # TODO: fine a better algo!
@@ -1169,6 +1171,7 @@ def contactgroup_edit(request, id):
                 'field_group': cg.field_group,
                 'date': cg.date,
                 'budget_code': cg.budget_code,
+                'mailman_address': cg.mailman_address,
                 'direct_supergroups': [ g.id for g in cg.direct_supergroups ],
             }
             form = ContactGroupForm(initialdata)
@@ -1596,6 +1599,42 @@ def contactgroup_news_delete(request, gid, nid):
     o = Query(ContactGroupNews).get(nid)
     return generic_delete(request, o, cg.get_absolute_url()+u'news/')
 
+class MailmanSyncForm(forms.Form):
+    mail = forms.CharField(widget=forms.Textarea)
+
+@http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
+def contactgroup_mailman(request, id):
+    initial_value = '''
+Les résultats de vos commandes courriels sont fournies ci-dessous.
+Ci-joint votre message original.
+
+- Résultats :
+    Abonnés en mode non-groupé (normaux) :
+        user1@example.com (John DOE)
+        user2@example.com
+
+- Fait.
+    '''
+    from ngw.extensions.mailman import synchronise_group
+    if not request.user.is_admin():
+        return unauthorized(request)
+    cg = Query(ContactGroup).get(id)
+    if request.method == 'POST':
+        form = MailmanSyncForm(request.POST)
+        if form.is_valid():
+            data = form.clean()
+            sync_result = synchronise_group(cg, data['mail'])
+            return render_to_response('group_mailman_result.html', {'sync_res': sync_result }, RequestContext(request))
+    else:
+        form = MailmanSyncForm(initial={'mail': initial_value})
+    
+    args = {}
+    args['title'] = u'Mailman synchronisation'
+    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'mailman')
+    args['form'] = form
+
+    return render_to_response('group_mailman.html', args, RequestContext(request))
 #######################################################################
 #
 # Contact Fields

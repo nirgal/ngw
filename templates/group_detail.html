@@ -15,6 +15,7 @@
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
     {% if cg.date %}Date: <b>{{ cg.date|ngw_date_format }}</b><br>{% endif %}
     {% if cg.budget_code %}Budget code: <b>{{ cg.budget_code }}</b><br>{% endif %}
+    {% if cg.mailman_address %}Mailing list: <b>{{ cg.mailman_address }}</b><br>{% endif %}
 
     <p>
     <script>
@@ -87,4 +88,7 @@
     {% endif %}
     <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Add to another group</a>
     <a href="../news/">News</a> 
+    {% if cg.mailman_address %}
+    <a href="../mailman">Mailman</a>
+    {% endif %}
 </div>{% endblock %}

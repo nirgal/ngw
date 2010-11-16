@@ -1,0 +1,13 @@
+{% extends "edit.html" %}
+
+
+{% block preform %}
+<div class=box>
+Send <tt>who listpassword</tt> to listname<b>-request</b>@mailman... and copy paste the answer bellow. Replace the example.
+<p>Be careful not to forget -request in the email address, since you probably don't want every suscriber to receive the password in their mailbox!
+</div>
+{% endblock %}
+
+{% block submitbar %}
+<input type=submit value="Send" id="default">
+{% endblock %}

@@ -53,6 +53,8 @@ urlpatterns = patterns('',
     (r'^contactgroups/(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', 'ngw.core.views.contactgroup_news_edit'),
     (r'^contactgroups/(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.contactgroup_news_delete'),
 
+    (r'^contactgroups/(?P<id>\d+)/mailman$', 'ngw.core.views.contactgroup_mailman'),
+
     (r'^contactfields/$', 'ngw.core.views.field_list'),
     (r'^contactfields/add$', 'ngw.core.views.field_edit', {'id': None}),
     (r'^contactfields/(?P<id>\d+)/$', 'django.views.generic.simple.redirect_to', {'url': '/contactfields/%(id)s/edit'}),
