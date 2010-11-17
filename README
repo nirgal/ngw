@@ -1,11 +1,8 @@
 Installation
 ============
-It is recommanded to use Debian Lenny or above
+It is recommanded to use Debian 6 (Squeeze) or above
 
 aptitude install python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-python libapache2-mod-auth-pgsql pwgen openoffice.org-sdbc-postgresql python-uno oomailing python-decoratedstr libjs-jquery
-
-python-django >= 1.0
-python-sqlalchemy >= 0.4
 
 oomailing and python-decoratedstr packages can be get at http://www.nirgal.com/debian/
 
@@ -30,8 +27,8 @@ createdb ngw -E unicode
 Rigth now, it's not possible to start from an empty database. You need to restore a backup.
 
 See http://developer.postgresql.org/pgdocs/postgres/contrib.html, as postgres user, run
-postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/int_aggregate.sql
-postgres:~$ psql ngw -f /usr/share/postgresql/8.3/contrib/_int.sql
+postgres:~$ psql ngw -f /usr/share/postgresql/8.4/contrib/int_aggregate.sql
+postgres:~$ psql ngw -f /usr/share/postgresql/8.4/contrib/_int.sql
 
 Oomailing
 =========
