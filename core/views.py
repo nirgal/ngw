@@ -1633,6 +1633,7 @@ Ci-joint votre message original.
     args['title'] = u'Mailman synchronisation'
     args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'mailman')
     args['form'] = form
+    args['cg'] = cg
 
     return render_to_response('group_mailman.html', args, RequestContext(request))
 #######################################################################

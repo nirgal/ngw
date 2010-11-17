@@ -609,6 +609,12 @@ class ContactGroup(NgwModel):
             result += u' ‧ '+ngw_date_format(self.date)
         return result
 
+    def mailman_request_address(self):
+        ''' Adds -request before the @ of the address '''
+        if self.mailman_address:
+            return self.mailman_address.replace(u'@', u'-request@')
+
+
     def static_folder(self):
         """ Returns the name of the folder for static files for that group """
         return GROUP_STATIC_DIR+str(self.id)
