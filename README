@@ -20,6 +20,8 @@ Add a new line "Listen 443" to /etc/apache2/ports.conf" if it's now there allrea
 Enable virtual hosts on https:
 Add a new line "NameVirtualHost *:443" before "Listen 443"
 
+Add "Listen 11371" at the end of the file
+
 Postgres
 ========
 createdb ngw -E unicode
