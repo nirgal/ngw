@@ -2,7 +2,7 @@ Installation
 ============
 It is recommanded to use Debian Lenny or above
 
-aptitude install python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-python libapache2-mod-auth-pgsql pwgen openoffice.org-sdbc-postgresql python-uno oomailing python-decoratedstr
+aptitude install python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-python libapache2-mod-auth-pgsql pwgen openoffice.org-sdbc-postgresql python-uno oomailing python-decoratedstr libjs-jquery
 
 python-django >= 1.0
 python-sqlalchemy >= 0.4
@@ -146,8 +146,27 @@ wget http://www.phpbb.com/files/language_packs_30x/subsilver2_fr.tar.gz
 tar xvfz lang_fr.tar.gz -C /usr/share/phpbb3/www/language/
 tar xvfz prosilver_fr.tar.gz -C /usr/share/phpbb3/styles/
 tar xvfz subsilver2_fr.tar.gz -C /usr/share/phpbb3/styles/
-If you retore a database, you have nothing more to do. If this is a fresh install, you'll need to log in the administrator control panel, go to system, then install the language, and set it as default. Many settings should be customized, such as "activation du compte" in "Réglage des inscriptions"; the fact that groups are closed; and so on...
+If you retore a database, you have nothing more to do. If this is a fresh install, you'll need to log in the administrator control panel, go to system, then install the language.
 
+and set it as default. Many settings should be customized, such as "activation du compte" in "Réglage des inscriptions"; the fact that groups are closed; and so on...
+
+In the admin control panel:
+ General
+  Board configuration
+   Board settings
+    Default Language = fr
+ Permissions
+  Global permissions
+   Group' permissions
+    Registered users
+     Advanced permissions
+      Profile
+       Change email address = No
+      -> Apply
+ System
+  Module Management
+   User Control Panel
+    disable all modules but profile
 
 
 You need to patch phpbb3 in order to forward password change requests to ngw main database:
