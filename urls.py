@@ -1,7 +1,6 @@
 from django.conf.urls.defaults import *
 
 groups_urlpatterns = patterns('',
-    (r'^$', 'ngw.core.views.contactgroup_list'),
     (r'^add$', 'ngw.core.views.contactgroup_edit', {'id': None}),
     (r'^(?P<id>\d+)/$', 'ngw.core.views.contactgroup_detail'),
     (r'^(?P<id>\d+)/edit$', 'ngw.core.views.contactgroup_edit'),
@@ -55,7 +54,9 @@ urlpatterns = patterns('',
     (r'^contacts/(?P<cid>\d+)/filters/add$', 'ngw.core.views.contact_filters_add'),
     (r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)$', 'ngw.core.views.contact_filters_edit'),
 
+    (r'^contactgroups/$', 'ngw.core.views.contactgroup_list'),
     (r'^contactgroups/', include(groups_urlpatterns)),
+    (r'^events/$', 'ngw.core.views.event_list'),
     (r'^events/', include(groups_urlpatterns)),
 
     (r'^contactfields/$', 'ngw.core.views.field_list'),

@@ -520,6 +520,12 @@ class ContactGroup(NgwModel):
     def __repr__(self):
         return self.name.encode('utf-8')
 
+    def get_absolute_url(self):
+        if self.date:
+            return '/events/'+unicode(self.id)+u"/"
+        else:
+            return self.get_class_absolute_url()+unicode(self.id)+u"/"
+        
     def _append_subgroups(self, result):
         for g in self.direct_subgroups:
             if g not in result:
@@ -583,7 +589,8 @@ class ContactGroup(NgwModel):
         return self.get_members_query().all()
     members = property(get_members)
 
-    get_link_name=NgwModel.get_absolute_url
+    def get_link_name(self):
+        return self.get_absolute_url()
 
     def supergroups_includinghtml(self):
         sgs = self.supergroups

@@ -29,16 +29,16 @@
 {% endif %}
 {% endfor %}
 
-<h1 class="boxheader">Please select an operation:</h1>
-<div id=submitbar style="margin-top:0px;">
-<a href="contacts/{{user.id}}/">My information</a>
 {% if user.is_admin %}
-<a href="contactgroups/">Contact Groups</a>
-<a href="contactfields/">Setup of optional fields</a>
-<a href="choicegroups/">Setup of choice lists</a>
+<h1 class="boxheader">What would you like to browse?</h1>
+<div id=submitbar style="margin-top:0px;">
+<a href="contactgroups/">Contact groups</a>
+<a href="events/">Events</a>
+<a href="contactfields/">Optional fields</a>
+<a href="choicegroups/">Choice lists</a>
 <a href="logs?_order=-0">Logs</a>
-{% endif %}
 </div>
+{% endif %}
 
 {% if user.is_admin %}
 <h1 class="boxheader">Derniers développements</h1>

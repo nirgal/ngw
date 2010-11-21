@@ -5,6 +5,7 @@ from md5 import md5
 from sha import sha
 from random import random
 from base64 import b64encode
+from datetime import *
 from decoratedstr import remove_decoration
 from django.http import *
 from django.utils.safestring import mark_safe
@@ -931,7 +932,7 @@ def contactgroup_list(request):
         ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.direct_subgroups])), None ),
         #( u'Budget\u00a0code', None, 'budget_code', ContactGroup.budget_code ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
-        ( u'System\u00a0locked', None, 'system', ContactGroup.system ),
+        #( u'System\u00a0locked', None, 'system', ContactGroup.system ),
     ]
     args={}
     args['title'] = 'Select a contact group'
@@ -943,6 +944,115 @@ def contactgroup_list(request):
     if header:
         args['header'] = header.text
     return query_print_entities(request, 'list_groups.html', args)
+
+
+MONTHES = u'January,February,March,April,May,June,July,August,Septembre,October,November,December'.split(',')
+
+class WeekDate:
+    def __init__(self, date, events):
+        self.date = date
+        self.events = events
+
+    def days(self):
+        for i in range(7):
+            dt = self.date + timedelta(days=i)
+            events = self.events.get(dt, [])
+            yield dt, events
+
+class YearMonthCal:
+    def __init__(self, year, month, events):
+        self.year = year
+        self.month = month
+        self.events = events
+
+    def title(self):
+        return u'%s %s' % (MONTHES[self.month-1], self.year)
+
+    def prev(self):
+        year, month = self.year, self.month
+        month -= 1
+        if month < 1:
+            month = 12
+            year -= 1
+        return u'%s-%s' % (year, month)
+
+    def next(self):
+        year, month = self.year, self.month
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+        return u'%s-%s' % (year, month)
+
+    def weeks(self):
+        first_day_of_month = date(self.year, self.month, 1)
+        first_day_of_month_isocal = first_day_of_month.isocalendar()
+        firstweeknumber = first_day_of_month_isocal[1]
+
+        first_day_of_month_isoweekday = first_day_of_month_isocal[2] # 1=monday, 7=sunday
+        first_week_date = first_day_of_month - timedelta(days=first_day_of_month_isoweekday-1)
+
+        nextyear, nextmonth = self.year, self.month
+        nextmonth += 1
+        if nextmonth > 12:
+            nextmonth = 1
+            nextyear += 1
+        next_month_start = date(nextyear, nextmonth, 1)
+
+        dt = first_week_date
+        while dt < next_month_start:
+            yield WeekDate(dt, self.events)
+            dt += timedelta(days=7)
+
+
+@http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
+def event_list(request):
+    if not request.user.is_admin():
+        return unauthorized(request)
+
+    dt = request.REQUEST.get('dt', None)
+    year = month = None
+    if dt is not None:
+        try:
+            year, month = dt.split(u'-')
+            year = int(year)
+            month = int(month)
+        except ValueError:
+            year = month = None
+        else:
+            if year < 2000 or year > 2100 \
+             or month < 1 or month > 12:
+                year = month = None
+            
+    if year is None or month is None:
+        now = datetime.utcnow()
+        month = now.month
+        year = now.year
+        
+    q = Query(ContactGroup).filter(u"extract(year from date) = %s" % year).filter(u"extract(month from date) = %s" % month)
+
+    cols = [
+        ( u'Date', None, 'html_date', ContactGroup.date ),
+        ( u'Name', None, 'name', ContactGroup.name ),
+        ( u'Description', None, 'description', ContactGroup.description ),
+    ]
+
+    month_events = {}
+    for cg in q:
+        if not month_events.has_key(cg.date):
+            month_events[cg.date] = []
+        month_events[cg.date].append(cg)
+
+    args={}
+    args['title'] = u'Events'
+    args['query'] = q
+    args['cols'] = cols
+    args['objtype'] = ContactGroup
+    args['nav'] = navbar()
+    args['nav'].add_component(u'events')
+    args['year_month'] = YearMonthCal(year, month, month_events)
+    return query_print_entities(request, 'list_events.html', args)
 
 
 @http_authenticate(ngw_auth, 'ngw')

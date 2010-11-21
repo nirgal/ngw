@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+    
+{% block body %}
+
+<style>
+.ncalendar {
+    width: 100%;
+}
+.ncalendar th {
+    border-bottom: 1px solid #999;
+    border-left: none;
+    font-weight: normal;
+}
+.ncalendar tr + tr {
+    /* all lines but the first */
+    border-top: 1px solid #ccc;
+}
+.ncalendar td {
+    vertical-align: top;
+    height: 7ex;
+}
+.calday {
+    background-color: #eee;
+    text-align: right;
+    padding-right: 1ex;
+    font-size: 80%;
+}
+</style>
+
+<div id=submitbar>
+    <a href=".">Today</a>
+    <a href="?dt={{year_month.prev}}" style="margin-right:1ex;">←</a>
+    <a href="?dt={{year_month.next}}" style="margin-left:0ex;">→</a>
+    <a href=add style="float:right;"><img src="/media/img/admin/icon_addlink.gif" border=0> Add event</a>
+    <div class=pseudotitle style="float:none; text-align:center; border:none; background:none; font-size:140%; padding-top:0;"><b>{{ year_month.title }}</b></div>
+</div>
+<br>
+<table class='ncalendar'>
+<colgroup>
+<col width='14.285%'>
+<col width='14.285%'>
+<col width='14.285%'>
+<col width='14.285%'>
+<col width='14.285%'>
+<col width='14.285%'>
+<col width='14.285%'>
+</colgroup>
+<tr>
+<th>Monday
+<th>Tuesday
+<th>Wenesday
+<th>Thrusday
+<th>Friday
+<th>Saturday
+<th>Sunday
+{% for week in year_month.weeks %}
+<tr>
+{% for d, events in week.days %}
+<td><div class=calday>{{ d.day }}</div>
+{% for event in events %}
+{% if forloop.counter0 %}<br>
+{% endif %}
+• <a href="{{event.get_absolute_url}}" title="{{event.description}}">{{ event }}</a>
+{% endfor %}
+{% endfor %}
+{% endfor %}
+</table>
+<br>
+{% endblock %}
