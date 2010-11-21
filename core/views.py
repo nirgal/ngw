@@ -1098,10 +1098,11 @@ def contactgroup_members(request, gid, output_format=''):
 class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
-    field_group = forms.BooleanField(required=False, help_text=u'Does that group yield specific fields to its members?')
     date = forms.DateField(required=False, help_text=u'Use YYYY-MM-DD format. Leave empty for permanent groups.', widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
     budget_code = forms.CharField(required=False, max_length=10)
-    mailman_address = forms.CharField(required=False, max_length=255)
+    field_group = forms.BooleanField(required=False, help_text=u'Does that group yield specific fields to its members?')
+    mailman_address = forms.CharField(required=False, max_length=255, help_text=u'Mailing list address, if the group is linked to a mailing list.')
+    has_news = forms.BooleanField(required=False, help_text=u'Does that group supports internal news system?')
     direct_supergroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, *args, **kargs):
@@ -1137,6 +1138,7 @@ def contactgroup_edit(request, id):
             cg.date = data['date']
             cg.budget_code = data['budget_code']
             cg.mailman_address = data['mailman_address']
+            cg.has_news = data['has_news']
             
             old_direct_supergroups = cg.direct_supergroups
             old_direct_supergroups_ids = [ g.id for g in old_direct_supergroups ] # TODO: fine a better algo!

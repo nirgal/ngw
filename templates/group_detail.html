@@ -87,7 +87,9 @@
     <a href="add"><img src="/media/img/admin/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
     <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="/media/img/admin/icon_addlink.gif" border=0> Add to another group</a>
+    {% if cg.has_news %}
     <a href="../news/">News</a> 
+    {% endif %}
     {% if cg.mailman_address %}
     <a href="../mailman">Mailman</a>
     {% endif %}
