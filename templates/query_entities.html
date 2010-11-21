@@ -16,7 +16,28 @@ Optionnal parameters:
 <table id=objlist class=objlist>
 {% for row in query %}
     {% if not forloop.counter0 %}
-        <thead><tr>
+        <thead>
+        <tr class=rowodd id=objsummary>
+            <td colspan={{ cols|length }}>
+            {% ifnotequal npages 1 %}
+                {{ npages }} pages
+                {% for i in page|pagenumber_iterator:npages %}
+                    {% ifnotequal page i %}
+                    <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
+                    {% else %}
+                    <span style="border: solid 1px #999; width: auto; background:#fce">
+                    {% endifnotequal %}
+                    <b>{{i}}</b>
+                    {% ifnotequal page i %}
+                    </a>
+                    {% else %}
+                    </span>
+                    {% endifnotequal %}&nbsp;
+                {% endfor %}
+                -
+            {% endifnotequal %}
+            {{ count }} result{{ count|pluralize }}
+        <tr>
         {% for col in cols %}
             <th>
             {% if col|get_notnull:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
