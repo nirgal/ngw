@@ -604,6 +604,9 @@ class ContactGroup(NgwModel):
             return u""
         return u" (including "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
+    def is_event(self):
+        return self.date is not None
+
     def html_date(self):
         if self.date:
             return ngw_date_format(self.date)
