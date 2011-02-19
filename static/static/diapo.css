@@ -1,0 +1,13 @@
+body {
+    background-color: #000000;
+}
+a[href] {
+    color: #ffffff;
+}
+img {
+    border: 0;
+}
+table#imgcontain {
+    border:0;
+    text-align:center;
+}
