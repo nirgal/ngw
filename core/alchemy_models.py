@@ -14,6 +14,7 @@ from itertools import chain
 from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, MEDIA_URL
 import decoratedstr
 from ngw.extensions import hooks
+from ngw.core.nav import *
 from ngw.core import gpg
 from ngw.core.widgets import *
 from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format
@@ -506,6 +507,7 @@ class Contact(NgwModel):
         cfv.value = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
 
+
 class ContactGroup(NgwModel):
     class Meta:
         verbose_name = u"contacts group"
@@ -519,6 +521,15 @@ class ContactGroup(NgwModel):
 
     def __repr__(self):
         return self.name.encode('utf-8')
+
+    def get_smart_navbar(self):
+        nav = navbar()
+        if self.date:
+            nav.add_component(("events", "Events"))
+        else:
+            nav.add_component(("contactgroups", "Contact Groups"))
+        nav.add_component((str(self.id), self.name))
+        return nav
 
     def get_absolute_url(self):
         if self.date:

@@ -18,6 +18,7 @@ from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
 from ngw.core.mailmerge import *
 from ngw.core.widgets import *
+from ngw.core.nav import *
 
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
@@ -92,38 +93,6 @@ class require_group:
             return func(*args, **kwargs)
         return wrapped
     
-
-class navbar(object):
-    '''
-    This is a breadcrumb builder, to build a navigation bar.
-    '''
-    def __init__(self, *args):
-        self.components = [ (u'', u'Home') ]
-        for arg in args:
-            self.add_component(arg)
-
-    def add_component(self, arg):
-        if isinstance(arg, tuple):
-            self.components.append(arg)
-        else:
-            assert isinstance(arg, unicode)
-            self.components.append((arg,arg))
-        
-    def geturl(self, idx):
-        return u''.join(self.components[i][0]+u'/' for i in range(idx+1))
-
-    def getfragment(self, idx):
-        result = u''
-        if idx!=len(self.components)-1:
-            result += u'<a href="'+self.geturl(idx)+'\">'
-        result += html.escape(self.components[idx][1])
-        if idx!=len(self.components)-1:
-            result += u'</a>'
-        return result
-
-    def __unicode__(self):
-        return u' › '.join([self.getfragment(i) for i in range(len(self.components)) ])
-
 
 def get_display_fields(user):
     # check the field still exists
@@ -518,14 +487,14 @@ def contact_detail(request, gid=None, cid=None):
         if cfv:
             rows.append((cf.name, mark_safe(cfv.as_html())))
     
-    is_admin = c.is_admin()
     args={}
     args['title'] = u'Details for '+unicode(c)
     if gid:
         cg = Query(ContactGroup).get(gid)
         #args['title'] += u' in group '+cg.unicode_with_date()
         args['contact_group'] = cg
-        args['nav'] = navbar(ContactGroup.get_class_navcomponent(), cg.get_navcomponent(), u'members')
+        args['nav'] = cg.get_smart_navbar()
+        args['nav'].add_component(u'members')
     else:
         args['nav'] = navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(c.get_navcomponent())
@@ -699,7 +668,8 @@ def contact_edit(request, gid=None, cid=None):
     args['id'] = cid
     args['objtype'] = objtype
     if gid:
-        args['nav'] = navbar(ContactGroup.get_class_navcomponent(), cg.get_navcomponent(), u'members')
+        args['nav'] = cg.get_smart_navbar()
+        args['nav'].add_component(u'members')
     else:
         args['nav'] = navbar(Contact.get_class_navcomponent())
     if cid:
@@ -751,7 +721,8 @@ def contact_pass(request, gid=None, cid=None):
     args['form'] = form
     if gid:
         cg = Query(ContactGroup).get(gid)
-        args['nav'] = navbar(ContactGroup.get_class_navcomponent(), cg.get_navcomponent(), u'members')
+        args['nav'] = cg.get_smart_navbar()
+        args['nav'].add_component(u'members')
     else:
         args['nav'] = navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
@@ -771,7 +742,8 @@ def contact_delete(request, gid=None, cid=None):
         next_url = reverse('ngw.core.views.contact_list')
     if gid:
         cg = Query(ContactGroup).get(gid)
-        base_nav = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'members')
+        args['nav'] = cg.get_smart_navbar()
+        args['nav'].add_component(u'members')
     else:
         base_nav = None
     return generic_delete(request, o, next_url, base_nav=base_nav)
@@ -1050,7 +1022,7 @@ def event_list(request):
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = navbar()
-    args['nav'].add_component(u'events')
+    args['nav'].add_component(('events', u'Events'))
     args['year_month'] = YearMonthCal(year, month, month_events)
     return query_print_entities(request, 'list_events.html', args)
 
@@ -1154,7 +1126,9 @@ def contactgroup_members(request, gid, output_format=''):
         args['cg'] = cg
         args['emails'] = emails
         args['noemails'] = noemails
-        args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'members', u'emails')
+        args['nav'] = cg.get_smart_navbar()
+        args['nav'].add_component(u'members')
+        args['nav'].add_component(u'emails')
         return render_to_response('emails.html', args, RequestContext(request))
     elif output_format == u'csv':
         result = u''
@@ -1201,7 +1175,8 @@ def contactgroup_members(request, gid, output_format=''):
     args['filter'] = strfilter
     args['fields'] = strfields
     ####
-    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'members')
+    args['nav'] = cg.get_smart_navbar()
+    args['nav'].add_component(u'members')
     return query_print_entities(request, 'group_detail.html', args)
 
 
@@ -1218,6 +1193,7 @@ class ContactGroupForm(forms.Form):
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
         self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.date, ContactGroup.name]) ]
+
 
 @http_authenticate(ngw_auth, 'ngw')
 @require_group(GROUP_USER_NGW)
@@ -1296,11 +1272,10 @@ def contactgroup_edit(request, id):
     args['form'] = form
     if id:
         args['o'] = cg
-    args['nav'] = navbar(ContactGroup.get_class_navcomponent())
-    if id:
-        args['nav'].add_component(cg.get_navcomponent())
+        args['nav'] = cg.get_smart_navbar()
         args['nav'].add_component(u'edit')
     else:
+        args['nav'] = navbar(ContactGroup.get_class_navcomponent())
         args['nav'].add_component(u'add')
 
     return render_to_response('edit.html', args, RequestContext(request))
@@ -1472,7 +1447,8 @@ def contactgroup_add_contacts_to(request):
 
     args = {}
     args['title'] = 'Add contacts to a group'
-    args['nav'] = navbar(ContactGroup.get_class_navcomponent(), (u'add_contacts_to', u'add contacts to'))
+    args['nav'] = cg.get_smart_navbar()
+    args['nav'].add_component((u'add_contacts_to', u'add contacts to'))
     args['groups'] = Query(ContactGroup).order_by(desc(ContactGroup.date), ContactGroup.name)
     args['query'] = q
     return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
@@ -1574,7 +1550,10 @@ def contactingroup_edit(request, gid, cid):
             inherited_info += u'<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
     args['inherited_info'] = mark_safe(inherited_info)
 
-    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'members', contact.get_navcomponent(), u'membership')
+    args['nav'] = cg.get_smart_navbar()
+    args['nav'].add_component(u'members')
+    args['nav'].add_component(contact.get_navcomponent())
+    args['nav'].add_component(u'membership')
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1619,7 +1598,9 @@ def contactingroup_delete(request, gid, cid):
     if not o:
         return HttpResponse('Error, that contact is not a direct member. Please check subgroups')
     #request.user.push_message(u'%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
-    return generic_delete(request, o, next_url=cg.get_absolute_url()+u'members/', base_nav=navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'members'))
+    base_nav = cg.get_smart_navbar()
+    base_nav.add_component(u'members')
+    return generic_delete(request, o, next_url=cg.get_absolute_url()+u'members/', base_nav=base_nav)
     # TODO: realnav bar is 'remove', not 'delete'
 
 
@@ -1641,7 +1622,8 @@ def contactgroup_news(request, gid):
     args['news'] = Query(ContactGroupNews).filter(ContactGroupNews.contact_group==cg).order_by(desc(ContactGroupNews.date))
     args['cg'] = cg
     args['objtype'] = ContactGroupNews
-    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'news')
+    args['nav'] = cg.get_smart_navbar()
+    args['nav'].add_component(u'news')
     return render_to_response('news.html', args, RequestContext(request))
 
 
@@ -1693,7 +1675,8 @@ def contactgroup_news_edit(request, gid, nid):
     if nid:
         args['o'] = news
         args['id'] = nid
-    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'news')
+    args['nav'] = cg.get_smart_navbar()
+    args['nav'].add_component(u'news')
     if nid:
         args['nav'].add_component(news.get_navcomponent())
         args['nav'].add_component(u'edit')
@@ -1743,11 +1726,14 @@ Ci-joint votre message original.
     
     args = {}
     args['title'] = u'Mailman synchronisation'
-    args['nav'] = navbar(cg.get_class_navcomponent(), cg.get_navcomponent(), u'mailman')
+    args['nav'] = cg.get_smart_navbar()
+    args['nav'].add_component(u'mailman')
     args['form'] = form
     args['cg'] = cg
 
     return render_to_response('group_mailman.html', args, RequestContext(request))
+
+
 #######################################################################
 #
 # Contact Fields
