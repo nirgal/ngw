@@ -656,6 +656,13 @@ def contact_edit(request, gid=None, cid=None):
             form = ContactEditForm(id=cid, initial=initialdata, request_user=request.user, contactgroup=cg)
 
         else:
+            for cf in Query(ContactField):
+                if cf.default:
+                    if cf.type == FTYPE_DATE and cf.default == u'today':
+                        initialdata[unicode(cf.id)] = date.today()
+                    else:
+                        initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cf.default)
+
             if cg:
                 initialdata['groups'] = [ cg.id ]
                 form = ContactEditForm(id=cid, initial=initialdata, contactgroup=cg, request_user=request.user)
@@ -742,8 +749,8 @@ def contact_delete(request, gid=None, cid=None):
         next_url = reverse('ngw.core.views.contact_list')
     if gid:
         cg = Query(ContactGroup).get(gid)
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'members')
+        base_nav = cg.get_smart_navbar()
+        base_nav.add_component(u'members')
     else:
         base_nav = None
     return generic_delete(request, o, next_url, base_nav=base_nav)
@@ -1800,6 +1807,7 @@ class FieldEditForm(forms.Form):
     contact_group = forms.CharField(label=u'Only for', required=False, widget=forms.Select)
     type = forms.CharField(widget=forms.Select)
     choicegroup = forms.CharField(required=False, widget=forms.Select)
+    default_value = forms.CharField(required=False)
     move_after = forms.IntegerField(widget=forms.Select())
 
     def __init__(self, cf, *args, **kargs):
@@ -1826,7 +1834,9 @@ class FieldEditForm(forms.Form):
         else:
             self.fields['choicegroup'].widget.attrs['disabled'] = 1
             self.fields['choicegroup'].required = False
-       
+        
+        self.fields['default_value'].widget.attrs['disabled'] = 1
+
         self.fields['move_after'].widget.choices = [ (5, 'Name') ] + [ (field.sort_weight + 5, field.name) for field in Query(ContactField).order_by('sort_weight') ]
 
         if cf and cf.system:
@@ -1860,6 +1870,7 @@ def field_edit(request, id):
         initial['contact_group'] = cf.contact_group_id
         initial['type'] = cf.type
         initial['choicegroup'] = cf.choice_group_id
+        initial['default_value'] = cf.default
         initial['move_after'] = cf.sort_weight-5
     else:
         cf = None
