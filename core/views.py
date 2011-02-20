@@ -1317,94 +1317,98 @@ def contactgroup_add_contacts_to(request):
 
     if request.method == 'POST':
         target_gid = request.POST[u'group']
-        target_group = Query(ContactGroup).get(target_gid)
-        assert target_group
-        t = request.REQUEST.get('type', u'')
-        added_contacts = []
-        changed_contacts = []
-        for param in request.POST:
-            if not param.startswith(u'contact_'):
-                continue
-            contact_id = param[len(u'contact_'):]
-            contact = Query(Contact).get(contact_id)
-            assert contact
-            cig = Query(ContactInGroup).get((contact_id, target_gid))
-            isAdded = False
-            if not cig:
-                cig = ContactInGroup(contact_id, target_gid)
-                added_contacts.append(contact)
-                isAdded = True
-                log = Log(request.user.id)
-                log.action = LOG_ACTION_ADD
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(target_gid)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+target_group.unicode_with_date()
-            if t == u'Invite':
-                if not cig.invited:
-                    if not isAdded:
-                        changed_contacts.append(contact)
+        if target_gid:
+            target_group = Query(ContactGroup).get(target_gid)
+            assert target_group
+            t = request.REQUEST.get('type', u'')
+            added_contacts = []
+            changed_contacts = []
+            for param in request.POST:
+                if not param.startswith(u'contact_'):
+                    continue
+                contact_id = param[len(u'contact_'):]
+                contact = Query(Contact).get(contact_id)
+                assert contact
+                cig = Query(ContactInGroup).get((contact_id, target_gid))
+                isAdded = False
+                if not cig:
+                    cig = ContactInGroup(contact_id, target_gid)
+                    added_contacts.append(contact)
+                    isAdded = True
                     log = Log(request.user.id)
-                    log.action = LOG_ACTION_CHANGE
+                    log.action = LOG_ACTION_ADD
                     log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(target_gid)
                     log.target_repr = u'Membership contact '+contact.name+u' in group '+target_group.unicode_with_date()
-                    log.property = u'invited'
-                    log.property_repr = u'Invited'
-                    log.change = u'new value is true'
-                cig.invited = True
-                cig.member = False
-                cig.declined_invitation = False
-            elif t == u'Member':
-                if not cig.member:
-                    if not isAdded:
-                        changed_contacts.append(contact)
-                    log = Log(request.user.id)
-                    log.action = LOG_ACTION_CHANGE
-                    log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(target_gid)
-                    log.target_repr = u'Membership contact '+contact.name+u' in group '+target_group.unicode_with_date()
-                    log.property = u'member'
-                    log.property_repr = u'Member'
-                    log.change = u'new value is true'
-                cig.invited = False
-                cig.member = True
-                cig.declined_invitation = False
-            elif t == u'Declined invitation':
-                if not cig.declined_invitation:
-                    if not isAdded:
-                        changed_contacts.append(contact)
-                    log = Log(request.user.id)
-                    log.action = LOG_ACTION_CHANGE
-                    log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(target_gid)
-                    log.target_repr = u'Membership contact '+contact.name+u' in group '+target_group.unicode_with_date()
-                    log.property = u'declined_invitation'
-                    log.property_repr = u'Declined invitation'
-                    log.change = u'new value is true'
-                cig.invited = False
-                cig.member = False
-                cig.declined_invitation = True
-            else:
-                raise Exception('Unsupported membership type '+t.encode('utf8'))
-        if added_contacts:
-            msgpart_contacts = u', '.join([c.name for c in added_contacts])
-            if len(added_contacts)==1:
-                msg = u'Contact %s has been added in %s with status %s.'
-            else:
-                msg = u'Contacts %s have been added in %s with status %s.'
-            request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
-        if changed_contacts:
-            msgpart_contacts = u', '.join([c.name for c in changed_contacts])
-            if len(changed_contacts)==1:
-                msg = u'Contact %s allready was in %s. Status has been changed to %s.'
-            else:
-                msg = u'Contacts %s allready were in %s. Status have been changed to %s.'
-            request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
+                if t == u'Invite':
+                    if not cig.invited:
+                        if not isAdded:
+                            changed_contacts.append(contact)
+                        log = Log(request.user.id)
+                        log.action = LOG_ACTION_CHANGE
+                        log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(target_gid)
+                        log.target_repr = u'Membership contact '+contact.name+u' in group '+target_group.unicode_with_date()
+                        log.property = u'invited'
+                        log.property_repr = u'Invited'
+                        log.change = u'new value is true'
+                    cig.invited = True
+                    cig.member = False
+                    cig.declined_invitation = False
+                elif t == u'Member':
+                    if not cig.member:
+                        if not isAdded:
+                            changed_contacts.append(contact)
+                        log = Log(request.user.id)
+                        log.action = LOG_ACTION_CHANGE
+                        log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(target_gid)
+                        log.target_repr = u'Membership contact '+contact.name+u' in group '+target_group.unicode_with_date()
+                        log.property = u'member'
+                        log.property_repr = u'Member'
+                        log.change = u'new value is true'
+                    cig.invited = False
+                    cig.member = True
+                    cig.declined_invitation = False
+                elif t == u'Declined invitation':
+                    if not cig.declined_invitation:
+                        if not isAdded:
+                            changed_contacts.append(contact)
+                        log = Log(request.user.id)
+                        log.action = LOG_ACTION_CHANGE
+                        log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(target_gid)
+                        log.target_repr = u'Membership contact '+contact.name+u' in group '+target_group.unicode_with_date()
+                        log.property = u'declined_invitation'
+                        log.property_repr = u'Declined invitation'
+                        log.change = u'new value is true'
+                    cig.invited = False
+                    cig.member = False
+                    cig.declined_invitation = True
+                else:
+                    raise Exception('Unsupported membership type '+t.encode('utf8'))
+            if added_contacts:
+                msgpart_contacts = u', '.join([c.name for c in added_contacts])
+                if len(added_contacts)==1:
+                    msg = u'Contact %s has been added in %s with status %s.'
+                else:
+                    msg = u'Contacts %s have been added in %s with status %s.'
+                request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
+            if changed_contacts:
+                msgpart_contacts = u', '.join([c.name for c in changed_contacts])
+                if len(changed_contacts)==1:
+                    msg = u'Contact %s allready was in %s. Status has been changed to %s.'
+                else:
+                    msg = u'Contacts %s allready were in %s. Status have been changed to %s.'
+                request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
 
-        Contact.check_login_created(request.user)
-        Session.flush() # CHECK ME
-        for c in added_contacts:
-            hooks.membership_changed(request.user, c, target_group)
-        for c in changed_contacts:
-            hooks.membership_changed(request.user, c, target_group)
+            Contact.check_login_created(request.user)
+            Session.flush() # CHECK ME
+            for c in added_contacts:
+                hooks.membership_changed(request.user, c, target_group)
+            for c in changed_contacts:
+                hooks.membership_changed(request.user, c, target_group)
 
-        return HttpResponseRedirect(target_group.get_absolute_url())
+            return HttpResponseRedirect(target_group.get_absolute_url())
+        else:
+            request.user.push_message('You must select a target group')
+            Session.commit()
 
     gid = request.REQUEST.get(u'gid', u'')
     assert gid

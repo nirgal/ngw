@@ -22,6 +22,7 @@ function selectAll(target_checked) {
 <h1 class="boxheader">Select a group</h1>
 <div class=box>
 <select name=group>
+<option value=''>Choose a group
 {% for g in groups %}
 {% ifchanged g.is_event %}
 {% if g.is_event %}
