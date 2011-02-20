@@ -6,7 +6,7 @@ function dump(o) {
 }
 
 function check_footer_bottom() {
-    min_height = document.body.clientHeight - $('#header').outerHeight() - $('#footer').outerHeight();
+    min_height = document.body.clientHeight - $('#banner').outerHeight() - $('#footer').outerHeight();
     /* alert('min_height='+min_height); */
     if (min_height > 0)
         $('#main').css('min-height', min_height+'px');

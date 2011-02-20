@@ -76,7 +76,7 @@ a img {
 }
 
 #main {
-    padding: 1ex;
+    padding: 0;
 }
 div#title, h1 {
     font-weight:bold;
