@@ -4,7 +4,7 @@ It is recommanded to use Debian 6 (Squeeze) or above
 
 aptitude install python-django python-sqlalchemy python-psycopg2 postgresql postgresql-contrib libapache2-mod-python libapache2-mod-auth-pgsql pwgen openoffice.org-sdbc-postgresql python-uno oomailing python-decoratedstr libjs-jquery
 
-oomailing and python-decoratedstr packages can be get at http://www.nirgal.com/debian/
+oomailing and python-decoratedstr packages can be downloaded at http://www.nirgal.com/debian/
 
 Apache
 ======
@@ -28,6 +28,7 @@ createdb ngw -E unicode
 
 Rigth now, it's not possible to start from an empty database. You need to restore a backup.
 
+If you are really creating a database from scratch, remember you need stuff from contrib:
 See http://developer.postgresql.org/pgdocs/postgres/contrib.html, as postgres user, run
 postgres:~$ psql ngw -f /usr/share/postgresql/8.4/contrib/int_aggregate.sql
 postgres:~$ psql ngw -f /usr/share/postgresql/8.4/contrib/_int.sql
@@ -53,21 +54,9 @@ Phpbb3 extension (optional)
 Note: This section documentation is incomplete
 
 Create a specific postgres user and database:
-
-As user postgres:
-postgres@localhost:~$ createuser
-Saisissez le nom du rôle à ajouter : phpbb3
-Le nouveau rôle est-il super-utilisateur ? (o/n) n
-Le nouveau rôle est-il autorisé à créer des bases de données ? (o/n) o
-Le nouveau rôle est-il autorisé à créer de nouveaux rôles ? (o/n) n
-
-Change this user's password:
-postgres@localhost:~$ psql template1
-template1=# ALTER USER phpbb3 PASSWORD 'secretpassword';
-template1=# \q
-
-Create an empty database:
-postgres@localhost:~$ createdb phpbb3 -h localhost -U phpbb3 -W
+su - postgres -c "createuser --no-superuser --createdb --no-createrole phpbb3"
+su - postgres -c "psql -c '\password phpbb3'"
+su - postgres -c "createdb phpbb3 -O phpbb3"
 
 Install the packages:
 aptitude install phpbb3 php5-pgsql php5-curl php5-cli sudo
@@ -96,13 +85,6 @@ $dbtype='pgsql';
 ?>
 
 If you get a white page, make sure you restart apache, not just reload it.
-
-There's a nasty bug in lenny version of php5-pgsql. The simpliest workaround is to disable SSL:
-In /etc/postgresql/8.3/main/postgresql.conf
-change ssl = true
-into ssl = false
-and "invoke-rc.d postgresql-8.3 restart"
-All connections are local, so it shouldn't be a security problem.
 
 The password to the phpbb database should be set in the ~/.pgpass file.
 This is nice not to have it in many places, but this is a problem for the www-data user since its home directory is available to public.
