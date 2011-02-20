@@ -33,5 +33,3 @@ class navbar(object):
     def __unicode__(self):
         return u' › '.join([self.getfragment(i) for i in range(len(self.components)) ])
 
-
-

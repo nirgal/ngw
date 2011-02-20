@@ -7,6 +7,17 @@ from django.utils import html
 register = template.Library()
 
 @register.filter
+def nav_is_active(navbar, tabname):
+    if len(navbar.components)<2:
+        activetab = u''
+    else:
+        activetab = navbar.components[1][0]
+    if activetab == tabname:
+        return u"id=active"
+    return u""
+
+
+@register.filter
 def escape_amp_query(txt):
     return txt.replace(u'&', u'%26')
 

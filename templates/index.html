@@ -30,21 +30,10 @@
 {% endfor %}
 
 {% if user.is_admin %}
-<h1 class="boxheader">What would you like to browse?</h1>
-<div id=submitbar style="margin-top:0px;">
-<a href="contactgroups/">Contact groups</a>
-<a href="events/">Events</a>
-<a href="contactfields/">Optional fields</a>
-<a href="choicegroups/">Choice lists</a>
-<a href="logs?_order=-0">Logs</a>
-</div>
-{% endif %}
-
-{% if user.is_admin %}
 <h1 class="boxheader">Derniers développements</h1>
 <div class=box>
 {% for article in news %}
-<b>{{ article.date|ngw_date_format }}</b><br>
+<b>{{ article.date|ngw_date_format }}</b> • <b>{{article.title}}</b><br>
 {{ article.text|linebreaksbr }}<br><br>
 {% endfor %}
 <a href="{{ GroupAdmin.get_absolute_url }}news/">Toutes les news...</a>

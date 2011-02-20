@@ -1,6 +1,6 @@
 body {
-    font-family:sans-serif;
-    margin:0px;
+    margin: 0;
+    font-family: sans-serif;
 /*    background-color: #f0f0f0;*/
 }
 body, table {
@@ -8,21 +8,60 @@ body, table {
 }
 a[href] {
     text-decoration: none;
+	color: #141466;
 }
+a[href]:hover {
+    text-decoration: underline;
+}
+
 a img { 
     border:none;
 }
 
-/*
 #banner {
-    font-weight:bold;
-    font-size: 120%;
-    padding: 1ex;
-    background-color: #008000;
-    color: #ccc;
+	background: lightblue;
+	border-bottom: 1px solid darkblue;
+	padding: 5px;
+	padding-bottom: 0px;
+}
+#banner #sitetitle {
+	float: left;
+	margin-left: 0.5ex;
+	font-size: 130%;
+	/*
+	font-weight:bold;
+	font-size:200%;
+	*/
+}
+#banner #userinfo {
+	float: right;
+}
+#banner #userinfo a[href] {
+	text-decoration:underline;
 }
 
-*/
+#banner #tabs a[href] {
+    display: inline-block;
+    background: #eee;
+    border: 1px solid darkblue;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    -moz-border-radius-topleft: 5px;
+    -moz-border-radius-topright: 5px;
+    -webkit-border-top-left-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    border-bottom: none;
+    margin: 0.7ex -1ex 0ex 3ex;
+    padding: 0.5ex 1ex 0.5ex 1ex;
+    font-weight: bold;
+    font-size: 120%;
+}
+#banner #tabs a[href]#active {
+    background: white;
+    margin-bottom: -1px;
+    border-bottom: 1px solid white;
+}
+
 #nav {
     border-bottom: 1px solid #ccc;
     padding: 0ex;
@@ -243,13 +282,10 @@ table p.datetime { font-size:10px; margin-left:0; padding-left:0; }
 ul.timelist, .timelist li { list-style-type:none; margin:0; padding:0; }
 .timelist a { padding:2px; }
 
-table#banner { width:100%; border-style:none; background-color: #008000; }
-table#banner td { border-style:none; }
-table#banner td#sitetitle { font-weight:bold; font-size:130%; padding:1ex; color:#ccc; }
-table#banner td#userinfo { font-size:small; padding:1ex; color:yellow; text-align:right; vertical-align:bottom; }
-table#banner td#userinfo a[href] { color:yellow; text-decoration:underline; }
-
 form {
     margin: 0px;
+}
+br.clearall {
+    clear: both;
 }
 

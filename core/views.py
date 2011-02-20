@@ -894,9 +894,9 @@ def contactgroup_list(request):
         else:
             return u'No'
 
-    q = Query(ContactGroup)
+    q = Query(ContactGroup).filter('date IS NULL')
     cols = [
-        ( u'Date', None, 'html_date', ContactGroup.date ),
+        #( u'Date', None, 'html_date', ContactGroup.date ),
         ( u'Name', None, 'name', ContactGroup.name ),
         ( u'Description', None, 'description', ContactGroup.description ),
         #( u'Contact fields', None, print_fields, ContactGroup.field_group ),
@@ -912,10 +912,8 @@ def contactgroup_list(request):
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = navbar(ContactGroup.get_class_navcomponent())
-    header = Query(Config).get(u'groups header')
-    if header:
-        args['header'] = header.text
-    return query_print_entities(request, 'list_groups.html', args)
+    #return query_print_entities(request, 'list_groups.html', args)
+    return query_print_entities(request, 'list.html', args)
 
 
 MONTHES = u'January,February,March,April,May,June,July,August,Septembre,October,November,December'.split(',')

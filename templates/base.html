@@ -1,13 +1,25 @@
+{% load ngwtags %}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <title>{{ title|safe }}</title>
 <script src='/javascript/jquery/jquery.js' type='text/javascript'></script>
 <link rel="stylesheet" type="text/css" href="/ngw.css">
-<table id=banner>
-<tr>
-<td id=sitetitle>{{ banner|safe }}
-{% if user.id %} <td id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="https://logout@{{request.META.HTTP_HOST}}/logout">Logout</a>{% endif %}
-</table>
+
+<div id=banner>
+	<span id=sitetitle>{{ banner|safe }}</span>
+	{% if user.id %}<span id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="https://logout@{{request.META.HTTP_HOST}}/logout">Logout</a></span>{% endif %}
+	<br class=clearall>
+	<div id=tabs>
+		<a href="/" {{ nav|nav_is_active:""}}>news</a>
+		<a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>groups</a>
+		<a href="/events/" {{ nav|nav_is_active:"events"}}>events</a>
+		{% if user.is_admin %}
+		<a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>fields</a>
+		<a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>choices</a>
+		<a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>logs</a>
+		{% endif %}
+	</div>
+</div>
 
 <div id=nav>
 {% if user.id %}
