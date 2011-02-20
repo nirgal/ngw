@@ -1,8 +1,8 @@
-{% load ngwtags %}
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+{% load ngwtags %}<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <title>{{ title|safe }}</title>
 <script src='/javascript/jquery/jquery.js' type='text/javascript'></script>
+<script src='{{MEDIA_URL}}/ngw.js' type='text/javascript'></script>
 <link rel="stylesheet" type="text/css" href="/ngw.css">
 
 <div id=banner>
@@ -41,4 +41,10 @@
 <p>No body.
 {% endblock %}
 </div>
+
+<div id=footer>
+<a href='http://www.enercoop.coop/' target=_blank noreferrer>Powered by renewable energy</a>
+, <a href='http://www.debian.org/' target=_blank noreferrer>Debian/GNU Linux</a>
+</div>
+
 </html>

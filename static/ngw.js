@@ -5,6 +5,16 @@ function dump(o) {
     document.writeln("<hr>"+txt);
 }
 
+function check_footer_bottom() {
+    min_height = document.body.clientHeight - $('#header').outerHeight() - $('#footer').outerHeight();
+    /* alert('min_height='+min_height); */
+    if (min_height > 0)
+        $('#main').css('min-height', min_height+'px');
+}
+
+$(document).ready(check_footer_bottom);
+$(window).resize(check_footer_bottom);
+
 //-------- dummy i18n.js
 function gettext(txt) {
     return txt;

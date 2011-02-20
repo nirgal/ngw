@@ -67,7 +67,14 @@ a img {
     padding: 0ex;
     padding-left: 1ex;
 }
- 
+
+#footer {
+    text-align: center;
+    background: lightblue;
+    border-top: 1px solid darkblue;
+    font-size: 70%;
+}
+
 #main {
     padding: 1ex;
 }
