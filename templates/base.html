@@ -9,6 +9,7 @@
 	<span id=sitetitle>{{ banner|safe }}</span>
 	{% if user.id %}<span id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="https://logout@{{request.META.HTTP_HOST}}/logout">Logout</a></span>{% endif %}
 	<br class=clearall>
+	{% if nav %}
 	<div id=tabs>
 		<a href="/" {{ nav|nav_is_active:""}}>news</a>
 		<a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>groups</a>
@@ -19,6 +20,7 @@
 		<a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>logs</a>
 		{% endif %}
 	</div>
+	{% endif %}
 </div>
 
 <div id=nav>
