@@ -503,7 +503,6 @@ class Contact(NgwModel):
             cfv = ContactFieldValue()
             cfv.contact_id = self.id
             cfv.contact_field_id = FIELD_LASTCONNECTION
-        # cfv.value = datetime.utcnow().date().isoformat()
         cfv.value = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
 
@@ -681,6 +680,144 @@ class ContactGroup(NgwModel):
             return u'mig'
         else:
             return u'mg'
+    
+    
+    """
+    group_member_mode is a combinaison of letters "mido"
+    TODO enforce that:
+    m/i/d are mutually exclusive
+    o require m
+    returns
+    LOG_ACTION_ADD if added
+    LOG_ACTION_CHANGE if changed
+    LOG_ACTION_DEL if deleted
+    0 other wise
+    """
+    def set_member(self, logged_contact, contact, group_member_mode):
+
+        result = 0
+
+        #operation = u''
+        #if group_member_mode and group_member_mode[0] in u'+-':
+        #    operation = group_member_mode[0]
+        #    group_member_mode = group_member_mode[1:]
+
+        cig = Query(ContactInGroup).get((contact.id, self.id))
+        if not cig and not group_member_mode:
+            return result
+        
+        if not cig:
+            cig = ContactInGroup(contact.id, self.id)
+            log = Log(logged_contact.id)
+            log.action = LOG_ACTION_ADD
+            log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+            log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+            result = LOG_ACTION_ADD
+
+        if u'm' in group_member_mode:
+            if not cig.member:
+                cig.member = True
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'member'
+                log.property_repr = u'Member'
+                log.change = u'new value is true'
+                result = result or LOG_ACTION_CHANGE
+        else:
+            if cig.member:
+                cig.member = False
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'member'
+                log.property_repr = u'Member'
+                log.change = u'new value is false'
+                result = result or LOG_ACTION_CHANGE
+
+        if u'i' in group_member_mode:
+            if not cig.invited:
+                cig.invited = True
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'invited'
+                log.property_repr = u'Invited'
+                log.change = u'new value is true'
+                result = result or LOG_ACTION_CHANGE
+        else:
+            if cig.invited:
+                cig.invited = False
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'invited'
+                log.property_repr = u'Invited'
+                log.change = u'new value is false'
+                result = result or LOG_ACTION_CHANGE
+
+        if u'd' in group_member_mode:
+            if not cig.declined_invitation:
+                cig.declined_invitation = True
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'declined_invitation'
+                log.property_repr = u'Declined invitation'
+                log.change = u'new value is true'
+                result = result or LOG_ACTION_CHANGE
+        else:
+            if cig.declined_invitation:
+                cig.declined_invitation = False
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'declined_invitation'
+                log.property_repr = u'Declined invitation'
+                log.change = u'new value is false'
+                result = result or LOG_ACTION_CHANGE
+
+        if u'o' in group_member_mode:
+            if not cig.operator:
+                cig.operator = True
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'operator'
+                log.property_repr = u'Operator'
+                log.change = u'new value is true'
+                result = result or LOG_ACTION_CHANGE
+        else:
+            if cig.operator:
+                cig.operator = False
+                log = Log(logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+                log.property = u'operator'
+                log.property_repr = u'Operator'
+                log.change = u'new value is false'
+                result = result or LOG_ACTION_CHANGE
+
+        if cig and not group_member_mode:
+            cig.delete()
+            log = Log(logged_contact.id)
+            log.action = LOG_ACTION_DEL
+            log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
+            log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+            result = LOG_ACTION_CHANGE
+        
+        if result:
+            Session.flush() # CHECK ME
+            hooks.membership_changed(logged_contact, contact, self)
+        return result
 
 
 ########################################
