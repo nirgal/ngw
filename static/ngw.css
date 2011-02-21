@@ -56,6 +56,9 @@ a img {
     font-weight: bold;
     font-size: 120%;
 }
+#banner #tabs a[href]:hover {
+    background: white;
+}
 #banner #tabs a[href]#active {
     background: white;
     margin-bottom: -1px;
