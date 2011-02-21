@@ -697,14 +697,49 @@ class ContactGroup(NgwModel):
 
         result = 0
 
-        #operation = u''
-        #if group_member_mode and group_member_mode[0] in u'+-':
-        #    operation = group_member_mode[0]
-        #    group_member_mode = group_member_mode[1:]
+        add_mode = set()
+        del_mode = set()
+
+        if group_member_mode and group_member_mode[0] in u'+-':
+            operation = group_member_mode[0]
+            group_member_mode = group_member_mode[1:]
+            raise ValueError("Not implemented: Can't set mode %s%s" % (operation, group_member_mode))
+        else:
+            # set mode
+            if u'+' in group_member_mode or u'-' in group_member_mode:
+                raise ValueError("Can't set mode %s" % group_member_mode)
+            if u'm' in group_member_mode:
+                if u'i' in group_member_mode or u'd' in group_member_mode:
+                    raise ValueError("Can't set mode %s" % group_member_mode)
+                add_mode.add(u'm')
+                del_mode.add(u'i')
+                del_mode.add(u'd')
+                del_mode.add(u'o')
+            if u'i' in group_member_mode:
+                if u'm' in group_member_mode or u'd' in group_member_mode or u'o' in group_member_mode:
+                    raise ValueError("Can't set mode %s" % group_member_mode)
+                del_mode.add(u'm')
+                add_mode.add(u'i')
+                del_mode.add(u'd')
+                del_mode.add(u'o')
+            if u'd' in group_member_mode:
+                if u'm' in group_member_mode or u'i' in group_member_mode or u'o' in group_member_mode:
+                    raise ValueError("Can't set mode %s" % group_member_mode)
+                del_mode.add(u'm')
+                del_mode.add(u'i')
+                add_mode.add(u'd')
+                del_mode.add(u'o')
+            if u'o' in group_member_mode:
+                if u'i' in group_member_mode or u'd' in group_member_mode:
+                    raise ValueError("Can't set mode %s" % group_member_mode)
+                add_mode.add(u'm')
+                del_mode.add(u'i')
+                del_mode.add(u'd')
+                add_mode.add(u'o')
 
         cig = Query(ContactInGroup).get((contact.id, self.id))
-        if not cig and not group_member_mode:
-            return result
+        if not cig and not add_mode:
+            return result # 0 = no change
         
         if not cig:
             cig = ContactInGroup(contact.id, self.id)
@@ -714,7 +749,7 @@ class ContactGroup(NgwModel):
             log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
             result = LOG_ACTION_ADD
 
-        if u'm' in group_member_mode:
+        if u'm' in add_mode:
             if not cig.member:
                 cig.member = True
                 log = Log(logged_contact.id)
@@ -725,7 +760,7 @@ class ContactGroup(NgwModel):
                 log.property_repr = u'Member'
                 log.change = u'new value is true'
                 result = result or LOG_ACTION_CHANGE
-        else:
+        if u'm' in del_mode:
             if cig.member:
                 cig.member = False
                 log = Log(logged_contact.id)
@@ -737,7 +772,7 @@ class ContactGroup(NgwModel):
                 log.change = u'new value is false'
                 result = result or LOG_ACTION_CHANGE
 
-        if u'i' in group_member_mode:
+        if u'i' in add_mode:
             if not cig.invited:
                 cig.invited = True
                 log = Log(logged_contact.id)
@@ -748,7 +783,7 @@ class ContactGroup(NgwModel):
                 log.property_repr = u'Invited'
                 log.change = u'new value is true'
                 result = result or LOG_ACTION_CHANGE
-        else:
+        if u'i' in del_mode:
             if cig.invited:
                 cig.invited = False
                 log = Log(logged_contact.id)
@@ -760,7 +795,7 @@ class ContactGroup(NgwModel):
                 log.change = u'new value is false'
                 result = result or LOG_ACTION_CHANGE
 
-        if u'd' in group_member_mode:
+        if u'd' in add_mode:
             if not cig.declined_invitation:
                 cig.declined_invitation = True
                 log = Log(logged_contact.id)
@@ -771,7 +806,7 @@ class ContactGroup(NgwModel):
                 log.property_repr = u'Declined invitation'
                 log.change = u'new value is true'
                 result = result or LOG_ACTION_CHANGE
-        else:
+        if u'd' in del_mode:
             if cig.declined_invitation:
                 cig.declined_invitation = False
                 log = Log(logged_contact.id)
@@ -783,7 +818,7 @@ class ContactGroup(NgwModel):
                 log.change = u'new value is false'
                 result = result or LOG_ACTION_CHANGE
 
-        if u'o' in group_member_mode:
+        if u'o' in add_mode:
             if not cig.operator:
                 cig.operator = True
                 log = Log(logged_contact.id)
@@ -794,7 +829,7 @@ class ContactGroup(NgwModel):
                 log.property_repr = u'Operator'
                 log.change = u'new value is true'
                 result = result or LOG_ACTION_CHANGE
-        else:
+        if u'o' in del_mode:
             if cig.operator:
                 cig.operator = False
                 log = Log(logged_contact.id)
@@ -806,7 +841,7 @@ class ContactGroup(NgwModel):
                 log.change = u'new value is false'
                 result = result or LOG_ACTION_CHANGE
 
-        if cig and not group_member_mode:
+        if not cig.member and not cig.invited and not cig.declined_invitation:
             cig.delete()
             log = Log(logged_contact.id)
             log.action = LOG_ACTION_DEL
