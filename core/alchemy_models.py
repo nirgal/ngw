@@ -683,7 +683,11 @@ class ContactGroup(NgwModel):
     
     
     """
-    group_member_mode is a combinaison of letters "mido"
+    group_member_mode is a combinaison of letters 'mido'
+    if it starts with '+', the mode will be added (dropping incompatible ones).
+    Example '+o' actually means '+m-id+o'
+            '+d' actually means '-mi+d-o'
+    if it starst with '-', the mode will be deleted
     TODO enforce that:
     m/i/d are mutually exclusive
     o require m
@@ -692,6 +696,7 @@ class ContactGroup(NgwModel):
     LOG_ACTION_CHANGE if changed
     LOG_ACTION_DEL if deleted
     0 other wise
+    If the contact was not in the group, it will be added.
     """
     def set_member(self, logged_contact, contact, group_member_mode):
 
@@ -701,11 +706,64 @@ class ContactGroup(NgwModel):
         del_mode = set()
 
         if group_member_mode and group_member_mode[0] in u'+-':
-            operation = group_member_mode[0]
-            group_member_mode = group_member_mode[1:]
-            raise ValueError("Not implemented: Can't set mode %s%s" % (operation, group_member_mode))
+            for letter in group_member_mode:
+                if letter in u'+-':
+                    operation = letter
+                elif letter == u'm':
+                    if operation == u'+':
+                        add_mode.add(u'm')
+                        del_mode.discard(u'm')
+                        add_mode.discard(u'i')
+                        del_mode.add(u'i')
+                        add_mode.discard(u'd')
+                        del_mode.add(u'd')
+                    else: # operation == u'-'
+                        add_mode.discard(u'm')
+                        del_mode.add(u'm')
+                        add_mode.discard(u'o')
+                        del_mode.add(u'o')
+                elif letter == u'i':
+                    if operation == u'+':
+                        add_mode.discard(u'm')
+                        del_mode.add(u'm')
+                        add_mode.add(u'i')
+                        del_mode.discard(u'i')
+                        add_mode.discard(u'd')
+                        del_mode.add(u'd')
+                        add_mode.discard(u'o')
+                        del_mode.add(u'o')
+                    else: # operation == u'-'
+                        add_mode.discard(u'i')
+                        del_mode.add(u'i')
+                elif letter == u'd':
+                    if operation == u'+':
+                        add_mode.discard(u'm')
+                        del_mode.add(u'm')
+                        add_mode.discard(u'i')
+                        del_mode.add(u'i')
+                        add_mode.add(u'd')
+                        del_mode.discard(u'd')
+                        add_mode.discard(u'o')
+                        del_mode.add(u'o')
+                    else: # operation == u'-'
+                        add_mode.discard(u'd')
+                        del_mode.add(u'd')
+                elif letter == u'o':
+                    if operation == u'+':
+                        add_mode.add(u'm')
+                        del_mode.discard(u'm')
+                        add_mode.discard(u'i')
+                        del_mode.add(u'i')
+                        add_mode.discard(u'd')
+                        del_mode.add(u'd')
+                        add_mode.add(u'o')
+                        del_mode.discard(u'o')
+                    else: # operation == u'-'
+                        add_mode.discard(u'o')
+                        del_mode.add(u'o')
+
         else:
-            # set mode
+            # set mode, no + nor -
             if u'+' in group_member_mode or u'-' in group_member_mode:
                 raise ValueError("Can't set mode %s" % group_member_mode)
             if u'm' in group_member_mode:
@@ -714,7 +772,6 @@ class ContactGroup(NgwModel):
                 add_mode.add(u'm')
                 del_mode.add(u'i')
                 del_mode.add(u'd')
-                del_mode.add(u'o')
             if u'i' in group_member_mode:
                 if u'm' in group_member_mode or u'd' in group_member_mode or u'o' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
