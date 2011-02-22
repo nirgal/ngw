@@ -201,6 +201,7 @@ input[type=submit] , #submitbar a, .submitbar a, #submitbar .pseudotitle {
     /*display: inline-block;*/
     float: left;
     font-size: 90%; /* needed 100%*/
+    text-decoration: none;
     border: 1px solid #999;
     background: #fcd;
     padding-top: 0.5ex;
@@ -216,7 +217,7 @@ input[type=submit] , #submitbar a, .submitbar a, #submitbar .pseudotitle {
     background: url(/media/img/admin/nav-bg.gif) bottom repeat-x;
     color: black;
 }
-input[type=submit]:active , #submitbar a:active, .submitbar a:active {
+input[type=submit]:hover , #submitbar a:hover, .submitbar a:hover {
     background: url(/media/img/admin/nav-bg-reverse.gif) top repeat-x;
 }
 
@@ -225,7 +226,7 @@ input[type=submit]#default , #submitbar a#default, .submitbar a#default {
     color:white;
     
 }
-input[type=submit]:active#default , #submitbar a:active#default, .submitbar a:active#default {
+input[type=submit]:hover#default , #submitbar a:hover#default, .submitbar a:hover#default {
     background: #7CA0C7 url(/media/img/admin/default-bg-reverse.gif) top repeat-x;
 }
 
