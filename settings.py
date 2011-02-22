@@ -82,6 +82,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.media',
     'django.core.context_processors.request',
     'ngw.core.banner_context.banner',
+    'ngw.core.contactcount_context.contactcount',
 )
 
 APPEND_SLASH = False
