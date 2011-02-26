@@ -1175,6 +1175,7 @@ def contactgroup_members(request, gid, output_format=''):
     args['dir'] = cg.static_folder()
     args['files'] = os.listdir(args['dir'])
     args['files'].remove('.htaccess')
+    args['files'].sort(reverse=True)
     ####
     args['objtype'] = ContactGroup
     args['filter'] = strfilter
