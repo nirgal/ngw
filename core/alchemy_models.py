@@ -457,7 +457,7 @@ class Contact(NgwModel):
         return random_password
 
 
-    def set_password(self, user, newpassword_plain):
+    def set_password(self, user, newpassword_plain, new_password_status=None):
         # TODO check password strength
         hash=subprocess.Popen(["openssl", "passwd", "-crypt", newpassword_plain], stdout=subprocess.PIPE).communicate()[0]
         hash=hash[:-1] # remove extra "\n"
@@ -465,10 +465,13 @@ class Contact(NgwModel):
         #self.passwd = "{SHA}"+hash
         self.set_fieldvalue(user, FIELD_PASSWORD, hash)
         self.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
-        if self.id==user.id:
-            self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'3')
+        if new_password_status is None:
+            if self.id==user.id:
+                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'3') # User defined
+            else:
+                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1') # Generated
         else:
-            self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1')
+                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, new_password_status)
 
     @staticmethod
     def check_login_created(logged_contact):

@@ -288,12 +288,15 @@ def hook_change_password(request):
     request.user.set_password(request.user, newpassword_plain)
     return HttpResponse('OK')
 
-def logout(request):
+def ngw_base_url(request):
     if os.environ.has_key('HTTPS'):
         scheme = 'https'
     else:
         scheme = 'http'
-    return render_to_response('message.html', {'message': mark_safe('Have a nice day!<br><a href=\"'+scheme+'://'+request.META['HTTP_HOST']+'/\">Login again</a>') }, RequestContext(request))
+    return scheme+'://'+request.META['HTTP_HOST']+'/'
+
+def logout(request):
+    return render_to_response('message.html', {'message': mark_safe('Have a nice day!<br><a href=\"' + ngw_base_url(request) + '\">Login again</a>') }, RequestContext(request))
 
 #######################################################################
 #
@@ -699,6 +702,7 @@ class ContactPasswordForm(forms.Form):
             raise forms.ValidationError('The passwords must match!')
         return self.cleaned_data
 
+
 @http_authenticate(ngw_auth, 'ngw')
 @require_group(GROUP_USER_NGW)
 def contact_pass(request, gid=None, cid=None):
@@ -735,6 +739,61 @@ def contact_pass(request, gid=None, cid=None):
     args['nav'].add_component(contact.get_navcomponent())
     args['nav'].add_component(u'password')
     return render_to_response('password.html', args, RequestContext(request))
+
+
+@http_authenticate(ngw_auth, 'ngw')
+@require_group(GROUP_USER_NGW)
+def contact_pass_letter(request, gid=None, cid=None):
+    if gid is not None:
+        gid = int(gid)
+    cid = int(cid)
+    if cid!=request.user.id and not request.user.is_admin():
+        return unauthorized(request)
+    contact = Query(Contact).get(cid)
+    args={}
+    args['title'] = 'Generate a new password and print a letter'
+    args['contact'] = contact
+    if request.method == 'POST':
+        new_password = Contact.generate_password()
+
+        # record the value
+        contact.set_password(request.user, new_password, u'2') # Generated and mailed
+        request.user.push_message('Password has been changed sucessfully!')
+
+        fields = {}
+        for cf in contact.get_allfields():
+            cfv = Query(ContactFieldValue).get((cid, cf.id))
+            fields[cf.name] = unicode(cfv).replace(u'\r', u'')
+            #if cfv:
+            #    rows.append((cf.name, mark_safe(cfv.as_html())))
+        fields['name'] = contact.name
+        fields['password'] = new_password
+
+        result = ngw_mailmerge2('/usr/lib/ngw/mailing/forms/welcome2.odt', fields)
+        if not result:
+            return HttpResponse('File generation failed')
+
+        filename = os.path.basename(result)
+        if subprocess.call(['sudo', '/usr/bin/mvoomail', filename, '/usr/lib/ngw/mailing/generated/']):
+            return HttpResponse('File move failed')
+
+        #if gid:
+        #    cg = Query(ContactGroup).get(gid)
+        #    return HttpResponseRedirect(cg.get_absolute_url()+u'members/'+unicode(cid)+u'/')
+        #else:
+        #    return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
+
+        html_message = 'File generated in ' + ngw_base_url(request) + 'mailing-generated/' + filename
+        return render_to_response('message.html', {'message': mark_safe(html_message) }, RequestContext(request))
+    if gid:
+        cg = Query(ContactGroup).get(gid)
+        args['nav'] = cg.get_smart_navbar()
+        args['nav'].add_component(u'members')
+    else:
+        args['nav'] = navbar(Contact.get_class_navcomponent())
+    args['nav'].add_component(contact.get_navcomponent())
+    args['nav'].add_component(u'password letter')
+    return render_to_response('password_letter.html', args, RequestContext(request))
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -864,7 +923,7 @@ def contact_make_login_mailing(request):
     result = ngw_mailmerge('/usr/lib/ngw/mailing/forms/welcome.odt', [str(id) for id in ids])
     if not result:
         return HttpResponse('File generation failed')
-    print result
+    #print result
     filename = os.path.basename(result)
     if subprocess.call(['sudo', '/usr/bin/mvoomail', os.path.splitext(filename)[0], '/usr/lib/ngw/mailing/generated/']):
         return HttpResponse('File move failed')

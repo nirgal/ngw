@@ -39,12 +39,59 @@ def ngw_mailmerge(filename_in, ids):
     mailmerge.OutputURL=uno.systemPathToFileUrl(TMPDIR)
     mailmerge.FileNamePrefix=outputprefix
     mailmerge.SaveAsSingleFile=True
-    mailmerge.execute(())
+    mailmerge.execute(())  # BOUM
     mailmerge.dispose()
 
     for fn in os.listdir(TMPDIR):
         if fn.startswith(outputprefix):
             return os.path.join(TMPDIR, fn)
+
+
+
+def ngw_mailmerge2(filename_in, fields):
+    local = uno.getComponentContext()
+    resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
+    context = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
+
+    desktop = context.ServiceManager.createInstance('com.sun.star.frame.Desktop')
+    document = desktop.loadComponentFromURL(uno.systemPathToFileUrl(filename_in), '_blank', 0, ())
+
+    find_replace = document.createSearchDescriptor()
+
+    p1 = PropertyValue()
+    p1.Name = 'SearchRegularExpression'
+    p1.Value = True
+    find_replace.setPropertyValue('SearchRegularExpression', True)
+    find_replace.setSearchString('[{][{]([^}]*)[}][}]')
+
+    found = document.findFirst(find_replace)
+    while found:
+        field_name = found.getString()[2:-2]
+        found.setString(fields.get(field_name, u'FIELD NOT FOUND'))
+        found = document.findNext(found.getEnd(), find_replace)
+
+    oldumask = os.umask(0077)
+    os.umask(0007)
+
+    filename_out = TMPDIR + '/' + get_outputprefix() + u'.pdf'
+
+    p1 = PropertyValue()
+    p1.Name = 'Overwrite'
+    p1.Value = True
+    p2 = PropertyValue()
+    p2.Name = 'FilterName'
+    p2.Value = 'writer_pdf_Export'
+    document.storeToURL(uno.systemPathToFileUrl(filename_out), (p1, p2))
+
+    # move to final directory, overriding and permissions
+    #subprocess.call(["sudo", "/usr/bin/mvoomail", 'guideogm.pdf', '/usr/lib/guideogm/www/'])
+
+    document.dispose()
+    os.umask(oldumask)
+
+    return filename_out
+
+
 
 if __name__ == "__main__":
     ids = [ sys.argv[x] for x in range(1,len(sys.argv)) ]
