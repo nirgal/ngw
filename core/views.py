@@ -738,6 +738,10 @@ def contact_pass(request, gid=None, cid=None):
         args['nav'] = navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
     args['nav'].add_component(u'password')
+    try:
+        args['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
+    except AttributeError:
+        pass # it's ok not to have a letter
     return render_to_response('password.html', args, RequestContext(request))
 
 
@@ -753,6 +757,15 @@ def contact_pass_letter(request, gid=None, cid=None):
     args={}
     args['title'] = 'Generate a new password and print a letter'
     args['contact'] = contact
+    if gid:
+        cg = Query(ContactGroup).get(gid)
+        args['nav'] = cg.get_smart_navbar()
+        args['nav'].add_component(u'members')
+    else:
+        args['nav'] = navbar(Contact.get_class_navcomponent())
+    args['nav'].add_component(contact.get_navcomponent())
+    args['nav'].add_component(u'password letter')
+
     if request.method == 'POST':
         new_password = Contact.generate_password()
 
@@ -783,16 +796,10 @@ def contact_pass_letter(request, gid=None, cid=None):
         #else:
         #    return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
 
-        html_message = 'File generated in ' + ngw_base_url(request) + 'mailing-generated/' + filename
-        return render_to_response('message.html', {'message': mark_safe(html_message) }, RequestContext(request))
-    if gid:
-        cg = Query(ContactGroup).get(gid)
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'members')
-    else:
-        args['nav'] = navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(u'password letter')
+        url = ngw_base_url(request) + 'mailing-generated/' + filename
+        html_message = 'File generated in <a href="%(url)s">%(url)s</a>.' % { 'url': url}
+        args['message'] = mark_safe(html_message)
+        return render_to_response('message.html', args, RequestContext(request))
     return render_to_response('password_letter.html', args, RequestContext(request))
 
 
