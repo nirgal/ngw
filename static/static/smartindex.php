@@ -137,7 +137,7 @@ if ($mode=='diaporama1') {
     echo '<title>'.$curentdir.' - picture '.$num.'</title>';
     echo '<link rel=stylesheet href="/static/diapo.css">';
     echo '<div style="text-align:center;">';
-echo("url=".$_REQUEST['HTTP_HOST']);
+	//echo("url=".$_REQUEST['HTTP_HOST']);
     echo '<a href="." target=_top>Index</a> ';
     echo '<center>';
     echo '<table id=imgcontain>';
@@ -165,7 +165,8 @@ echo("url=".$_REQUEST['HTTP_HOST']);
 	$num=0;
     foreach($array_by_type['image'] as $filename) {
         //echo "<a href='".htmlspecialchars($curentdir)."?mode=diaporama1&num=".$num."' target=big><img src='/static/iconify.php?id=".htmlspecialchars(urlencode($curentdir.$filename))."' height=150/></a>";
-        echo "<a href='".htmlspecialchars($curentdir)."?mode=diaporama1&num=".$num."' target=big><img src='".get_thumb_url($curentdir.$filename)."' height=150/></a>";
+        //echo "<a href='".htmlspecialchars($curentdir)."?mode=diaporama1&num=".$num."' target=big><img src='".get_thumb_url($curentdir.$filename)."' height=150/></a>";
+        echo "<a href='?mode=diaporama1&num=".$num."' target=big><img src='".get_thumb_url($curentdir.$filename)."' height=150/></a>";
 		$num++;
     }
 	echo '</nobr></div>';
