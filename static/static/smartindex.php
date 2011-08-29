@@ -121,14 +121,19 @@ foreach ($filelist as $num => $filename) {
 
 $mode = $_REQUEST['mode'];
 if ($mode=='diaporama1') {
+	//setlocale('LC_ALL', 'en_GB.UTF-8');
+	//mb_internal_encoding('UTF-8');
+	//mb_http_output('UTF-8');
+	$utf8_curentdir = utf8_decode($curentdir);
+    header("Content-Type: text/html; charset=utf-8");
     $num = $_REQUEST['num'];
     if (!$num)
         $num=0;
     $filename = $array_by_type['image'][$num];
     if ($num<count($array_by_type['image'])-1)
-        header("Refresh: 15;url=https://".$_SERVER['HTTP_HOST'].$curentdir.'?mode=diaporama1&num='.($num+1));
+        header("Refresh: 15;url=https://".$_SERVER['HTTP_HOST'].$utf8_curentdir.'?mode=diaporama1&num='.($num+1));
     else
-        header("Refresh: 15;url=https://".$_SERVER['HTTP_HOST'].$curentdir.'?mode=diaporama1');
+        header("Refresh: 15;url=https://".$_SERVER['HTTP_HOST'].$utf8_curentdir.'?mode=diaporama1');
     echo '<title>'.$curentdir.' - picture '.$num.'</title>';
     echo '<link rel=stylesheet href="/static/diapo.css">';
     echo '<div style="text-align:center;">';
