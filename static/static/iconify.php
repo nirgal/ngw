@@ -6,7 +6,7 @@ if (!extension_loaded('gd'))
 $id = stripslashes($_REQUEST["id"]);
 //TODO
 //$_SERVER[DOCUMENT_ROOT] == /usr/lib/ngw/extensions/phpbb/static/ 
-$filename = "/usr/lib/ngw/static/".$id;
+$filename = "/usr/lib/ngw/static".$id;
 if (strstr($filename, "..")) {
 	echo('error'); // HACK ATTEMPT!
 	die();
@@ -33,8 +33,13 @@ if (!file_exists($thumbname) || filemtime($thumbname)<filemtime($filename)) {
 	imagecopyresampled($result, $result_preload, 0,0, 0,0, $small_size_w,$small_size_h, $width, $height);
 	
 	// check target directory exists
-	if (!file_exists(thumbdir))
-		mkdir($thumbdir);
+	#echo $thumbdir;
+	#die();
+	if (!file_exists($thumbdir))
+		if (!mkdir($thumbdir)) {
+			echo('Error while creating folder: '.$thumbdir);
+			die();
+		}
 	imagejpeg  ($result, "$thumbname", 70);
 }
 header ("302 Use cache");
