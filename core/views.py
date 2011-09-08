@@ -423,7 +423,7 @@ def get_available_fields():
     result = [ (DISP_NAME, u'Name') ]
     for cf in Query(ContactField).order_by(ContactField.sort_weight):
         result.append((DISP_FIELD_PREFIX+unicode(cf.id), cf.name))
-    for cg in Query(ContactGroup).order_by([ContactGroup.date, ContactGroup.name]):
+    for cg in Query(ContactGroup).order_by(desc(ContactGroup.date), ContactGroup.name):
         result.append((DISP_GROUP_PREFIX+unicode(cg.id), cg.unicode_with_date()))
     return result
 
