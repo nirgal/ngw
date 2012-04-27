@@ -1073,7 +1073,12 @@ def event_list(request):
         month = now.month
         year = now.year
         
-    q = Query(ContactGroup).filter(u"extract(year from date) = %s" % year).filter(u"extract(month from date) = %s" % month)
+    min_date = datetime(year, month, 1) - timedelta(days=6)
+    min_date = min_date.strftime('%Y-%m-%d')
+    max_date = datetime(year, month, 1) + timedelta(days=31+6)
+    max_date = max_date.strftime('%Y-%m-%d')
+
+    q = Query(ContactGroup).filter(u"date >= '%s'" % min_date).filter(u"date <= '%s'" % max_date)
 
     cols = [
         ( u'Date', None, 'html_date', ContactGroup.date ),
@@ -1095,6 +1100,7 @@ def event_list(request):
     args['nav'] = navbar()
     args['nav'].add_component(('events', u'Events'))
     args['year_month'] = YearMonthCal(year, month, month_events)
+    args['today'] = date.today()
     return query_print_entities(request, 'list_events.html', args)
 
 
@@ -1407,35 +1413,15 @@ def contactgroup_add_contacts_to(request):
             else:
                 raise Exception('Unsupported membership type '+t.encode('utf8'))
 
-            added_contacts = []
-            changed_contacts = []
+            contacts = []
             for param in request.POST:
                 if not param.startswith(u'contact_'):
                     continue
                 contact_id = param[len(u'contact_'):]
                 contact = Query(Contact).get(contact_id)
                 assert contact
-
-                res = target_group.set_member(request.user, contact, mode)
-                if res == LOG_ACTION_ADD:
-                    added_contacts.append(contact)
-                elif res == LOG_ACTION_CHANGE:
-                    changed_contacts.append(contact)
-
-            if added_contacts:
-                msgpart_contacts = u', '.join([c.name for c in added_contacts])
-                if len(added_contacts)==1:
-                    msg = u'Contact %s has been added in %s with status %s.'
-                else:
-                    msg = u'Contacts %s have been added in %s with status %s.'
-                request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
-            if changed_contacts:
-                msgpart_contacts = u', '.join([c.name for c in changed_contacts])
-                if len(changed_contacts)==1:
-                    msg = u'Contact %s allready was in %s. Status has been changed to %s.'
-                else:
-                    msg = u'Contacts %s allready were in %s. Status have been changed to %s.'
-                request.user.push_message(msg % (msgpart_contacts, target_group.unicode_with_date(), t))
+                contacts.append(contact)
+            target_group.set_member_n(request.user, contacts, mode)
 
             return HttpResponseRedirect(target_group.get_absolute_url())
         else:

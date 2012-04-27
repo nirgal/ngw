@@ -25,6 +25,9 @@
     padding-right: 1ex;
     font-size: 80%;
 }
+.today {
+    background-color: #faa;
+}
 </style>
 
 <div id=submitbar>
@@ -56,7 +59,10 @@
 {% for week in year_month.weeks %}
 <tr>
 {% for d, events in week.days %}
-<td><div class=calday>{{ d.day }}</div>
+<td><div class="calday{% ifequal d today %} today{% endifequal %}">
+
+{{ d.day }}
+</div>
 {% for event in events %}
 {% if forloop.counter0 %}<br>
 {% endif %}

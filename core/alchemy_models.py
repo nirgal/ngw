@@ -701,7 +701,7 @@ class ContactGroup(NgwModel):
     0 other wise
     If the contact was not in the group, it will be added.
     """
-    def set_member(self, logged_contact, contact, group_member_mode):
+    def set_member_1(self, logged_contact, contact, group_member_mode):
 
         result = 0
 
@@ -913,6 +913,34 @@ class ContactGroup(NgwModel):
             Session.flush() # CHECK ME
             hooks.membership_changed(logged_contact, contact, self)
         return result
+
+    """
+    Like set_member_1 but for several contacts
+    """
+    def set_member_n(self, logged_contact, contacts, group_member_mode):
+        added_contacts = []
+        changed_contacts = []
+        for contact in contacts:
+            res = self.set_member_1(logged_contact, contact, group_member_mode)
+            if res == LOG_ACTION_ADD:
+                added_contacts.append(contact)
+            elif res == LOG_ACTION_CHANGE:
+                changed_contacts.append(contact)
+
+        if added_contacts:
+            msgpart_contacts = u', '.join([c.name for c in added_contacts])
+            if len(added_contacts)==1:
+                msg = u'Contact %s has been added in %s with status %s.'
+            else:
+                msg = u'Contacts %s have been added in %s with status %s.'
+            logged_contact.push_message(msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
+        if changed_contacts:
+            msgpart_contacts = u', '.join([c.name for c in changed_contacts])
+            if len(changed_contacts)==1:
+                msg = u'Contact %s allready was in %s. Status has been changed to %s.'
+            else:
+                msg = u'Contacts %s allready were in %s. Status have been changed to %s.'
+            logged_contact.push_message(msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
 
 
 ########################################
