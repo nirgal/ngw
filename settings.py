@@ -33,7 +33,7 @@ MEDIA_ROOT = '/usr/lib/ngw/static'
 
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
-MEDIA_URL = 'https://nike.fr.gl3'
+MEDIA_URL = 'https://www.example.com/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -44,11 +44,10 @@ ADMIN_MEDIA_PREFIX = '/media/'
 SECRET_KEY = '38n+sve^%%$5a35j%6zdabmlyk(eow*jbh^(r^k9w*g5c_p3p5'
 
 # List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
-#     'django.template.loaders.eggs.load_template_source',
-)
+#TEMPLATE_LOADERS = (
+#    'django.template.loaders.filesystem.load_template_source',
+#    'django.template.loaders.app_directories.load_template_source',
+#)
 
 MIDDLEWARE_CLASSES = (
     'ngw.core.alchemy_middleware.TransactionMiddleware',
@@ -73,10 +72,11 @@ INSTALLED_APPS = (
 #    'django.contrib.sites',
 #    'django.contrib.admin',
     'ngw.core',
+    'ngw.extensions.phpbb',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.core.context_processors.auth',
+    'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',

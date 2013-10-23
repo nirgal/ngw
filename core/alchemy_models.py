@@ -87,6 +87,8 @@ contact_group_news_table = Table('contact_group_news', meta, autoload=True)
 
 
 class NgwModel(object):
+    do_not_call_in_templates = True # prevent django from trying to instanciate objtype
+
     def __init__(self):
         Session.add(self)
     
@@ -195,9 +197,9 @@ class ChoiceGroup(NgwModel):
         q = Query(Choice)
         q = q.filter(choice_table.c.choice_group_id==self.id)
         if self.sort_by_key:
-            q = q.order_by([choice_table.c.key])
+            q = q.order_by(Choice.key)
         else:
-            q = q.order_by([choice_table.c.value])
+            q = q.order_by(Choice.value)
         return [(c.key, c.value) for c in q]
 
     get_link_name=NgwModel.get_absolute_url
@@ -1826,6 +1828,7 @@ class ContactSysMsg(NgwModel):
         self.message = message
     def __repr__(self):
         return "ContactSysMsg<%s,%s>"%(self.contact_id, self.message)
+
 
 class ContactGroupNews(NgwModel):
     class Meta:

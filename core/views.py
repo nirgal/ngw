@@ -5,7 +5,7 @@ from md5 import md5
 from sha import sha
 from random import random
 from base64 import b64encode
-from datetime import *
+import datetime
 from decoratedstr import remove_decoration
 from django.http import *
 from django.utils.safestring import mark_safe
@@ -545,7 +545,7 @@ class ContactEditForm(forms.Form):
         
         #if request_user.is_admin():
         #    # sql '_' means 'any character' and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.name.startswith('\\_'))).order_by ...
-        #    contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.date.desc(), ContactGroup.name]) ]
+        #    contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by(ContactGroup.date.desc(), ContactGroup.name) ]
         #    self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Group', False), choices=contactgroupchoices)
         
 
@@ -1069,13 +1069,13 @@ def event_list(request):
                 year = month = None
             
     if year is None or month is None:
-        now = datetime.utcnow()
+        now = datetime.datetime.utcnow()
         month = now.month
         year = now.year
         
-    min_date = datetime(year, month, 1) - timedelta(days=6)
+    min_date = datetime.datetime(year, month, 1) - timedelta(days=6)
     min_date = min_date.strftime('%Y-%m-%d')
-    max_date = datetime(year, month, 1) + timedelta(days=31+6)
+    max_date = datetime.datetime(year, month, 1) + timedelta(days=31+6)
     max_date = max_date.strftime('%Y-%m-%d')
 
     q = Query(ContactGroup).filter(u"date >= '%s'" % min_date).filter(u"date <= '%s'" % max_date)
@@ -1271,7 +1271,7 @@ class ContactGroupForm(forms.Form):
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by([ContactGroup.date, ContactGroup.name]) ]
+        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by(ContactGroup.date, ContactGroup.name) ]
 
 
 @http_authenticate(ngw_auth, 'ngw')
@@ -1670,7 +1670,7 @@ def contactgroup_news_edit(request, gid, nid):
                 news = ContactGroupNews()
                 news.author = request.user
                 news.contact_group = cg
-                news.date = datetime.now()
+                news.date = datetime.datetime.now()
             news.title = data['title']
             news.text = data['text']
             request.user.push_message('News %s has been changed sucessfully!' % unicode(news))
@@ -1766,7 +1766,7 @@ def field_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
     args = {}
-    args['query'] = Query(ContactField).order_by([ContactField.sort_weight])
+    args['query'] = Query(ContactField).order_by(ContactField.sort_weight)
     args['cols'] = [
         ( 'Name', None, 'name', ContactField.name),
         ( 'Type', None, 'type_as_html', ContactField.type),
@@ -1778,7 +1778,7 @@ def field_list(request):
     args['objtype'] = ContactField
     args['nav'] = navbar(ContactField.get_class_navcomponent())
     def extrasort(query):
-        return query.order_by([ContactField.sort_weight])
+        return query.order_by(ContactField.sort_weight)
     return query_print_entities(request, 'list.html', args, extrasort=extrasort)
 
 
