@@ -19,8 +19,8 @@ from ngw.core import gpg
 from ngw.core.widgets import *
 from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format
 
-GROUP_EVERYBODY = 1
-GROUP_USER = 2
+GROUP_EVERYBODY = 1 # Group "Contact"
+GROUP_USER = 2      # With login & password
 GROUP_ADMIN = 8
 GROUP_USER_NGW = 52
 GROUP_USER_PHPBB = 53
