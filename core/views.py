@@ -955,6 +955,14 @@ def contactgroup_list(request):
         if len(l)>LIST_PREVIEW_LEN:
             return l[:LIST_PREVIEW_LEN]+[u'…']
         return l
+    def _trucate_description(cg):
+        DESCRIPTION_MAXLEN = 200
+        if len(cg.description) < DESCRIPTION_MAXLEN:
+            return cg.description
+        else:
+            return cg.description[:DESCRIPTION_MAXLEN]+u'…'
+
+	
     if not request.user.is_admin():
         return unauthorized(request)
     def print_fields(cg):
@@ -971,7 +979,8 @@ def contactgroup_list(request):
     cols = [
         #( u'Date', None, 'html_date', ContactGroup.date ),
         ( u'Name', None, 'name', ContactGroup.name ),
-        ( u'Description', None, 'description', ContactGroup.description ),
+        ( u'Description', None, lambda cg: _trucate_description(cg), None ),
+        #( u'Description', None, 'description', lambda cg: len(cg.description)<100 and cg.description+u'!!' or cg.description[:100]+u"…", None ),
         #( u'Contact fields', None, print_fields, ContactGroup.field_group ),
         ( u'Super\u00a0groups', None, lambda cg: u', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.direct_supergroups])), None ),
         ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.direct_subgroups])), None ),
