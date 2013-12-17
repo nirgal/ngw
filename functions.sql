@@ -1,5 +1,4 @@
 -- Rigth now, NGW can only be installed from a backup. So you'll probably never user this file
--- Make sure contrib modules _int.sql and int_aggregate.sql are loaded. See ngw README
 DROP VIEW mailinginfo;
 DROP VIEW auth_users_ngw;
 DROP VIEW auth_users_bb;
@@ -7,49 +6,18 @@ DROP VIEW auth_users;
 DROP VIEW auth_user_groups;
 DROP VIEW apache_log;
 DROP FUNCTION self_and_subgroups(integer);
-DROP FUNCTION subgroups_append(integer, integer[]);
-DROP FUNCTION subgroups_append_direct(integer, integer[]);
-
--- $1: group id
--- $2: results
--- That function adds direct children that weren't allready members of result
--- returns a array of group id
-CREATE FUNCTION subgroups_append_direct(integer, integer[]) RETURNS integer[] AS $$
-    SELECT int_array_aggregate(subgroup_id) | $2 FROM group_in_group WHERE father_id=$1 AND NOT subgroup_id=ANY($2)
-$$ LANGUAGE SQL STABLE;
 
 
--- $1: group id
--- $2: results
--- That function adds childrens in result array that is returned
-CREATE FUNCTION subgroups_append(integer, integer[]) RETURNS SETOF integer AS $$
-    SELECT int_array_enum(subgroups_append_direct($1, $2))
-    UNION
-    SELECT subgroups_append(subgroup_id, subgroups_append_direct($1, $2)) FROM group_in_group WHERE father_id=$1 AND NOT arraycontains($2, array[subgroup_id])
-$$ LANGUAGE SQL STABLE;
-
--- CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
---     SELECT int_array_enum(subgroups_append_2($1, '{}'::integer[]) | $1)
--- $$ LANGUAGE SQL STABLE;
 CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
-    SELECT subgroups_append($1, '{}'::integer[])
-    UNION
-    SELECT $1
+    WITH RECURSIVE subgroups AS (
+        -- Non-recursive term
+        SELECT $1 AS self_and_subgroup
+        UNION
+        -- Recursive Term
+        SELECT subgroup_id AS self_and_subgroup FROM group_in_group JOIN subgroups ON group_in_group.father_id=subgroups.self_and_subgroup
+    )
+    SELECT * FROM subgroups;
 $$ LANGUAGE SQL STABLE;
-
-
--- select arraycontains(array[1,2,3], array[2]);
--- select array_lower('{7,8,9}'::int[], 1);
--- select array_upper('{7,8,9}'::int[], 1);
--- select ('{7,8,9}'::int[])[2];
--- select array_lower(v,1),  from (select '{7,8,9}'::int[] as v) as dummy1;
--- select array_lower(v,1),array_upper(v,1)  from (select '{7,8,9,33}'::int[]) as dummy1(v);
--- select * from generate_series(1, (select array_upper(v,1) from (select '{7,8,9,33}'::int[]) as dummy1(v)));
--- select * from int_array_enum('{7,8,9,33}'::int[]);
--- select int_array_aggregate(id) from contact_group;
--- select array[1,2,3] + array[2,6]; --> {1,2,3,2,6}
--- select array[1,2,3] | array[2,6]; --> {1,2,3,6}
-
 
 
 

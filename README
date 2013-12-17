@@ -6,6 +6,8 @@ aptitude install python-django python-sqlalchemy python-psycopg2 postgresql post
 
 oomailing and python-decoratedstr packages can be downloaded at http://www.nirgal.com/debian/
 
+Base directory should be /usr/lib/ngw
+
 Apache
 ======
 Enable ssl, auth_pgsql in apache:
@@ -27,13 +29,13 @@ Postgres
 createdb ngw -E unicode
 
 Rigth now, it's not possible to start from an empty database. You need to restore a backup.
+See funtions.sql for the list of functions.
 
-If you are really creating a database from scratch, remember you need stuff from contrib:
-See http://developer.postgresql.org/pgdocs/postgres/contrib.html, as postgres user, run
-postgres:~$ psql ngw -f /usr/share/postgresql/8.4/contrib/int_aggregate.sql
-postgres:~$ psql ngw -f /usr/share/postgresql/8.4/contrib/_int.sql
+Static files and thumbnails
+===========================
+php5 php5-gd
 
-Oomailing
+oomailing
 =========
 Launch openoffice setup a database:
 ssh oomailing@localhost soffice (you migth need to turn off oomailing first, using /etc/init.d/oomailing stop)
