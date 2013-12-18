@@ -8,6 +8,8 @@ DROP VIEW apache_log;
 DROP FUNCTION self_and_subgroups(integer);
 
 
+-- That function returns the list of subgroup of a given group
+-- Has been tested with bugus setu where A is in B and B in A.
 CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
     WITH RECURSIVE subgroups AS (
         -- Non-recursive term
