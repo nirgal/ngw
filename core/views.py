@@ -203,7 +203,7 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
         # TODO: 'id_' is hard-coded here. This should instead use the correct
         # API to determine the ID dynamically.
         output.append(u'SelectFilter.init("id_%s", "%s", %s, "%s"); });</script>\n' % \
-            (name, self.verbose_name.replace(u'"', u'\\"'), int(self.is_stacked), settings.MEDIA_URL+settings.ADMIN_MEDIA_PREFIX))
+            (name, self.verbose_name.replace(u'"', u'\\"'), int(self.is_stacked), settings.STATIC_URL+'admin/'))
         return mark_safe(u''.join(output))
 
 

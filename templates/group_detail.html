@@ -84,9 +84,9 @@
     <a href="csv{{baseurl}}">CSV export</a> 
     {% if cg.date %}
     {% else %}
-    <a href="add"><img src="/media/admin/img/icon_addlink.gif" border=0> Create a new contact in that group</a>
+    <a href="add"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> Create a new contact in that group</a>
     {% endif %}
-    <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="/media/admin/img/icon_addlink.gif" border=0> Add to another group</a>
+    <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> Add to another group</a>
     {% if cg.has_news %}
     <a href="../news/">News</a> 
     {% endif %}

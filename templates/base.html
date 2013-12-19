@@ -2,9 +2,9 @@
 <html>
 <title>{{ title|safe }}</title>
 <script src='/javascript/jquery/jquery.js' type='text/javascript'></script>
-<script src='{{MEDIA_URL}}/ngw.js' type='text/javascript'></script>
-<link rel="stylesheet" type="text/css" href="/ngw.css">
-<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/media/admin/css/widgets.css">
+<script src='{{STATIC_URL}}ngw.js' type='text/javascript'></script>
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}ngw.css">
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/widgets.css">
 
 <div id=banner>
 	<span id=sitetitle>{{ banner|safe }}</span>

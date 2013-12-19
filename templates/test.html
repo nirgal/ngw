@@ -26,9 +26,9 @@
 </div>
 </form>
 <script>
-SelectFilter.init("id_groups", "Groups", 0, '{{MEDIA_URL}}/media/');
+SelectFilter.init("id_groups", "Groups", 0, '{{STATIC_URL}}admin/');
 </script>
 {{form.media}}
 <a href="https://logout@{{ request.META.HTTP_HOST }}/logout">logout</a><br>
-env:{{env|pprint}}
+STATIC_URL: {{STATIC_URL}}
 {% endblock %}

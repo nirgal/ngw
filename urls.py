@@ -31,7 +31,7 @@ groups_urlpatterns = patterns('',
 urlpatterns = patterns('',
     (r'^$', 'ngw.core.views.index'),
     
-#    (r'^test$', 'ngw.core.views.test'),
+    (r'^test$', 'ngw.core.views.test'),
 
     (r'^hook_change_password$', 'ngw.core.views.hook_change_password'),
 

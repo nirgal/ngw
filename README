@@ -35,6 +35,8 @@ Static files and thumbnails
 ===========================
 php5 php5-gd
 
+user or group www-data should have write access to /var/lib/ngw/static/static/g
+
 oomailing
 =========
 Launch openoffice setup a database:

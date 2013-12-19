@@ -60,7 +60,7 @@
         AuthName "ngw"
     </Location>
 
-    Alias /media/ /usr/share/pyshared/django/contrib/admin/media/
+    Alias /admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
 
     Alias /mailing-generated/ /usr/lib/ngw/mailing/generated/
     <LocationMatch "^/mailing-generated/">
