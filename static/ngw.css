@@ -230,68 +230,6 @@ input[type=submit]:hover#default , #submitbar a:hover#default, .submitbar a:hove
     background: #7CA0C7 url(/media/admin/img/default-bg-reverse.gif) top repeat-x;
 }
 
-/* SELECTOR (FILTER INTERFACE) */
-.selector { width:580px; float:left; }
-.selector select { width:270px; height:17.2em; }
-.selector-available, .selector-chosen { float:left; width:270px; text-align:center; margin-bottom:5px; }
-.selector-available h2, .selector-chosen h2 { border:1px solid #ccc; margin-bottom:0px; }
-.selector .selector-available h2 { background:white url(/media/admin/img/nav-bg.gif) bottom left repeat-x; color:#666; }
-.selector .selector-filter { background:white; border:1px solid #ccc; border-width:0 1px; padding:3px; color:#999; font-size:10px; margin:0; text-align:left; }
-.selector .selector-chosen .selector-filter { padding:4px 5px; }
-.selector .selector-available input { width:230px; }
-.selector ul.selector-chooser { float:left; width:22px; height:50px; background:url(/media/admin/img/chooser-bg.gif) top center no-repeat; margin:8em 3px 0 3px; padding:0; }
-.selector-chooser li { margin:0; padding:3px; list-style-type:none; }
-.selector select { margin-bottom:5px; margin-top:0; }
-.selector-add, .selector-remove { width:16px; height:16px; display:block; text-indent:-3000px; }
-.selector-add { background:url(/media/admin/img/selector-add.gif) top center no-repeat; margin-bottom:2px; }
-.selector-remove { background:url(/media/admin/img/selector-remove.gif) top center no-repeat; }
-a.selector-chooseall, a.selector-clearall { display:block; width:6em; text-align:left; margin-left:auto; margin-right:auto; font-weight:bold; color:#666;  padding:3px 0 3px 18px; }
-a.selector-chooseall:hover, a.selector-clearall:hover { color:#036; }
-a.selector-chooseall { width:7em; background:url(/media/admin/img/selector-addall.gif) left center no-repeat; }
-a.selector-clearall { background:url(/media/admin/img/selector-removeall.gif) left center no-repeat; }
-
-/* STACKED SELECTORS */
-.stacked { float:left; width:500px; }
-.stacked select { width:480px; height:10.1em; }
-.stacked .selector-available, .stacked .selector-chosen { width:480px; }
-.stacked .selector-available { margin-bottom:0; }
-.stacked .selector-available input { width:442px; }
-.stacked ul.selector-chooser { height:22px; width:50px; margin:0 0 3px 40%; background:url(/media/admin/img/chooser_stacked-bg.gif) top center no-repeat; }
-.stacked .selector-chooser li { float:left; padding:3px 3px 3px 5px; }
-.stacked .selector-chooseall, .stacked .selector-clearall { display:none; }
-.stacked .selector-add { background-image:url(/media/admin/img/selector_stacked-add.gif); }
-.stacked .selector-remove { background-image:url(/media/admin/img/selector_stacked-remove.gif); }
-
-/* DATE AND TIME */
-p.datetime { line-height:20px; margin:0; padding:0; color:#666; font-size:11px; font-weight:bold; }
-.datetime span { font-size:11px; color:#ccc; font-weight:normal; white-space:nowrap; }
-table p.datetime { font-size:10px; margin-left:0; padding-left:0; }
-
-/* CALENDARS & CLOCKS */
-.calendarbox, .clockbox { margin:5px auto; font-size:11px; width:16em; text-align:center; background:white; position:relative; }
-.clockbox { width:auto; }
-.calendar { margin:0; padding: 0; }
-.calendar table { margin:0; padding:0; border-collapse:collapse; background:white; width:99%; }
-.calendar caption, .calendarbox h2 { margin: 0; font-size:11px; text-align:center; border-top:none; }
-.calendar th { font-size:10px; color:#666; padding:2px 3px; text-align:center; background:#e1e1e1 url(/media/admin/img/nav-bg.gif) 0 50% repeat-x; border-bottom:1px solid #ddd; }
-.calendar td { font-size:11px; text-align: center; padding: 0; border-top:1px solid #eee; border-bottom:none; }
-.calendar td.selected a { background: #C9DBED; }
-.calendar td.nonday { background:#efefef; }
-.calendar td.today a { background:#ffc; }
-.calendar td a, .timelist a { display: block; font-weight:bold; padding:4px; text-decoration: none; color:#444; }
-.calendar td a:hover, .timelist a:hover { background: #5b80b2; color:white; }
-.calendar td a:active, .timelist a:active { background: #036; color:white; }
-.calendarnav { font-size:10px; text-align: center; color:#ccc; margin:0; padding:1px 3px; }
-.calendarnav a:link, #calendarnav a:visited, #calendarnav a:hover { color: #999; }
-.calendar-shortcuts { background:white; font-size:10px; line-height:11px; border-top:1px solid #eee; padding:3px 0 4px; color:#ccc; }
-.calendarbox .calendarnav-previous, .calendarbox .calendarnav-next { display:block; position:absolute; font-weight:bold; font-size:12px; background:#C9DBED url(/media/admin/img/default-bg.gif) bottom left repeat-x; padding:1px 4px 2px 4px; color:white; }
-.calendarnav-previous:hover, .calendarnav-next:hover { background:#036; }
-.calendarnav-previous { top:0; left:0; }
-.calendarnav-next { top:0; right:0; }
-.calendar-cancel { margin:0 !important; padding:0; font-size:10px; background:#e1e1e1 url(/media/admin/img/nav-bg.gif) 0 50% repeat-x;  border-top:1px solid #ddd; }
-.calendar-cancel a { padding:2px; color:#999; }
-ul.timelist, .timelist li { list-style-type:none; margin:0; padding:0; }
-.timelist a { padding:2px; }
 
 form {
     margin: 0px;
@@ -300,3 +238,7 @@ br.clearall {
     clear: both;
 }
 
+/* Hack for admin multiple select widget */
+.selector h2 {
+    margin-bottom: 0px;
+}

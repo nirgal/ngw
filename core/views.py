@@ -272,7 +272,6 @@ def test(request):
     args={
         'title': 'Test',
         'env': os.environ,
-        'MEDIA_URL': settings.MEDIA_URL,
         'objtype': Contact,
     }
     #raise Exception(u'Boum')
