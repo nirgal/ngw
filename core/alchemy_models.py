@@ -11,7 +11,7 @@ from django.utils import html, http
 from django import forms
 from django.utils.encoding import smart_unicode
 from itertools import chain
-from ngw.settings import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, STATIC_URL
+from ngw.settings import DATABASES, STATIC_ROOT, STATIC_URL
 import decoratedstr
 from ngw.extensions import hooks
 from ngw.core.nav import *
@@ -44,9 +44,14 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
 
 # Ends with a /
-GROUP_STATIC_DIR="/usr/lib/ngw/static/static/g/"
+GROUP_STATIC_DIR = STATIC_ROOT + "static/g/"
 
-dburl = sqlalchemy.engine.url.URL("postgresql", DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT or None, DATABASE_NAME)
+dburl = sqlalchemy.engine.url.URL("postgresql",
+                                  DATABASES['default']['USER'],
+                                  DATABASES['default']['PASSWORD'],
+                                  DATABASES['default']['HOST'],
+                                  DATABASES['default']['PORT'] or None,
+                                  DATABASES['default']['NAME'])
 engine = create_engine(dburl, convert_unicode=True) #, echo=True)
 
 Session = scoped_session(sessionmaker(bind=engine, autoflush=False))
