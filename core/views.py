@@ -150,7 +150,6 @@ def index(request):
     return render_to_response('index.html', {
         'nav': navbar(),
         'title': 'Home page',
-        'ncontacts': Query(Contact).count(),
         'operator_groups': operator_groups,
         'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN).order_by(desc(ContactGroupNews.date)).limit(5),
         'GroupContact': Query(ContactGroup).get(GROUP_EVERYBODY),
@@ -1467,6 +1466,7 @@ def contactgroup_add_contacts_to(request):
 
     if u'g' in display:
         cig_conditions_group = u'group_id IN (%s)' % u','.join([unicode(g.id) for g in cg.self_and_subgroups])
+        #NOT TESTED: cig_conditions_group = u'group_id IN self_and_subgroup(%s)' % g.id
     else:
         cig_conditions_group = u'group_id=%d' % cg.id
 
