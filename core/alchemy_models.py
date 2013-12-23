@@ -3,15 +3,15 @@
 
 import os, subprocess
 from datetime import *
+from itertools import chain
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from sqlalchemy.orm import mapper
 import sqlalchemy.engine.url
+from django.conf import settings
 from django.utils import html, http
 from django import forms
 from django.utils.encoding import smart_unicode
-from itertools import chain
-from ngw.settings import DATABASES, STATIC_ROOT, STATIC_URL
 import decoratedstr
 from ngw.extensions import hooks
 from ngw.core.nav import *
@@ -45,14 +45,14 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
 
 # Ends with a /
-GROUP_STATIC_DIR = STATIC_ROOT + "static/g/"
+GROUP_STATIC_DIR = settings.STATIC_ROOT + "static/g/"
 
 dburl = sqlalchemy.engine.url.URL("postgresql",
-                                  DATABASES['default']['USER'],
-                                  DATABASES['default']['PASSWORD'],
-                                  DATABASES['default']['HOST'],
-                                  DATABASES['default']['PORT'] or None,
-                                  DATABASES['default']['NAME'])
+                                  settings.DATABASES['default']['USER'],
+                                  settings.DATABASES['default']['PASSWORD'],
+                                  settings.DATABASES['default']['HOST'],
+                                  settings.DATABASES['default']['PORT'] or None,
+                                  settings.DATABASES['default']['NAME'])
 engine = create_engine(dburl, convert_unicode=True) #, echo=True)
 
 Session = scoped_session(sessionmaker(bind=engine, autoflush=False))
@@ -1151,7 +1151,7 @@ register_contact_field_type(DateTimeContactField, u"DATETIME", u"DateTime", has_
 class EmailContactField(ContactField):
     def format_value_html(self, value):
         if gpg.is_email_secure(value):
-            gpg_indicator = u' <a href="/pks/lookup?op=get&options=mr&extact=on&search='+http.urlquote_plus(value)+'"><img src="'+STATIC_URL+'static/key.jpeg" alt=key title="GPG key available" border=0></a>'
+            gpg_indicator = u' <a href="/pks/lookup?op=get&options=mr&extact=on&search='+http.urlquote_plus(value)+'"><img src="'+settings.STATIC_URL+'static/key.jpeg" alt=key title="GPG key available" border=0></a>'
         else:
             gpg_indicator = u""
         return u'<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s' % {'value':value, 'gpg_indicator':gpg_indicator}
