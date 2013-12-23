@@ -7,13 +7,13 @@ from random import random
 from base64 import b64encode
 import datetime
 from decoratedstr import remove_decoration
+from django.conf import settings
 from django.http import *
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django import forms
 from django.shortcuts import render_to_response
 from django.template import loader, RequestContext
-from ngw import settings
 from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
 from ngw.core.mailmerge import *
