@@ -8,7 +8,7 @@
 
 <div id=banner>
 	<span id=sitetitle>{{ banner|safe }}</span>
-	{% if user.id %}<span id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="https://logout@{{request.META.HTTP_HOST}}/logout">Logout</a></span>{% endif %}
+	{% if user.id %}<span id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="//logout@{{request.META.HTTP_HOST}}/logout">Logout</a></span>{% endif %}
 	<br class=clearall>
 	{% if nav %}
     {% if user.is_admin %}
