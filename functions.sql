@@ -95,6 +95,10 @@ CREATE VIEW mailinginfo AS
         WHERE password_status.value='1'
         ;
 
+-- This is a helper view for apache module auth_pgsql:
+-- Auth_PG_log_table points to this
+-- "lastconection" gets updated at each request
+
 CREATE VIEW apache_log (login, lastconnection) AS
     SELECT login_values.value, lastconnection_values.value
     FROM contact_field_value AS login_values
