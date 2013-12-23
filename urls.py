@@ -29,7 +29,7 @@ groups_urlpatterns = patterns('',
 )
 
 urlpatterns = patterns('',
-    (r'^$', 'ngw.core.views.index'),
+    (r'^$', 'ngw.core.views.home'),
     
     (r'^test$', 'ngw.core.views.test'),
 

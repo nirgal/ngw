@@ -143,11 +143,11 @@ def unauthorized(request):
 
 @http_authenticate(ngw_auth, 'ngw')
 @require_group(GROUP_USER_NGW)
-def index(request):
+def home(request):
     # Birthdates: select contact_id, substring(value from 6) as md from contact_field_value where contact_field_id=6 order by md;
     operator_groups_ids = [ cig.group_id for cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==request.user.id).filter(ContactInGroup.operator==True) ]
     operator_groups = Query(ContactGroup).filter(ContactGroup.id.in_(operator_groups_ids)).order_by(ContactGroup.name)
-    return render_to_response('index.html', {
+    return render_to_response('home.html', {
         'nav': navbar(),
         'title': 'Home page',
         'operator_groups': operator_groups,
