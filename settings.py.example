@@ -95,6 +95,7 @@ MIDDLEWARE_CLASSES = (
 #    'django.middleware.common.CommonMiddleware',
 #    'django.contrib.sessions.middleware.SessionMiddleware',
 #    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
 #    'django.middleware.doc.XViewMiddleware',
 )
 
@@ -111,7 +112,7 @@ INSTALLED_APPS = (
 #    'django.contrib.contenttypes',
 #    'django.contrib.sessions',
 #    'django.contrib.sites',
-#    'django.contrib.messages',
+    'django.contrib.messages',
     'django.contrib.staticfiles',
 #    'django.contrib.admin',
     'ngw.core',
@@ -125,8 +126,10 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.media',
     'django.core.context_processors.request',
     'django.core.context_processors.static', # STATIC_URL available in templates
+    'django.contrib.messages.context_processors.messages',
     'ngw.core.context_processors.banner',
     'ngw.core.context_processors.contactcount',
 )
 
 APPEND_SLASH = False
+MESSAGE_STORAGE = 'ngw.core.messages.NgwMessageStorage'

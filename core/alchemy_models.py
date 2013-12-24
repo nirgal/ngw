@@ -423,20 +423,10 @@ class Contact(NgwModel):
     def get_addr_semicol(self):
         return self.get_fieldvalue_by_id(FIELD_STREET)+u";"+self.get_fieldvalue_by_id(FIELD_POSTCODE)+u";"+self.get_fieldvalue_by_id(FIELD_CITY)+u";"+self.get_fieldvalue_by_id(FIELD_COUNTRY)
 
+    # TODO: migrate to new django.contrib.messages framework
     def push_message(self, message):
         ContactSysMsg(self.id, message)
         #N# Session.commit()
-
-    def get_and_delete_messages(self):
-        """
-        That function is called by django ContextProcessor auth.
-        See django.core.context_processors
-        """
-        messages = []
-        for sm in self.sysmsg:
-            messages.append(sm.message)
-            Session.delete(sm)
-        return messages
 
     def generate_login(self):
         words=self.name.split(" ")

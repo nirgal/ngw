@@ -14,6 +14,7 @@ from django.core.urlresolvers import reverse
 from django import forms
 from django.shortcuts import render_to_response
 from django.template import loader, RequestContext
+from django.contrib import messages
 from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
 from ngw.core.mailmerge import *
@@ -171,7 +172,7 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
             ondelete_function(o)
         name = unicode(o)
         Session.delete(o)
-        request.user.push_message('%s has been deleted sucessfully!'%name)
+        messages.add_message(request, messages.SUCCESS, u'%s has been deleted sucessfully!' % name)
         log = Log(request.user.id)
         log.action = LOG_ACTION_DEL
         pk = o._sa_instance_state.key[1] # this is a tuple. TODO: use primary_key_from_instance
@@ -624,7 +625,7 @@ def contact_edit(request, gid=None, cid=None):
                 if newvalue!=None:
                     newvalue = cf.formfield_value_to_db_value(newvalue)
                 contact.set_fieldvalue(request.user, cf, newvalue)
-            request.user.push_message(u'Contact %s has been saved sucessfully!' % contact.name)
+            messages.add_message(request, messages.SUCCESS, u'Contact %s has been saved sucessfully!' % contact.name)
                 
             if not cid:
                 Session.commit() # We need the id rigth now!
@@ -718,7 +719,7 @@ def contact_pass(request, gid=None, cid=None):
             # record the value
             password = form.clean()['new_password']
             contact.set_password(request.user, password)
-            request.user.push_message('Password has been changed sucessfully!')
+            messages.add_message(request, messages.SUCCESS, u'Password has been changed sucessfully!')
             if gid:
                 cg = Query(ContactGroup).get(gid)
                 return HttpResponseRedirect(cg.get_absolute_url()+u'members/'+unicode(cid)+u'/')
@@ -768,7 +769,7 @@ def contact_pass_letter(request, gid=None, cid=None):
 
         # record the value
         contact.set_password(request.user, new_password, u'2') # Generated and mailed
-        request.user.push_message('Password has been changed sucessfully!')
+        messages.add_message(request, messages.SUCCESS, u'Password has been changed sucessfully!')
 
         fields = {}
         for cf in contact.get_allfields():
@@ -835,7 +836,7 @@ def contact_filters_add(request, cid=None):
     filter_list.append((u'No name', filter_str))
     filter_list_str = u','.join([u'"'+name+u'","'+filterstr+u'"' for name, filterstr in filter_list])
     contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
-    request.user.push_message('Filter has been added sucessfully!')
+    messages.add_message(request, messages.SUCCESS, u'Filter has been added sucessfully!')
     return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid,len(filter_list)-1)))
 
 
@@ -891,7 +892,7 @@ def contact_filters_edit(request, cid=None, fid=None):
             filter_list_str = u','.join([u'"'+name+u'","'+filterstr+u'"' for name, filterstr in filter_list])
             #print repr(filter_list_str)
             contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
-            request.user.push_message('Filter has been renamed sucessfully!')
+            messages.add_message(request, messages.SUCCESS, u'Filter has been renamed sucessfully!')
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else:
         form = FilterEditForm(initial={ 'name': filtername })
@@ -1321,7 +1322,7 @@ def contactgroup_edit(request, id):
             # supergroups have no properties (yet!): just recreate the array with brute force
             cg.direct_supergroups = [ Query(ContactGroup).get(id) for id in new_direct_supergroups_id]
 
-            request.user.push_message(u'Group %s has been changed sucessfully!' % cg.unicode_with_date())
+            messages.add_message(request, messages.SUCCESS, u'Group %s has been changed sucessfully!' % cg.unicode_with_date())
 
             cg.check_static_folder_created()
             Session.commit()
@@ -1392,7 +1393,7 @@ def contactgroup_delete(request, id):
     o = Query(ContactGroup).get(id)
     next_url = reverse('ngw.core.views.contactgroup_list')
     if o.system:
-        request.user.push_message(u'Group %s is locked and CANNOT be deleted.' % o.name)
+        messages.add_message(request, messages.ERROR, u'Group %s is locked and CANNOT be deleted.' % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
@@ -1431,7 +1432,7 @@ def contactgroup_add_contacts_to(request):
 
             return HttpResponseRedirect(target_group.get_absolute_url())
         else:
-            request.user.push_message('You must select a target group')
+            messages.add_message(request, messages.ERROR, u'You must select a target group')
             Session.commit()
 
     gid = request.REQUEST.get(u'gid', u'')
@@ -1545,7 +1546,7 @@ def contactingroup_edit(request, gid, cid):
             cig.member = data['member']
             cig.operator = data['operator']
             cig.note = data['note']
-            request.user.push_message(u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
+            messages.add_message(request, messages.SUCCESS, u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
             Session.flush()
             hooks.membership_changed(request.user, contact, cg)
@@ -1611,7 +1612,7 @@ def contactingroup_edit_inline(request, gid, cid):
         cig.operator = False
     else:
         raise Exception(u'invalid membership '+request.POST['membership'])
-    request.user.push_message(u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
+    messages.add_message(request, messages.SUCCESS, u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
     hooks.membership_changed(request.user, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
 
@@ -1624,7 +1625,7 @@ def contactingroup_delete(request, gid, cid):
     o = Query(ContactInGroup).get((cid, gid))
     if not o:
         return HttpResponse('Error, that contact is not a direct member. Please check subgroups')
-    #request.user.push_message(u'%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
+    #messages.add_message(request, messages.SUCCESS, u'%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
     base_nav = cg.get_smart_navbar()
     base_nav.add_component(u'members')
     return generic_delete(request, o, next_url=cg.get_absolute_url()+u'members/', base_nav=base_nav)
@@ -1680,7 +1681,7 @@ def contactgroup_news_edit(request, gid, nid):
                 news.date = datetime.datetime.now()
             news.title = data['title']
             news.text = data['text']
-            request.user.push_message('News %s has been changed sucessfully!' % unicode(news))
+            messages.add_message(request, messages.SUCCESS, u'News %s has been changed sucessfully!' % news)
             Session.commit()
             
             if request.POST.get('_continue', None):
@@ -1964,7 +1965,7 @@ def field_edit(request, id):
 
             field_renumber()
             print cf
-            request.user.push_message(u'Field %s has been changed sucessfully.' % cf.name)
+            messages.add_message(request, messages.SUCCESS, u'Field %s has been changed sucessfully.' % cf.name)
             if request.POST.get('_continue', None):
                 if not id:
                     Session.commit() # We need the id rigth now!
@@ -2005,7 +2006,7 @@ def field_delete(request, id):
     o = Query(ContactField).get(id)
     next_url = reverse('ngw.core.views.field_list')
     if o.system:
-        request.user.push_message(u'Field %s is locked and CANNOT be deleted.' % o.name)
+        messages.add_message(request, messages.ERROR, u'Field %s is locked and CANNOT be deleted.' % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url)
 
@@ -2163,7 +2164,7 @@ class ChoiceGroupForm(forms.Form):
             #print 'ADDING', k
             cg.choices.append(Choice(key=k, value=v))
     
-        request.user.push_message(u'Choice %s has been saved sucessfully.' % cg.name)
+        messages.add_message(request, messages.SUCCESS, u'Choice %s has been saved sucessfully.' % cg.name)
         return cg
             
         
