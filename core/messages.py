@@ -10,11 +10,15 @@ class NgwMessageStorage(BaseStorage):
     """
     
     def _get(self, *args, **kwargs):
-        contact_id = self.request.user.id
         messages = []
-        for sm in Query(ContactSysMsg).filter(ContactSysMsg.contact_id==contact_id):
-            messages.append(sm.message)
-            Session.delete(sm)
+        try:
+            contact_id = self.request.user.id
+        except AttributeError:
+            pass
+        else:
+            for sm in Query(ContactSysMsg).filter(ContactSysMsg.contact_id==contact_id):
+                messages.append(sm.message)
+                Session.delete(sm)
         return messages, True # Returned everything
     
     def _store(self, messages, response, *args, **kwargs):
