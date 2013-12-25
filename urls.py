@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, include, url
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 groups_urlpatterns = patterns('',
     url(r'^add$', 'ngw.core.views.contactgroup_edit', {'id': None}),
@@ -79,3 +80,7 @@ urlpatterns = patterns('',
 
     url(r'^pks/lookup$', 'ngw.core.gpg.lookup'),
 )
+
+# Also serve static files in DEBUG mode:
+# Note that staticfiles can't be in settings INSTALLED_APPS or /* will be matched first
+urlpatterns += staticfiles_urlpatterns()

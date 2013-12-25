@@ -45,7 +45,7 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 
 
 # Ends with a /
-GROUP_STATIC_DIR = settings.STATIC_ROOT + "static/g/"
+GROUP_STATIC_DIR = "/usr/lib/ngw/static/static/g/"
 
 dburl = sqlalchemy.engine.url.URL("postgresql",
                                   settings.DATABASES['default']['USER'],
