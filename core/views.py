@@ -1244,17 +1244,24 @@ def contactgroup_members(request, gid, output_format=''):
                 result += _quote_csv(v)
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
-        
+    
+    folder = cg.static_folder()
+    try:
+        files = os.listdir(folder)
+    except OSError as (errno, errmsg):
+        messages.add_message(request, messages.ERROR, u'Error while reading shared files list in %s: %s' % (folder, errmsg))
+        files = []
+    if '.htaccess' in files:
+        del files['.htaccess']
+    files.sort()
+
     args['title'] = u'Contacts of group '+cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
     args['display'] = display
     args['query'] = q
     args['cols'] = cols
     args['cg'] = cg
-    args['dir'] = cg.static_folder()
-    args['files'] = os.listdir(args['dir'])
-    args['files'].remove('.htaccess')
-    args['files'].sort()
+    args['files'] = files
     ####
     args['objtype'] = ContactGroup
     args['filter'] = strfilter
