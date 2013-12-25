@@ -1252,7 +1252,7 @@ def contactgroup_members(request, gid, output_format=''):
         messages.add_message(request, messages.ERROR, u'Error while reading shared files list in %s: %s' % (folder, errmsg))
         files = []
     if '.htaccess' in files:
-        del files['.htaccess']
+        files.remove('.htaccess')
     files.sort()
 
     args['title'] = u'Contacts of group '+cg.unicode_with_date()
