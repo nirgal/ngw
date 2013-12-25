@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, include, url
+from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 groups_urlpatterns = patterns('',
@@ -23,7 +24,7 @@ groups_urlpatterns = patterns('',
     url(r'^add_contacts_to$', 'ngw.core.views.contactgroup_add_contacts_to'),
     url(r'^(?P<gid>\d+)/news/$', 'ngw.core.views.contactgroup_news'),
     url(r'^(?P<gid>\d+)/news/add$', 'ngw.core.views.contactgroup_news_edit', {'nid':None}),
-    url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', 'django.views.generic.simple.redirect_to', {'url': '/contactgroups/%(gid)s/news/%(nid)s/edit'}),
+    url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='/contactgroups/%(gid)s/news/%(nid)s/edit')),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', 'ngw.core.views.contactgroup_news_edit'),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.contactgroup_news_delete'),
     url(r'^(?P<id>\d+)/mailman$', 'ngw.core.views.contactgroup_mailman'),
@@ -66,7 +67,7 @@ urlpatterns = patterns('',
 
     url(r'^contactfields/$', 'ngw.core.views.field_list'),
     url(r'^contactfields/add$', 'ngw.core.views.field_edit', {'id': None}),
-    url(r'^contactfields/(?P<id>\d+)/$', 'django.views.generic.simple.redirect_to', {'url': '/contactfields/%(id)s/edit'}),
+    url(r'^contactfields/(?P<id>\d+)/$', RedirectView.as_view(url='/contactfields/%(id)s/edit')),
     url(r'^contactfields/(?P<id>\d+)/edit$', 'ngw.core.views.field_edit'),
     url(r'^contactfields/(?P<id>\d+)/moveup$', 'ngw.core.views.field_move_up'),
     url(r'^contactfields/(?P<id>\d+)/movedown$', 'ngw.core.views.field_move_down'),
@@ -74,7 +75,7 @@ urlpatterns = patterns('',
 
     url(r'^choicegroups/$', 'ngw.core.views.choicegroup_list'),
     url(r'^choicegroups/add$', 'ngw.core.views.choicegroup_edit', {'id': None}),
-    url(r'^choicegroups/(?P<id>\d+)/$', 'django.views.generic.simple.redirect_to', {'url': '/choicegroups/%(id)s/edit'}),
+    url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='/choicegroups/%(id)s/edit')),
     url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choicegroup_edit'),
     url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choicegroup_delete'),
 
