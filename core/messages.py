@@ -14,7 +14,7 @@ class NgwMessageStorage(BaseStorage):
         try:
             contact_id = self.request.user.id
         except AttributeError:
-            pass
+            pass # No message if no user is loggued in
         else:
             for sm in Query(ContactSysMsg).filter(ContactSysMsg.contact_id==contact_id):
                 messages.append(sm.message)
@@ -26,4 +26,4 @@ class NgwMessageStorage(BaseStorage):
         for message in messages:
             ContactSysMsg(contact_id, message.message)
         #N# Session.commit()
-        return [] # Unstored messages
+        return [] # No unstored messages left
