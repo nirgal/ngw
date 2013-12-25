@@ -24,7 +24,7 @@ var DateTimeShortcuts = {
             DateTimeShortcuts.admin_media_prefix = '/missing-admin-media-prefix/';
         }
         // NIRGAL WAS HERE:
-        DateTimeShortcuts.admin_media_prefix = '/media/admin/'
+        DateTimeShortcuts.admin_media_prefix = '/admin/'
 
 
         var inputs = document.getElementsByTagName('input');
