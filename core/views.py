@@ -1,10 +1,6 @@
 # -*- encoding: utf8 -*-
 
 import os, traceback, subprocess, inspect
-from md5 import md5
-from sha import sha
-from random import random
-from base64 import b64encode
 import datetime
 from decoratedstr import remove_decoration
 from django.conf import settings
@@ -15,6 +11,7 @@ from django import forms
 from django.shortcuts import render_to_response
 from django.template import loader, RequestContext
 from django.contrib import messages
+from django.contrib.auth.hashers import check_password
 from ngw.core.alchemy_models import *
 from ngw.core.basicauth import *
 from ngw.core.mailmerge import *
@@ -36,49 +33,35 @@ FTYPE_CHOICE='CHOICE'
 FTYPE_MULTIPLECHOICE='MULTIPLECHOICE'
 FTYPE_PASSWORD='PASSWORD'
 
-ENABLE_LASTCONNECTION_UPDATES = False
+#######################################################################
+#
+# Login / Logout
+#
+#######################################################################
 
-# call back function for http_authenticate decorator
-# Note that it does NOT verify the membership of any groups, not even users
-# Do use @require_group
-def ngw_auth(username, passwd):
-    username = unicode(username, 'utf-8', 'replace')
-    passwd = unicode(passwd, 'utf-8', 'replace')
-    if not username or not passwd:
-        return None
-    login_value = Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.value==username).first()
-    if not login_value:
-        return None
-    c = login_value.contact
-    dbpasswd = Query(ContactFieldValue).get((c.id, FIELD_PASSWORD)).value
-    if not dbpasswd:
-        return None
-    if dbpasswd.startswith(u'{SHA}'):
-        digest = dbpasswd[5:]
-        if b64encode(sha(passwd).digest())==digest:
-            if ENABLE_LASTCONNECTION_UPDATES:
+class NgwAuthBackend(object):
+    """
+    Authenticate a user
+    """
+
+    supports_inactive_user = False
+    enable_lastconnection_updates = False # Set to True if apache doesn't do it by itself
+
+    def authenticate(self, username=None, password=None):
+        if not username or not password:
+            return None
+        login_value = Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.value==username).first()
+        if not login_value:
+            return None
+        c = login_value.contact
+        dbpassword = Query(ContactFieldValue).get((c.id, FIELD_PASSWORD)).value
+        if not dbpassword:
+            return None
+        if check_password(password, u'crypt$$'+dbpassword):
+            if self.enable_lastconnection_updates:
                 c.update_lastconnection()
             return c
-    else: # assume crypt algorithm
-        salt,digest = dbpasswd[0:2],dbpasswd[2:]
-        targetdigest=subprocess.Popen(['openssl', 'passwd', '-crypt', '-salt', salt, passwd], stdout=subprocess.PIPE).communicate()[0]
-        targetdigest=targetdigest[:-1] # remove extra '\n'
-        if salt+digest==targetdigest:
-            if ENABLE_LASTCONNECTION_UPDATES:
-                c.update_lastconnection()
-            return c
-    #algo, salt, digest = dbpasswd.split('$')
-    #if algo=='crypt':
-    #elif algo=='md5':
-    #    if md5(salt+passwd).hexdigest()==digest:
-    #        return c
-    #elif algo=='sha1':
-    #    if sha(salt+passwd).hexdigest()==digest:
-    #        return c
-    #else:
-    #    print 'Unsupported password algorithm', algo.encode('utf-8')
-    #    return None
-    return None # authentification failed
+        return None # authentification failed
 
 
 # decorator for requests
@@ -88,7 +71,10 @@ class require_group:
     def __call__(self, func):
         def wrapped(*args, **kwargs):
             request = args[0]
-            user = request.user
+            try:
+                user = request.user
+            except AttributeError:
+                return unauthorized(request)
             if not user.is_member_of(self.required_group):
                 return unauthorized(request)
             return func(*args, **kwargs)
@@ -142,7 +128,7 @@ def unauthorized(request):
             RequestContext(request)))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def home(request):
     # Birthdates: select contact_id, substring(value from 6) as md from contact_field_value where contact_field_id=6 order by md;
@@ -265,7 +251,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
     return render_to_response(template_name, args, RequestContext(request))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def test(request):
     args={
@@ -276,7 +262,7 @@ def test(request):
     #raise Exception(u'Boum')
     return render_to_response('test.html', args, RequestContext(request))
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER) # not GROUP_USER_NGW
 def hook_change_password(request):
     newpassword_plain = request.POST.get(u'password')
@@ -302,7 +288,7 @@ def logout(request):
 #
 #######################################################################
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 @require_group(GROUP_ADMIN)
 def logs(request):
@@ -433,7 +419,7 @@ class FieldSelectForm(forms.Form):
         self.fields[u'selected_fields']=forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_fields())
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_list(request):
     import contactsearch # FIXME
@@ -475,7 +461,7 @@ def contact_list(request):
 
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_detail(request, gid=None, cid=None):
     cid = int(cid)
@@ -506,7 +492,7 @@ def contact_detail(request, gid=None, cid=None):
 
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_vcard(request, gid=None, cid=None):
     cid = int(cid)
@@ -547,7 +533,7 @@ class ContactEditForm(forms.Form):
         #    self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Group', False), choices=contactgroupchoices)
         
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_edit(request, gid=None, cid=None):
     if cid: # edit existing contact
@@ -701,7 +687,7 @@ class ContactPasswordForm(forms.Form):
         return self.cleaned_data
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_pass(request, gid=None, cid=None):
     if gid is not None:
@@ -743,7 +729,7 @@ def contact_pass(request, gid=None, cid=None):
     return render_to_response('password.html', args, RequestContext(request))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_pass_letter(request, gid=None, cid=None):
     if gid is not None:
@@ -801,7 +787,7 @@ def contact_pass_letter(request, gid=None, cid=None):
     return render_to_response('password_letter.html', args, RequestContext(request))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_delete(request, gid=None, cid=None):
     if not request.user.is_admin():
@@ -820,7 +806,7 @@ def contact_delete(request, gid=None, cid=None):
     return generic_delete(request, o, next_url, base_nav=base_nav)
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_add(request, cid=None):
     from contactsearch import *
@@ -840,7 +826,7 @@ def contact_filters_add(request, cid=None):
     return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid,len(filter_list)-1)))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_list(request, cid=None):
     from contactsearch import *
@@ -865,7 +851,7 @@ def contact_filters_list(request, cid=None):
 class FilterEditForm(forms.Form):
     name = forms.CharField(max_length=50)
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_edit(request, cid=None, fid=None):
     from contactsearch import *
@@ -910,7 +896,7 @@ def contact_filters_edit(request, cid=None, fid=None):
     return render_to_response('customfilter_user.html', args, RequestContext(request))
 
 from sqlalchemy.orm.util import AliasedClass
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_ADMIN)
 def contact_make_login_mailing(request):
     # select contacts whose password is in state 'Registered', with both 'Adress' and 'City' not null
@@ -945,7 +931,7 @@ def contact_make_login_mailing(request):
 #
 #######################################################################
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_list(request):
     def _trucate_list(l):
@@ -1055,7 +1041,7 @@ class YearMonthCal:
             dt += timedelta(days=7)
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def event_list(request):
     if not request.user.is_admin():
@@ -1111,7 +1097,7 @@ def event_list(request):
     return query_print_entities(request, 'list_events.html', args)
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_detail(request, id):
     if not request.user.is_admin():
@@ -1119,7 +1105,7 @@ def contactgroup_detail(request, id):
     return HttpResponseRedirect(u'./members/')
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_members(request, gid, output_format=''):
     import contactsearch # FIXME
@@ -1288,7 +1274,7 @@ class ContactGroupForm(forms.Form):
         self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by(ContactGroup.date, ContactGroup.name) ]
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_edit(request, id):
     if not request.user.is_admin():
@@ -1392,7 +1378,7 @@ def on_contactgroup_delete(cg):
             subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
     # TODO: delete static folder
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_delete(request, id):
     if not request.user.is_admin():
@@ -1405,7 +1391,7 @@ def contactgroup_delete(request, id):
     return generic_delete(request, o, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_add_contacts_to(request):
     import contactsearch # FIXME
@@ -1519,7 +1505,7 @@ class ContactInGroupForm(forms.Form):
             raise forms.ValidationError('Invalid flags combinaison')
         return data
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_edit(request, gid, cid):
     if not request.user.is_admin():
@@ -1591,7 +1577,7 @@ def contactingroup_edit(request, gid, cid):
     args['nav'].add_component(u'membership')
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_edit_inline(request, gid, cid):
     if not request.user.is_admin():
@@ -1623,7 +1609,7 @@ def contactingroup_edit_inline(request, gid, cid):
     hooks.membership_changed(request.user, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_delete(request, gid, cid):
     if not request.user.is_admin():
@@ -1645,7 +1631,7 @@ def contactingroup_delete(request, gid, cid):
 #
 #######################################################################
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news(request, gid):
     if not request.user.is_admin():
@@ -1666,7 +1652,7 @@ class NewsEditForm(forms.Form):
     title = forms.CharField(max_length=50)
     text = forms.CharField(widget=forms.Textarea)
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_edit(request, gid, nid):
     if not request.user.is_admin():
@@ -1720,7 +1706,7 @@ def contactgroup_news_edit(request, gid, nid):
 
     return render_to_response('edit.html', args, RequestContext(request))
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_delete(request, gid, nid):
     if not request.user.is_admin():
@@ -1732,7 +1718,7 @@ def contactgroup_news_delete(request, gid, nid):
 class MailmanSyncForm(forms.Form):
     mail = forms.CharField(widget=forms.Textarea)
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_mailman(request, id):
     initial_value = '''
@@ -1775,7 +1761,7 @@ Ci-joint votre message original.
 #
 #######################################################################
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def field_list(request):
     if not request.user.is_admin():
@@ -1797,7 +1783,7 @@ def field_list(request):
     return query_print_entities(request, 'list.html', args, extrasort=extrasort)
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def field_move_up(request, id):
     if not request.user.is_admin():
@@ -1808,7 +1794,7 @@ def field_move_up(request, id):
     field_renumber()
     return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def field_move_down(request, id):
     if not request.user.is_admin():
@@ -1881,7 +1867,7 @@ class FieldEditForm(forms.Form):
         return self.cleaned_data
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def field_edit(request, id):
     if not request.user.is_admin():
@@ -2005,7 +1991,7 @@ def field_edit(request, id):
     return render_to_response('edit.html', args, RequestContext(request))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def field_delete(request, id):
     if not request.user.is_admin():
@@ -2024,7 +2010,7 @@ def field_delete(request, id):
 #
 #######################################################################
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def choicegroup_list(request):
     if not request.user.is_admin():
@@ -2175,7 +2161,7 @@ class ChoiceGroupForm(forms.Form):
         return cg
             
         
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def choicegroup_edit(request, id=None):
     if not request.user.is_admin():
@@ -2219,7 +2205,7 @@ def choicegroup_edit(request, id=None):
     return render_to_response('edit.html', args, RequestContext(request))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 @require_group(GROUP_USER_NGW)
 def choicegroup_delete(request, id):
     if not request.user.is_admin():

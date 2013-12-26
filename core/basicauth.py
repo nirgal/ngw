@@ -1,25 +1,23 @@
 # -*- coding: utf-8 -*-
-#
-#Example usage:
-#def auth(username, password):
-#    return (username,password)==('me', 'secret')
-#
-#@http_authenticate(auth, 'myrealm')
-#def myview(request):
-#    return HttpResponse("Hello world!")
 
-from django.http import *
+"""
+This module implements RFC2617 "http basic auth"
+"""
 import base64
+from functools import wraps
+from django.contrib.auth import authenticate as auth_authenticate
+from django.http import *
 
 
 class HttpResponseAuthenticate(HttpResponse):
     """ Http response that trigger a basic http authentification on the client.
         parameter: http realm (string)"""
     def __init__(self, *args, **kwargs):
-        realm = 'DOL'
         if 'realm' in kwargs:
             realm =  kwargs['realm']
             del kwargs['realm']
+        else:
+            realm = 'ngw'
         HttpResponse.__init__(self, *args, **kwargs)
         self.status_code = 401
         self.mimetype = "text/html; charset=utf-8"
@@ -28,33 +26,38 @@ class HttpResponseAuthenticate(HttpResponse):
         self['WWW-Authenticate'] = 'Basic realm="'+realm+'"'
 
 
-class http_authenticate:
-    """ Decorator that check authorization.
-        Parameters:
-            passwd_checker(username,password): function that must return True if the username is recognised.
-            realm: string with the realm. See rfc1945.
+# Decorator to check a user is loged in
+# Blocks requests if not and returns a 401 code that triggers browser input
+# Note that it does NOT verify the membership of any groups, not even users
+# Do use @require_group
+def login_required():
+    def decorator(f):
+        @wraps(f)
+        def wrapper(request, *args, **kargs):
+            if 'HTTP_AUTHORIZATION' not in request.META:
+                return HttpResponseAuthenticate(u'Password required')
+            return f(request, *args, **kargs)
+        return wrapper
+    return decorator
+
+
+class AuthenticationMiddleware:
     """
-    def __init__(self, passwd_checker, realm):
-        self.passwd_checker = passwd_checker
-        self.realm = realm
-
-    def __call__(self, func):
-        def _wrapper(*args, **kwargs):
-            request = args[0]
-            if not 'HTTP_AUTHORIZATION' in request.META:
-                username, password = "", ""
-                if not self.passwd_checker(username, password):
-                    return HttpResponseAuthenticate("Password required", realm=self.realm)
-            else:
-                auth = request.META['HTTP_AUTHORIZATION']
-                assert auth.startswith('Basic '), "Invalid authentification scheme"
-                username, password = base64.decodestring(auth[len('Basic '):]).split(':', 2)
-                user =  self.passwd_checker(username, password)
-                if not user:
-                    return HttpResponseAuthenticate("Invalid username/password", realm=self.realm)
- 
-            request.user = user
-            return func(*args, **kwargs)
-
-        _wrapper.__name__ = func.__name__
-        return _wrapper
+    Check user credidentials and setup request.user
+    Authentication is done using settings.AUTHENTICATION_BACKENDS
+    Warning, if no user is logged in, user will NOT be set (unlike django)
+    """
+    def process_request(self, request):
+        if 'HTTP_AUTHORIZATION' not in request.META:
+            return # It is ok not to be logged in (logout view, ...)
+        auth = request.META['HTTP_AUTHORIZATION']
+        assert auth.startswith('Basic '), "Invalid authentification scheme"
+        username, password = base64.decodestring(auth[len('Basic '):]).split(':', 2)
+        username = unicode(username, 'utf-8', 'replace')
+        password = unicode(password, 'utf-8', 'replace')
+        if request.path == u'/logout':
+            return # special hack, so that //logout@exemple.net/logout will work
+        user = auth_authenticate(username=username, password=password)
+        if not user:
+            return HttpResponseAuthenticate("Invalid username/password")
+        request.user = user

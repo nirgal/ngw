@@ -308,7 +308,7 @@ def parse_filterstring(sfilter):
 
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 def editfilter(request):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -316,7 +316,7 @@ def editfilter(request):
     return render_to_response('filter.html', {'filter_html':mark_safe(filter.to_html())}, RequestContext(request))
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 def contactsearch_get_fields(request, kind):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -355,7 +355,7 @@ def parse_filter_list_str(txt):
     return [ (list[2*i], list[2*i+1]) for i in range(len(list)/2) ]
     
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 def contactsearch_get_filters(request, field):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -396,7 +396,7 @@ def contactsearch_get_filters(request, field):
     return HttpResponse(body)
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 def contactsearch_get_params(request, field, filtername):
     if not request.user.is_admin():
         return unauthorized(request)
@@ -499,7 +499,7 @@ def contactsearch_get_params(request, field, filtername):
 
 
 
-@http_authenticate(ngw_auth, 'ngw')
+@login_required()
 def contactsearch_filter_to_html(request):
     if not request.user.is_admin():
         return unauthorized(request)
