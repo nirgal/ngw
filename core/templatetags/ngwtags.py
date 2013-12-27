@@ -1,6 +1,6 @@
 # -*- encofing: utf8 -*-
 
-import inspect, traceback
+import inspect
 from django import template
 from django.utils import html
 

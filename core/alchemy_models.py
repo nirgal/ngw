@@ -487,15 +487,12 @@ class Contact(NgwModel):
             Session.delete(cfv)
 
     def is_member_of(self, group_id):
-        # TODO commit?
         cfv = Query(ContactInGroup).filter("contact_id=%(contact_id)d AND group_id IN (SELECT * FROM self_and_subgroups(%(group_id)d)) AND member" % {'contact_id': self.id, 'group_id': group_id}).all()
         #print cfv, len(cfv)
         return len(cfv)!=0
 
     def is_admin(self):
-        adminsubgroups = Query(ContactGroup).get(GROUP_ADMIN).self_and_subgroups
-        cig = Query(ContactInGroup).filter(ContactInGroup.contact_id==self.id).filter(ContactInGroup.group_id.in_([g.id for g in adminsubgroups])).first()
-        return cig!=None
+        return self.is_member_of(GROUP_ADMIN)
 
     def update_lastconnection(self):
         # see ENABLE_LASTCONNECTION_UPDATES
