@@ -143,3 +143,42 @@ CREATE RULE apache_log_ins AS ON INSERT TO apache_log
     );
 
 
+
+-- Create a view compatible with django.contrib.auth
+--
+-- CREATE OR REPLACE VIEW auth_user (id, username, first_name, last_name, email, password, is_staff, is_active, is_superuser, last_login, date_joined) AS
+-- SELECT contact.id AS id,
+--    login_values.value AS username,
+--    contact.name AS first_name,
+--    '' AS last_name,
+--    email_values.value AS email,
+--    'crypt$$'||password_values.value AS password,
+--    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(52)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND member AND contact_in_group.contact_id=contact.id) AS is_staff,
+--    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(2)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND member AND contact_in_group.contact_id=contact.id) AS is_active,
+--    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(8)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND member AND contact_in_group.contact_id=contact.id) AS is_superuser,
+--    lastconnection_values.value AS last_login,
+--    '1970-01-01 00:00:00'::timestamp AS date_joined
+-- FROM contact
+-- JOIN contact_field_value AS login_values ON contact.id = login_values.contact_id AND login_values.contact_field_id = 1
+-- LEFT JOIN contact_field_value AS email_values ON contact.id = email_values.contact_id AND email_values.contact_field_id = 7
+-- JOIN contact_field_value AS password_values ON contact.id = password_values.contact_id AND password_values.contact_field_id = 2
+-- LEFT JOIN contact_field_value AS lastconnection_values ON contact.id = lastconnection_values.contact_id AND lastconnection_values.contact_field_id = 3
+-- ;
+-- CREATE OR REPLACE RULE auth_user_upd AS ON UPDATE TO auth_user
+--     DO INSTEAD
+--     (
+--         -- Create lastconnection value if missing
+--         INSERT INTO contact_field_value
+--             SELECT NEW.id, 3, NULL
+--                 WHERE NOT EXISTS ( 
+--                     SELECT *
+--                     FROM contact_field_value AS probe
+--                     WHERE probe.contact_id = NEW.id
+--                     AND probe.contact_field_id=3);
+--         -- Update lastconnection value
+--         UPDATE contact_field_value
+--             SET value = NEW.last_login
+--             WHERE contact_field_id=3
+--             AND contact_id = NEW.id;
+--         -- TODO: raise if other value changed
+--     );

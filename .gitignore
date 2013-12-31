@@ -1,0 +1,11 @@
+*.pyc
+apache.conf
+apache_error.log
+backup.sh
+backups/
+functions2.sql
+mailing/
+settings.py
+static/static/c/
+static/static/g/
+
