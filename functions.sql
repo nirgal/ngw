@@ -8,8 +8,8 @@ DROP VIEW apache_log;
 DROP FUNCTION self_and_subgroups(integer);
 
 
--- That function returns the list of subgroup of a given group
--- Has been tested with bugus setu where A is in B and B in A.
+-- That function returns the set of subgroups of a given group
+-- Has been tested with bugus setup where A is in B and B in A.
 CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
     WITH RECURSIVE subgroups AS (
         -- Non-recursive term
@@ -22,7 +22,20 @@ CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
 $$ LANGUAGE SQL STABLE;
 
 
+-- That function returns the set of supergroups of a given group
+CREATE FUNCTION self_and_supergroups(integer) RETURNS SETOF integer AS $$
+    WITH RECURSIVE supergroups AS (
+        -- Non-recursive term
+        SELECT $1 AS self_and_supergroup
+        UNION
+        -- Recursive Term
+        SELECT father_id AS self_and_supergroup FROM group_in_group JOIN supergroups ON group_in_group.subgroup_id=supergroups.self_and_supergroup
+    )
+    SELECT * FROM supergroups;
+$$ LANGUAGE SQL STABLE;
 
+
+-- SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=1 AND member;
 -- select contact_group.id, contact_group.name, array(select self_and_subgroups(id)) from contact_group;
 
 -- admins:

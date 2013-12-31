@@ -62,6 +62,22 @@ class NgwAuthBackend(object):
                 c.update_lastconnection()
             return c
         return None # authentification failed
+    
+    def get_user(self, user_id):
+            return Query(Contact).get(user_id) or None
+
+
+def ngw_base_url(request):
+    if os.environ.has_key('HTTPS'):
+        scheme = 'https'
+    else:
+        scheme = 'http'
+    #FIXME empty scheme is enough, remove that
+    return scheme+'://'+request.META['HTTP_HOST']+'/'
+
+
+def logout(request):
+    return render_to_response('message.html', {'message': mark_safe('Have a nice day!<br><a href=\"' + ngw_base_url(request) + '\">Login again</a>') }, RequestContext(request))
 
 
 # decorator for requests
@@ -128,6 +144,12 @@ def unauthorized(request):
             RequestContext(request)))
 
 
+#######################################################################
+#
+# Home
+#
+#######################################################################
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def home(request):
@@ -142,36 +164,24 @@ def home(request):
         'GroupAdmin': Query(ContactGroup).get(GROUP_ADMIN),
     }, RequestContext(request))
 
-# Helper function that is never call directly, hence the lack of authentification check
-def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
-    if not request.user.is_admin():
-        return unauthorized(request)
 
-    title = u'Please confirm deletetion'
+@login_required()
+@require_group(GROUP_USER_NGW)
+def test(request):
+    args={
+        'title': 'Test',
+        'env': os.environ,
+        'objtype': Contact,
+    }
+    #raise Exception(u'Boum')
+    return render_to_response('test.html', args, RequestContext(request))
 
-    if not o:
-        raise Http404()
+########################################################################
+#
+# Generic views
+#
+########################################################################
 
-    confirm = request.GET.get('confirm', u'')
-    if confirm:
-        if ondelete_function:
-            ondelete_function(o)
-        name = unicode(o)
-        Session.delete(o)
-        messages.add_message(request, messages.SUCCESS, u'%s has been deleted sucessfully!' % name)
-        log = Log(request.user.id)
-        log.action = LOG_ACTION_DEL
-        pk = o._sa_instance_state.key[1] # this is a tuple. TODO: use primary_key_from_instance
-        log.target = unicode(o.__class__.__name__)+u' '+u' '.join([unicode(x) for x in pk])
-        log.target_repr = o.get_class_verbose_name()+u' '+name
-        #FIXME log doesn't work??
-        return HttpResponseRedirect(next_url)
-    else:
-        nav = base_nav or navbar(o.get_class_navcomponent())
-        nav.add_component(o.get_navcomponent())
-        nav.add_component(u'delete')
-        return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
-        
 
 class FilterMultipleSelectWidget(forms.SelectMultiple):
     class Media:
@@ -251,36 +261,36 @@ def query_print_entities(request, template_name, args, extrasort=None):
     return render_to_response(template_name, args, RequestContext(request))
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def test(request):
-    args={
-        'title': 'Test',
-        'env': os.environ,
-        'objtype': Contact,
-    }
-    #raise Exception(u'Boum')
-    return render_to_response('test.html', args, RequestContext(request))
+# Helper function that is never call directly, hence the lack of authentification check
+def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
+    if not request.user.is_admin():
+        return unauthorized(request)
 
-@login_required()
-@require_group(GROUP_USER) # not GROUP_USER_NGW
-def hook_change_password(request):
-    newpassword_plain = request.POST.get(u'password')
-    if not newpassword_plain:
-        return HttpResponse(u'Missing password POST parameter')
-    #TODO: check strength
-    request.user.set_password(request.user, newpassword_plain)
-    return HttpResponse('OK')
+    title = u'Please confirm deletetion'
 
-def ngw_base_url(request):
-    if os.environ.has_key('HTTPS'):
-        scheme = 'https'
+    if not o:
+        raise Http404()
+
+    confirm = request.GET.get('confirm', u'')
+    if confirm:
+        if ondelete_function:
+            ondelete_function(o)
+        name = unicode(o)
+        Session.delete(o)
+        messages.add_message(request, messages.SUCCESS, u'%s has been deleted sucessfully!' % name)
+        log = Log(request.user.id)
+        log.action = LOG_ACTION_DEL
+        pk = o._sa_instance_state.key[1] # this is a tuple. TODO: use primary_key_from_instance
+        log.target = unicode(o.__class__.__name__)+u' '+u' '.join([unicode(x) for x in pk])
+        log.target_repr = o.get_class_verbose_name()+u' '+name
+        #FIXME log doesn't work??
+        return HttpResponseRedirect(next_url)
     else:
-        scheme = 'http'
-    return scheme+'://'+request.META['HTTP_HOST']+'/'
-
-def logout(request):
-    return render_to_response('message.html', {'message': mark_safe('Have a nice day!<br><a href=\"' + ngw_base_url(request) + '\">Login again</a>') }, RequestContext(request))
+        nav = base_nav or navbar(o.get_class_navcomponent())
+        nav.add_component(o.get_navcomponent())
+        nav.add_component(u'delete')
+        return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
+        
 
 #######################################################################
 #
@@ -551,7 +561,7 @@ def contact_edit(request, gid=None, cid=None):
     else: # edit out of a group
         cg = None
 
-    objtype = Contact;
+    objtype = Contact
     if cid:
         contact = Query(Contact).get(cid)
         title = u'Editing '+unicode(contact)
@@ -727,6 +737,17 @@ def contact_pass(request, gid=None, cid=None):
     except AttributeError:
         pass # it's ok not to have a letter
     return render_to_response('password.html', args, RequestContext(request))
+
+
+@login_required()
+@require_group(GROUP_USER) # not GROUP_USER_NGW
+def hook_change_password(request):
+    newpassword_plain = request.POST.get(u'password')
+    if not newpassword_plain:
+        return HttpResponse(u'Missing password POST parameter')
+    #TODO: check strength
+    request.user.set_password(request.user, newpassword_plain)
+    return HttpResponse('OK')
 
 
 @login_required()
@@ -1732,7 +1753,7 @@ Ci-joint votre message original.
 
 - Fait.
     '''
-    from ngw.extensions.mailman import synchronise_group
+    from ngw2.extensions.mailman import synchronise_group
     if not request.user.is_admin():
         return unauthorized(request)
     cg = Query(ContactGroup).get(id)

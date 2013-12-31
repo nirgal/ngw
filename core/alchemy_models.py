@@ -1059,7 +1059,6 @@ class ContactField(NgwModel):
     def validate_unicode_value(cls, value, choice_group_id=None):
         return True
 
-
     def get_filters_classes(self):
         return (FieldFilterNull, FieldFilterNotNull,)
 
