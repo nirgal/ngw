@@ -6,7 +6,7 @@ This module implements RFC2617 "http basic auth"
 import base64
 from functools import wraps
 from django.contrib.auth import authenticate as auth_authenticate
-from django.http import *
+from django.http import HttpResponse
 
 
 class HttpResponseAuthenticate(HttpResponse):

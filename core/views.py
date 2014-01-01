@@ -1,22 +1,27 @@
 # -*- encoding: utf8 -*-
 
-import os, traceback, subprocess, inspect
-import datetime
+from datetime import *
 from decoratedstr import remove_decoration
-from django.conf import settings
-from django.http import *
+from copy import copy
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
 from django.utils.safestring import mark_safe
-from django.core.urlresolvers import reverse
-from django import forms
 from django.shortcuts import render_to_response
 from django.template import loader, RequestContext
-from django.contrib import messages
+from django.core.urlresolvers import reverse
+from django import forms
 from django.contrib.auth.hashers import check_password
-from ngw.core.alchemy_models import *
+#from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.conf import settings
 from ngw.core.basicauth import *
-from ngw.core.mailmerge import *
+from ngw.core.models import *
 from ngw.core.widgets import *
 from ngw.core.nav import *
+from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
+from ngw.core.mailmerge import *
+from ngw.core import contactsearch
+
+from django.db.models.query import RawQuerySet, sql
 
 DISP_NAME = u'name'
 DISP_FIELD_PREFIX = u'field_'
@@ -45,16 +50,18 @@ class NgwAuthBackend(object):
     """
 
     supports_inactive_user = False
-    enable_lastconnection_updates = False # Set to True if apache doesn't do it by itself
+    enable_lastconnection_updates = True # Set to True if apache doesn't do it by itself
 
+    #TODO: skip auth/lastconnection update if REMOTE_USER is set by httpd
     def authenticate(self, username=None, password=None):
         if not username or not password:
             return None
-        login_value = Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.value==username).first()
-        if not login_value:
+        try:
+            login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=username)
+        except ContactFieldValue.DoesNotExist:
             return None
         c = login_value.contact
-        dbpassword = Query(ContactFieldValue).get((c.id, FIELD_PASSWORD)).value
+        dbpassword = ContactFieldValue.objects.get(contact_id=c.id, contact_field_id=FIELD_PASSWORD).value
         if not dbpassword:
             return None
         if check_password(password, u'crypt$$'+dbpassword):
@@ -62,10 +69,12 @@ class NgwAuthBackend(object):
                 c.update_lastconnection()
             return c
         return None # authentification failed
-    
-    def get_user(self, user_id):
-            return Query(Contact).get(user_id) or None
 
+    def get_user(self, user_id):
+        try:
+            return Contact.objects.get(pk=user_id)
+        except Contact.DoesNotExist:
+            return None
 
 def ngw_base_url(request):
     if os.environ.has_key('HTTPS'):
@@ -77,7 +86,8 @@ def ngw_base_url(request):
 
 
 def logout(request):
-    return render_to_response('message.html', {'message': mark_safe('Have a nice day!<br><a href=\"' + ngw_base_url(request) + '\">Login again</a>') }, RequestContext(request))
+    #need to call auth_logout(request) when using auth contrib module
+    return render_to_response('message.html', {'message': mark_safe('Have a nice day!<br><a href="' + ngw_base_url(request) + '">Login again</a>') }, RequestContext(request))
 
 
 # decorator for requests
@@ -95,14 +105,14 @@ class require_group:
                 return unauthorized(request)
             return func(*args, **kwargs)
         return wrapped
-    
+
 
 def get_display_fields(user):
     # check the field still exists
     result = []
     default_fields = user.get_fieldvalue_by_id(FIELD_COLUMNS)
     if not default_fields:
-        default_fields = Query(Config).get('columns')
+        default_fields = Config.objects.get(pk='columns')
         if default_fields:
             default_fields = default_fields.text
     if not default_fields:
@@ -116,7 +126,9 @@ def get_display_fields(user):
             except ValueError:
                 print 'Error in default fields: %s has invalid syntax.' % fname.encode('utf8')
                 continue
-            if not Query(ContactGroup).get(groupid):
+            try:
+                ContactGroup.objects.get(pk=groupid)
+            except ContactGroup.DoesNotExist:
                 print 'Error in default fields: There is no group #%d.' % groupid
                 continue
         elif fname.startswith(DISP_FIELD_PREFIX):
@@ -125,7 +137,9 @@ def get_display_fields(user):
             except ValueError:
                 print 'Error in default fields: %s has invalid syntax.' % fname.encode('utf8')
                 continue
-            if not Query(ContactField).get(fieldid):
+            try:
+                ContactField.objects.get(pk=fieldid)
+            except ContactField.DoesNotExist:
                 print 'Error in default fields: There is no field #%d.' % fieldid
                 continue
         else:
@@ -143,7 +157,6 @@ def unauthorized(request):
             'message': 'Sorry. You are not authorized to browse that page.'},
             RequestContext(request)))
 
-
 #######################################################################
 #
 # Home
@@ -154,14 +167,15 @@ def unauthorized(request):
 @require_group(GROUP_USER_NGW)
 def home(request):
     # Birthdates: select contact_id, substring(value from 6) as md from contact_field_value where contact_field_id=6 order by md;
-    operator_groups_ids = [ cig.group_id for cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==request.user.id).filter(ContactInGroup.operator==True) ]
-    operator_groups = Query(ContactGroup).filter(ContactGroup.id.in_(operator_groups_ids)).order_by(ContactGroup.name)
+    print repr(hooks.__hooks_contact_field_changed)
+    print repr(hooks.__hooks_membership_changed)
+    operator_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.group_id = contact_group.id AND contact_in_group.contact_id=%s AND operator)' % request.user.id])
     return render_to_response('home.html', {
-        'nav': navbar(),
         'title': 'Home page',
+        'nav': navbar(),
         'operator_groups': operator_groups,
-        'news': Query(ContactGroupNews).filter(ContactGroupNews.contact_group_id==GROUP_ADMIN).order_by(desc(ContactGroupNews.date)).limit(5),
-        'GroupAdmin': Query(ContactGroup).get(GROUP_ADMIN),
+        'news': ContactGroupNews.objects.filter(contact_group_id=GROUP_ADMIN)[:5],
+        'GroupAdmin': ContactGroup.objects.get(id=GROUP_ADMIN),
     }, RequestContext(request))
 
 
@@ -176,12 +190,12 @@ def test(request):
     #raise Exception(u'Boum')
     return render_to_response('test.html', args, RequestContext(request))
 
+
 ########################################################################
 #
 # Generic views
 #
 ########################################################################
-
 
 class FilterMultipleSelectWidget(forms.SelectMultiple):
     class Media:
@@ -202,12 +216,11 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
         return mark_safe(u''.join(output))
 
 
-
 def query_print_entities(request, template_name, args, extrasort=None):
     try:
-        object_query_page_length = Query(Config).get(u'query_page_length')
-        NB_LINES_PER_PAGE = int(object_query_page_length.text) 
-    except (AttributeError, ValueError):
+        object_query_page_length = Config.objects.get(pk=u'query_page_length')
+        NB_LINES_PER_PAGE = int(object_query_page_length.text)
+    except (Config.DoesNotExist, ValueError):
         NB_LINES_PER_PAGE = 200
 
     q = args['query']
@@ -233,7 +246,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
             if not order or order[0]!='-':
                 q = q.order_by(sort_col)
             else:
-                q = q.order_by(sort_col.desc())
+                q = q.order_by('-'+sort_col)
     else: # no order and extrasort
         order=u''
     if extrasort:
@@ -246,8 +259,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
         page=int(page)
     except ValueError:
         page = 1
-    q = q.limit(NB_LINES_PER_PAGE)
-    q = q.offset(NB_LINES_PER_PAGE*(page-1))
+    q = q[NB_LINES_PER_PAGE*(page-1):NB_LINES_PER_PAGE*page]
 
     args['query'] = q
     args['cols'] = cols
@@ -276,21 +288,23 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
         if ondelete_function:
             ondelete_function(o)
         name = unicode(o)
-        Session.delete(o)
-        messages.add_message(request, messages.SUCCESS, u'%s has been deleted sucessfully!' % name)
-        log = Log(request.user.id)
+        log = Log()
+        log.contact_id = request.user.id
         log.action = LOG_ACTION_DEL
-        pk = o._sa_instance_state.key[1] # this is a tuple. TODO: use primary_key_from_instance
-        log.target = unicode(o.__class__.__name__)+u' '+u' '.join([unicode(x) for x in pk])
+        pk_names = (o._meta.pk.attname,) # default django pk name
+        log.target = unicode(o.__class__.__name__)+u' '+u' '.join([unicode(o.__getattribute__(fieldname)) for fieldname in pk_names])
         log.target_repr = o.get_class_verbose_name()+u' '+name
-        #FIXME log doesn't work??
+        o.delete()
+        log.save()
+        messages.add_message(request, messages.SUCCESS, u'%s has been deleted sucessfully!' % name)
         return HttpResponseRedirect(next_url)
     else:
         nav = base_nav or navbar(o.get_class_navcomponent())
         nav.add_component(o.get_navcomponent())
         nav.add_component(u'delete')
         return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
-        
+
+
 
 #######################################################################
 #
@@ -309,14 +323,14 @@ def logs(request):
     args['title'] = 'Global log'
     args['nav'] = navbar(Log.get_class_navcomponent())
     args['objtype'] = Log
-    args['query'] = Query(Log)
+    args['query'] = Log.objects.all()
     args['cols'] = [
-        ( 'Date GMT', None, 'small_date', Log.dt),
-        ( 'User', None, 'contact', Log.contact_id),
-        ( 'Action', None, 'action_txt', Log.action),
-        ( 'Target', None, 'target_repr', Log.target_repr),
-        ( 'Property', None, 'property_repr', Log.property_repr),
-        ( 'Change', None, 'change', Log.change),
+        ( 'Date GMT', None, 'small_date', 'dt'),
+        ( 'User', None, 'contact', 'contact__name'),
+        ( 'Action', None, 'action_txt', 'action'),
+        ( 'Target', None, 'target_repr', 'target_repr'),
+        ( 'Property', None, 'property_repr', 'property_repr'),
+        ( 'Change', None, 'change', 'change'),
     ]
     return query_print_entities(request, 'list_log.html', args)
 
@@ -327,15 +341,18 @@ def logs(request):
 #######################################################################
 
 def str_member_of_factory(contact_group):
-    gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: c.str_member_of(gids)
+    #gids = [ g.id for g in contact_group.self_and_subgroups ]
+    return lambda c: c.str_member_of((contact_group.id,))
 
 def str_member_of_note_factory(contact_group):
     return lambda c: c.str_member_of_note(contact_group.id)
 
 def str_extendedmembership_factory(contact_group, base_url):
     def str_extendedmembership(contact_group, gids, c):
-        cig = Query(ContactInGroup).get((c.id, contact_group.id))
+        try:
+            cig = ContactInGroup.objects.get(contact_id=c.id, group_id=gids[0])
+        except ContactInGroup.DoesNotExist:
+            cig = None
         params = {}
         params['cid'] = c.id
         params['membership_str'] = c.str_member_of(gids)
@@ -359,44 +376,98 @@ def str_extendedmembership_factory(contact_group, base_url):
             params['has_declined_invitation_checked'] = u' checked'
         else:
             params['has_declined_invitation_checked'] = u''
-        
+
         return  u'<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s<div class=membershipextra id="membership_%(cid)d"><a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>'%params
-    gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: str_extendedmembership(contact_group, gids, c)
+    #gids = [ g.id for g in contact_group.self_and_subgroups ]
+    return lambda c: str_extendedmembership(contact_group, (contact_group.id,), c)
 
-def str_action_of_factory(contact_group):
-    gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: u'<a href="%(membership_url)s">%(membership_str)s</a>'%{'cid':c.id, 'membership_str':c.str_member_of(gids), 'membership_url':contact_group.get_absolute_url()+u'members/'+unicode(c.id)+u'/membership',}
+class ContactQuerySet(RawQuerySet):
+    def __init__(self, *args, **kargs):
+        super(ContactQuerySet, self).__init__('', *args, **kargs)
+        self.qry_fields = {'id':'contact.id', 'name':'name'}
+        self.qry_from = ['contact']
+        self.qry_where = []
+        self.qry_orderby = []
 
+    def add_field(self, fieldid):
+        fieldid = str(fieldid)
+        self.qry_from.append('LEFT JOIN contact_field_value AS cfv%(fid)s ON (contact.id = cfv%(fid)s.contact_id AND cfv%(fid)s.contact_field_id = %(fid)s)' % {'fid':fieldid})
+        self.qry_fields[DISP_FIELD_PREFIX+fieldid] = 'cfv%(fid)s.value' % {'fid':fieldid}
 
+    def filter(self, extrawhere):
+        self.qry_where.append(extrawhere)
+        return self
+
+    def add_params(self, params):
+        if self.params:
+            self.params.update(params)
+        else:
+            self.params = params
+        return self
+
+    def order_by(self, name):
+        self.qry_orderby.append(name)
+        return self
+
+    def compile(self):
+        qry = 'SELECT '
+        qry += ', '.join(['%s AS %s' % (v,k) for k,v in self.qry_fields.iteritems()])
+        qry += ' FROM ' + ' '.join(self.qry_from)
+        if self.qry_where:
+            qry += ' WHERE ( ' + ') AND ('.join(self.qry_where) + ' )'
+        if self.qry_orderby:
+            order = []
+            for by in self.qry_orderby:
+                if by[0] == '-':
+                    order.append(by[1:]+' DESC')
+                else:
+                    order.append(by)
+            qry += ' ORDER BY ' + ', '.join(order)
+
+        self.raw_query = qry
+        self.query = sql.RawQuery(sql=qry, using=self.db, params=self.params)
+
+    def count(self):
+        qry = 'SELECT '
+        qry += ', '.join(['%s AS %s' % (v,k) for k,v in self.qry_fields.iteritems()])
+        qry += ' FROM ' + ' '.join(self.qry_from)
+        if self.qry_where:
+            qry += ' WHERE (' + ') AND ('.join(self.qry_where) + ')'
+
+        countqry = 'SELECT COUNT(*) FROM ('+qry+') AS qry_count'
+        for count, in sql.RawQuery(sql=countqry, using=self.db, params=self.params):
+            return count
+
+    def __iter__(self):
+        self.compile()
+        for x in RawQuerySet.__iter__(self):
+            yield x
 
 def contact_make_query_with_fields(fields, current_cg=None, base_url=None, format=u'html'):
-    q = Query(Contact)
-    n_entities = 1
-    j = contact_table
+    q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
     cols=[]
-    
+
     for prop in fields:
         if prop==u'name':
             if format==u'html':
-                cols.append( (u'Name', 0, 'name_with_relative_link', Contact.name) )
+                cols.append( (u'Name', None, 'name_with_relative_link', 'name') )
             else:
-                cols.append( (u'Name', 0, '__unicode__', Contact.name) )
+                cols.append( (u'Name', None, '__unicode__', 'name') )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
-            cg = Query(ContactGroup).get(groupid)
-            cols.append( (cg.name, 0, str_member_of_factory(cg), None) )
+            cg = ContactGroup.objects.get(pk=groupid)
+            cols.append( (cg.name, None, str_member_of_factory(cg), None) )
         elif prop.startswith(DISP_FIELD_PREFIX):
-            fieldid = int(prop[len(DISP_FIELD_PREFIX):])
-            cf = Query(ContactField).get(fieldid)
-            a = contact_field_value_table.alias()
-            q = q.add_entity(ContactFieldValue, alias=a)
-            j = outerjoin(j, a, and_(contact_table.c.id==a.c.contact_id, a.c.contact_field_id==cf.id ))
+            fieldid = prop[len(DISP_FIELD_PREFIX):]
+
+            q.add_field(fieldid)
+
+            cf = ContactField.objects.get(pk=fieldid)
+            cf.polymorphic_upgrade()
             if format == u'html':
-                cols.append( (cf.name, n_entities, 'as_html', a.c.value) )
+                cols.append( (cf.name, cf.format_value_html, prop, prop) )
             else:
-                cols.append( (cf.name, n_entities, '__unicode__', a.c.value) )
-            n_entities += 1
+                cols.append( (cf.name, cf.format_value_unicode, prop, prop) )
         else:
             raise ValueError(u'Invalid field '+prop)
 
@@ -408,16 +479,14 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
         else:
             cols.append( ('Status', 0, str_member_of_factory(current_cg), None) )
             cols.append( ('Note', 0, str_member_of_note_factory(current_cg), None) )
-        
-    q = q.select_from(j)
     return q, cols
 
 
 def get_available_fields():
     result = [ (DISP_NAME, u'Name') ]
-    for cf in Query(ContactField).order_by(ContactField.sort_weight):
+    for cf in ContactField.objects.order_by('sort_weight'):
         result.append((DISP_FIELD_PREFIX+unicode(cf.id), cf.name))
-    for cg in Query(ContactGroup).order_by(desc(ContactGroup.date), ContactGroup.name):
+    for cg in ContactGroup.objects.order_by('-date').order_by('name'):
         result.append((DISP_GROUP_PREFIX+unicode(cg.id), cg.unicode_with_date()))
     return result
 
@@ -432,7 +501,6 @@ class FieldSelectForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_list(request):
-    import contactsearch # FIXME
     if not request.user.is_admin():
         return unauthorized(request)
 
@@ -447,7 +515,7 @@ def contact_list(request):
     else:
         fields = get_display_fields(request.user)
         strfields = u','.join(fields)
-   
+
     if (request.REQUEST.get(u'savecolumns')):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
@@ -469,25 +537,29 @@ def contact_list(request):
     return query_print_entities(request, 'list_contact.html', args)
 
 
-
-
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_detail(request, gid=None, cid=None):
     cid = int(cid)
     if cid!=request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    c = Query(Contact).get(cid)
+    try:
+        c = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
+
     rows = []
     for cf in c.get_allfields():
-        cfv = Query(ContactFieldValue).get((cid, cf.id))
-        if cfv:
+        try:
+            cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
             rows.append((cf.name, mark_safe(cfv.as_html())))
-    
+        except ContactFieldValue.DoesNotExist:
+            pass
+
     args={}
     args['title'] = u'Details for '+unicode(c)
     if gid:
-        cg = Query(ContactGroup).get(gid)
+        cg = ContactGroup.objects.get(pk=gid)
         #args['title'] += u' in group '+cg.unicode_with_date()
         args['contact_group'] = cg
         args['nav'] = cg.get_smart_navbar()
@@ -501,16 +573,17 @@ def contact_detail(request, gid=None, cid=None):
     return render_to_response('contact_detail.html', args, RequestContext(request))
 
 
-
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_vcard(request, gid=None, cid=None):
     cid = int(cid)
     if cid!=request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    c = Query(Contact).get(cid)
+    try:
+        c = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
     return HttpResponse(c.vcard().encode('utf-8'), mimetype='text/x-vcard')
-
 
 
 
@@ -522,26 +595,29 @@ class ContactEditForm(forms.Form):
         contactid = id # FIXME
 
         if contactid:
-            contact = Query(Contact).get(contactid)
-            contactgroupids = [ g.id for g in contact.get_allgroups_withfields()] 
+            try:
+                contact = Contact.objects.get(pk=contactid)
+            except Contact.DoesNotExist:
+                raise Http404()
+            fields = contact.get_allfields()
         elif contactgroup:
-            contactgroupids = [ g.id for g in contactgroup.self_and_supergroups ] 
+            contactgroupids = [ g.id for g in contactgroup.get_self_and_supergroups() ]
+            fields = ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
         else:
-            contactgroupids = [ ]
+            field = [ ]
 
         # Add all extra fields
-        for cf in Query(ContactField).order_by(ContactField.sort_weight):
-            if cf.contact_group_id not in contactgroupids:
-                continue # some fields are excluded
-            fields = cf.get_form_fields()
-            if fields:
-                self.fields[unicode(cf.id)] = fields
-        
+        for cf in fields:
+            cf.polymorphic_upgrade()
+            f = cf.get_form_fields()
+            if f:
+                self.fields[unicode(cf.id)] = f
+
         #if request_user.is_admin():
         #    # sql '_' means 'any character' and must be escaped: g in Query(ContactGroup).filter(not_(ContactGroup.name.startswith('\\_'))).order_by ...
         #    contactgroupchoices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by(ContactGroup.date.desc(), ContactGroup.name) ]
         #    self.fields['groups'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Group', False), choices=contactgroupchoices)
-        
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -554,16 +630,21 @@ def contact_edit(request, gid=None, cid=None):
         if not request.user.is_admin():
             return unauthorized(request)
         assert gid, 'Missing required parameter groupid'
- 
+
     if gid: # edit/add in a group
-        gid = int(gid)
-        cg = Query(ContactGroup).get(gid)
+        try:
+            cg = ContactGroup.objects.get(pk=gid)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
     else: # edit out of a group
         cg = None
 
     objtype = Contact
     if cid:
-        contact = Query(Contact).get(cid)
+        try:
+            contact = Contact.objects.get(pk=cid)
+        except Contact.DoesNotExist:
+            raise Http404()
         title = u'Editing '+unicode(contact)
     else:
         title = u'Adding a new '+objtype.get_class_verbose_name()
@@ -578,58 +659,65 @@ def contact_edit(request, gid=None, cid=None):
 
             # 1/ In contact
             if cid:
-                contactgroupids = [ g.id for g in contact.get_allgroups_withfields()]  # Need to keep a record of initial groups
                 if contact.name != data['name']:
-                    log = Log(request.user.id)
+                    log = Log(contact_id=request.user.id)
                     log.action = LOG_ACTION_CHANGE
                     log.target = u'Contact '+unicode(contact.id)
                     log.target_repr = u'Contact '+contact.name
                     log.property = u'Name'
                     log.property_repr = u'Name'
                     log.change = u'change from '+contact.name+u' to '+data['name']
+                    log.save()
 
                 contact.name = data['name']
+                contact.save()
+
+                fields = contact.get_allfields() # Need to keep a record of initial groups
+
             else:
-                contact = Contact(data['name'])
-                Session.flush()
-                log = Log(request.user.id)
+                contact = Contact(name=data['name'])
+                contact.save()
+
+                log = Log(contact_id=request.user.id)
                 log.action = LOG_ACTION_ADD
                 log.target = u'Contact '+unicode(contact.id)
                 log.target_repr = u'Contact '+contact.name
+                log.save()
 
-                log = Log(request.user.id)
+                log = Log(contact_id=request.user.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'Contact '+unicode(contact.id)
                 log.target_repr = u'Contact '+contact.name
                 log.property = u'Name'
                 log.property_repr = u'Name'
                 log.change = u'new value is '+contact.name
+                log = Log(request.user.id)
 
-                contactgroupids = [ g.id for g in cg.self_and_supergroups ]
-
-                cig = ContactInGroup(contact.id, gid)
+                cig = ContactInGroup(contact_id=contact.id, group_id=gid)
                 cig.member = True
+                cig.save()
                 # TODO: Log
 
+                contactgroupids = [ g.id for g in cg.get_self_and_supergroups() ]
+                fields = ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
+
             # 2/ In ContactFields
-            for cf in Query(ContactField):
-                if cf.contact_group_id not in contactgroupids or cf.type==FTYPE_PASSWORD:
+            for cf in fields:
+                cf.polymorphic_upgrade()
+                if cf.type==FTYPE_PASSWORD:
                     continue
-                cfname = cf.name
+                #cfname = cf.name
                 cfid = cf.id
                 newvalue = data[unicode(cfid)]
                 if newvalue!=None:
                     newvalue = cf.formfield_value_to_db_value(newvalue)
                 contact.set_fieldvalue(request.user, cf, newvalue)
             messages.add_message(request, messages.SUCCESS, u'Contact %s has been saved sucessfully!' % contact.name)
-                
-            if not cid:
-                Session.commit() # We need the id rigth now!
 
             if cg:
                 base_url=cg.get_absolute_url()+u'members/'+unicode(contact.id)+u'/'
             else:
-                base_url=contact.get_class_absolute_url()
+                base_url=contact.get_class_absolute_url()+unicode(contact.id)+u'/'
 
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(base_url+u'edit')
@@ -646,14 +734,16 @@ def contact_edit(request, gid=None, cid=None):
         if cid: # modify existing
             initialdata['name'] = contact.name
 
-            for cfv in contact.values:
-                cf = cfv.field
+            for cfv in contact.values.all():
+                cf = cfv.contact_field
+                cf.polymorphic_upgrade()
                 if cf.type != FTYPE_PASSWORD:
                     initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
             form = ContactEditForm(id=cid, initial=initialdata, request_user=request.user, contactgroup=cg)
 
         else:
-            for cf in Query(ContactField):
+            for cf in ContactField.objects.all():
+                cf.polymorphic_upgrade()
                 if cf.default:
                     if cf.type == FTYPE_DATE and cf.default == u'today':
                         initialdata[unicode(cf.id)] = date.today()
@@ -685,7 +775,7 @@ def contact_edit(request, gid=None, cid=None):
         args['o'] = contact
 
     return render_to_response('edit.html', args, RequestContext(request))
-    
+
 
 class ContactPasswordForm(forms.Form):
     new_password = forms.CharField(max_length=50, widget=forms.PasswordInput())
@@ -705,7 +795,10 @@ def contact_pass(request, gid=None, cid=None):
     cid = int(cid)
     if cid!=request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    contact = Query(Contact).get(cid)
+    try:
+        contact = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
     args={}
     args['title'] = 'Change password'
     args['contact'] = contact
@@ -717,7 +810,7 @@ def contact_pass(request, gid=None, cid=None):
             contact.set_password(request.user, password)
             messages.add_message(request, messages.SUCCESS, u'Password has been changed sucessfully!')
             if gid:
-                cg = Query(ContactGroup).get(gid)
+                cg = ContactGroup.objects.get(pk=gid)
                 return HttpResponseRedirect(cg.get_absolute_url()+u'members/'+unicode(cid)+u'/')
             else:
                 return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
@@ -725,7 +818,7 @@ def contact_pass(request, gid=None, cid=None):
         form = ContactPasswordForm()
     args['form'] = form
     if gid:
-        cg = Query(ContactGroup).get(gid)
+        cg = ContactGroup.objects.get(pk=gid)
         args['nav'] = cg.get_smart_navbar()
         args['nav'].add_component(u'members')
     else:
@@ -758,12 +851,18 @@ def contact_pass_letter(request, gid=None, cid=None):
     cid = int(cid)
     if cid!=request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    contact = Query(Contact).get(cid)
+    try:
+        contact = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
     args={}
     args['title'] = 'Generate a new password and print a letter'
     args['contact'] = contact
     if gid:
-        cg = Query(ContactGroup).get(gid)
+        try:
+            cg = Query(ContactGroup).get(gid)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         args['nav'] = cg.get_smart_navbar()
         args['nav'].add_component(u'members')
     else:
@@ -780,7 +879,10 @@ def contact_pass_letter(request, gid=None, cid=None):
 
         fields = {}
         for cf in contact.get_allfields():
-            cfv = Query(ContactFieldValue).get((cid, cf.id))
+            try:
+                cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
+            except ContactFieldValue.DoesNotExist:
+                continue
             fields[cf.name] = unicode(cfv).replace(u'\r', u'')
             #if cfv:
             #    rows.append((cf.name, mark_safe(cfv.as_html())))
@@ -813,9 +915,15 @@ def contact_pass_letter(request, gid=None, cid=None):
 def contact_delete(request, gid=None, cid=None):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = Query(Contact).get(cid)
+    try:
+        o = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
     if gid:
-        next_url = Query(ContactGroup).get(gid).get_absolute_url()+u'members/'
+        try:
+            next_url = ContactGroup.objects.get(pk=gid).get_absolute_url()+u'members/'
+        except ContactGroup.DoesNotExist:
+            raise Http404()
     else:
         next_url = reverse('ngw.core.views.contact_list')
     if gid:
@@ -826,18 +934,19 @@ def contact_delete(request, gid=None, cid=None):
         base_nav = None
     return generic_delete(request, o, next_url, base_nav=base_nav)
 
-
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_add(request, cid=None):
-    from contactsearch import *
     if not request.user.is_admin():
         return unauthorized(request)
-    contact = Query(Contact).get(cid)
+    try:
+        contact = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
     filter_str = request.GET['filterstr']
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     if filter_list_str:
-        filter_list = parse_filter_list_str(filter_list_str)
+        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
     else:
         filter_list = []
     filter_list.append((u'No name', filter_str))
@@ -850,15 +959,17 @@ def contact_filters_add(request, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_list(request, cid=None):
-    from contactsearch import *
     if not request.user.is_admin():
         return unauthorized(request)
-    contact = Query(Contact).get(cid)
+    try:
+        contact = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     filters = []
     if filter_list_str:
-        filter_list = parse_filter_list_str(filter_list_str)
-        filters = [ (filtername,parse_filterstring(filter_str).to_html()) for (filtername,filter_str) in filter_list]
+        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
+        filters = [ (filtername, contactsearch.parse_filterstring(filter_str).to_html()) for (filtername,filter_str) in filter_list]
     args = {}
     args['title'] = u'User custom filters'
     args['contact'] = contact
@@ -875,15 +986,17 @@ class FilterEditForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_edit(request, cid=None, fid=None):
-    from contactsearch import *
     if not request.user.is_admin():
         return unauthorized(request)
-    contact = Query(Contact).get(cid)
+    try:
+        contact = Contact.objects.get(pk=cid)
+    except Contact.DoesNotExist:
+        raise Http404()
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     if not filter_list_str:
         return HttpResponse(u'ERROR: no custom filter for that user')
     else:
-        filter_list = parse_filter_list_str(filter_list_str)
+        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
     try:
         filtername,filterstr = filter_list[int(fid)]
     except IndexError, ValueError:
@@ -908,7 +1021,7 @@ def contact_filters_edit(request, cid=None, fid=None):
     args['contact'] = contact
     args['form'] = form
     args['filtername'] = filtername
-    args['filter_html'] = parse_filterstring(filterstr).to_html()
+    args['filter_html'] = contactsearch.parse_filterstring(filterstr).to_html()
     args['nav'] = navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
     args['nav'].add_component((u'filters', u'custom filters'))
@@ -916,22 +1029,20 @@ def contact_filters_edit(request, cid=None, fid=None):
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
 
-from sqlalchemy.orm.util import AliasedClass
+
 @login_required()
 @require_group(GROUP_ADMIN)
 def contact_make_login_mailing(request):
     # select contacts whose password is in state 'Registered', with both 'Adress' and 'City' not null
-    q = Query(Contact)
-    passwordstatus_obj = AliasedClass(ContactFieldValue)
-    q = q.add_entity(passwordstatus_obj).filter(Contact.id==passwordstatus_obj.contact_id).filter(passwordstatus_obj.contact_field_id == FIELD_PASSWORD_STATUS).filter(passwordstatus_obj.value == u'1')
-    address_obj = AliasedClass(ContactFieldValue)
-    q = q.add_entity(address_obj).filter(Contact.id==address_obj.contact_id).filter(address_obj.contact_field_id == FIELD_STREET)
-    city_obj = AliasedClass(ContactFieldValue)
-    q = q.add_entity(city_obj).filter(Contact.id==city_obj.contact_id).filter(city_obj.contact_field_id == FIELD_CITY) # implies not null, TODO addentity->outerjoin
-    ids = [ row[0].id for row in q ]
+    q = Contact.objects.all()
+    q = q.extra(where=["EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value='%(value)s')" % { 'field_id': FIELD_PASSWORD_STATUS, 'value': '1' }])
+    q = q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_STREET}])
+    q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_CITY}])
+    ids = [ row.id for row in q ]
+    #print ids
     if not ids:
         return HttpResponse('No waiting mail')
-        
+
     result = ngw_mailmerge('/usr/lib/ngw/mailing/forms/welcome.odt', [str(id) for id in ids])
     if not result:
         return HttpResponse('File generation failed')
@@ -955,8 +1066,8 @@ def contact_make_login_mailing(request):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_list(request):
+    LIST_PREVIEW_LEN=5
     def _trucate_list(l):
-        LIST_PREVIEW_LEN=5
         if len(l)>LIST_PREVIEW_LEN:
             return l[:LIST_PREVIEW_LEN]+[u'…']
         return l
@@ -980,18 +1091,18 @@ def contactgroup_list(request):
         else:
             return u'No'
 
-    q = Query(ContactGroup).filter('date IS NULL')
+    q = ContactGroup.objects.filter(date=None)
     cols = [
         #( u'Date', None, 'html_date', ContactGroup.date ),
-        ( u'Name', None, 'name', ContactGroup.name ),
+        ( u'Name', None, 'name', 'name' ),
         ( u'Description', None, lambda cg: _trucate_description(cg), None ),
         #( u'Description', None, 'description', lambda cg: len(cg.description)<100 and cg.description+u'!!' or cg.description[:100]+u"…", None ),
-        #( u'Contact fields', None, print_fields, ContactGroup.field_group ),
-        ( u'Super\u00a0groups', None, lambda cg: u', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.direct_supergroups])), None ),
-        ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.direct_subgroups])), None ),
-        #( u'Budget\u00a0code', None, 'budget_code', ContactGroup.budget_code ),
+        #( u'Contact fields', None, print_fields, 'field_group' ),
+        ( u'Super\u00a0groups', None, lambda cg: u', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups()[:LIST_PREVIEW_LEN+1]])), None ),
+        ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups()][:LIST_PREVIEW_LEN+1])), None ),
+        #( u'Budget\u00a0code', None, 'budget_code', 'budget_code' ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
-        #( u'System\u00a0locked', None, 'system', ContactGroup.system ),
+        #( u'System\u00a0locked', None, 'system', 'system' ),
     ]
     args={}
     args['title'] = 'Select a contact group'
@@ -1081,23 +1192,23 @@ def event_list(request):
             if year < 2000 or year > 2100 \
              or month < 1 or month > 12:
                 year = month = None
-            
+
     if year is None or month is None:
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         month = now.month
         year = now.year
-        
-    min_date = datetime.datetime(year, month, 1) - timedelta(days=6)
+
+    min_date = datetime(year, month, 1) - timedelta(days=6)
     min_date = min_date.strftime('%Y-%m-%d')
-    max_date = datetime.datetime(year, month, 1) + timedelta(days=31+6)
+    max_date = datetime(year, month, 1) + timedelta(days=31+6)
     max_date = max_date.strftime('%Y-%m-%d')
 
-    q = Query(ContactGroup).filter(u"date >= '%s'" % min_date).filter(u"date <= '%s'" % max_date)
+    q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date)
 
     cols = [
-        ( u'Date', None, 'html_date', ContactGroup.date ),
-        ( u'Name', None, 'name', ContactGroup.name ),
-        ( u'Description', None, 'description', ContactGroup.description ),
+        ( u'Date', None, 'html_date', 'date' ),
+        ( u'Name', None, 'name', 'name' ),
+        ( u'Description', None, 'description', 'description' ),
     ]
 
     month_events = {}
@@ -1125,11 +1236,9 @@ def contactgroup_detail(request, id):
         return unauthorized(request)
     return HttpResponseRedirect(u'./members/')
 
-
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_members(request, gid, output_format=''):
-    import contactsearch # FIXME
     if not request.user.is_admin():
         return unauthorized(request)
 
@@ -1145,13 +1254,14 @@ def contactgroup_members(request, gid, output_format=''):
         fields = get_display_fields(request.user)
         strfields = u','.join(fields)
         #baseurl doesn't need to have default fields
-   
+
     if request.REQUEST.get(u'savecolumns'):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
-    cg = Query(ContactGroup).get(gid)
-    if not cg:
-        raise Http404
+    try:
+        cg = ContactGroup.objects.get(pk=gid)
+    except ContactGroup.DoesNotExists:
+        raise Http404()
 
     display=request.REQUEST.get(u'display', None)
     if display is None:
@@ -1183,7 +1293,7 @@ def contactgroup_members(request, gid, output_format=''):
         cig_conditions_flags = u' AND False' # display nothing
 
     if u'g' in display:
-        cig_conditions_group = u'group_id IN (%s)' % u','.join([unicode(g.id) for g in cg.self_and_subgroups])
+        cig_conditions_group = u'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
         args['display_subgroups'] = 1
     else:
         cig_conditions_group = u'group_id=%d' % cg.id
@@ -1192,16 +1302,15 @@ def contactgroup_members(request, gid, output_format=''):
     q = filter.apply_filter_to_query(q)
 
     if output_format == u'vcards':
+        #FIXME: This works but is really inefficient (try it on a large group!)
         result=u''
-        for row in q:
-            contact = row[0]
+        for contact in q:
             result += contact.vcard()
         return HttpResponse(result.encode('utf-8'), mimetype='text/x-vcard')
     elif output_format == u'emails':
         emails = []
         noemails = []
-        for row in q:
-            contact = row[0]
+        for contact in q:
             c_emails = contact.get_fieldvalues_by_type(EmailContactField)
             if c_emails:
                 emails.append((contact, c_emails[0])) # only the first email
@@ -1234,24 +1343,13 @@ def contactgroup_members(request, gid, output_format=''):
             for i, col in enumerate(cols):
                 if i: # not first column
                     result += u','
-                # see templatetags/ngwtags ngw_display
-                entity_id = col[1]
-                entity = row[entity_id]
-                if not entity:
-                    continue # result +=u''
-                if inspect.isfunction(col[2]):
-                    result += _quote_csv(col[2](entity))
-                    continue
-                attribute_name = col[2]
-                v = entity.__getattribute__(attribute_name)
-                if inspect.ismethod(v):
-                    v = v()
+                v = ngw_display(row, col)
                 if v==None:
                     continue
                 result += _quote_csv(v)
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
-    
+
     folder = cg.static_folder()
     try:
         files = os.listdir(folder)
@@ -1292,7 +1390,7 @@ class ContactGroupForm(forms.Form):
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in Query(ContactGroup).order_by(ContactGroup.date, ContactGroup.name) ]
+        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.order_by('date', 'name') ]
 
 
 @login_required()
@@ -1302,13 +1400,14 @@ def contactgroup_edit(request, id):
         return unauthorized(request)
     objtype= ContactGroup
     if id:
-        cg = Query(ContactGroup).get(id)
-        if not cg:
-            raise Http404
+        try:
+            cg = ContactGroup.objects.get(pk=id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         title = u'Editing '+unicode(cg)
     else:
         title = u'Adding a new '+objtype.get_class_verbose_name()
-    
+
     if request.method == 'POST':
         form = ContactGroupForm(request.POST)
         if form.is_valid():
@@ -1316,9 +1415,8 @@ def contactgroup_edit(request, id):
 
             data = form.clean()
             if not id:
-                cg = ContactGroup(data['name'])
-            else:
-                cg.name = data['name']
+                cg = ContactGroup()
+            cg.name = data['name']
             cg.description = data['description']
             cg.field_group = data['field_group']
             cg.sticky = data['sticky']
@@ -1326,25 +1424,22 @@ def contactgroup_edit(request, id):
             cg.budget_code = data['budget_code']
             cg.mailman_address = data['mailman_address']
             cg.has_news = data['has_news']
-            
-            old_direct_supergroups = cg.direct_supergroups
-            old_direct_supergroups_ids = [ g.id for g in old_direct_supergroups ] # TODO: fine a better algo!
+
+            cg.save()
+            old_direct_supergroups_ids = cg.get_direct_supergroups_ids()
             new_direct_supergroups_id = data['direct_supergroups']
             if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
                 new_direct_supergroups_id = [ GROUP_EVERYBODY ]
 
             # supergroups have no properties (yet!): just recreate the array with brute force
-            cg.direct_supergroups = [ Query(ContactGroup).get(id) for id in new_direct_supergroups_id]
+            cg.set_direct_supergroups_ids(new_direct_supergroups_id)
 
             messages.add_message(request, messages.SUCCESS, u'Group %s has been changed sucessfully!' % cg.unicode_with_date())
 
             cg.check_static_folder_created()
-            Session.commit()
             Contact.check_login_created(request.user) # subgroups change
 
             if request.POST.get('_continue', None):
-                if not id:
-                    Session.commit() # We need the id rigth now!
                 return HttpResponseRedirect(cg.get_absolute_url()+u'edit')
             elif request.POST.get('_addanother', None):
                 return HttpResponseRedirect(cg.get_class_absolute_url()+u'add')
@@ -1353,7 +1448,10 @@ def contactgroup_edit(request, id):
 
     else: # GET
         if id:
-            cg = Query(ContactGroup).get(id)
+            try:
+                cg = ContactGroup.objects.get(pk=id)
+            except ContactGroup.DoesNotExists:
+                raise Http404()
             initialdata = {
                 'name': cg.name,
                 'description': cg.description,
@@ -1362,7 +1460,8 @@ def contactgroup_edit(request, id):
                 'date': cg.date,
                 'budget_code': cg.budget_code,
                 'mailman_address': cg.mailman_address,
-                'direct_supergroups': [ g.id for g in cg.direct_supergroups ],
+                'has_news': cg.has_news,
+                'direct_supergroups': cg.get_direct_supergroups_ids()
             }
             form = ContactGroupForm(initialdata)
         else: # add new one
@@ -1384,27 +1483,28 @@ def contactgroup_edit(request, id):
 
 
 def on_contactgroup_delete(cg):
-    supers = cg.direct_supergroups # never empty, there's allways at least GROUP_EVERYBODY
-    for cig in cg.in_group: # for all members/invited/...
-        for superg in supers:
-            cisg = Query(ContactInGroup).get((cig.contact_id,superg.id)) # supergroup membership
-            if not cisg: # was not a member
-                cisg = ContactInGroup(cig.contact_id,superg.id)
-                cisg.invited = cig.invited
-                cisg.member = cig.member
-                cisg.declined_invitation = cig.declined_invitation
-            # FIXME else what? Move from invited to member automatically?
-    for subcg in cg.direct_subgroups:
-        if not subcg.direct_supergroups:
-            subcg.direct_supergroups = [ Query(ContactGroup).get(GROUP_EVERYBODY) ]
+    """
+    All subgroups will now have their fathers' fathers as direct fathers
+    """
+    supergroups_ids = set(cg.get_direct_supergroups_ids())
+    for subcg in cg.get_direct_subgroups():
+        sub_super = set(subcg.get_direct_supergroups_ids())
+        #print repr(subcg), "had these fathers:", sub_super
+        sub_super = sub_super | supergroups_ids - { cg.id }
+        if not sub_super:
+            sub_super = { GROUP_EVERYBODY }
+        #print repr(subcg), "new fathers:", sub_super
+        subcg.set_direct_supergroups_ids(sub_super)
+        #print repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids()
     # TODO: delete static folder
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = Query(ContactGroup).get(id)
+    o = ContactGroup.objects.get(pk=id)
     next_url = reverse('ngw.core.views.contactgroup_list')
     if o.system:
         messages.add_message(request, messages.ERROR, u'Group %s is locked and CANNOT be deleted.' % o.name)
@@ -1415,14 +1515,13 @@ def contactgroup_delete(request, id):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_add_contacts_to(request):
-    import contactsearch # FIXME
     if not request.user.is_admin():
         return unauthorized(request)
 
     if request.method == 'POST':
         target_gid = request.POST[u'group']
         if target_gid:
-            target_group = Query(ContactGroup).get(target_gid)
+            target_group = ContactGroup.objects.get(pk=target_gid)
             assert target_group
             t = request.REQUEST.get('type', u'')
             if t == u'Invite':
@@ -1439,28 +1538,27 @@ def contactgroup_add_contacts_to(request):
                 if not param.startswith(u'contact_'):
                     continue
                 contact_id = param[len(u'contact_'):]
-                contact = Query(Contact).get(contact_id)
-                assert contact
+                contact = Contact.objects.get(pk=contact_id)
                 contacts.append(contact)
             target_group.set_member_n(request.user, contacts, mode)
 
             return HttpResponseRedirect(target_group.get_absolute_url())
         else:
             messages.add_message(request, messages.ERROR, u'You must select a target group')
-            Session.commit()
 
     gid = request.REQUEST.get(u'gid', u'')
     assert gid
-    cg = Query(ContactGroup).get(gid)
-    if not cg:
-        raise Http404
+    try:
+        cg = ContactGroup.objects.get(pk=gid)
+    except ContactGroup.DoesNotExist:
+        raise Http404()
 
     strfilter = request.REQUEST.get(u'filter', u'')
     filter = contactsearch.parse_filterstring(strfilter)
 
     q, cols = contact_make_query_with_fields([], format=u'html') #, current_cg=cg)
 
-    q = q.order_by(Contact.name)
+    q = q.order_by('name')
 
     display=request.REQUEST.get(u'display', None)
     if display is None:
@@ -1479,8 +1577,7 @@ def contactgroup_add_contacts_to(request):
         cig_conditions_flags = u' AND False' # display nothing
 
     if u'g' in display:
-        cig_conditions_group = u'group_id IN (%s)' % u','.join([unicode(g.id) for g in cg.self_and_subgroups])
-        #NOT TESTED: cig_conditions_group = u'group_id IN self_and_subgroup(%s)' % g.id
+        cig_conditions_group = u'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
     else:
         cig_conditions_group = u'group_id=%d' % cg.id
 
@@ -1491,9 +1588,11 @@ def contactgroup_add_contacts_to(request):
     args['title'] = 'Add contacts to a group'
     args['nav'] = cg.get_smart_navbar()
     args['nav'].add_component((u'add_contacts_to', u'add contacts to'))
-    args['groups'] = Query(ContactGroup).order_by(desc(ContactGroup.date), ContactGroup.name)
+    args['groups'] = ContactGroup.objects.order_by('-date', 'name')
     args['query'] = q
     return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
+
+
 
 
 #######################################################################
@@ -1531,9 +1630,12 @@ class ContactInGroupForm(forms.Form):
 def contactingroup_edit(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cg = Query(ContactGroup).get(gid)
-    contact = Query(Contact).get(cid)
-    cig = Query(ContactInGroup).get((cid, gid))
+    try:
+        cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
+    except ContactInGroup.DoesNotExist:
+        raise Http404()
+    cg = ContactGroup.objects.get(pk=gid)
+    contact = Contact.objects.get(pk=cid)
     args = {}
     args['title'] = u'Contact '+unicode(contact)+u' in group '+cg.unicode_with_date()
     args['cg'] = cg
@@ -1554,7 +1656,7 @@ def contactingroup_edit(request, gid, cid):
             if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator']:
                 return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id),cid))) # TODO update logins deletion, call membership hooks
             if not cig:
-                cig = ContactInGroup(contact.id, cg.id)
+                cig = ContactInGroup(contact_id=contact.id, croup_id=cg.id)
             cig.invited = data['invited']
             cig.declined_invitation = data['declined_invitation']
             cig.member = data['member']
@@ -1562,7 +1664,7 @@ def contactingroup_edit(request, gid, cid):
             cig.note = data['note']
             messages.add_message(request, messages.SUCCESS, u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
-            Session.flush()
+            cig.save()
             hooks.membership_changed(request.user, contact, cg)
             return HttpResponseRedirect(cg.get_absolute_url())
     else:
@@ -1570,25 +1672,20 @@ def contactingroup_edit(request, gid, cid):
 
     args['form'] = form
 
-    subgroups = cg.subgroups
-    subgroup_ids = [ subg.id for subg in subgroups ]
-    auto_member = []
-    auto_invited = []
-    for sub_cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==cid).filter(ContactInGroup.group_id.in_(subgroup_ids)).filter(ContactInGroup.member==True):
-        sub_cg = Query(ContactGroup).get(sub_cig.group_id)
-        auto_member.append(sub_cg)
-    for sub_cig in Query(ContactInGroup).filter(ContactInGroup.contact_id==cid).filter(ContactInGroup.group_id.in_(subgroup_ids)).filter(ContactInGroup.invited==True):
-        sub_cg = Query(ContactGroup).get(sub_cig.group_id)
-        auto_invited.append(sub_cg)
     inherited_info = u''
-    if auto_member:
+
+    automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND member AND group_id=contact_group.id)' % (gid, cid)]).exclude(id=gid).order_by('-date', 'name')
+    #print automember_groups.query
+    if automember_groups:
         inherited_info += u'Automatically member because member of subgroup(s):<br>'
-        for sub_cg in auto_member:
+        for sub_cg in automember_groups:
             inherited_info += u'<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
         inherited_info += u'<br>'
-    if auto_invited:
+
+    autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND invited AND group_id=contact_group.id)' % (gid, cid)]).exclude(id=gid).order_by('-date', 'name')
+    if autoinvited_groups:
         inherited_info += u'Automatically invited because invited in subgroup(s):<br>'
-        for sub_cg in auto_invited:
+        for sub_cg in autoinvited_groups:
             inherited_info += u'<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
     args['inherited_info'] = mark_safe(inherited_info)
 
@@ -1603,11 +1700,12 @@ def contactingroup_edit(request, gid, cid):
 def contactingroup_edit_inline(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cg = Query(ContactGroup).get(gid)
-    contact = Query(Contact).get(cid)
-    cig = Query(ContactInGroup).get((cid, gid))
-    if not cig:
+    try:
+        cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
+    except ContactInGroup.DoesNotExist:
         cig = ContactInGroup(contact.id, cg.id)
+    cg = ContactGroup.objects.get(pk=gid)
+    contact = Contact.objects.get(pk=cid)
     newmembership = request.POST['membership']
     if newmembership==u'invited':
         cig.invited = True
@@ -1626,6 +1724,7 @@ def contactingroup_edit_inline(request, gid, cid):
         cig.operator = False
     else:
         raise Exception(u'invalid membership '+request.POST['membership'])
+    cig.save()
     messages.add_message(request, messages.SUCCESS, u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
     hooks.membership_changed(request.user, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
@@ -1635,9 +1734,10 @@ def contactingroup_edit_inline(request, gid, cid):
 def contactingroup_delete(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cg = Query(ContactGroup).get(gid)
-    o = Query(ContactInGroup).get((cid, gid))
-    if not o:
+    cg = ContactGroup.objects.get(pk=gid)
+    try:
+        o = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
+    except ContactInGroup.DoesNotExist:
         return HttpResponse('Error, that contact is not a direct member. Please check subgroups')
     #messages.add_message(request, messages.SUCCESS, u'%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
     base_nav = cg.get_smart_navbar()
@@ -1655,13 +1755,10 @@ def contactingroup_delete(request, gid, cid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news(request, gid):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    cg = Query(ContactGroup).get(gid)
+    cg = ContactGroup.objects.get(pk=gid)
     args = {}
     args['title'] = u'News for group '+cg.name
-    #args['news'] = cg.news #order doesn't work?!
-    args['news'] = Query(ContactGroupNews).filter(ContactGroupNews.contact_group==cg).order_by(desc(ContactGroupNews.date))
+    args['news'] = ContactGroupNews.objects.filter(contact_group=gid)
     args['cg'] = cg
     args['objtype'] = ContactGroupNews
     args['nav'] = cg.get_smart_navbar()
@@ -1673,16 +1770,15 @@ class NewsEditForm(forms.Form):
     title = forms.CharField(max_length=50)
     text = forms.CharField(widget=forms.Textarea)
 
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_edit(request, gid, nid):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    cg = Query(ContactGroup).get(gid)
+    cg = ContactGroup.objects.get(pk=gid)
     if nid:
-        news = Query(ContactGroupNews).get(nid)
-        if news.contact_group!=cg:
-            return HttpResponse(u'ERROR: Invalid group')
+        news = ContactGroupNews.objects.get(pk=nid)
+        if str(news.contact_group_id) != gid:
+            return HttpResponse(u'ERROR: Group mismatch')
 
     if request.method == 'POST':
         form = NewsEditForm(request.POST)
@@ -1690,14 +1786,14 @@ def contactgroup_news_edit(request, gid, nid):
             data = form.clean()
             if not nid:
                 news = ContactGroupNews()
-                news.author = request.user
+                news.author_id = request.user.id
                 news.contact_group = cg
-                news.date = datetime.datetime.now()
+                news.date = datetime.now()
             news.title = data['title']
             news.text = data['text']
+            news.save()
             messages.add_message(request, messages.SUCCESS, u'News %s has been changed sucessfully!' % news)
-            Session.commit()
-            
+
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(news.get_absolute_url())
             elif request.POST.get('_addanother', None):
@@ -1732,8 +1828,8 @@ def contactgroup_news_edit(request, gid, nid):
 def contactgroup_news_delete(request, gid, nid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cg = Query(ContactGroup).get(gid)
-    o = Query(ContactGroupNews).get(nid)
+    cg = ContactGroup.objects.get(pk=gid)
+    o = ContactGroupNews.objects.get(pk=nid)
     return generic_delete(request, o, cg.get_absolute_url()+u'news/')
 
 class MailmanSyncForm(forms.Form):
@@ -1753,26 +1849,30 @@ Ci-joint votre message original.
 
 - Fait.
     '''
-    from ngw2.extensions.mailman import synchronise_group
+    from ngw.extensions.mailman import synchronise_group
     if not request.user.is_admin():
         return unauthorized(request)
-    cg = Query(ContactGroup).get(id)
-    if request.method == 'POST':
-        form = MailmanSyncForm(request.POST)
-        if form.is_valid():
-            data = form.clean()
-            sync_result = synchronise_group(cg, data['mail'])
-            return render_to_response('group_mailman_result.html', {'sync_res': sync_result }, RequestContext(request))
-    else:
-        form = MailmanSyncForm(initial={'mail': initial_value})
-    
+    try:
+        cg = ContactGroup.objects.get(pk=id)
+    except ContactGroup.DoesNotExist:
+        raise Http404()
+
     args = {}
     args['title'] = u'Mailman synchronisation'
     args['nav'] = cg.get_smart_navbar()
     args['nav'].add_component(u'mailman')
-    args['form'] = form
     args['cg'] = cg
 
+    if request.method == 'POST':
+        form = MailmanSyncForm(request.POST)
+        if form.is_valid():
+            data = form.clean()
+            args['sync_res'] = synchronise_group(cg, data['mail'])
+            return render_to_response('group_mailman_result.html', args, RequestContext(request))
+    else:
+        form = MailmanSyncForm(initial={'mail': initial_value})
+
+    args['form'] = form
     return render_to_response('group_mailman.html', args, RequestContext(request))
 
 
@@ -1788,19 +1888,19 @@ def field_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
     args = {}
-    args['query'] = Query(ContactField).order_by(ContactField.sort_weight)
+    args['query'] = ContactField.objects.order_by('sort_weight')
     args['cols'] = [
-        ( 'Name', None, 'name', ContactField.name),
-        ( 'Type', None, 'type_as_html', ContactField.type),
-        ( 'Only for', None, 'contact_group', ContactField.contact_group_id),
-        ( 'System locked', None, 'system', ContactField.system),
-        #( 'Move', None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
+        ( 'Name', None, 'name', 'name'),
+        ( 'Type', None, 'type_as_html', 'type'),
+        ( 'Only for', None, 'contact_group', 'contact_group_id'),
+        ( 'System locked', None, 'system', 'system'),
+        ( 'Move', None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     args['title'] = 'Select an optionnal field'
     args['objtype'] = ContactField
     args['nav'] = navbar(ContactField.get_class_navcomponent())
     def extrasort(query):
-        return query.order_by(ContactField.sort_weight)
+        return query.order_by('sort_weight')
     return query_print_entities(request, 'list.html', args, extrasort=extrasort)
 
 
@@ -1809,9 +1909,9 @@ def field_list(request):
 def field_move_up(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    cf = Query(ContactField).get(id)
+    cf = ContactField.objects.get(pk=id)
     cf.sort_weight -= 15
-    Session.commit()
+    cf.save()
     field_renumber()
     return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
 
@@ -1820,18 +1920,22 @@ def field_move_up(request, id):
 def field_move_down(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    cf = Query(ContactField).get(id)
+    cf = ContactField.objects.get(pk=id)
     cf.sort_weight += 15
-    Session.commit()
+    cf.save()
     field_renumber()
     return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
 
+
 def field_renumber():
+    """
+    Update all fields sort_weight so that each weight is previous + 10
+    """
     new_weigth = 0
-    for cf in Query(ContactField).order_by('sort_weight'):
+    for cf in ContactField.objects.order_by('sort_weight'):
         new_weigth += 10
         cf.sort_weight = new_weigth
-    Session.commit()
+        cf.save()
 
 
 class FieldEditForm(forms.Form):
@@ -1845,21 +1949,21 @@ class FieldEditForm(forms.Form):
 
     def __init__(self, cf, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-    
-        contacttypes = Query(ContactGroup).filter(ContactGroup.field_group==True)
+
+        contacttypes = ContactGroup.objects.filter(field_group=True)
         self.fields['contact_group'].widget.choices = [ (g.id, g.name) for g in contacttypes ]
 
-        self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id) for cls in CONTACT_FIELD_TYPES_CLASSES ]
-        js_test_type_has_choice = u' || '.join([ u"this.value=='"+cls.db_type_id+"'" for cls in CONTACT_FIELD_TYPES_CLASSES if cls.has_choice ])
+        self.fields['type'].widget.choices = CONTACT_FIELD_TYPES_CHOICES;
+        js_test_type_has_choice = u' || '.join([ u"this.value=='"+cls.db_type_id+"'" for cls in CONTACT_FIELD_TYPES_CLASSES.values() if cls.has_choice ])
         self.fields['type'].widget.attrs = { 'onchange': mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choicegroup'].disabled = 0; } else { document.forms['objchange']['choicegroup'].value = ''; document.forms['objchange']['choicegroup'].disabled = 1; }") }
-    
-        self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in Query(ChoiceGroup).order_by(ChoiceGroup.name)]
- 
+
+        self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
+
         t = self.data.get('type', '') or self.initial.get('type', '')
         if t:
             cls_contact_field = get_contact_field_type_by_dbid(t)
         else:
-            cls_contact_field = CONTACT_FIELD_TYPES_CLASSES[0]
+            cls_contact_field = TextContactField
         if cls_contact_field.has_choice:
             if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
                 del self.fields['choicegroup'].widget.attrs['disabled']
@@ -1867,10 +1971,10 @@ class FieldEditForm(forms.Form):
         else:
             self.fields['choicegroup'].widget.attrs['disabled'] = 1
             self.fields['choicegroup'].required = False
-        
+
         self.fields['default_value'].widget.attrs['disabled'] = 1
 
-        self.fields['move_after'].widget.choices = [ (5, 'Name') ] + [ (field.sort_weight + 5, field.name) for field in Query(ContactField).order_by('sort_weight') ]
+        self.fields['move_after'].widget.choices = [ (5, 'Name') ] + [ (field.sort_weight + 5, field.name) for field in ContactField.objects.order_by('sort_weight') ]
 
         if cf and cf.system:
             self.fields['contact_group'].widget.attrs['disabled'] = 1
@@ -1896,7 +2000,7 @@ def field_edit(request, id):
     objtype=ContactField
     initial = {}
     if id:
-        cf = Query(ContactField).get(id)
+        cf = ContactField.objects.get(pk=id)
         title = u'Editing '+unicode(cf)
         initial['name'] = cf.name
         initial['hint'] = cf.hint
@@ -1908,30 +2012,25 @@ def field_edit(request, id):
     else:
         cf = None
         title = u'Adding a new '+objtype.get_class_verbose_name()
-    
+
     if request.method == 'POST':
         form = FieldEditForm(cf, request.POST, initial=initial)
-        print request.POST
+        #print request.POST
         if form.is_valid():
             data = form.clean()
             if not id:
                 cf = ContactField()
-                
+
                 cf.name = data['name']
                 cf.hint = data['hint']
                 cf.contact_group_id = int(data['contact_group'])
-                cf.type = data['type'] # BUG can't change polymorphic type
+                cf.type = data['type']
                 if data['choicegroup']:
                     cf.choice_group_id = int(data['choicegroup'])
                 else:
                     cf.choice_group_id = None
                 cf.sort_weight = int(data['move_after'])
-                # reload polymorphic class:
-                Session.commit()
-                cfid = cf.id
-                Session.execute("UPDATE contact_field SET type='%(type)s' WHERE id=%(id)i"%{'id':cfid, 'type': data['type']})
-                Session.expunge(cf)
-                cf = Query(ContactField).get(cfid)
+                cf.save()
             else:
                 if not cf.system and (cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']):
                     deletion_details=[]
@@ -1939,14 +2038,14 @@ def field_edit(request, id):
                     choice_group_id = None
                     if data['choicegroup']:
                         choice_group_id = int(data['choicegroup'])
-                    for cfv in cf.values:
+                    for cfv in cf.values.all():
                         if not cls.validate_unicode_value(cfv.value, choice_group_id):
                             deletion_details.append((cfv.contact, cfv))
-                            
+
                     if deletion_details:
                         if request.POST.get('confirm', None):
                             for cfv in [ dd[1] for dd in deletion_details ]:
-                                Session.delete(cfv)
+                                cfv.delete()
                         else:
                             args={}
                             args['title'] = 'Type incompatible with existing data'
@@ -1957,28 +2056,24 @@ def field_edit(request, id):
                                 args[k] = data[k]
                             args['nav'] = navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), (u'edit', u'delete imcompatible data'))
                             return render_to_response('type_change.html', args, RequestContext(request))
-                    
-                    # Needed work around sqlalchemy polymorphic feature
-                    # Recreate the record
-                    # Updating type of a sub class silently fails
-                    id_int = int(id)
-                    Session.execute("UPDATE contact_field SET type='%(type)s' WHERE id=%(id)i"%{'id':id_int, 'type': data['type']})
-                    cf = Query(ContactField).get(id)
+
+                    cf.type = data['type']
+                    cf.polymorphic_upgrade()
+                    cf.save()
                 cf.name = data['name']
                 cf.hint = data['hint']
                 if not cf.system:
                     # system fields have some properties disabled
                     cf.contact_group_id = int(data['contact_group'])
-                    cf.type = data['type'] # BUG can't change polymorphic type
+                    cf.type = data['type']
                     if data['choicegroup']:
                         cf.choice_group_id = int(data['choicegroup'])
                     else:
                         cf.choice_group_id = None
                 cf.sort_weight = int(data['move_after'])
-
+                cf.save()
 
             field_renumber()
-            print cf
             messages.add_message(request, messages.SUCCESS, u'Field %s has been changed sucessfully.' % cf.name)
             if request.POST.get('_continue', None):
                 if not id:
@@ -1987,7 +2082,7 @@ def field_edit(request, id):
             elif request.POST.get('_addanother', None):
                 return HttpResponseRedirect(cf.get_class_absolute_url()+u'add')
             else:
-                return HttpResponseRedirect(reverse('ngw.core.views.field_list')) # args=(p.id,)))
+                return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
         # else validation error
     else:
         if id: # modify
@@ -2017,13 +2112,12 @@ def field_edit(request, id):
 def field_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = Query(ContactField).get(id)
+    o = ContactField.objects.get(pk=id)
     next_url = reverse('ngw.core.views.field_list')
     if o.system:
         messages.add_message(request, messages.ERROR, u'Field %s is locked and CANNOT be deleted.' % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url)
-
 
 #######################################################################
 #
@@ -2037,9 +2131,9 @@ def choicegroup_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
     args = {}
-    args['query'] = Query(ChoiceGroup)
+    args['query'] = ChoiceGroup.objects
     args['cols'] = [
-        ( 'Name', None, 'name', ChoiceGroup.name),
+        ( 'Name', None, 'name', 'name'),
         ( 'Choices', None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
     args['title'] = 'Select a choice group'
@@ -2100,13 +2194,14 @@ class ChoicesField(forms.MultiValueField):
         return possibles_values
 
 
+
 class ChoiceGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     sort_by_key = forms.BooleanField(required=False)
 
     def __init__(self, cg=None, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        
+
         ndisplay=0
         self.initial['possible_values']=[]
 
@@ -2125,7 +2220,7 @@ class ChoiceGroupForm(forms.Form):
             ndisplay+=1
         self.fields['possible_values'] = ChoicesField(required=False, widget=ChoicesWidget(ndisplay=ndisplay), ndisplay=ndisplay)
 
-    
+
     def save(self, cg, request):
         if cg:
             oldid = cg.id
@@ -2134,7 +2229,8 @@ class ChoiceGroupForm(forms.Form):
             oldid = None
         cg.name = self.clean()['name']
         cg.sort_by_key = self.clean()['sort_by_key']
-        
+        cg.save()
+
         possibles_values = self['possible_values']._data()
         choices={}
 
@@ -2164,24 +2260,25 @@ class ChoiceGroupForm(forms.Form):
                 choices[k] = v
 
         #print 'choices=', choices
-        
-        for c in cg.choices:
+
+        for c in cg.choices.all():
             k = c.key
             if k in choices.keys():
                 #print 'UPDATING', k
                 c.value=choices[k]
+                c.save()
                 del choices[k]
             else: # that key has be deleted
                 #print 'DELETING', k
-                Session.delete(c)
+                c.delete()
         for k,v in choices.iteritems():
             #print 'ADDING', k
-            cg.choices.append(Choice(key=k, value=v))
-    
+            cg.choices.create(key=k, value=v)
+
         messages.add_message(request, messages.SUCCESS, u'Choice %s has been saved sucessfully.' % cg.name)
         return cg
-            
-        
+
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def choicegroup_edit(request, id=None):
@@ -2189,7 +2286,7 @@ def choicegroup_edit(request, id=None):
         return unauthorized(request)
     objtype = ChoiceGroup
     if id:
-        cg = Query(ChoiceGroup).get(id)
+        cg = ChoiceGroup.objects.get(pk=id)
         title = u'Editing '+unicode(cg)
     else:
         cg = None
@@ -2231,5 +2328,5 @@ def choicegroup_edit(request, id=None):
 def choicegroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = Query(ChoiceGroup).get(id)
-    return generic_delete(request, o, reverse('ngw.core.views.choicegroup_list'))# args=(p.id,)))
+    o = ChoiceGroup.objects.get(pk=id)
+    return generic_delete(request, o, reverse('ngw.core.views.choicegroup_list'))

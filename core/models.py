@@ -1,23 +1,24 @@
-#!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+#
+# Also note: You'll have to insert the output of 'manage.py sqlall core'
+# into your database.
 
-import os, subprocess
+import os
+import sys
+from functools import wraps
 from datetime import *
+import subprocess
 from itertools import chain
-from sqlalchemy import *
-from sqlalchemy.orm import *
-from sqlalchemy.orm import mapper
-import sqlalchemy.engine.url
-from django.conf import settings
-from django.utils import html, http
+from django.db import models, connection
 from django import forms
 from django.utils.encoding import smart_unicode
-import decoratedstr
+from django.contrib.auth.hashers import make_password
+import decoratedstr # Nirgal external package
+from ngw.core.nav import * # TODO realy make from url
+from  ngw.core import gpg
+from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #FIXME
 from ngw.extensions import hooks
-from ngw.core.nav import *
-from ngw.core import gpg
-from ngw.core.widgets import *
-from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format
+from ngw.core.widgets import NgwCalendarWidget
 
 GROUP_EVERYBODY = 1 # Group "Contact"
 GROUP_USER = 2      # With login & password
@@ -47,71 +48,17 @@ AUTOMATIC_MEMBER_INDICATOR = u"⁂"
 # Ends with a /
 GROUP_STATIC_DIR = "/usr/lib/ngw/static/static/g/"
 
-dburl = sqlalchemy.engine.url.URL("postgresql",
-                                  settings.DATABASES['default']['USER'],
-                                  settings.DATABASES['default']['PASSWORD'],
-                                  settings.DATABASES['default']['HOST'],
-                                  settings.DATABASES['default']['PORT'] or None,
-                                  settings.DATABASES['default']['NAME'])
-engine = create_engine(dburl, convert_unicode=True) #, echo=True)
-
-Session = scoped_session(sessionmaker(bind=engine, autoflush=False))
-meta = MetaData(engine)
-#FIXME
-Query = Session.query
-
-########################################################################
-# create the table objects, using the existing database
-########################################################################
-choice_table = Table('choice', meta, autoload=True)
-choice_group_table = Table('choice_group', meta, autoload=True)
-contact_table = Table('contact', meta, autoload=True)
-contact_field_table = Table('contact_field', meta, autoload=True)
-contact_field_value_table = Table('contact_field_value', meta, autoload=True)
-contact_group_table = Table('contact_group', meta, autoload=True)
-contact_in_group_table = Table('contact_in_group', meta, autoload=True)
-group_in_group_table = Table('group_in_group', meta, autoload=True)
-contact_sysmsg_table = Table('contact_sysmsg', meta, autoload=True)
-config_table = Table('config', meta, autoload=True)
-log_table = Table('log', meta, autoload=True)
-contact_group_news_table = Table('contact_group_news', meta, autoload=True)
-
-#print "meta analysis:"
-#for t in meta.table_iterator(reverse=True):
-#    print "TABLE", t.name
-#    for c in t.columns:
-#        print "column", c
-#        print "primary key:", c.primary_key
-#        print "index:", c.index
-#        print "nullable:", c.nullable
-#        print "onupdate:", c.onupdate
-#        print "unique:", c.unique
-#        print "type:", c.type
-#        print "default:", c.default
-#        #print "cascade:", c.cascade
-#        #print dir(c)
-
-
-class NgwModel(object):
+class NgwModel(models.Model):
     do_not_call_in_templates = True # prevent django from trying to instanciate objtype
 
-    def __init__(self):
-        Session.add(self)
-    
     @classmethod
     def get_class_verbose_name(cls):
-        try:
-            return cls.Meta.verbose_name
-        except AttributeError:
-            return cls.__name__.lower()
-    
+        return unicode(cls._meta.verbose_name)
+
     @classmethod
     def get_class_verbose_name_plural(cls):
-        try:
-            return cls.Meta.verbose_name_plural
-        except AttributeError:
-            return cls.get_class_verbose_name()+u"s"
-    
+        return unicode(cls._meta.verbose_name_plural)
+
     @classmethod
     def get_class_urlfragment(cls):
         return unicode(cls.__name__.lower(), "utf8")+u"s"
@@ -122,7 +69,7 @@ class NgwModel(object):
     @classmethod
     def get_class_navcomponent(cls):
         return cls.get_class_urlfragment(), cls.get_class_verbose_name_plural()
-    
+
     def get_navcomponent(self):
         return self.get_urlfragment(), unicode(self)
 
@@ -133,38 +80,42 @@ class NgwModel(object):
     def get_absolute_url(self):
         return self.get_class_absolute_url()+unicode(self.id)+u"/"
 
+    class Meta:
+        abstract = True
 
-########################################################################
-# Define classes to be mapped to the above tables.
-# Most properties are fetched from the database, and autodeclared
-########################################################################
+
 # Types of change
 LOG_ACTION_ADD      = 1
 LOG_ACTION_CHANGE   = 2
 LOG_ACTION_DEL      = 3
 
 class Log(NgwModel):
+    id = models.AutoField(primary_key=True)
+    dt = models.DateTimeField(auto_now=True)
+    contact = models.ForeignKey('Contact')
+    action = models.IntegerField()
+    target = models.TextField()
+    target_repr = models.TextField()
+    property = models.TextField(blank=True, null=True)
+    property_repr = models.TextField(blank=True, null=True)
+    change = models.TextField(blank=True, null=True)
     class Meta:
-        pass
-    def __init__(self, contact_id):
-        NgwModel.__init__(self)
-        self.dt = datetime.utcnow()
-        self.contact_id = contact_id
-    
-    def __unicode__(self):
-        return u"%(date)s: %(contactname)s %(type_and_data)s"% {
-                u'date': self.dt.isoformat(),
-                u'contactname': self.contact.name,
-                u'action_and_data': self.action_and_data(),
-                }
-            
-    def action_and_data(self):
-        if self.action==LOG_ACTION_CHANGE:
-            return u"%(property)s %(target)s: %(change)s"% {
-                u'target': self.target_repr,
-                u'property': self.property_repr,
-                u'change': self.change,
-                }
+        db_table = u'log'
+
+    #def __unicode__(self):
+    #    return u"%(date)s: %(contactname)s %(type_and_data)s"% {
+    #            u'date': self.dt.isoformat(),
+    #            u'contactname': self.contact.name,
+    #            u'action_and_data': self.action_and_data(),
+    #            }
+    #
+    #def action_and_data(self):
+    #    if self.action==LOG_ACTION_CHANGE:
+    #        return u"%(property)s %(target)s: %(change)s"% {
+    #            u'target': self.target_repr,
+    #            u'property': self.property_repr,
+    #            u'change': self.change,
+    #            }
 
     def small_date(self):
         return self.dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -174,62 +125,71 @@ class Log(NgwModel):
                  LOG_ACTION_CHANGE: u"Update",
                  LOG_ACTION_DEL: u"Delete"}[self.action]
 
+
 class Config(NgwModel):
+    id = models.CharField(max_length=32, primary_key=True)
+    text = models.TextField(blank=True)
+    def __unicode__(self):
+        return self.id
     class Meta:
-        pass
-    pass
+        db_table = u'config'
+
 
 class Choice(NgwModel):
+    oid = models.AutoField(primary_key=True)
+    choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
+    key = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
+    def __unicode__(self):
+        return self.value
     class Meta:
-        pass
-    def __init__(self, key, value):
-        NgwModel.__init__(self)
-        self.key = key
-        self.value = value
+        db_table = u'choice'
 
 class ChoiceGroup(NgwModel):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, blank=True)
+    sort_by_key = models.BooleanField()
     class Meta:
-        verbose_name="choices list"
+        db_table = u'choice_group'
+        verbose_name = u"choices list"
 
     def __unicode__(self):
         return self.name
 
-    def __repr__(self):
-        return "ChoiceGroup<"+self.name.encode('utf-8')+">"
-
     @property
     def ordered_choices(self):
         "Utility property to get choices tuples in correct order"
-        q = Query(Choice)
-        q = q.filter(choice_table.c.choice_group_id==self.id)
+        q = Choice.objects
+        q = q.filter(choice_group_id=self.id)
         if self.sort_by_key:
-            q = q.order_by(Choice.key)
+            q = q.order_by('key')
         else:
-            q = q.order_by(Choice.value)
+            q = q.order_by('value')
         return [(c.key, c.value) for c in q]
 
     get_link_name=NgwModel.get_absolute_url
 
 
 class Contact(NgwModel):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True)
     class Meta:
-        verbose_name="contact"
-
-    def __init__(self, name):
-        NgwModel.__init__(self)
-        self.name = name
+        db_table = u'contact'
 
     def __repr__(self):
-        return self.name.encode('utf-8')
+        return 'Contact <'+self.name.encode('utf-8')+'>'
 
     def __unicode__(self):
         return self.name
 
+    def is_authenticated(self):
+        return True
+
     def str_member_of(self, gids):
         #gids = [ g.id for g in cg.self_and_subgroups ]
         gid = gids[0]
-        cig = Query(ContactInGroup).get((self.id, gid))
-        if cig:
+        try:
+            cig = ContactInGroup.objects.get(contact_id=self.id, group_id=gid)
             if cig.operator:
                 return u"Operator"
             elif cig.member:
@@ -240,85 +200,81 @@ class Contact(NgwModel):
                 return u"Declined"
             else:
                 return u"ERROR: invalid contact_in_group flag combinaision"
+        except ContactInGroup.DoesNotExist:
+            pass
 
-        elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).execute().fetchone(): 
+        if ContactInGroup.objects.filter(contact_id=self.id, member=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % gid]):
             return u"Member"+u" "+AUTOMATIC_MEMBER_INDICATOR
-        elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.invited==True)).execute().fetchone(): 
+        if ContactInGroup.objects.filter(contact_id=self.id, invited=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % gid]):
             return u"Invited"+u" "+AUTOMATIC_MEMBER_INDICATOR
-        elif select([contact_in_group_table], whereclause=and_(contact_in_group_table.c.contact_id==self.id, contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.declined_invitation==True)).execute().fetchone(): 
+        if ContactInGroup.objects.filter(contact_id=self.id, declined_invitation=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % gid]):
             return u"Declined"+u" "+AUTOMATIC_MEMBER_INDICATOR
         else:
             return u"no"
-    
-    def str_member_of_note(self, contact_group_id):
-        cig = Query(ContactInGroup).get((self.id, contact_group_id))
-        if not cig:
-            return u''
-        else:
+
+    def str_member_of_note(self, gid):
+        try:
+            cig = ContactInGroup.objects.get(contact_id=self.id, group_id=gid)
             note = cig.note
             if not note:
                 return u''
             return note
+        except ContactInGroup.DoesNotExist:
+            return u''
+
+    def get_fieldvalue_by_id(self, field_id):
+        try:
+            cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
+        except ContactFieldValue.DoesNotExist:
+            return u""
+        return unicode(cfv)
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
         return u"<a href=\"%(id)d/\">%(name)s</a>" % { 'id': self.id, 'name': html.escape(self.name) }
 
+
     def get_directgroups_member(self):
         "returns the list of groups that contact is a direct member of."
-        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.member==True)
-        groupids = [cig.group_id for cig in q]
-        return Query(ContactGroup).filter(ContactGroup.id.in_(groupids))
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND group_id=id AND member)' % self.id])
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
-        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.member==True)
-        groups = []
-        for cig in q:
-            g = Query(ContactGroup).get(cig.group_id)
-            if g not in groups:
-                groups.append(g)
-            g._append_supergroups(groups)
-        return groups
+        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND member)' % self.id])
 
     def get_directgroups_invited(self):
         "returns the list of groups that contact has been invited to."
-        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.invited==True)
-        groupids = [cig.group_id for cig in q]
-        return Query(ContactGroup).filter(ContactGroup.id.in_(groupids))
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND group_id=id AND invited)' % self.id])
 
-    def get_allgroups_invited(self):
-        "returns the list of groups that contact has been invited to."
-        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.invited==True)
-        groups = []
-        for cig in q:
-            g = Query(ContactGroup).get(cig.group_id)
-            if g not in groups:
-                groups.append(g)
-            g._append_supergroups(groups)
-        return groups
+#    def get_allgroups_invited(self):
+#        "returns the list of groups that contact has been invited to."
+#        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.invited==True)
+#        groups = []
+#        for cig in q:
+#            g = Query(ContactGroup).get(cig.group_id)
+#            if g not in groups:
+#                groups.append(g)
+#            g._append_supergroups(groups)
+#        return groups
 
     def get_directgroups_declinedinvitation(self):
         "returns the list of groups that contact has been invited to."
-        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.declined_invitation==True)
-        groupids = [cig.group_id for cig in q]
-        return Query(ContactGroup).filter(ContactGroup.id.in_(groupids))
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND group_id=id AND declined_invitation)' % self.id])
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
-        return [ g for g in self.get_allgroups_member() if g.field_group ]
+        return self.get_allgroups_member().filter(field_group=True)
 
     def get_allfields(self):
-        #TODO check that
-        contactgroupids = [ g.id for g in self.get_allgroups_withfields()] 
+        contactgroupids = [ g.id for g in self.get_allgroups_withfields() ]
         #print "contactgroupids=", contactgroupids
-        return Query(ContactField).filter(ContactField.contact_group_id.in_(contactgroupids)).order_by(ContactField.sort_weight)
+        return ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
 
     def get_fieldvalues_by_type(self, type_):
         if issubclass(type_, ContactField):
             type_ = type_.db_type_id
         assert type_.__class__ == unicode
-        fields = Query(ContactField).filter(ContactField.type==type_).order_by(ContactField.sort_weight)
+        fields = ContactField.objects.filter(type=type_).order_by('sort_weight')
         # TODO: check authority
         result = []
         for field in fields:
@@ -328,8 +284,9 @@ class Contact(NgwModel):
         return result
 
     def get_fieldvalue_by_id(self, field_id):
-        cfv = Query(ContactFieldValue).get((self.id, field_id))
-        if cfv == None:
+        try:
+            cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
+        except ContactFieldValue.DoesNotExist:
             return u""
         return unicode(cfv)
 
@@ -341,29 +298,15 @@ class Contact(NgwModel):
         """
         if type(field)==int:
             field_id = field
-            field = Query(ContactField).get(field)
+            field = ContactField.objects.get(pk=field)
         else:
             assert isinstance(field, ContactField)
             field_id = field.id
-        cfv = Query(ContactFieldValue).get((self.id, field_id))
-        if cfv == None:
-            if newvalue:
-                log = Log(user.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = u"Contact "+unicode(self.id)
-                log.target_repr = u"Contact "+self.name
-                log.property = unicode(field_id)
-                log.property_repr = field.name
-                cfv = ContactFieldValue()
-                cfv.contact = self
-                cfv.field = field
-                cfv.value = newvalue
-                log.change = u"new value is "+unicode(cfv)
-                hooks.contact_field_changed(user, field_id, self)
-        else: # There was a value
+        try:
+            cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
             if newvalue:
                 if cfv.value!=newvalue:
-                    log = Log(user.id)
+                    log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
                     log.target = u"Contact "+unicode(self.id)
                     log.target_repr = u"Contact "+self.name
@@ -372,19 +315,40 @@ class Contact(NgwModel):
                     log.change = u"change from "+unicode(cfv)
                     cfv.value = newvalue
                     log.change += u" to "+unicode(cfv)
+                    cfv.save()
+                    log.save()
                     hooks.contact_field_changed(user, field_id, self)
             else:
-                log = Log(user.id)
+                log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_DEL
                 log.target = u"Contact "+unicode(self.id)
                 log.target_repr = u"Contact "+self.name
                 log.property = unicode(field_id)
                 log.property_repr = field.name
                 log.change = u"old value was "+unicode(cfv)
-                Session.delete(cfv)
+                cfv.delete()
+                log.save()
+                hooks.contact_field_changed(user, field_id, self)
+        except ContactFieldValue.DoesNotExist:
+            if newvalue:
+                log = Log(contact_id=user.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = u"Contact "+unicode(self.id)
+                log.target_repr = u"Contact "+self.name
+                log.property = unicode(field_id)
+                log.property_repr = field.name
+                cfv = ContactFieldValue()
+                cfv.contact = self
+                cfv.contact_field = field
+                cfv.value = newvalue
+                cfv.save()
+                log.change = u"new value is "+unicode(cfv)
+                log.save()
                 hooks.contact_field_changed(user, field_id, self)
 
+
     def get_login(self):
+        # See templates/contact_detail.htm
         return self.get_fieldvalue_by_id(FIELD_LOGIN)
 
     def vcard(self):
@@ -421,12 +385,12 @@ class Contact(NgwModel):
         return vcf
 
     def get_addr_semicol(self):
+        "Returns address in a form compatible with googlemap query"
         return self.get_fieldvalue_by_id(FIELD_STREET)+u";"+self.get_fieldvalue_by_id(FIELD_POSTCODE)+u";"+self.get_fieldvalue_by_id(FIELD_CITY)+u";"+self.get_fieldvalue_by_id(FIELD_COUNTRY)
 
     # TODO: migrate to new django.contrib.messages framework
     def push_message(self, message):
-        ContactSysMsg(self.id, message)
-        #N# Session.commit()
+        ContactSysMsg(contact_id=self.id, message=message).save()
 
     def generate_login(self):
         words=self.name.split(" ")
@@ -434,11 +398,13 @@ class Contact(NgwModel):
         login = "".join(login)
         login = decoratedstr.remove_decoration(login)
         def get_logincfv_by_login(ref_uid, login):
-            " return first login cfv where loginname=login and not uid!=ref_uid "
-            return Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN) \
-                                   .filter(ContactFieldValue.value==login) \
-                                   .filter(ContactFieldValue.contact_id!=ref_uid) \
-                                   .first()
+            """
+            Returns login cfv where loginname=login and not uid!=ref_uid
+            This can be evaluated as true is login is already in use by another user
+            """
+            return ContactFieldValue.objects.filter(contact_field_id=FIELD_LOGIN) \
+                                   .filter(value=login) \
+                                   .exclude(contact_id=ref_uid)
         if not get_logincfv_by_login(self.id, login):
             return login
         i=1;
@@ -457,10 +423,9 @@ class Contact(NgwModel):
 
     def set_password(self, user, newpassword_plain, new_password_status=None):
         # TODO check password strength
-        hash=subprocess.Popen(["openssl", "passwd", "-crypt", newpassword_plain], stdout=subprocess.PIPE).communicate()[0]
-        hash=hash[:-1] # remove extra "\n"
-        #hash = b64encode(sha(password).digest())
-        #self.passwd = "{SHA}"+hash
+        hash = make_password(newpassword_plain)
+        assert hash.startswith('crypt$$'), 'Hash algorithm is imcompatible with apache authentication'
+        hash = hash[len('crypt$$'):]
         self.set_fieldvalue(user, FIELD_PASSWORD, hash)
         self.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
         if new_password_status is None:
@@ -469,55 +434,61 @@ class Contact(NgwModel):
             else:
                 self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1') # Generated
         else:
-                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, new_password_status)
+            self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, new_password_status)
+
 
     @staticmethod
     def check_login_created(logged_contact):
-        Session.commit()
         # Create login for all members of GROUP_USER
-        for (uid,) in Session.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN}):
-            contact = Query(Contact).get(uid)
+        cursor = connection.cursor()
+        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN})
+        for uid, in cursor:
+            contact = Contact.objects.get(pk=uid)
             new_login = contact.generate_login()
             contact.set_fieldvalue(logged_contact, FIELD_LOGIN, new_login)
             contact.set_password(logged_contact, contact.generate_password())
             logged_contact.push_message("Login information generated for User %s."%(contact.name))
-        
-        for cfv in Query(ContactFieldValue).filter("contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member)"%{"GROUP_USER":GROUP_USER, "FIELD_LOGIN":FIELD_LOGIN}):
+
+        for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member)"%{"GROUP_USER":GROUP_USER, "FIELD_LOGIN":FIELD_LOGIN}]):
+            cfv.delete()
             logged_contact.push_message("Delete login information for User %s."%(cfv.contact.name))
-            Session.delete(cfv)
 
     def is_member_of(self, group_id):
-        cfv = Query(ContactInGroup).filter("contact_id=%(contact_id)d AND group_id IN (SELECT * FROM self_and_subgroups(%(group_id)d)) AND member" % {'contact_id': self.id, 'group_id': group_id}).all()
-        #print cfv, len(cfv)
-        return len(cfv)!=0
+        cin = ContactInGroup.objects.filter(contact_id=self.id, member=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % group_id])
+        return len(cin) > 0
 
     def is_admin(self):
         return self.is_member_of(GROUP_ADMIN)
 
     def update_lastconnection(self):
-        # see ENABLE_LASTCONNECTION_UPDATES
-        cfv = Query(ContactFieldValue).get((self.id, FIELD_LASTCONNECTION))
-        if not cfv:
-            cfv = ContactFieldValue()
-            cfv.contact_id = self.id
-            cfv.contact_field_id = FIELD_LASTCONNECTION
+        # see NgwAuthBackend.enable_lastconnection_updates
+        cfv, created = ContactFieldValue.objects.get_or_create(contact_id=self.id, contact_field_id=FIELD_LASTCONNECTION)
         cfv.value = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        cfv.save()
 
 
 
 class ContactGroup(NgwModel):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    field_group = models.BooleanField()
+    date = models.DateField(null=True, blank=True)
+    budget_code = models.CharField(max_length=10)
+    system = models.BooleanField()
+    mailman_address = models.CharField(max_length=255, blank=True)
+    has_news = models.BooleanField()
+    sticky = models.BooleanField()
+    #direct_supergroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none1+')
+    #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')
     class Meta:
-        verbose_name = u"contacts group"
-
-    def __init__(self, name):
-        NgwModel.__init__(self)
-        self.name = name
+        db_table = u'contact_group'
 
     def __unicode__(self):
         return self.name
 
     def __repr__(self):
-        return self.name.encode('utf-8')
+        return 'ContactGroup<'+str(self.id)+self.name.encode('utf-8')+'>'
 
     def get_smart_navbar(self):
         nav = navbar()
@@ -533,85 +504,85 @@ class ContactGroup(NgwModel):
             return '/events/'+unicode(self.id)+u"/"
         else:
             return self.get_class_absolute_url()+unicode(self.id)+u"/"
-        
-    def _append_subgroups(self, result):
-        for g in self.direct_subgroups:
-            if g not in result:
-                result.append(g)
-                g._append_subgroups(result)
-        
-    @property
-    def subgroups(self):
-        result = []
-        self._append_subgroups(result)
-        return result
 
-    @property
-    def self_and_subgroups(self):
-        result = [ self ]
-        self._append_subgroups(result)
-        return result
 
-    def _append_supergroups(self, result):
-        for g in self.direct_supergroups:
-            if g not in result:
-                result.append(g)
-                g._append_supergroups(result)
-        
-    @property
-    def supergroups(self):
-        result = []
-        self._append_supergroups(result)
-        return result
+    def get_direct_supergroups_ids(self):
+        return [gig.father_id for gig in GroupInGroup.objects.filter(subgroup_id=self.id)]
 
-    @property
-    def self_and_supergroups(self):
-        result = [self ]
-        self._append_supergroups(result)
-        return result
+    def get_direct_supergroups(self):
+        return ContactGroup.objects.filter(direct_gig_subgroups__subgroup_id=self.id)
 
-    def get_direct_members(self):
-        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.member==True))
-        cids = [ cig.contact_id for cig in cigs ]
-        return Query(Contact).filter(Contact.id.in_(cids))
+    def set_direct_supergroups_ids(self, ids):
+        # supergroups have no properties (yet!): just recreate the array with brute force
+        for gig in GroupInGroup.objects.filter(subgroup_id=self.id):
+            gig.delete()
 
-    def get_direct_invited(self):
-        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.invited==True))
-        cids = [ cig.contact_id for cig in cigs ]
-        return Query(Contact).filter(Contact.id.in_(cids))
+        for id in ids:
+            GroupInGroup(father_id=id, subgroup_id=self.id).save()
 
-    #    s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
-    #    #print "members=", s, ":"
-    #    result =  []
-    #    for cid in Session.execute(s):
-    #        result.append(Query(Contact).get(cid[0]))
-    #        #print cid[0]
-    #    return result
+    def get_self_and_supergroups(self):
+        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_supergroups(%s))' % self.id])
 
-    def get_members_query(self):
-        #TODO optimize me
-        gids = [ g.id for g in self.self_and_subgroups ]
-        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True)
+    def get_supergroups(self):
+        return self.get_self_and_supergroups().exclude(id=self.id)
 
-    def get_members(self):
-        return self.get_members_query().all()
-    members = property(get_members)
+
+
+    def get_direct_subgroups(self):
+        return ContactGroup.objects.filter(direct_gig_supergroups__father_id=self.id)
+
+    def get_self_and_subgroups(self):
+        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_subgroups(%s))' % self.id])
+
+    def get_subgroups(self):
+        return self.get_self_and_subgroups().exclude(id=self.id)
+
+
+#    def get_direct_members(self):
+#        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.member==True))
+#        cids = [ cig.contact_id for cig in cigs ]
+#        return Query(Contact).filter(Contact.id.in_(cids))
+#
+#    def get_direct_invited(self):
+#        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.invited==True))
+#        cids = [ cig.contact_id for cig in cigs ]
+#        return Query(Contact).filter(Contact.id.in_(cids))
+#
+#    #    s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
+#    #    #print "members=", s, ":"
+#    #    result =  []
+#    #    for cid in Session.execute(s):
+#    #        result.append(Query(Contact).get(cid[0]))
+#    #        #print cid[0]
+#    #    return result
+
+#    def get_members_query(self):
+#        #TODO optimize me
+#        gids = [ g.id for g in self.self_and_subgroups ]
+#        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True)
+
+    def get_all_members(self):
+        return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.id])
+#    members = property(get_members)
+
 
     def get_link_name(self):
+        "Name will then be clickable in the list"
         return self.get_absolute_url()
 
     def supergroups_includinghtml(self):
-        sgs = self.supergroups
+        sgs = self.get_supergroups()
         if not sgs:
             return u""
         return u" (implies "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
     def subgroups_includinghtml(self):
-        sgs = self.subgroups
+        sgs = self.get_subgroups()
         if not sgs:
             return u""
         return u" (including "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
 
+    # See group_add_contacts_to.html
     def is_event(self):
         return self.date is not None
 
@@ -620,6 +591,7 @@ class ContactGroup(NgwModel):
             return ngw_date_format(self.date)
         else:
             return u''
+
     def unicode_with_date(self):
         """ Returns the name of the group, and the date if there's one"""
         result = self.name
@@ -640,8 +612,8 @@ class ContactGroup(NgwModel):
 
     def check_static_folder_created(self):
         """ Create the folder for static files and setup permissions """
-        if not self.id:
-            Session.commit()
+#        if not self.id:
+#            self.save()
         assert(self.id)
         dirname = self.static_folder()
         if not os.path.isdir(dirname):
@@ -664,12 +636,13 @@ class ContactGroup(NgwModel):
         return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
 
     def get_birthday_members(self):
-        """select * from contact_field_value where contact_field_id=6 and value like '%-11-%';"""
-        #TODO optimize me
-        gids = [ g.id for g in self.self_and_subgroups ]
-        #TODO: localize timezone
-        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True) \
-                             .filter(ContactFieldValue.contact_id==Contact.id).filter(ContactFieldValue.contact_field_id==FIELD_BIRTHDAY).filter(ContactFieldValue.value.like(datetime.today().strftime('%%-%m-%d')))
+        #select * from contact_field_value where contact_field_id=6 and value like '%-11-%';
+        q = self.get_all_members()
+        w2 = "EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id=contact.id AND contact_field_value.contact_field_id=%s AND contact_field_value.value LIKE '%s')" % \
+                    (FIELD_BIRTHDAY, datetime.today().strftime('%%%%-%m-%d'))
+        q = q.extra(where=[w2])
+        #print q.query
+        return q
 
     def get_default_display(self):
         if not self.date:
@@ -678,25 +651,25 @@ class ContactGroup(NgwModel):
             return u'mig'
         else:
             return u'mg'
-    
-    
-    """
-    group_member_mode is a combinaison of letters 'mido'
-    if it starts with '+', the mode will be added (dropping incompatible ones).
-    Example '+o' actually means '+m-id+o'
-            '+d' actually means '-mi+d-o'
-    if it starst with '-', the mode will be deleted
-    TODO enforce that:
-    m/i/d are mutually exclusive
-    o require m
-    returns
-    LOG_ACTION_ADD if added
-    LOG_ACTION_CHANGE if changed
-    LOG_ACTION_DEL if deleted
-    0 other wise
-    If the contact was not in the group, it will be added.
-    """
+
+
     def set_member_1(self, logged_contact, contact, group_member_mode):
+        """
+        group_member_mode is a combinaison of letters 'mido'
+        if it starts with '+', the mode will be added (dropping incompatible ones).
+        Example '+o' actually means '+m-id+o'
+                '+d' actually means '-mi+d-o'
+        if it starst with '-', the mode will be deleted
+        TODO enforce that:
+        m/i/d are mutually exclusive
+        o require m
+        returns
+        LOG_ACTION_ADD if added
+        LOG_ACTION_CHANGE if changed
+        LOG_ACTION_DEL if deleted
+        0 other wise
+        If the contact was not in the group, it will be added.
+        """
 
         result = 0
 
@@ -792,120 +765,132 @@ class ContactGroup(NgwModel):
                 del_mode.add(u'd')
                 add_mode.add(u'o')
 
-        cig = Query(ContactInGroup).get((contact.id, self.id))
-        if not cig and not add_mode:
-            return result # 0 = no change
-        
-        if not cig:
-            cig = ContactInGroup(contact.id, self.id)
-            log = Log(logged_contact.id)
+        try:
+            cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
+        except ContactInGroup.DoesNotExist:
+            if not add_mode:
+                return result # 0 = no change
+
+            cig = ContactInGroup(contact_id=contact.id, group_id=self.id)
+            log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_ADD
             log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
             log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+            log.save()
             result = LOG_ACTION_ADD
 
+        #print "ok +", add_mode, "-", del_mode
         if u'm' in add_mode:
             if not cig.member:
                 cig.member = True
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'member'
                 log.property_repr = u'Member'
                 log.change = u'new value is true'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
         if u'm' in del_mode:
             if cig.member:
                 cig.member = False
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'member'
                 log.property_repr = u'Member'
                 log.change = u'new value is false'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
 
         if u'i' in add_mode:
             if not cig.invited:
                 cig.invited = True
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'invited'
                 log.property_repr = u'Invited'
                 log.change = u'new value is true'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
         if u'i' in del_mode:
             if cig.invited:
                 cig.invited = False
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'invited'
                 log.property_repr = u'Invited'
                 log.change = u'new value is false'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
 
         if u'd' in add_mode:
             if not cig.declined_invitation:
                 cig.declined_invitation = True
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'declined_invitation'
                 log.property_repr = u'Declined invitation'
                 log.change = u'new value is true'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
         if u'd' in del_mode:
             if cig.declined_invitation:
                 cig.declined_invitation = False
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'declined_invitation'
                 log.property_repr = u'Declined invitation'
                 log.change = u'new value is false'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
 
         if u'o' in add_mode:
             if not cig.operator:
                 cig.operator = True
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'operator'
                 log.property_repr = u'Operator'
                 log.change = u'new value is true'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
         if u'o' in del_mode:
             if cig.operator:
                 cig.operator = False
-                log = Log(logged_contact.id)
+                log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
                 log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
                 log.property = u'operator'
                 log.property_repr = u'Operator'
                 log.change = u'new value is false'
+                log.save()
                 result = result or LOG_ACTION_CHANGE
 
         if not cig.member and not cig.invited and not cig.declined_invitation:
             cig.delete()
-            log = Log(logged_contact.id)
+            log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_DEL
             log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
             log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
             result = LOG_ACTION_CHANGE
-        
+        else:
+            cig.save()
+
         if result:
-            Session.flush() # CHECK ME
             hooks.membership_changed(logged_contact, contact, self)
         return result
 
@@ -938,6 +923,7 @@ class ContactGroup(NgwModel):
             logged_contact.push_message(msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
 
 
+
 ########################################
 # Contact Fields
 
@@ -966,14 +952,14 @@ class RibField(forms.Field):
                 iso_value+= str(ord(c)-81)
             else:
                 raise forms.ValidationError("Illegal character "+c)
-            
+
         if len(iso_value) != 23:
             raise forms.ValidationError("There must be 23 non blank characters.")
-            
-        print iso_value
+
+        #print iso_value
         if int(iso_value) % 97:
             raise forms.ValidationError("CRC error")
-            
+
         return value
 
 
@@ -1006,26 +992,52 @@ class NgwCheckboxSelectMultiple(forms.SelectMultiple):
     id_for_label = classmethod(id_for_label)
 
 
-
-CONTACT_FIELD_TYPES_CLASSES=[]
+CONTACT_FIELD_TYPES_CLASSES={}
+CONTACT_FIELD_TYPES_CHOICES=[]
 def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
-    CONTACT_FIELD_TYPES_CLASSES.append(cls)
+    CONTACT_FIELD_TYPES_CLASSES[db_type_id] = cls
+    CONTACT_FIELD_TYPES_CHOICES.append((db_type_id, human_type_id))
     cls.db_type_id = db_type_id
     cls.human_type_id = human_type_id
     cls.has_choice = has_choice
     return cls
+
 def get_contact_field_type_by_dbid(db_type_id):
-    for cls in CONTACT_FIELD_TYPES_CLASSES:
-        if cls.db_type_id == db_type_id:
-            return cls
-    raise KeyError(u"No ContactField class using id "+db_type_id)
+    return CONTACT_FIELD_TYPES_CLASSES[db_type_id]
+
+
+# decorator that changes ContactField class type
+# FIXME doesn't work on first call (log password)
+def polymorphicCF(f):
+    @wraps(f)
+    def wrapper(self, *args, **kargs):
+        if self.__class__ == ContactField:
+            #print "dir(f) = ", dir(f)
+            #print "funcname =", f.__name__
+            self.polymorphic_upgrade()
+            # upgrade f too:
+            #fname = f.__name__
+            #f = self.__getattribute__(fname)
+        return f(self, *args, **kargs)
+    return wrapper
+
 
 
 
 class ContactField(NgwModel):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    hint = models.TextField(blank=True)
+    type = models.CharField(max_length=15, choices=CONTACT_FIELD_TYPES_CHOICES)
+    contact_group = models.ForeignKey(ContactGroup)
+    sort_weight = models.IntegerField()
+    choice_group = models.ForeignKey(ChoiceGroup, null=True, blank=True)
+    system = models.BooleanField()
+    default = models.TextField(blank=True)
     class Meta:
-        verbose_name = u"optional field"
-    
+        db_table = u'contact_field'
+        ordering = 'sort_weight',
+
     # Overide url for all derived classes
     @classmethod
     def get_class_absolute_url(cls):
@@ -1037,21 +1049,36 @@ class ContactField(NgwModel):
     def __unicode__(self):
         return self.name
 
-    def str_type_base(self):
-        return self.__class__.human_type_id
-
-    def type_as_html(self):
-        return self.str_type_base()
-
-    def format_value_unicode(self, value):
-        return value
-    def format_value_html(self, value):
-        return self.format_value_unicode(value)
+    def polymorphic_upgrade(self):
+        self.__class__ = CONTACT_FIELD_TYPES_CLASSES[self.type]
 
     get_link_name=NgwModel.get_absolute_url
 
+    @polymorphicCF
+    def str_type_base(self):
+        return self.human_type_id
+
+    @polymorphicCF
+    def type_as_html(self):
+        return self.str_type_base()
+
+    @polymorphicCF
+    def format_value_unicode(self, value):
+        return value
+
+    @polymorphicCF
+    def format_value_html(self, value):
+        return self.format_value_unicode(value)
+
+    @polymorphicCF
+    def get_form_fields(self):
+        raise NotImplementedError()
+
+    @polymorphicCF
     def formfield_value_to_db_value(self, value):
         return unicode(value)
+
+    @polymorphicCF
     def db_value_to_formfield_value(self, value):
         return value
 
@@ -1059,18 +1086,21 @@ class ContactField(NgwModel):
     def validate_unicode_value(cls, value, choice_group_id=None):
         return True
 
+    @polymorphicCF
     def get_filters_classes(self):
         return (FieldFilterNull, FieldFilterNotNull,)
 
+    @polymorphicCF
     def get_filters(self):
         return [ cls(self.id) for cls in self.get_filters_classes() ]
 
+    @polymorphicCF
     def get_filter_by_name(self, name):
         return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
 
-
-
 class TextContactField(ContactField):
+    class Meta:
+        proxy = True
     def get_form_fields(self):
         return forms.CharField(label=self.name, required=False, help_text=self.hint)
     def get_filters_classes(self):
@@ -1078,6 +1108,8 @@ class TextContactField(ContactField):
 register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
 
 class LongTextContactField(ContactField):
+    class Meta:
+        proxy = True
     def get_form_fields(self):
         return forms.CharField(label=self.name, widget=forms.Textarea, required=False, help_text=self.hint)
     def get_filters_classes(self):
@@ -1085,6 +1117,8 @@ class LongTextContactField(ContactField):
 register_contact_field_type(LongTextContactField, u"LONGTEXT", u"Long Text", has_choice=False)
 
 class NumberContactField(ContactField):
+    class Meta:
+        proxy = True
     def get_form_fields(self):
         return forms.IntegerField(label=self.name, required=False, help_text=self.hint)
     def get_filters_classes(self):
@@ -1099,6 +1133,8 @@ class NumberContactField(ContactField):
 register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice=False)
 
 class DateContactField(ContactField):
+    class Meta:
+        proxy = True
 
     def get_form_fields(self):
         return forms.DateField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint, widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
@@ -1118,6 +1154,8 @@ class DateContactField(ContactField):
 register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False)
 
 class DateTimeContactField(ContactField):
+    class Meta:
+        proxy = True
     def get_form_fields(self):
         return forms.DateTimeField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD HH:MM:SS format."+u" "+self.hint)
     def format_value_html(self, value):
@@ -1135,6 +1173,8 @@ class DateTimeContactField(ContactField):
 register_contact_field_type(DateTimeContactField, u"DATETIME", u"DateTime", has_choice=False)
 
 class EmailContactField(ContactField):
+    class Meta:
+        proxy = True
     def format_value_html(self, value):
         if gpg.is_email_secure(value):
             gpg_indicator = u' <a href="/pks/lookup?op=get&options=mr&extact=on&search='+http.urlquote_plus(value)+'"><img src="'+settings.STATIC_URL+'static/key.jpeg" alt=key title="GPG key available" border=0></a>'
@@ -1155,6 +1195,8 @@ class EmailContactField(ContactField):
 register_contact_field_type(EmailContactField, u"EMAIL", u"E.Mail", has_choice=False)
 
 class PhoneContactField(ContactField):
+    class Meta:
+        proxy = True
     def format_value_html(self, value):
         return u'<a href="tel:%(value)s">%(value)s</a>' % {'value':value} # rfc3966
     def get_form_fields(self):
@@ -1164,6 +1206,8 @@ class PhoneContactField(ContactField):
 register_contact_field_type(PhoneContactField, u"PHONE", u"Phone", has_choice=False)
 
 class RibContactField(ContactField):
+    class Meta:
+        proxy = True
     def get_form_fields(self):
         return RibField(label=self.name, required=False, help_text=self.hint)
     @classmethod
@@ -1178,14 +1222,17 @@ class RibContactField(ContactField):
 register_contact_field_type(RibContactField, u"RIB", u"French bank account", has_choice=False)
 
 class ChoiceContactField(ContactField):
+    class Meta:
+        proxy = True
     def type_as_html(self):
         return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
     def format_value_unicode(self, value):
         chg = self.choice_group
         if chg == None:
             return u"Error"
-        c = Query(Choice).get((chg.id, value))
-        if c == None:
+        try:
+            c = Choice.objects.get(choice_group_id=chg.id, key=value)
+        except Choice.DoesNotExist:
             return u"Error"
         else:
             return c.value
@@ -1193,26 +1240,32 @@ class ChoiceContactField(ContactField):
         return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[(u'', u"Unknown")]+self.choice_group.ordered_choices))
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
-        return Query(Choice).filter(Choice.choice_group_id==choice_group_id).filter(Choice.key==value).count() == 1
+        return Choice.objects.filter(choice_group_id=choice_group_id).filter(key=value).count() == 1
     def get_filters_classes(self):
         return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterNull, FieldFilterNotNull,)
 
 register_contact_field_type(ChoiceContactField, u"CHOICE", u"Choice", has_choice=True)
 
 class MultipleChoiceContactField(ContactField):
+    class Meta:
+        proxy = True
     def type_as_html(self):
         return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
     def format_value_unicode(self, value):
-        chg = self.choice_group
-        if chg == None:
+        try:
+            chg = ChoiceGroup.objects.get(pk=self.choice_group_id)
+        except ChoiceGroup.DoesNotExist:
+            print "ChoiceGroup %s was lost!" % self.choice_group_id
             return u"Error"
         txt_choice_list = []
         for cid in value.split(u","):
             if cid==u"":
                 txt_choice_list.append( "default" ) # this should never occur
                 continue
-            c = Query(Choice).get((chg.id, cid))
-            if c == None:
+            try:
+                c = Choice.objects.get(choice_group_id=chg.id, key=cid)
+            except Choice.DoesNotExist:
+                print u"Choice", cid, "in", chg, "was lost."
                 txt_choice_list.append( "error" )
             else:
                 txt_choice_list.append( c.value )
@@ -1226,14 +1279,17 @@ class MultipleChoiceContactField(ContactField):
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         for v in value.split(','):
-            if Query(Choice).filter(Choice.choice_group_id==choice_group_id).filter(Choice.key==v).count() != 1:
+            if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=v).count() != 1:
                 return False
         return True
     def get_filters_classes(self):
         return (FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(MultipleChoiceContactField, u"MULTIPLECHOICE", u"Multiple choice", has_choice=True)
 
+
 class PasswordContactField(ContactField):
+    class Meta:
+        proxy = True
     def format_value_unicode(self, value):
         return u"********"
     def get_form_fields(self):
@@ -1244,7 +1300,7 @@ class PasswordContactField(ContactField):
         raise NotImplemented(u"Cannot reverse hash of a password")
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
-        return len(value)==13 #TODO
+        return len(value)==13 # We are locked with crypt algorithm, right now
 register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_choice=False)
 
 
@@ -1261,7 +1317,7 @@ class ContactNameMetaField(object):
     def get_filter_by_name(cls, name):
         return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
 
-    
+
 class AllEventsMetaField(object):
     @classmethod
     def get_filters_classes(cls):
@@ -1292,9 +1348,9 @@ class FilterHelper(object):
         params_sql = { }
         for k,v in kargs.iteritems():
             #print k,"=",v
-            auto_param_name=u"autoparam_"+unicode(len(query._params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
+            auto_param_name=u"autoparam_"+unicode(len(query.params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
             if isinstance(v, unicode):
-                params_where[ k ] = u':'+auto_param_name+k
+                params_where[ k ] = u'%('+auto_param_name+k+u')s'
                 params_sql[ auto_param_name+k ] = v
             elif isinstance(v, int):
                 params_where[ k ] = v
@@ -1313,10 +1369,10 @@ class FilterHelper(object):
         """
         where, params = self.get_sql_where_params(*args, **kargs)
         where, params = self.sqlescape_where_params(query, where, **params)
-        query = query.params(params)
+        query = query.add_params(params)
         return query, where
 
-    
+
 class Filter(FilterHelper):
     """
     This is a generic filter that must be given arguments before being applied.
@@ -1341,7 +1397,6 @@ class NameFilterStartsWith(Filter):
 NameFilterStartsWith.internal_name="startswith"
 NameFilterStartsWith.human_name=u"has a word starting with"
 
-
 class FieldFilter(Filter):
     """ Helper abstract class for field filters """
     def __init__(self, field_id):
@@ -1350,13 +1405,15 @@ class FieldFilter(Filter):
 class FieldFilterOp0(FieldFilter):
     """ Helper abstract class for field filters that takes not parameter """
     def to_html(self):
-        field = Query(ContactField).get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
+        field.polymorphic_upgrade()
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name
 
 class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
-        field = Query(ContactField).get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
+        field.polymorphic_upgrade()
         result = u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" "
         if isinstance(value, unicode):
             value = u'"'+value+u'"'
@@ -1383,7 +1440,7 @@ class FieldFilterEQ(FieldFilterOp1):
 FieldFilterEQ.internal_name="eq"
 FieldFilterEQ.human_name=u"="
 
-    
+
 class FieldFilterNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
@@ -1392,7 +1449,7 @@ class FieldFilterNEQ(FieldFilterOp1):
 FieldFilterNEQ.internal_name="neq"
 FieldFilterNEQ.human_name=u"≠"
 
-    
+
 class FieldFilterLE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', { 'field_id':self.field_id, 'value':value }
@@ -1401,7 +1458,7 @@ class FieldFilterLE(FieldFilterOp1):
 FieldFilterLE.internal_name="le"
 FieldFilterLE.human_name=u"≤"
 
-    
+
 class FieldFilterGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', { 'field_id':self.field_id, 'value':value }
@@ -1410,7 +1467,7 @@ class FieldFilterGE(FieldFilterOp1):
 FieldFilterGE.internal_name="ge"
 FieldFilterGE.human_name=u"≥"
 
-    
+
 class FieldFilterLIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', { 'field_id':self.field_id, 'value':value }
@@ -1419,7 +1476,7 @@ class FieldFilterLIKE(FieldFilterOp1):
 FieldFilterLIKE.internal_name="like"
 FieldFilterLIKE.human_name=u"SQL LIKE"
 
-    
+
 class FieldFilterILIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', { 'field_id':self.field_id, 'value':value }
@@ -1428,7 +1485,7 @@ class FieldFilterILIKE(FieldFilterOp1):
 FieldFilterILIKE.internal_name="ilike"
 FieldFilterILIKE.human_name=u"SQL ILIKE"
 
-    
+
 class FieldFilterNull(FieldFilterOp0):
     def get_sql_where_params(self):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
@@ -1437,7 +1494,7 @@ class FieldFilterNull(FieldFilterOp0):
 FieldFilterNull.internal_name="null"
 FieldFilterNull.human_name=u"is undefined"
 
-    
+
 class FieldFilterNotNull(FieldFilterOp0):
     def get_sql_where_params(self):
         return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
@@ -1446,7 +1503,7 @@ class FieldFilterNotNull(FieldFilterOp0):
 FieldFilterNotNull.internal_name="notnull"
 FieldFilterNotNull.human_name=u"is defined"
 
-    
+
 class FieldFilterIEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
@@ -1455,7 +1512,7 @@ class FieldFilterIEQ(FieldFilterOp1):
 FieldFilterIEQ.internal_name="ieq"
 FieldFilterIEQ.human_name=u"="
 
-    
+
 class FieldFilterINE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', { 'field_id':self.field_id, 'value':int(value) }
@@ -1464,7 +1521,7 @@ class FieldFilterINE(FieldFilterOp1):
 FieldFilterINE.internal_name="ineq"
 FieldFilterINE.human_name=u"≠"
 
-    
+
 class FieldFilterIEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
@@ -1473,7 +1530,7 @@ class FieldFilterIEQ(FieldFilterOp1):
 FieldFilterIEQ.internal_name="ieq"
 FieldFilterIEQ.human_name=u"="
 
-    
+
 class FieldFilterILT(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', { 'field_id':self.field_id, 'value':int(value) }
@@ -1482,7 +1539,7 @@ class FieldFilterILT(FieldFilterOp1):
 FieldFilterILT.internal_name="ilt"
 FieldFilterILT.human_name=u"<"
 
-    
+
 class FieldFilterIGT(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', { 'field_id':self.field_id, 'value':int(value) }
@@ -1491,7 +1548,7 @@ class FieldFilterIGT(FieldFilterOp1):
 FieldFilterIGT.internal_name="igt"
 FieldFilterIGT.human_name=u">"
 
-    
+
 class FieldFilterILE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
@@ -1500,7 +1557,7 @@ class FieldFilterILE(FieldFilterOp1):
 FieldFilterILE.internal_name="ile"
 FieldFilterILE.human_name=u"≤"
 
-    
+
 class FieldFilterIGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
@@ -1509,7 +1566,7 @@ class FieldFilterIGE(FieldFilterOp1):
 FieldFilterIGE.internal_name="ige"
 FieldFilterIGE.human_name=u"≥"
 
-    
+
 class FieldFilterAGE_GE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
@@ -1518,7 +1575,7 @@ class FieldFilterAGE_GE(FieldFilterOp1):
 FieldFilterAGE_GE.internal_name="agege"
 FieldFilterAGE_GE.human_name=u"Age (years) ≥"
 
-    
+
 class FieldFilterVALID_GT(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
@@ -1527,7 +1584,7 @@ class FieldFilterVALID_GT(FieldFilterOp1):
 FieldFilterVALID_GT.internal_name="validitygt"
 FieldFilterVALID_GT.human_name=u"date until event ≥"
 
-    
+
 class FieldFilterFUTURE(FieldFilterOp0):
     def get_sql_where_params(self):
         return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', { 'field_id': self.field_id }
@@ -1536,16 +1593,18 @@ class FieldFilterFUTURE(FieldFilterOp0):
 FieldFilterFUTURE.internal_name="future"
 FieldFilterFUTURE.human_name=u"In the future"
 
-    
+
 class FieldFilterChoiceEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
-        field = Query(ContactField).get(self.field_id)
-        cfv = Query(Choice).get((field.choice_group_id, value))
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
+        cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
-        field = Query(ContactField).get(self.field_id)
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterChoiceEQ.internal_name="ceq"
 FieldFilterChoiceEQ.human_name=u"="
@@ -1555,40 +1614,45 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
-        field = Query(ContactField).get(self.field_id)
-        cfv = Query(Choice).get((field.choice_group_id, value))
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
+        cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
-        field = Query(ContactField).get(self.field_id)
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterChoiceNEQ.internal_name="cneq"
 FieldFilterChoiceNEQ.human_name=u"≠"
 
-    
+
 class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
-        field = Query(ContactField).get(self.field_id)
-        cfv = Query(Choice).get((field.choice_group_id, value))
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
+        cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
-        field = Query(ContactField).get(self.field_id)
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterMultiChoiceHAS.internal_name="mchas"
 FieldFilterMultiChoiceHAS.human_name=u"contains"
-
 
 
 class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
-        field = Query(ContactField).get(self.field_id)
-        cfv = Query(Choice).get((field.choice_group_id, value))
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
+        cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
-        field = Query(ContactField).get(self.field_id)
+        field = ContactField.objects.get(self.field_id)
+        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterMultiChoiceHASNOT.internal_name="mchasnot"
 FieldFilterMultiChoiceHASNOT.human_name=u"doesn't contain"
@@ -1599,92 +1663,104 @@ class GroupFilterIsMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
     def to_html(self):
-        group = Query(ContactGroup).get(self.group_id)
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name="memberof"
 GroupFilterIsMember.human_name=u"is member of group"
 
-    
+
 class GroupFilterIsNotMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND member=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
     def to_html(self):
-        group = Query(ContactGroup).get(self.group_id)
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsNotMember.internal_name="notmemberof"
 GroupFilterIsNotMember.human_name=u"is not member of group"
 
-    
+
 class GroupFilterIsInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
     def to_html(self):
-        group = Query(ContactGroup).get(self.group_id)
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name="ginvited"
 GroupFilterIsInvited.human_name=u"has been invited in group"
 
-    
+
 class GroupFilterIsNotInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND invited=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
     def to_html(self):
-        group = Query(ContactGroup).get(self.group_id)
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterIsNotInvited.internal_name="gnotinvited"
 GroupFilterIsNotInvited.human_name=u"has not been invited in group"
 
-    
+
 class GroupFilterDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND declined_invitation=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
     def to_html(self):
-        group = Query(ContactGroup).get(self.group_id)
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterDeclinedInvitation.internal_name="gdeclined"
 GroupFilterDeclinedInvitation.human_name=u"has declined invitation in group"
 
-    
+
 class GroupFilterNotDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        group = Query(ContactGroup).get(self.group_id)
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (%s) AND declined_invitation=True)' % ",".join([str(g.id) for g in group.self_and_subgroups]), {}
+        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
     def to_html(self):
-        group = Query(ContactGroup).get(self.group_id)
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
 GroupFilterNotDeclinedInvitation.internal_name="gnotdeclined"
 GroupFilterNotDeclinedInvitation.human_name=u"has not declined invitation in group"
 
-    
+
 class AllEventsNotReactedSince(Filter):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
@@ -1695,7 +1771,7 @@ class AllEventsNotReactedSince(Filter):
         return (unicode,) # TODO
 AllEventsNotReactedSince.internal_name="notreactedsince"
 AllEventsNotReactedSince.human_name=u"has not reacted to any invitation since"
-    
+
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
         return u'(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) < '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
@@ -1705,7 +1781,7 @@ class AllEventsReactionYearRatioLess(Filter):
         return (int,)
 AllEventsReactionYearRatioLess.internal_name="yearreactionratioless"
 AllEventsReactionYearRatioLess.human_name=u"1 year invitation reaction % less than"
-    
+
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
         return u'(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) > '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
@@ -1715,7 +1791,11 @@ class AllEventsReactionYearRatioMore(Filter):
         return (int,)
 AllEventsReactionYearRatioMore.internal_name="yearreactionratiomore"
 AllEventsReactionYearRatioMore.human_name=u"1 year invitation reaction % more than"
-    
+
+
+
+#######################################################
+
 class BaseBoundFilter(FilterHelper):
     """
     This is a full contact filter with both function and arguments
@@ -1745,12 +1825,14 @@ class BoundFilter(BaseBoundFilter):
 
     def to_html(self, indent_level=0):
         return self.indent(indent_level)+self.filter.to_html(*self.args)
-    
+
+
 class EmptyBoundFilter(BaseBoundFilter):
     def apply_filter_to_query(self, query):
         return query
     def to_html(self, indent_level=0):
         return self.indent(indent_level)+u"All contacts"
+
 
 class AndBoundFilter(BaseBoundFilter):
     def __init__(self, f1, f2):
@@ -1776,201 +1858,97 @@ class OrBoundFilter(BaseBoundFilter):
         return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"OR<br>"+ self.f2.to_html(indent_level+1)
 
 
-
 class ContactFieldValue(NgwModel):
+    oid = models.AutoField(primary_key=True)
+    contact = models.ForeignKey(Contact, related_name='values')
+    contact_field = models.ForeignKey(ContactField, related_name='values')
+    value = models.TextField(blank=True)
     class Meta:
-        verbose_name = u"contact field value"
+        db_table = u'contact_field_value'
 
     def __repr__(self):
-        return 'ContactFieldValue<"'+unicode(self.contact).encode("utf-8")+'", "'+unicode(self.field).encode('utf-8')+'", "'+unicode(self).encode('utf-8')+'">'
+        cf = self.contact_field
+        cf.polymorphic_upgrade()
+        return 'ContactFieldValue<"'+unicode(self.contact).encode("utf-8")+'", "'+unicode(cf).encode('utf-8')+'", "'+unicode(self).encode('utf-8')+'">'
 
     def __unicode__(self):
-        return self.field.format_value_unicode(self.value)
- 
+        cf = self.contact_field
+        cf.polymorphic_upgrade()
+        return cf.format_value_unicode(self.value)
+
     def as_html(self):
-        return self.field.format_value_html(self.value)
+        cf = self.contact_field
+        cf.polymorphic_upgrade()
+        return cf.format_value_html(self.value)
+
+
+class GroupInGroup(NgwModel):
+    oid = models.AutoField(primary_key=True)
+    father = models.ForeignKey(ContactGroup, related_name='direct_gig_subgroups')
+    subgroup = models.ForeignKey(ContactGroup, related_name='direct_gig_supergroups')
+    class Meta:
+        db_table = u'group_in_group'
+
+    def __repr__(self):
+        return 'GroupInGroup <%s %s>' % (self.subgroup_id, self.father_id)
+
 
 
 class ContactInGroup(NgwModel):
+    oid = models.AutoField(primary_key=True)
+    contact = models.ForeignKey(Contact)
+    group = models.ForeignKey(ContactGroup)
+    operator = models.BooleanField()
+    member = models.BooleanField()
+    invited = models.BooleanField()
+    declined_invitation = models.BooleanField()
+    note = models.TextField(blank=True)
     class Meta:
-        verbose_name = u"membership"
-    def __init__(self, contact_id, group_id):
-        NgwModel.__init__(self)
-        self.contact_id = contact_id
-        self.group_id = group_id
+        db_table = u'contact_in_group'
 
     def __repr__(self):
         return "ContactInGroup<%s,%s>"%(self.contact_id, self.group_id)
-    
+
     def __unicode__(self):
         return u"contact %(contactname)s in group %(groupname)s" % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
 
     @classmethod
     def get_class_navcomponent(cls):
         raise Exception("NotImplemented")
-    
+
     def get_navcomponent(self):
-        return Query(Contact).get(self.contact_id).get_navcomponent()
+        return self.contact.get_navcomponent()
+
+    def get_absolute_url(self):
+        return self.contact_group.get_absolute_url()+u"members/"+str(self.contact_id)+u"/membership"
 
 
 class ContactSysMsg(NgwModel):
-    def __init__(self, contact_id, message):
-        NgwModel.__init__(self)
-        self.contact_id = contact_id
-        self.message = message
-    def __repr__(self):
-        return "ContactSysMsg<%s,%s>"%(self.contact_id, self.message)
+    id = models.AutoField(primary_key=True)
+    contact = models.ForeignKey(Contact)
+    message = models.TextField()
+    class Meta:
+        db_table = u'contact_sysmsg'
 
 
 class ContactGroupNews(NgwModel):
+    id = models.AutoField(primary_key=True)
+    author = models.ForeignKey(Contact, null=True, blank=True)
+    contact_group = models.ForeignKey(ContactGroup, null=True, blank=True)
+    date = models.DateTimeField()
+    title = models.TextField()
+    text = models.TextField()
+
     class Meta:
+        db_table = u'contact_group_news'
+        ordering = '-date',
         verbose_name = u"news"
-        verbose_name_plural = u"news"
-    #def __repr__(self):
-    #    return "ContactGroupNews<%s,%s>"%(self.contact_id, self.message)
+        verbose_name_plural = 'news'
+
     def __unicode__(self):
-        return self.title + u" - " + ngw_date_format(self.date)
-        #CONFIG_DATE_FORMAT = '%a %d %b %Y' #'%Y %m %d'
-        #return self.title + u" - " + self.date.strftime(CONFIG_DATE_FORMAT)
-    
-    @staticmethod
-    def get_class_absolute_url(cls):
-        raise Error("Not implemented")
+        return self.title
 
     def get_absolute_url(self):
         return self.contact_group.get_absolute_url()+u"news/"+str(self.id)+"/"
 
-########################################################################
-# Map the class to the tables
-########################################################################
-#mapper = Session.mapper
-choice_mapper=mapper(Choice, choice_table)
-choice_group_mapper = mapper(ChoiceGroup, choice_group_table)
-contact_mapper = mapper(Contact, contact_table)
-contact_group_mapper = mapper(ContactGroup, contact_group_table)
-contact_in_group_mapper = mapper(ContactInGroup, contact_in_group_table)
-contact_field_mapper = mapper(ContactField, contact_field_table, polymorphic_on=contact_field_table.c.type)
-for cls in CONTACT_FIELD_TYPES_CLASSES:
-    mapper(cls, contact_field_table, inherits=ContactField, polymorphic_identity=cls.db_type_id)
-contact_field_value_mapper = mapper(ContactFieldValue, contact_field_value_table)
-contact_sysmsg_mapper = mapper(ContactSysMsg, contact_sysmsg_table)
-config_mapper = mapper(Config, config_table)
-log_mapper = mapper(Log, log_table)
-contact_group_news_mapper = mapper(ContactGroupNews, contact_group_news_table)
 
-#mapper(ContactInGroup,
-#    contact_in_group_table, properties={ \
-##    'choices': relation(Choice, primaryjoin=choice_table.c.choice_group_id==choice_group_table.c.id, cascade="save, update, merge, expunge, refresh, delete, expire"),
-#})
-########################################################################
-# Define the relations between the tables
-########################################################################
-
-#TODO backref=backref('parent', uselist=False)
-
-# ChoiceGroup <-> Choice
-choice_group_mapper.add_property('choices', relation(
-    Choice,
-    primaryjoin=choice_table.c.choice_group_id==choice_group_table.c.id,
-    cascade="delete",
-    passive_deletes=True))
-
-# ContactInGroup -> Contact
-contact_mapper.add_property('in_group', relation(
-    ContactInGroup,
-    primaryjoin=contact_table.c.id==contact_in_group_table.c.contact_id,
-    cascade="delete",
-    backref="contact",
-    passive_deletes=True))
-
-# ContactInGroup -> Group
-contact_group_mapper.add_property('in_group', relation(
-    ContactInGroup,
-    primaryjoin=contact_group_table.c.id==contact_in_group_table.c.group_id,
-    cascade="delete",
-    backref="group",
-    passive_deletes=True))
-# ContactGroup <-> Contact
-#contact_mapper.add_property('direct_groups', relation(
-#    ContactGroup,
-#    secondary=contact_in_group_table,
-#    lazy=True,
-#    cascade="none",
-#    backref='direct_contacts',
-#    passive_deletes=True))
-
-# ContactGroup <-> ContactGroup
-contact_group_mapper.add_property('direct_subgroups', relation(
-    ContactGroup, 
-    primaryjoin=contact_group_table.c.id==group_in_group_table.c.father_id,
-    secondary=group_in_group_table,
-    secondaryjoin=contact_group_table.c.id==group_in_group_table.c.subgroup_id,
-    lazy=True,
-    cascade="none", 
-    backref='direct_supergroups',
-    passive_deletes=True))
-
-# ContactField -> ContactGroup
-contact_group_mapper.add_property('contact_fields', relation(
-    ContactField,
-    primaryjoin=contact_group_table.c.id==contact_field_table.c.contact_group_id,
-    cascade="none",
-    backref='contact_group',
-    passive_deletes=True))
-
-# ContactField -> ChoiceGroup
-choice_group_mapper.add_property('contact_field', relation(
-    ContactField,
-    primaryjoin=choice_group_table.c.id==contact_field_table.c.choice_group_id,
-    cascade="delete", # TODO
-    backref='choice_group',
-    passive_deletes=True))
-
-# ContactFieldValue -> Contact
-contact_mapper.add_property('values', relation(
-    ContactFieldValue,
-    cascade="delete",
-    backref="contact",
-    passive_deletes=True))
-
-# ContactFieldValue -> ContactField
-contact_field_mapper.add_property('values', relation(
-    ContactFieldValue,
-    cascade="delete",
-    backref="field",
-    passive_deletes=True))
-
-# Contact <-> ContactSysMsg
-contact_mapper.add_property('sysmsg', relation(
-    ContactSysMsg,
-    primaryjoin=contact_sysmsg_table.c.contact_id==contact_table.c.id,
-    cascade="delete",
-    passive_deletes=True,
-    order_by=contact_sysmsg_table.c.id))
-
-# Log -> Contact
-contact_mapper.add_property('logs', relation(
-    Log,
-    primaryjoin=log_table.c.contact_id==contact_table.c.id,
-    cascade="delete",
-    backref='contact',
-    passive_deletes=True))
-
-# Contact <-> ContactGroupNews
-contact_mapper.add_property('news', relation(
-    ContactGroupNews,
-    primaryjoin=contact_group_news_table.c.author_id==contact_table.c.id,
-    cascade="all,delete",
-    backref='author',
-    passive_deletes=True,
-    order_by=desc(ContactGroupNews.date)))
-# ContactGroup <-> ContactGroupNews 
-contact_group_mapper.add_property('news', relation(
-    ContactGroupNews,
-    primaryjoin=contact_group_news_table.c.contact_group_id==contact_group_table.c.id,
-    cascade="all,delete",
-    backref='contact_group',
-    passive_deletes=True,
-    order_by=desc(ContactGroupNews.date)))
-
-print "Alchemy initialized"

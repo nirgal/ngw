@@ -4,7 +4,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
+    # ('Your Name', 'your_email@example.com'),
 )
 
 MANAGERS = ADMINS
@@ -84,30 +84,33 @@ STATICFILES_FINDERS = (
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '38n+sve^%%$5a35j%6zdabmlyk(eow*jbh^(r^k9w*g5c_p3p5'
+SECRET_KEY = ''
 
 # List of callables that know how to import templates from various sources.
-#TEMPLATE_LOADERS = (
-#    'django.template.loaders.filesystem.load_template_source',
-#    'django.template.loaders.app_directories.load_template_source',
-#)
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+#     'django.template.loaders.eggs.Loader',
+)
 
 MIDDLEWARE_CLASSES = (
-    'ngw.core.alchemy_middleware.TransactionMiddleware',
     'django.middleware.common.CommonMiddleware',
 #    'django.contrib.sessions.middleware.SessionMiddleware',
+#    'django.middleware.csrf.CsrfViewMiddleware',
 #    'django.contrib.auth.middleware.AuthenticationMiddleware', # set up request.user from session
     'ngw.core.basicauth.AuthenticationMiddleware', # set up request.user from basic auth
     'django.contrib.messages.middleware.MessageMiddleware',
-#    'django.middleware.doc.XViewMiddleware',
+    # Uncomment the next line for simple clickjacking protection:
+    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
 ROOT_URLCONF = 'ngw.urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates".
+    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
-    "/usr/lib/ngw/templates",
+    # Don't forget to use absolute paths, not relative paths.
+    '/usr/lib/ngw/templates',
 )
 
 INSTALLED_APPS = (
@@ -117,9 +120,13 @@ INSTALLED_APPS = (
 #    'django.contrib.sites',
     'django.contrib.messages',
 #    'django.contrib.staticfiles', # Don't enable here or '/' won't work, see urls.py
-#    'django.contrib.admin',
     'ngw.core',
     'ngw.extensions.phpbb',
+    'ngw.extensions.mailman',
+    # Uncomment the next line to enable the admin:
+    #'django.contrib.admin',
+    # Uncomment the next line to enable admin documentation:
+    #'django.contrib.admindocs',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -129,6 +136,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.media',
     'django.core.context_processors.request',
     'django.core.context_processors.static', # STATIC_URL available in templates
+    'django.core.context_processors.tz',
     'django.contrib.messages.context_processors.messages',
     'ngw.core.context_processors.banner',
     'ngw.core.context_processors.contactcount',
@@ -137,9 +145,47 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 AUTHENTICATION_BACKENDS = (
     'ngw.core.views.NgwAuthBackend',
 )
+#LOGIN_URL = '/login' # We are not using contrib.auth
+#LOGIN_REDIRECT_URL = '/' # We are not using contrib.auth
+
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.CryptPasswordHasher',
 )
+# We are not using sessions
+#SESSION_COOKIE_AGE = 600
+#SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
+
+# A sample logging configuration. The only tangible logging
+# performed by this configuration is to send an email to
+# the site admins on every HTTP 500 error when DEBUG=False.
+# See http://docs.djangoproject.com/en/dev/topics/logging for
+# more details on how to customize your logging configuration.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler'
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    }
+}
 
 APPEND_SLASH = False
 MESSAGE_STORAGE = 'ngw.core.messages.NgwMessageStorage'
+
+# Set to True to enable libreoffice mailings:
+#PASSWORD_LETTER = True

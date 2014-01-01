@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 from django.contrib.messages.storage.base import BaseStorage
-from ngw.core.alchemy_models import Session, Query, ContactSysMsg
+from ngw.core.models import ContactSysMsg
 
 class NgwMessageStorage(BaseStorage):
     """
@@ -16,14 +16,14 @@ class NgwMessageStorage(BaseStorage):
         except AttributeError:
             pass # No message if no user is loggued in
         else:
-            for sm in Query(ContactSysMsg).filter(ContactSysMsg.contact_id==contact_id):
-                messages.append(sm.message)
-                Session.delete(sm)
+            for csm in ContactSysMsg.objects.filter(contact_id=contact_id):
+                messages.append(csm.message)
+                csm.delete()
         return messages, True # Returned everything
     
     def _store(self, messages, response, *args, **kwargs):
         contact_id = self.request.user.id
         for message in messages:
-            ContactSysMsg(contact_id, message.message)
-        #N# Session.commit()
+            csm = ContactSysMsg(contact_id=contact_id, message=message)
+            csm.save()
         return [] # No unstored messages left

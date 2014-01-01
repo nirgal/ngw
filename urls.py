@@ -2,6 +2,11 @@ from django.conf.urls import patterns, include, url
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+
+# Uncomment the next two lines to enable the admin:
+#from django.contrib import admin
+#admin.autodiscover()
+
 groups_urlpatterns = patterns('',
     url(r'^add$', 'ngw.core.views.contactgroup_edit', {'id': None}),
     url(r'^(?P<id>\d+)/$', 'ngw.core.views.contactgroup_detail'),
@@ -24,7 +29,7 @@ groups_urlpatterns = patterns('',
     url(r'^add_contacts_to$', 'ngw.core.views.contactgroup_add_contacts_to'),
     url(r'^(?P<gid>\d+)/news/$', 'ngw.core.views.contactgroup_news'),
     url(r'^(?P<gid>\d+)/news/add$', 'ngw.core.views.contactgroup_news_edit', {'nid':None}),
-    url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='/contactgroups/%(gid)s/news/%(nid)s/edit')),
+    url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='/contactgroups/%(gid)s/news/%(nid)s/edit')), # FIXME for events
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', 'ngw.core.views.contactgroup_news_edit'),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.contactgroup_news_delete'),
     url(r'^(?P<id>\d+)/mailman$', 'ngw.core.views.contactgroup_mailman'),
@@ -37,6 +42,7 @@ urlpatterns = patterns('',
 
     url(r'^hook_change_password$', 'ngw.core.views.hook_change_password'),
 
+    #url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
     url(r'^logout$', 'ngw.core.views.logout'),
 
     url(r'^logs$', 'ngw.core.views.logs'),
@@ -80,6 +86,12 @@ urlpatterns = patterns('',
     url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choicegroup_delete'),
 
     url(r'^pks/lookup$', 'ngw.core.gpg.lookup'),
+
+    # Uncomment the admin/doc line below to enable admin documentation:
+    #url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+
+    # Uncomment the next line to enable the admin:
+    #url(r'^admin/', include(admin.site.urls)),
 )
 
 # Also serve static files in DEBUG mode:

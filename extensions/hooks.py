@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-print "in extensions.hooks"
-
 # __hooks_group_hierarchy_changed = []
 # def on_group_hierarchy_changed(func):
 #     " decodator for extension functions that wants to be notified of group/subgroups hierarchy changes "
@@ -55,7 +53,7 @@ def on_membership_changed(group_id):
 def membership_changed(user, contact, group):
     "Event dispatcher for membership change notification"
     print "Dispatching notification membership_changed", contact, group
-    for sg in group.self_and_supergroups:
+    for sg in group.get_self_and_supergroups():
         print "Dispatching notification membership_changed", contact, group, ": supergroup", sg
         for f in __hooks_membership_changed.get(sg.id, []):
             f(user, contact, sg)

@@ -1,11 +1,10 @@
 # -*- encoding: utf-8 -*-
 
-import pprint
 import urllib2
 from django.http import *
 from django.utils.safestring import mark_safe
 from ngw.core.views import *
-from ngw.core.alchemy_models import *
+from ngw.core.models import *
 
 def no_br(txt):
     " Replaces all spaces by non-breaking spaces"
@@ -188,7 +187,9 @@ def filter_parse_expression(lexer):
             elif lexem.type==FilterLexer.Lexem.Type.INT:
                 params.append(int(lexem.str))
                 
-        filter = Query(ContactField).get(field_id).get_filter_by_name(field_filter_name)
+        field = ContactField.objects.get(pk=field_id)
+        field.polymorphic_upgrade()
+        filter = field.get_filter_by_name(field_filter_name)
         return filter.bind(*params)
 
     elif lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"gfilter":
@@ -225,7 +226,7 @@ def filter_parse_expression(lexer):
             elif lexem.type==FilterLexer.Lexem.Type.INT:
                 params.append(int(lexem.str))
                 
-        filter = Query(ContactGroup).get(group_id).get_filter_by_name(group_filter_name)
+        filter = ContactGroup.objects.get(pk=group_id).get_filter_by_name(group_filter_name)
         return filter.bind(*params)
 
     elif lexem.type==FilterLexer.Lexem.Type.WORD and lexem.str==u"nfilter":
@@ -324,15 +325,15 @@ def contactsearch_get_fields(request, kind):
     body = u""
     if kind==u"field":
         body += u"Add a field: "
-        body += format_link_list([(u"javascript:select_field('name')", u"Name", u"field_name")]+[ (u"javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), u"field_field_"+unicode(cf.id)) for cf in Query(ContactField).order_by(ContactField.sort_weight)])
+        body += format_link_list([(u"javascript:select_field('name')", u"Name", u"field_name")]+[ (u"javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), u"field_field_"+unicode(cf.id)) for cf in ContactField.objects.order_by('sort_weight')])
     elif kind==u"group":
         body += u"Add a group: "
-        body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.date==None)])
+        body += format_link_list([ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in ContactGroup.objects.filter(date=None)])
     elif kind==u"event":
         body += u"Add an event: "
         body += format_link_list(
             [ (u"javascript:select_field('allevents')", no_br('All events'), u"field_allevents") ] +
-            [ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in Query(ContactGroup).filter(ContactGroup.date!=None)])
+            [ (u"javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), u"field_group_"+unicode(cg.id)) for cg in ContactGroup.objects.exclude(date=None)])
     elif kind==u"custom":
         body += u"Add a custom filter: "
         body += format_link_list([ (u"javascript:select_field('custom_user')", u"Custom filters for "+request.user.name, u'field_custom_user')])
@@ -367,13 +368,14 @@ def contactsearch_get_filters(request, field):
 
     elif field.startswith(u"field_"):
         field_id = int(field[len(u"field_"):])
-        field = Query(ContactField).get(field_id)
+        field = ContactField.objects.get(pk=field_id)
+        field.polymorphic_upgrade()
         body += u"Add a filter for field of type "+field.human_type_id+u" : "
         body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in field.get_filters() ])
 
     elif field.startswith(u"group_"):
         group_id = int(field[len(u"group_"):])
-        group = Query(ContactGroup).get(group_id)
+        group = ContactGroup.objects.get(pk=group_id)
         body += u"Add a filter for group/event : "
         body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in group.get_filters() ])
 
@@ -410,13 +412,14 @@ def contactsearch_get_params(request, field, filtername):
 
     elif field.startswith(u"field_"):
         field_id = int(field[len(u"field_"):])
-        field = Query(ContactField).get(field_id)
+        field = ContactField.objects.get(pk=field_id)
+        field.polymorphic_upgrade()
         filter = field.get_filter_by_name(filtername)
         filter_internal_beginin=u"ffilter("+unicode(field_id)+u","
 
     elif field.startswith(u"group_"):
         group_id = int(field[len(u"group_"):])
-        group = Query(ContactGroup).get(group_id)
+        group = ContactGroup.objects.get(pk=group_id)
         filter = group.get_filter_by_name(filtername)
         filter_internal_beginin=u"gfilter("+unicode(group_id)+u","
 

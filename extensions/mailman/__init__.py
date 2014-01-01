@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-#
-# Database settings is defined in ~/.pgpass
 
 import sys
 import os
 if __name__ != "__main__":
+    print "Mailman synchronisation extension for NGW loading."
     print >> sys.stderr, "Mailman synchronisation extension for NGW loading."
 
 if __name__ == "__main__":
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
-from ngw.core.alchemy_models import *
 from ngw.extensions import hooks
 
 def normalize_name(name):
@@ -66,7 +64,7 @@ def synchronise_group(cg, mailcontent):
     mailman_members = parse_who_result(mailcontent)
     unsubscribe_list = []
     subscribe_list = []
-    for c in cg.get_members():
+    for c in cg.get_all_members():
         email_base = c.get_fieldvalue_by_id(7)
         name_base = c.name
         if name_base == email_base:
@@ -131,7 +129,7 @@ if __name__ == "__main__":
 
     elif action == 'check':
         assert options.groupid is not None, "You must use -g option"
-        cg = Query(ContactGroup).get(options.groupid)
+        cg = ContactGroup.objects.get(pk=options.groupid)
         print "Synching", cg.name
         
         msg, unsubscribe_list, subscribe_list = synchronise_group(cg, filecontent)
@@ -156,4 +154,4 @@ if __name__ == "__main__":
         print >> sys.stderr, "unknow action" + action
 
 if __name__ != "__main__":
-    print >> sys.stderr, "PHPBB forum synchronisation extension for NGW loaded."
+    print >> sys.stderr, "mailman synchronisation extension for NGW loaded."

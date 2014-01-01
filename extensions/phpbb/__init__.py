@@ -12,8 +12,8 @@ from time import time as timestamp
 if __name__ == "__main__":
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
-from ngw.core.alchemy_models import *
 from ngw.extensions import hooks
+from ngw.core.models import *
 
 DATABASE_NAME=u'phpbb3'
 DEFAULT_USER_PERMISSIONS= u'00000000006xv1ssxs'
@@ -47,7 +47,7 @@ def get_phpbb_acl_dictionary():
     returns [ (10,55), (7,5), (8,6), (9,54), (11,56) ]
     this means phpbb usergroup 10 matches ngw group 55, phpbb group 7 matches ngw 5, and so on...
     """
-    strdict = Query(Config).get(u'phpbb acl dictionary').text
+    strdict = Config.objects.get(pk=u'phpbb acl dictionary').text
     if not strdict:
         return []
     return [ [ int(i) for i in pair.split(',')] for pair in strdict.split(';') ]
@@ -95,6 +95,7 @@ def sync_user_base(u):
         cfv.contact_id = u.id
         cfv.contact_field_id = FIELD_PHPBB_USERID
         cfv.value = str(phpbb_user_id)
+        cfv.save()
 
         sql = u"INSERT INTO phpbb_users (user_id, group_id, user_permissions, user_regdate, username, username_clean, user_email, user_lang, user_timezone, user_dst, user_dateformat) VALUES(%(phpbb_user_id)d, 2, '%(user_permissions)s', %(regtime)d, '%(f_login)s', '%(f_login)s', 'noemail', '%(lang)s', %(timezone)s, %(dst)s, '%(dateformat)s')" % {'phpbb_user_id': phpbb_user_id, 'user_permissions': DEFAULT_USER_PERMISSIONS, 'f_login': f_login, 'regtime': int(timestamp()), 'lang': get_config('default_lang'), 'timezone': get_config('board_timezone'), 'dst': get_config('board_dst'), 'dateformat': get_config('default_dateformat')}
         #print sql
@@ -110,7 +111,6 @@ def sync_user_base(u):
         set_config('newest_username', str(f_login))
         set_config('num_users', str(int(get_config('num_users'))+1))
         
-        Session.commit()
         get_common_db().commit()
 
     print "user ids are PHPBB", phpbb_user_id, "and NGW", u.id
@@ -204,7 +204,7 @@ def login_updated(user, contact):
     login = contact.get_fieldvalue_by_id(FIELD_LOGIN)
     if not login:
         print "Error: Can't synchronise user with empty login" # FIXME
-        contact.push_message("ERROR: Can't synchronise PHPBB user with empty login.")
+        user.push_message("ERROR: Can't synchronise PHPBB user with empty login.")
         return
 
     main_phpbb_changed = sync_user_all(contact)
@@ -238,11 +238,11 @@ if __name__ == "__main__":
         main_phpbb_changed = False
 
         if not options.user:
-            user_set = Query(ContactGroup).get(GROUP_USER_PHPBB).get_members()
+            user_set = ContactGroup.objects.get(pk=GROUP_USER_PHPBB).get_all_members()
         else:
             user_set = []
             for ngw_user_id in options.user:
-                u = Query(Contact).get(ngw_user_id)
+                u = Contact.objects.get(pk=ngw_user_id)
                 if not u:
                     print >> sys.stderr, "No user", ngw_user_id
                     sys.exit(1)

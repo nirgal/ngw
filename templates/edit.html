@@ -4,7 +4,7 @@
 {{form.media|safe}}
 {% comment %}{{ form.errors }}{% endcomment %}
 {% block preform %}{% endblock %}
-<form name=objchange method=post>
+<form name=objchange method=post>{% csrf_token %}
 <table class=objchange>
 {{ form.as_table }}
 </table>
