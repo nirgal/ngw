@@ -9,10 +9,12 @@ from functools import wraps
 from datetime import *
 import subprocess
 from itertools import chain
+from django.conf import settings
 from django.db import models, connection
 from django import forms
 from django.utils.encoding import smart_unicode
 from django.contrib.auth.hashers import make_password
+from django.http import Http404
 import decoratedstr # Nirgal external package
 from ngw.core.nav import * # TODO realy make from url
 from  ngw.core import gpg
@@ -222,13 +224,6 @@ class Contact(NgwModel):
         except ContactInGroup.DoesNotExist:
             return u''
 
-    def get_fieldvalue_by_id(self, field_id):
-        try:
-            cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
-        except ContactFieldValue.DoesNotExist:
-            return u""
-        return unicode(cfv)
-
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
         return u"<a href=\"%(id)d/\">%(name)s</a>" % { 'id': self.id, 'name': html.escape(self.name) }
@@ -236,15 +231,15 @@ class Contact(NgwModel):
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is a direct member of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND group_id=id AND member)' % self.id])
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND member)' % self.id])
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
-        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND member)' % self.id])
+        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=%s AND member)' % self.id])
 
     def get_directgroups_invited(self):
         "returns the list of groups that contact has been invited to."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND group_id=id AND invited)' % self.id])
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND invited)' % self.id])
 
 #    def get_allgroups_invited(self):
 #        "returns the list of groups that contact has been invited to."
@@ -259,7 +254,7 @@ class Contact(NgwModel):
 
     def get_directgroups_declinedinvitation(self):
         "returns the list of groups that contact has been invited to."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=%s AND group_id=id AND declined_invitation)' % self.id])
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND declined_invitation)' % self.id])
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
@@ -1295,9 +1290,9 @@ class PasswordContactField(ContactField):
     def get_form_fields(self):
         return None
     def formfield_value_to_db_value(self, value):
-        raise NotImplemented()
+        raise NotImplementedError()
     def db_value_to_formfield_value(self, value):
-        raise NotImplemented(u"Cannot reverse hash of a password")
+        raise NotImplementedError(u"Cannot reverse hash of a password")
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         return len(value)==13 # We are locked with crypt algorithm, right now
@@ -1520,15 +1515,6 @@ class FieldFilterINE(FieldFilterOp1):
         return (int,)
 FieldFilterINE.internal_name="ineq"
 FieldFilterINE.human_name=u"≠"
-
-
-class FieldFilterIEQ(FieldFilterOp1):
-    def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
-    def get_param_types(self):
-        return (int,)
-FieldFilterIEQ.internal_name="ieq"
-FieldFilterIEQ.human_name=u"="
 
 
 class FieldFilterILT(FieldFilterOp1):
@@ -1914,7 +1900,7 @@ class ContactInGroup(NgwModel):
 
     @classmethod
     def get_class_navcomponent(cls):
-        raise Exception("NotImplemented")
+        raise NotImplementedError()
 
     def get_navcomponent(self):
         return self.contact.get_navcomponent()

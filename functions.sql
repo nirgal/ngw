@@ -1,4 +1,11 @@
 -- Rigth now, NGW can only be installed from a backup. So you'll probably never user this file
+
+ALTER TABLE contact_field_value SET WITH OIDS;
+ALTER TABLE contact_in_group SET WITH OIDS;
+ALTER TABLE choice SET WITH OIDS;
+ALTER TABLE group_in_group SET WITH OIDS;
+
+
 DROP VIEW mailinginfo;
 DROP VIEW auth_users_ngw;
 DROP VIEW auth_users_bb;
@@ -6,6 +13,7 @@ DROP VIEW auth_users;
 DROP VIEW auth_user_groups;
 DROP VIEW apache_log;
 DROP FUNCTION self_and_subgroups(integer);
+DROP FUNCTION self_and_supergroups(integer);
 
 
 -- That function returns the set of subgroups of a given group
@@ -35,8 +43,11 @@ CREATE FUNCTION self_and_supergroups(integer) RETURNS SETOF integer AS $$
 $$ LANGUAGE SQL STABLE;
 
 
--- SELECT self_and_subgroups(group_id) FROM contact_in_group WHERE contact_id=1 AND member;
--- select contact_group.id, contact_group.name, array(select self_and_subgroups(id)) from contact_group;
+-- All the groups contact #1 is member of, either directly or by inheritance:
+-- SELECT DISTINCT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=1 AND member;
+
+-- All the groups and their subgroups
+-- SELECT contact_group.id, contact_group.name, array(select self_and_subgroups(id)) AS self_and_subgroups FROM contact_group;
 
 -- admins:
 -- select * from contact where exists (select * from contact_in_group where contact_id=contact.id and group_id in (select self_and_subgroups(8)));

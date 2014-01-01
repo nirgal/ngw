@@ -3,6 +3,7 @@
 from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
+from django.conf import settings
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
 from django.utils.safestring import mark_safe
 from django.shortcuts import render_to_response
@@ -12,7 +13,6 @@ from django import forms
 from django.contrib.auth.hashers import check_password
 #from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.conf import settings
 from ngw.core.basicauth import *
 from ngw.core.models import *
 from ngw.core.widgets import *
@@ -166,9 +166,6 @@ def unauthorized(request):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def home(request):
-    # Birthdates: select contact_id, substring(value from 6) as md from contact_field_value where contact_field_id=6 order by md;
-    print repr(hooks.__hooks_contact_field_changed)
-    print repr(hooks.__hooks_membership_changed)
     operator_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.group_id = contact_group.id AND contact_in_group.contact_id=%s AND operator)' % request.user.id])
     return render_to_response('home.html', {
         'title': 'Home page',
@@ -860,7 +857,7 @@ def contact_pass_letter(request, gid=None, cid=None):
     args['contact'] = contact
     if gid:
         try:
-            cg = Query(ContactGroup).get(gid)
+            cg = ContactGroup.objects.get(pk=gid)
         except ContactGroup.DoesNotExist:
             raise Http404()
         args['nav'] = cg.get_smart_navbar()
@@ -927,7 +924,7 @@ def contact_delete(request, gid=None, cid=None):
     else:
         next_url = reverse('ngw.core.views.contact_list')
     if gid:
-        cg = Query(ContactGroup).get(gid)
+        cg = ContactGroup.objects.get(pk=gid)
         base_nav = cg.get_smart_navbar()
         base_nav.add_component(u'members')
     else:
@@ -1260,7 +1257,7 @@ def contactgroup_members(request, gid, output_format=''):
 
     try:
         cg = ContactGroup.objects.get(pk=gid)
-    except ContactGroup.DoesNotExists:
+    except ContactGroup.DoesNotExist:
         raise Http404()
 
     display=request.REQUEST.get(u'display', None)
@@ -1450,7 +1447,7 @@ def contactgroup_edit(request, id):
         if id:
             try:
                 cg = ContactGroup.objects.get(pk=id)
-            except ContactGroup.DoesNotExists:
+            except ContactGroup.DoesNotExist:
                 raise Http404()
             initialdata = {
                 'name': cg.name,
@@ -2076,8 +2073,6 @@ def field_edit(request, id):
             field_renumber()
             messages.add_message(request, messages.SUCCESS, u'Field %s has been changed sucessfully.' % cf.name)
             if request.POST.get('_continue', None):
-                if not id:
-                    Session.commit() # We need the id rigth now!
                 return HttpResponseRedirect(cf.get_absolute_url()+u'edit')
             elif request.POST.get('_addanother', None):
                 return HttpResponseRedirect(cf.get_class_absolute_url()+u'add')
@@ -2297,8 +2292,6 @@ def choicegroup_edit(request, id=None):
         if form.is_valid():
             cg = form.save(cg, request)
             if request.POST.get('_continue', None):
-                if not id:
-                    Session.commit() # We need the id rigth now!
                 return HttpResponseRedirect(cg.get_absolute_url()+u'edit')
             elif request.POST.get('_addanother', None):
                 return HttpResponseRedirect(cg.get_class_absolute_url()+u'add')
