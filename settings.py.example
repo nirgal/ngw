@@ -121,8 +121,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
 #    'django.contrib.staticfiles', # Don't enable here or '/' won't work, see urls.py
     'ngw.core',
-    'ngw.extensions.phpbb',
-    'ngw.extensions.mailman',
+#    'ngw.extensions.phpbb',
+#    'ngw.extensions.mailman',
+#    'ngw.extensions.xmpp',
     # Uncomment the next line to enable the admin:
     #'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:

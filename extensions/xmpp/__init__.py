@@ -6,17 +6,19 @@
 if __name__ != "__main__":
     print "XMPP synchronisation extension for NGW loading."
 
-import sys, os, subprocess
-import psycopg2, psycopg2.extensions
-from time import time as timestamp
+import sys
+import os
+import psycopg2
+import psycopg2.extensions
 import logging
 if __name__ == "__main__":
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
-from ngw.core.alchemy_models import *
+from ngw.core.models import ( ContactFieldValue, ContactGroup,
+    FIELD_LOGIN, FIELD_PASSWORD_PLAIN )
 from ngw.extensions import hooks
 
-DATABASE_NAME=u'ejabberd'
+DATABASE_NAME = u'ejabberd'
     
 __db = None
 def get_common_db():
@@ -25,9 +27,9 @@ def get_common_db():
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
         for line in file(os.path.sep.join([os.getenv('HOME', '/var/www'), '.pgpass'])):
             line = line[:-1] # remove \n
-            host,port,user,database,password = line.split(':')
-            if database==DATABASE_NAME:
-                __db=psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+            host, port, user, database, password = line.split(':')
+            if database == DATABASE_NAME:
+                __db = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
                 __db.set_client_encoding('UTF8')
                 break
     return __db
@@ -43,7 +45,7 @@ def sync_user(u):
     f_login = u.get_fieldvalue_by_id(FIELD_LOGIN)
     logging.debug("Sync'ing %s", f_login)
     f_login = f_login.lower()
-    f_password = Query(ContactFieldValue).get((u.id, FIELD_PASSWORD_PLAIN)).value
+    f_password = ContactFieldValue.objects.get(contact_id=u.id, contact_field_id=FIELD_PASSWORD_PLAIN).value
     sql = u'INSERT INTO users (username, password) SELECT %s, %s WHERE NOT EXISTS (SELECT * FROM users WHERE username=%s)' 
     get_common_cursor().execute(sql, (f_login, f_password, f_login))
 
@@ -92,8 +94,8 @@ def clean_rostergroup(login):
 def subscribe_everyone(baseusername, allusers, exclude=None):
     logging.debug('subscribe_everyone for %s. Exclude=%s', baseusername, exclude)
     exclude = exclude or []
-    baseuser = Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.value==baseusername).first()
-    assert baseusername, 'No user %s' % baseusername
+    # Check baseusername exists:
+    baseuser = ContactFieldValue.objects.filter(contact_field_id=FIELD_LOGIN).filter(value=baseusername)
     baseusername = baseusername.lower()
     for user in allusers:
         username = user.get_fieldvalue_by_id(FIELD_LOGIN)
@@ -147,7 +149,7 @@ if __name__ == "__main__":
     
     logging.info("Sync'ing databases...")
    
-    user_set = Query(ContactGroup).get(GROUP_USER_XMPP).get_members()
+    user_set = ContactGroup.objects.get(pk=GROUP_USER_XMPP).get_all_members()
     login_set = set()
     for u in user_set:
         login = sync_user(u)
@@ -156,12 +158,11 @@ if __name__ == "__main__":
     remove_unknown(login_set)
 
     for l1l2 in options.add_subs:
-        l1,l2 = l1l2.split(u':')
-        login1 = Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.value==l1).first()
-        assert login1, "No user "+l1
-        login2 = Query(ContactFieldValue).filter(ContactFieldValue.contact_field_id==FIELD_LOGIN).filter(ContactFieldValue.value==l2).first()
-        assert login2, "No user "+l2
-        cross_subscribe(l1,l2)
+        l1, l2 = l1l2.split(u':')
+        # Check the logins do exists in the database
+        login1 = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=l1)
+        login2 = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=l2)
+        cross_subscribe(l1, l2)
     get_common_db().commit()
 
     if options.suball:
