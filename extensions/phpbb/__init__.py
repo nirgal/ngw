@@ -6,38 +6,44 @@
 if __name__ != "__main__":
     print "PHPBB forum synchronisation extension for NGW loading."
 
-import sys, os, subprocess
-import psycopg2, psycopg2.extensions
+import sys
+import os
+import subprocess
+import psycopg2
+import psycopg2.extensions
 from time import time as timestamp
-if __name__ == "__main__":
-    sys.path += [ '/usr/lib/' ]
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
-from ngw.extensions import hooks
-from ngw.core.models import *
 
-DATABASE_NAME=u'phpbb3'
-DEFAULT_USER_PERMISSIONS= u'00000000006xv1ssxs'
+if __name__ == "__main__":
+    # TODO: This should be called from top level manage.py
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ngw.settings")
+    sys.path.append('/usr/lib')
+from ngw.extensions import hooks
+from ngw.core.models import ( Config, Contact, ContactGroup, ContactFieldValue,
+    GROUP_USER_PHPBB, FIELD_LOGIN, FIELD_PHPBB_USERID )
+
+DATABASE_NAME = u'phpbb3'
+DEFAULT_USER_PERMISSIONS = u'00000000006xv1ssxs'
     
-__db = None
+__db__ = None
 def get_common_db():
-    global __db
-    if not __db:
+    global __db__
+    if not __db__:
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
         for line in file(os.path.sep.join([os.getenv('HOME', '/var/www'), '.pgpass'])):
             line = line[:-1] # remove \n
-            host,port,user,database,password = line.split(':')
-            if database==DATABASE_NAME:
-                __db=psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-                __db.set_client_encoding('UTF8')
+            host, port, user, database, password = line.split(':')
+            if database == DATABASE_NAME:
+                __db__=psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+                __db__.set_client_encoding('UTF8')
                 break
-    return __db
+    return __db__
 
-__cursor = None
+__cursor__ = None
 def get_common_cursor():
-    global __cursor
-    if not __cursor:
-        __cursor = get_common_db().cursor()
-    return __cursor
+    global __cursor__
+    if not __cursor__:
+        __cursor__ = get_common_db().cursor()
+    return __cursor__
 
 def get_phpbb_acl_dictionary():
     """
@@ -121,7 +127,7 @@ def sync_user_base(u):
     sql = u"SELECT username FROM phpbb_users WHERE user_id='%d'" % phpbb_user_id
     c.execute(sql)
     phpbb_username = c.fetchone()[0] # might crash if databases sync was lost
-    if phpbb_username!=f_login:
+    if phpbb_username != f_login:
         print "Changing PHPBB user name from", phpbb_username, "to", f_login
         sql = u"UPDATE phpbb_users SET (username, username_clean) = ( '%(sql_login)s', '%(sql_login)s' ) WHERE user_id=%(user_id)d" % { 'user_id': phpbb_user_id, 'sql_login': f_login.replace(u"'", u"''") }
         print sql
@@ -230,7 +236,7 @@ if __name__ == "__main__":
         parser.print_help(file=sys.stderr)
         sys.exit(1)
     
-    if args[0]=="full":
+    if args[0] == "full":
         print "Sync'ing databases..."
         
         # We don't want to delete phpbb users. We can revoke acces, but we don't want to remove existing messages.

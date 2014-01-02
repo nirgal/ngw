@@ -2,7 +2,7 @@
 
 import inspect
 from django import template
-from django.utils import html
+#from django.utils import html
 
 register = template.Library()
 
@@ -31,21 +31,21 @@ def ngw_datetime_format(dt):
 
 @register.filter
 def pagenumber_iterator(page, npages):
-    _VISIBLE_PAGES_AROUND=5
-    return range(max(1,page-_VISIBLE_PAGES_AROUND), min(npages, page+_VISIBLE_PAGES_AROUND)+1)
+    _VISIBLE_PAGES_AROUND = 5
+    return range(max(1, page-_VISIBLE_PAGES_AROUND), min(npages, page+_VISIBLE_PAGES_AROUND)+1)
 
 @register.filter
 def order_absmatch(order, column_index):
-    if order==u"":
+    if order == u'':
         return False
-    if order[0]!="-":
-        return int(order)==column_index
+    if order[0] != '-':
+        return int(order) == column_index
     else:
-        return int(order[1:])==column_index
+        return int(order[1:]) == column_index
 
 @register.filter
 def order_isreverted(order):
-    return order and order[0]=="-"
+    return order and order[0] == "-"
 
 @register.filter
 def get(object, index):
@@ -71,7 +71,7 @@ def ngw_display(obj, coldesc):
         result = obj.__getattribute__(attribute_name)
         if inspect.ismethod(result):
             result = result()
-        if result==None:
+        if result == None:
             return u""
         #result = html.escape(result)
 

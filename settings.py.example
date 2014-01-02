@@ -143,7 +143,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'ngw.core.views.NgwAuthBackend',
+    'ngw.core.authbackend.NgwAuthBackend',
 )
 #LOGIN_URL = '/login' # We are not using contrib.auth
 #LOGIN_REDIRECT_URL = '/' # We are not using contrib.auth

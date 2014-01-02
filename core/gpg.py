@@ -4,7 +4,7 @@
 GPG_HOME = "/var/lib/ngw/"
 
 import subprocess
-from django.http import *
+from django.http import HttpResponse
 
 # TODO: use --edit-key deluid to keep only one uid per key ?
 
@@ -72,7 +72,7 @@ def lookup(request):
         return HttpResponse(__build_content(title, 'pks request did not include a <b>search</b> property'), 'text/html', 200)
     if search.startswith('-'):
         return HttpResponse(__build_content(title, 'pks request had an invalid <b>search</b> value'), 'text/html', 403)
-    if op=='get':
+    if op == 'get':
         title = 'Public Key Server -- Get "'+search+'"'
         if request.GET.get('exact', '')=='on':
             title += ' exact'

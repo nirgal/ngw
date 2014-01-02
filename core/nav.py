@@ -2,7 +2,9 @@
 
 from django.utils import html
 
-class navbar(object):
+# TODO: We should realy make all the calls to Navbar from url.py
+
+class Navbar(object):
     '''
     This is a breadcrumb builder, to build a navigation bar.
     '''
@@ -16,17 +18,17 @@ class navbar(object):
             self.components.append(arg)
         else:
             assert isinstance(arg, unicode)
-            self.components.append((arg,arg))
+            self.components.append((arg, arg))
         
     def geturl(self, idx):
         return u''.join(self.components[i][0]+u'/' for i in range(idx+1))
 
     def getfragment(self, idx):
         result = u''
-        if idx!=len(self.components)-1:
+        if idx != len(self.components)-1:
             result += u'<a href="'+self.geturl(idx)+'\">'
         result += html.escape(self.components[idx][1])
-        if idx!=len(self.components)-1:
+        if idx != len(self.components)-1:
             result += u'</a>'
         return result
 

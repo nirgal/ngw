@@ -1,6 +1,8 @@
 # This file is unused
 from django.contrib import admin
-from ngw.core.models import *
+from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
+    ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
+    ContactFieldValue, ContactSysMsg )
 
 admin.site.register(Config)
 

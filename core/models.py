@@ -4,23 +4,23 @@
 # into your database.
 
 import os
-import sys
 from functools import wraps
-from datetime import *
+from datetime import datetime, timedelta
 import subprocess
-from itertools import chain
 from django.conf import settings
 from django.db import models, connection
 from django import forms
-from django.utils.encoding import smart_unicode
 from django.contrib.auth.hashers import make_password
+from django.utils import http
 from django.http import Http404
+from django.utils import html
 import decoratedstr # Nirgal external package
-from ngw.core.nav import * # TODO realy make from url
-from  ngw.core import gpg
+from ngw.core.nav import Navbar
+from ngw.core import gpg
 from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #FIXME
+from ngw.core.widgets import NgwCalendarWidget, NgwCheckboxSelectMultiple
+#from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
 from ngw.extensions import hooks
-from ngw.core.widgets import NgwCalendarWidget
 
 GROUP_EVERYBODY = 1 # Group "Contact"
 GROUP_USER = 2      # With login & password
@@ -169,7 +169,7 @@ class ChoiceGroup(NgwModel):
             q = q.order_by('value')
         return [(c.key, c.value) for c in q]
 
-    get_link_name=NgwModel.get_absolute_url
+    get_link_name = NgwModel.get_absolute_url
 
 
 class Contact(NgwModel):
@@ -291,7 +291,7 @@ class Contact(NgwModel):
         Field can be either a field id or a ContactField object.
         New value must be text.
         """
-        if type(field)==int:
+        if type(field) == int:
             field_id = field
             field = ContactField.objects.get(pk=field)
         else:
@@ -300,7 +300,7 @@ class Contact(NgwModel):
         try:
             cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
             if newvalue:
-                if cfv.value!=newvalue:
+                if cfv.value != newvalue:
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
                     log.target = u"Contact "+unicode(self.id)
@@ -388,8 +388,8 @@ class Contact(NgwModel):
         ContactSysMsg(contact_id=self.id, message=message).save()
 
     def generate_login(self):
-        words=self.name.split(" ")
-        login=[w[0].lower() for w in words[:-1] ] + [ words[-1].lower() ]
+        words = self.name.split(" ")
+        login = [w[0].lower() for w in words[:-1] ] + [ words[-1].lower() ]
         login = "".join(login)
         login = decoratedstr.remove_decoration(login)
         def get_logincfv_by_login(ref_uid, login):
@@ -402,12 +402,12 @@ class Contact(NgwModel):
                                    .exclude(contact_id=ref_uid)
         if not get_logincfv_by_login(self.id, login):
             return login
-        i=1;
-        while (True):
-            altlogin = login+unicode(i)
+        i = 1
+        while True:
+            altlogin = login + unicode(i)
             if not get_logincfv_by_login(self.id, altlogin):
                 return altlogin
-            i+=1
+            i += 1
 
     @staticmethod
     def generate_password():
@@ -424,7 +424,7 @@ class Contact(NgwModel):
         self.set_fieldvalue(user, FIELD_PASSWORD, hash)
         self.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
         if new_password_status is None:
-            if self.id==user.id:
+            if self.id == user.id:
                 self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'3') # User defined
             else:
                 self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1') # Generated
@@ -436,7 +436,7 @@ class Contact(NgwModel):
     def check_login_created(logged_contact):
         # Create login for all members of GROUP_USER
         cursor = connection.cursor()
-        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {"GROUP_USER":GROUP_USER,"FIELD_LOGIN":FIELD_LOGIN})
+        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {"GROUP_USER":GROUP_USER, "FIELD_LOGIN":FIELD_LOGIN})
         for uid, in cursor:
             contact = Contact.objects.get(pk=uid)
             new_login = contact.generate_login()
@@ -486,7 +486,7 @@ class ContactGroup(NgwModel):
         return 'ContactGroup<'+str(self.id)+self.name.encode('utf-8')+'>'
 
     def get_smart_navbar(self):
-        nav = navbar()
+        nav = Navbar()
         if self.date:
             nav.add_component(("events", "Events"))
         else:
@@ -933,18 +933,18 @@ class RibField(forms.Field):
             return None
         iso_value = ""
         for c in value:
-            if c==" ":
+            if c == " ":
                 continue # ignore spaces
-            if c>="0" and c<="9":
+            if c >= "0" and c <= "9":
                 iso_value += c
                 continue
             c = c.upper()
-            if c>="A" and c<="I":
+            if c >= "A" and c <= "I":
                 iso_value += str(ord(c)-64)
-            elif c>="J" and c<="R":
+            elif c >= "J" and c <= "R":
                 iso_value += str(ord(c)-73)
-            elif c>="S" and c<="Z":
-                iso_value+= str(ord(c)-81)
+            elif c >= "S" and c <= "Z":
+                iso_value += str(ord(c)-81)
             else:
                 raise forms.ValidationError("Illegal character "+c)
 
@@ -958,37 +958,8 @@ class RibField(forms.Field):
         return value
 
 
-# That class is a clone of forms.CheckboxSelectMultiple
-# It only adds an extra class=multiplechoice to the <ul>
-class NgwCheckboxSelectMultiple(forms.SelectMultiple):
-    def render(self, name, value, attrs=None, choices=()):
-        if value is None: value = []
-        has_id = attrs and attrs.has_key('id')
-        final_attrs = self.build_attrs(attrs, name=name)
-        output = [u'<ul class=multiplechoice>']
-        str_values = set([smart_unicode(v) for v in value]) # Normalize to strings.
-        for i, (option_value, option_label) in enumerate(chain(self.choices, choices)):
-            # If an ID attribute was given, add a numeric index as a suffix,
-            # so that the checkboxes don't all have the same ID attribute.
-            if has_id:
-                final_attrs = dict(final_attrs, id='%s_%s' % (attrs['id'], i))
-            cb = forms.CheckboxInput(final_attrs, check_test=lambda value: value in str_values)
-            option_value = smart_unicode(option_value)
-            rendered_cb = cb.render(name, option_value)
-            output.append(u'<li><label>%s %s</label></li>' % (rendered_cb, html.escape(smart_unicode(option_label))))
-        output.append(u'</ul>')
-        return u'\n'.join(output)
-
-    def id_for_label(self, id_):
-        # See the comment for RadioSelect.id_for_label()
-        if id_:
-            id_ += '_0'
-        return id_
-    id_for_label = classmethod(id_for_label)
-
-
-CONTACT_FIELD_TYPES_CLASSES={}
-CONTACT_FIELD_TYPES_CHOICES=[]
+CONTACT_FIELD_TYPES_CLASSES = {}
+CONTACT_FIELD_TYPES_CHOICES = []
 def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     CONTACT_FIELD_TYPES_CLASSES[db_type_id] = cls
     CONTACT_FIELD_TYPES_CHOICES.append((db_type_id, human_type_id))
@@ -1047,7 +1018,7 @@ class ContactField(NgwModel):
     def polymorphic_upgrade(self):
         self.__class__ = CONTACT_FIELD_TYPES_CLASSES[self.type]
 
-    get_link_name=NgwModel.get_absolute_url
+    get_link_name = NgwModel.get_absolute_url
 
     @polymorphicCF
     def str_type_base(self):
@@ -1092,6 +1063,8 @@ class ContactField(NgwModel):
     @polymorphicCF
     def get_filter_by_name(self, name):
         return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
+
+
 
 class TextContactField(ContactField):
     class Meta:
@@ -1254,7 +1227,7 @@ class MultipleChoiceContactField(ContactField):
             return u"Error"
         txt_choice_list = []
         for cid in value.split(u","):
-            if cid==u"":
+            if cid == u"":
                 txt_choice_list.append( "default" ) # this should never occur
                 continue
             try:
@@ -1326,7 +1299,6 @@ class AllEventsMetaField(object):
     def get_filter_by_name(cls, name):
         return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
 
-
 class FilterHelper(object):
     @staticmethod
     def sqlescape_where_params(query, where, **kargs):
@@ -1341,9 +1313,9 @@ class FilterHelper(object):
         # integers are expanded inline
         params_where = { }
         params_sql = { }
-        for k,v in kargs.iteritems():
+        for k, v in kargs.iteritems():
             #print k,"=",v
-            auto_param_name=u"autoparam_"+unicode(len(query.params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
+            auto_param_name = u"autoparam_"+unicode(len(query.params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
             if isinstance(v, unicode):
                 params_where[ k ] = u'%('+auto_param_name+k+u')s'
                 params_sql[ auto_param_name+k ] = v
@@ -1389,8 +1361,8 @@ class NameFilterStartsWith(Filter):
 
     def get_param_types(self):
         return (unicode,)
-NameFilterStartsWith.internal_name="startswith"
-NameFilterStartsWith.human_name=u"has a word starting with"
+NameFilterStartsWith.internal_name = "startswith"
+NameFilterStartsWith.human_name = u"has a word starting with"
 
 class FieldFilter(Filter):
     """ Helper abstract class for field filters """
@@ -1398,7 +1370,7 @@ class FieldFilter(Filter):
         self.field_id = field_id
 
 class FieldFilterOp0(FieldFilter):
-    """ Helper abstract class for field filters that takes not parameter """
+    """ Helper abstract class for field filters that takes no parameter """
     def to_html(self):
         field = ContactField.objects.get(pk=self.field_id)
         field.polymorphic_upgrade()
@@ -1423,8 +1395,8 @@ class FieldFilterStartsWith(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', { 'field_id':self.field_id, 'value1':u"^"+value, 'value2':u" "+value}
     def get_param_types(self):
         return (unicode,)
-FieldFilterStartsWith.internal_name="startswith"
-FieldFilterStartsWith.human_name=u"has a word starting with"
+FieldFilterStartsWith.internal_name = "startswith"
+FieldFilterStartsWith.human_name = u"has a word starting with"
 
 
 class FieldFilterEQ(FieldFilterOp1):
@@ -1432,8 +1404,8 @@ class FieldFilterEQ(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (unicode,)
-FieldFilterEQ.internal_name="eq"
-FieldFilterEQ.human_name=u"="
+FieldFilterEQ.internal_name = "eq"
+FieldFilterEQ.human_name = u"="
 
 
 class FieldFilterNEQ(FieldFilterOp1):
@@ -1441,8 +1413,8 @@ class FieldFilterNEQ(FieldFilterOp1):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterNEQ.internal_name="neq"
-FieldFilterNEQ.human_name=u"≠"
+FieldFilterNEQ.internal_name = "neq"
+FieldFilterNEQ.human_name = u"≠"
 
 
 class FieldFilterLE(FieldFilterOp1):
@@ -1450,8 +1422,8 @@ class FieldFilterLE(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterLE.internal_name="le"
-FieldFilterLE.human_name=u"≤"
+FieldFilterLE.internal_name = "le"
+FieldFilterLE.human_name = u"≤"
 
 
 class FieldFilterGE(FieldFilterOp1):
@@ -1459,8 +1431,8 @@ class FieldFilterGE(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterGE.internal_name="ge"
-FieldFilterGE.human_name=u"≥"
+FieldFilterGE.internal_name = "ge"
+FieldFilterGE.human_name = u"≥"
 
 
 class FieldFilterLIKE(FieldFilterOp1):
@@ -1468,8 +1440,8 @@ class FieldFilterLIKE(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterLIKE.internal_name="like"
-FieldFilterLIKE.human_name=u"SQL LIKE"
+FieldFilterLIKE.internal_name = "like"
+FieldFilterLIKE.human_name = u"SQL LIKE"
 
 
 class FieldFilterILIKE(FieldFilterOp1):
@@ -1477,8 +1449,8 @@ class FieldFilterILIKE(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterILIKE.internal_name="ilike"
-FieldFilterILIKE.human_name=u"SQL ILIKE"
+FieldFilterILIKE.internal_name = "ilike"
+FieldFilterILIKE.human_name = u"SQL ILIKE"
 
 
 class FieldFilterNull(FieldFilterOp0):
@@ -1486,8 +1458,8 @@ class FieldFilterNull(FieldFilterOp0):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
     def get_param_types(self):
         return ()
-FieldFilterNull.internal_name="null"
-FieldFilterNull.human_name=u"is undefined"
+FieldFilterNull.internal_name = "null"
+FieldFilterNull.human_name = u"is undefined"
 
 
 class FieldFilterNotNull(FieldFilterOp0):
@@ -1495,8 +1467,8 @@ class FieldFilterNotNull(FieldFilterOp0):
         return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
     def get_param_types(self):
         return ()
-FieldFilterNotNull.internal_name="notnull"
-FieldFilterNotNull.human_name=u"is defined"
+FieldFilterNotNull.internal_name = "notnull"
+FieldFilterNotNull.human_name = u"is defined"
 
 
 class FieldFilterIEQ(FieldFilterOp1):
@@ -1504,8 +1476,8 @@ class FieldFilterIEQ(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterIEQ.internal_name="ieq"
-FieldFilterIEQ.human_name=u"="
+FieldFilterIEQ.internal_name = "ieq"
+FieldFilterIEQ.human_name = u"="
 
 
 class FieldFilterINE(FieldFilterOp1):
@@ -1513,8 +1485,8 @@ class FieldFilterINE(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterINE.internal_name="ineq"
-FieldFilterINE.human_name=u"≠"
+FieldFilterINE.internal_name = "ineq"
+FieldFilterINE.human_name = u"≠"
 
 
 class FieldFilterILT(FieldFilterOp1):
@@ -1522,8 +1494,8 @@ class FieldFilterILT(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterILT.internal_name="ilt"
-FieldFilterILT.human_name=u"<"
+FieldFilterILT.internal_name = "ilt"
+FieldFilterILT.human_name = u"<"
 
 
 class FieldFilterIGT(FieldFilterOp1):
@@ -1531,8 +1503,8 @@ class FieldFilterIGT(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterIGT.internal_name="igt"
-FieldFilterIGT.human_name=u">"
+FieldFilterIGT.internal_name = "igt"
+FieldFilterIGT.human_name = u">"
 
 
 class FieldFilterILE(FieldFilterOp1):
@@ -1540,8 +1512,8 @@ class FieldFilterILE(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterILE.internal_name="ile"
-FieldFilterILE.human_name=u"≤"
+FieldFilterILE.internal_name = "ile"
+FieldFilterILE.human_name = u"≤"
 
 
 class FieldFilterIGE(FieldFilterOp1):
@@ -1549,8 +1521,8 @@ class FieldFilterIGE(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterIGE.internal_name="ige"
-FieldFilterIGE.human_name=u"≥"
+FieldFilterIGE.internal_name = "ige"
+FieldFilterIGE.human_name = u"≥"
 
 
 class FieldFilterAGE_GE(FieldFilterOp1):
@@ -1558,8 +1530,8 @@ class FieldFilterAGE_GE(FieldFilterOp1):
         return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterAGE_GE.internal_name="agege"
-FieldFilterAGE_GE.human_name=u"Age (years) ≥"
+FieldFilterAGE_GE.internal_name = "agege"
+FieldFilterAGE_GE.human_name = u"Age (years) ≥"
 
 
 class FieldFilterVALID_GT(FieldFilterOp1):
@@ -1567,8 +1539,8 @@ class FieldFilterVALID_GT(FieldFilterOp1):
         return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterVALID_GT.internal_name="validitygt"
-FieldFilterVALID_GT.human_name=u"date until event ≥"
+FieldFilterVALID_GT.internal_name = "validitygt"
+FieldFilterVALID_GT.human_name = u"date until event ≥"
 
 
 class FieldFilterFUTURE(FieldFilterOp0):
@@ -1576,8 +1548,8 @@ class FieldFilterFUTURE(FieldFilterOp0):
         return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', { 'field_id': self.field_id }
     def get_param_types(self):
         return ()
-FieldFilterFUTURE.internal_name="future"
-FieldFilterFUTURE.human_name=u"In the future"
+FieldFilterFUTURE.internal_name = "future"
+FieldFilterFUTURE.human_name = u"In the future"
 
 
 class FieldFilterChoiceEQ(FieldFilterOp1):
@@ -1592,8 +1564,8 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
         field = ContactField.objects.get(self.field_id)
         field.polymorphic_upgrade()
         return (field.choice_group,)
-FieldFilterChoiceEQ.internal_name="ceq"
-FieldFilterChoiceEQ.human_name=u"="
+FieldFilterChoiceEQ.internal_name = "ceq"
+FieldFilterChoiceEQ.human_name = u"="
 
 
 class FieldFilterChoiceNEQ(FieldFilterOp1):
@@ -1608,8 +1580,8 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
         field = ContactField.objects.get(self.field_id)
         field.polymorphic_upgrade()
         return (field.choice_group,)
-FieldFilterChoiceNEQ.internal_name="cneq"
-FieldFilterChoiceNEQ.human_name=u"≠"
+FieldFilterChoiceNEQ.internal_name = "cneq"
+FieldFilterChoiceNEQ.human_name = u"≠"
 
 
 class FieldFilterMultiChoiceHAS(FieldFilterOp1):
@@ -1624,8 +1596,8 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
         field = ContactField.objects.get(self.field_id)
         field.polymorphic_upgrade()
         return (field.choice_group,)
-FieldFilterMultiChoiceHAS.internal_name="mchas"
-FieldFilterMultiChoiceHAS.human_name=u"contains"
+FieldFilterMultiChoiceHAS.internal_name = "mchas"
+FieldFilterMultiChoiceHAS.human_name = u"contains"
 
 
 class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
@@ -1640,8 +1612,8 @@ class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
         field = ContactField.objects.get(self.field_id)
         field.polymorphic_upgrade()
         return (field.choice_group,)
-FieldFilterMultiChoiceHASNOT.internal_name="mchasnot"
-FieldFilterMultiChoiceHASNOT.human_name=u"doesn't contain"
+FieldFilterMultiChoiceHASNOT.internal_name = "mchasnot"
+FieldFilterMultiChoiceHASNOT.human_name = u"doesn't contain"
 
 
 
@@ -1658,8 +1630,8 @@ class GroupFilterIsMember(Filter):
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
-GroupFilterIsMember.internal_name="memberof"
-GroupFilterIsMember.human_name=u"is member of group"
+GroupFilterIsMember.internal_name = "memberof"
+GroupFilterIsMember.human_name = u"is member of group"
 
 
 class GroupFilterIsNotMember(Filter):
@@ -1675,8 +1647,8 @@ class GroupFilterIsNotMember(Filter):
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
-GroupFilterIsNotMember.internal_name="notmemberof"
-GroupFilterIsNotMember.human_name=u"is not member of group"
+GroupFilterIsNotMember.internal_name = "notmemberof"
+GroupFilterIsNotMember.human_name = u"is not member of group"
 
 
 class GroupFilterIsInvited(Filter):
@@ -1692,8 +1664,8 @@ class GroupFilterIsInvited(Filter):
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
-GroupFilterIsInvited.internal_name="ginvited"
-GroupFilterIsInvited.human_name=u"has been invited in group"
+GroupFilterIsInvited.internal_name = "ginvited"
+GroupFilterIsInvited.human_name = u"has been invited in group"
 
 
 class GroupFilterIsNotInvited(Filter):
@@ -1709,8 +1681,8 @@ class GroupFilterIsNotInvited(Filter):
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
-GroupFilterIsNotInvited.internal_name="gnotinvited"
-GroupFilterIsNotInvited.human_name=u"has not been invited in group"
+GroupFilterIsNotInvited.internal_name = "gnotinvited"
+GroupFilterIsNotInvited.human_name = u"has not been invited in group"
 
 
 class GroupFilterDeclinedInvitation(Filter):
@@ -1726,8 +1698,8 @@ class GroupFilterDeclinedInvitation(Filter):
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
-GroupFilterDeclinedInvitation.internal_name="gdeclined"
-GroupFilterDeclinedInvitation.human_name=u"has declined invitation in group"
+GroupFilterDeclinedInvitation.internal_name = "gdeclined"
+GroupFilterDeclinedInvitation.human_name = u"has declined invitation in group"
 
 
 class GroupFilterNotDeclinedInvitation(Filter):
@@ -1743,8 +1715,8 @@ class GroupFilterNotDeclinedInvitation(Filter):
         return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
     def get_param_types(self):
         return ()
-GroupFilterNotDeclinedInvitation.internal_name="gnotdeclined"
-GroupFilterNotDeclinedInvitation.human_name=u"has not declined invitation in group"
+GroupFilterNotDeclinedInvitation.internal_name = "gnotdeclined"
+GroupFilterNotDeclinedInvitation.human_name = u"has not declined invitation in group"
 
 
 class AllEventsNotReactedSince(Filter):
@@ -1755,8 +1727,8 @@ class AllEventsNotReactedSince(Filter):
         return self.__class__.human_name+u" \""+unicode(value)+u"\""
     def get_param_types(self):
         return (unicode,) # TODO
-AllEventsNotReactedSince.internal_name="notreactedsince"
-AllEventsNotReactedSince.human_name=u"has not reacted to any invitation since"
+AllEventsNotReactedSince.internal_name = "notreactedsince"
+AllEventsNotReactedSince.human_name = u"has not reacted to any invitation since"
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
@@ -1765,8 +1737,8 @@ class AllEventsReactionYearRatioLess(Filter):
         return self.__class__.human_name+u" \""+unicode(value)+u"\""
     def get_param_types(self):
         return (int,)
-AllEventsReactionYearRatioLess.internal_name="yearreactionratioless"
-AllEventsReactionYearRatioLess.human_name=u"1 year invitation reaction % less than"
+AllEventsReactionYearRatioLess.internal_name = "yearreactionratioless"
+AllEventsReactionYearRatioLess.human_name = u"1 year invitation reaction % less than"
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
@@ -1775,8 +1747,8 @@ class AllEventsReactionYearRatioMore(Filter):
         return self.__class__.human_name+u" \""+unicode(value)+u"\""
     def get_param_types(self):
         return (int,)
-AllEventsReactionYearRatioMore.internal_name="yearreactionratiomore"
-AllEventsReactionYearRatioMore.human_name=u"1 year invitation reaction % more than"
+AllEventsReactionYearRatioMore.internal_name = "yearreactionratiomore"
+AllEventsReactionYearRatioMore.human_name = u"1 year invitation reaction % more than"
 
 
 
@@ -1893,7 +1865,7 @@ class ContactInGroup(NgwModel):
         db_table = u'contact_in_group'
 
     def __repr__(self):
-        return "ContactInGroup<%s,%s>"%(self.contact_id, self.group_id)
+        return "ContactInGroup<%s,%s>" % (self.contact_id, self.group_id)
 
     def __unicode__(self):
         return u"contact %(contactname)s in group %(groupname)s" % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
