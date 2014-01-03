@@ -34,7 +34,7 @@ def login_required():
     def decorator(f):
         @wraps(f)
         def wrapper(request, *args, **kargs):
-            if 'HTTP_AUTHORIZATION' not in request.META:
+            if not hasattr(request, 'user'):
                 return HttpResponseAuthenticate(u'Password required')
             return f(request, *args, **kargs)
         return wrapper
@@ -48,15 +48,17 @@ class AuthenticationMiddleware:
     Warning, if no user is logged in, user will NOT be set (unlike django)
     """
     def process_request(self, request):
-        if 'HTTP_AUTHORIZATION' not in request.META:
+        if request.path == u'/logout':
+            return # special hack, so that //logout@exemple.net/logout will work
+        try:
+            auth = request.META.pop('HTTP_AUTHORIZATION')
+            # key gets removed, so it's not displayed in error 500 handler
+        except KeyError:
             return # It is ok not to be logged in (logout view, ...)
-        auth = request.META['HTTP_AUTHORIZATION']
         assert auth.startswith('Basic '), "Invalid authentification scheme"
         username, password = base64.decodestring(auth[len('Basic '):]).split(':', 2)
         username = unicode(username, 'utf-8', 'replace')
         password = unicode(password, 'utf-8', 'replace')
-        if request.path == u'/logout':
-            return # special hack, so that //logout@exemple.net/logout will work
         user = auth_authenticate(username=username, password=password)
         if not user:
             return HttpResponseAuthenticate("Invalid username/password")
