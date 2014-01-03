@@ -386,6 +386,7 @@ class ContactQuerySet(RawQuerySet):
 
     def __iter__(self):
         self.compile()
+        print repr(self.raw_query), repr(self.params)
         for x in RawQuerySet.__iter__(self):
             yield x
 
@@ -409,7 +410,6 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
             q.add_field(fieldid)
 
             cf = ContactField.objects.get(pk=fieldid)
-            cf.polymorphic_upgrade()
             if format == u'html':
                 cols.append( (cf.name, cf.format_value_html, prop, prop) )
             else:
@@ -554,7 +554,6 @@ class ContactEditForm(forms.Form):
 
         # Add all extra fields
         for cf in fields:
-            cf.polymorphic_upgrade()
             f = cf.get_form_fields()
             if f:
                 self.fields[unicode(cf.id)] = f
@@ -649,7 +648,6 @@ def contact_edit(request, gid=None, cid=None):
 
             # 2/ In ContactFields
             for cf in fields:
-                cf.polymorphic_upgrade()
                 if cf.type == FTYPE_PASSWORD:
                     continue
                 #cfname = cf.name
@@ -682,14 +680,12 @@ def contact_edit(request, gid=None, cid=None):
 
             for cfv in contact.values.all():
                 cf = cfv.contact_field
-                cf.polymorphic_upgrade()
                 if cf.type != FTYPE_PASSWORD:
                     initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
             form = ContactEditForm(id=cid, initial=initialdata, request_user=request.user, contactgroup=cg)
 
         else:
             for cf in ContactField.objects.all():
-                cf.polymorphic_upgrade()
                 if cf.default:
                     if cf.type == FTYPE_DATE and cf.default == u'today':
                         initialdata[unicode(cf.id)] = date.today()
@@ -1900,15 +1896,18 @@ class FieldEditForm(forms.Form):
         contacttypes = ContactGroup.objects.filter(field_group=True)
         self.fields['contact_group'].widget.choices = [ (g.id, g.name) for g in contacttypes ]
 
-        self.fields['type'].widget.choices = CONTACT_FIELD_TYPES_CHOICES
-        js_test_type_has_choice = u' || '.join([ u"this.value=='"+cls.db_type_id+"'" for cls in CONTACT_FIELD_TYPES_CLASSES.values() if cls.has_choice ])
+        self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id)
+            for cls in ContactField.types_classes.itervalues() ] # TODO: Sort
+        js_test_type_has_choice = u' || '.join([ u"this.value=='"+cls.db_type_id+"'"
+            for cls in ContactField.types_classes.values()
+            if cls.has_choice ])
         self.fields['type'].widget.attrs = { 'onchange': mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choicegroup'].disabled = 0; } else { document.forms['objchange']['choicegroup'].value = ''; document.forms['objchange']['choicegroup'].disabled = 1; }") }
 
         self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
 
         t = self.data.get('type', '') or self.initial.get('type', '')
         if t:
-            cls_contact_field = get_contact_field_type_by_dbid(t)
+            cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
         else:
             cls_contact_field = TextContactField
         if cls_contact_field.has_choice:
@@ -1933,7 +1932,7 @@ class FieldEditForm(forms.Form):
         t = self.cleaned_data.get('type', None)
         if t:
             # system fields have type disabled, this is ok
-            cls_contact_field = get_contact_field_type_by_dbid(t)
+            cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
             if cls_contact_field.has_choice and not self.cleaned_data['choicegroup']:
                 raise forms.ValidationError('You must select a choice group for that type.')
         return self.cleaned_data
@@ -1966,27 +1965,22 @@ def field_edit(request, id):
         if form.is_valid():
             data = form.clean()
             if not id:
-                cf = ContactField()
-
-                cf.name = data['name']
-                cf.hint = data['hint']
-                cf.contact_group_id = int(data['contact_group'])
-                cf.type = data['type']
-                if data['choicegroup']:
-                    cf.choice_group_id = int(data['choicegroup'])
-                else:
-                    cf.choice_group_id = None
-                cf.sort_weight = int(data['move_after'])
+                cf = ContactField(name = data['name'],
+                                  hint = data['hint'],
+                                  contact_group_id = int(data['contact_group']),
+                                  type = data['type'],
+                                  choice_group_id = data['choicegroup'] and int(data['choicegroup']) or None,
+                                  sort_weight = int(data['move_after']))
                 cf.save()
             else:
                 if not cf.system and (cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']):
                     deletion_details = []
-                    cls = get_contact_field_type_by_dbid(data['type'])
+                    newcls = ContactField.get_contact_field_type_by_dbid(data['type'])
                     choice_group_id = None
                     if data['choicegroup']:
                         choice_group_id = int(data['choicegroup'])
                     for cfv in cf.values.all():
-                        if not cls.validate_unicode_value(cfv.value, choice_group_id):
+                        if not newcls.validate_unicode_value(cfv.value, choice_group_id):
                             deletion_details.append((cfv.contact, cfv))
 
                     if deletion_details:
@@ -2005,7 +1999,7 @@ def field_edit(request, id):
                             return render_to_response('type_change.html', args, RequestContext(request))
 
                     cf.type = data['type']
-                    cf.polymorphic_upgrade()
+                    cf.polymorphic_upgrade() # This is needed after changing type
                     cf.save()
                 cf.name = data['name']
                 cf.hint = data['hint']

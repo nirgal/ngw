@@ -958,43 +958,25 @@ class RibField(forms.Field):
         return value
 
 
-CONTACT_FIELD_TYPES_CLASSES = {}
-CONTACT_FIELD_TYPES_CHOICES = []
 def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
-    CONTACT_FIELD_TYPES_CLASSES[db_type_id] = cls
-    CONTACT_FIELD_TYPES_CHOICES.append((db_type_id, human_type_id))
+    ContactField.types_classes[db_type_id] = cls
     cls.db_type_id = db_type_id
     cls.human_type_id = human_type_id
     cls.has_choice = has_choice
     return cls
 
-def get_contact_field_type_by_dbid(db_type_id):
-    return CONTACT_FIELD_TYPES_CLASSES[db_type_id]
-
-
-# decorator that changes ContactField class type
-# FIXME doesn't work on first call (log password)
-def polymorphicCF(f):
-    @wraps(f)
-    def wrapper(self, *args, **kargs):
-        if self.__class__ == ContactField:
-            #print "dir(f) = ", dir(f)
-            #print "funcname =", f.__name__
-            self.polymorphic_upgrade()
-            # upgrade f too:
-            #fname = f.__name__
-            #f = self.__getattribute__(fname)
-        return f(self, *args, **kargs)
-    return wrapper
-
-
 
 
 class ContactField(NgwModel):
+    # This is a polymorphic class:
+    # When it's ready, it's "upgraded" into one of its subclass
+    # See polymorphic_upgrade()
+    types_classes = {}
+
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     hint = models.TextField(blank=True)
-    type = models.CharField(max_length=15, choices=CONTACT_FIELD_TYPES_CHOICES)
+    type = models.CharField(max_length=15)
     contact_group = models.ForeignKey(ContactGroup)
     sort_weight = models.IntegerField()
     choice_group = models.ForeignKey(ChoiceGroup, null=True, blank=True)
@@ -1004,7 +986,6 @@ class ContactField(NgwModel):
         db_table = u'contact_field'
         ordering = 'sort_weight',
 
-    # Overide url for all derived classes
     @classmethod
     def get_class_absolute_url(cls):
         return u"/contactfields/"
@@ -1015,36 +996,37 @@ class ContactField(NgwModel):
     def __unicode__(self):
         return self.name
 
+    @staticmethod
+    def get_contact_field_type_by_dbid(db_type_id):
+        return ContactField.types_classes[db_type_id]
+
     def polymorphic_upgrade(self):
-        self.__class__ = CONTACT_FIELD_TYPES_CLASSES[self.type]
+        """
+        That special method is called to "upgrade" a base abstract ContactType
+        into one of its subtypes.
+        """
+        self.__class__ = self.types_classes[self.type]
 
     get_link_name = NgwModel.get_absolute_url
 
-    @polymorphicCF
     def str_type_base(self):
         return self.human_type_id
 
-    @polymorphicCF
     def type_as_html(self):
         return self.str_type_base()
 
-    @polymorphicCF
     def format_value_unicode(self, value):
         return value
 
-    @polymorphicCF
     def format_value_html(self, value):
         return self.format_value_unicode(value)
 
-    @polymorphicCF
     def get_form_fields(self):
         raise NotImplementedError()
 
-    @polymorphicCF
     def formfield_value_to_db_value(self, value):
         return unicode(value)
 
-    @polymorphicCF
     def db_value_to_formfield_value(self, value):
         return value
 
@@ -1052,18 +1034,21 @@ class ContactField(NgwModel):
     def validate_unicode_value(cls, value, choice_group_id=None):
         return True
 
-    @polymorphicCF
     def get_filters_classes(self):
         return (FieldFilterNull, FieldFilterNotNull,)
 
-    @polymorphicCF
     def get_filters(self):
         return [ cls(self.id) for cls in self.get_filters_classes() ]
 
-    @polymorphicCF
     def get_filter_by_name(self, name):
         return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
 
+
+def contact_field_initialized_my_manager(sender, **kwargs):
+    field = kwargs['instance']
+    assert field.type is not None, u"Polymorphic abstract class must be created with type defined"
+    field.polymorphic_upgrade()
+models.signals.post_init.connect(contact_field_initialized_my_manager, ContactField)
 
 
 class TextContactField(ContactField):
@@ -1373,14 +1358,12 @@ class FieldFilterOp0(FieldFilter):
     """ Helper abstract class for field filters that takes no parameter """
     def to_html(self):
         field = ContactField.objects.get(pk=self.field_id)
-        field.polymorphic_upgrade()
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name
 
 class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
-        field.polymorphic_upgrade()
         result = u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" "
         if isinstance(value, unicode):
             value = u'"'+value+u'"'
@@ -1557,12 +1540,10 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
         return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterChoiceEQ.internal_name = "ceq"
 FieldFilterChoiceEQ.human_name = u"="
@@ -1573,12 +1554,10 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterChoiceNEQ.internal_name = "cneq"
 FieldFilterChoiceNEQ.human_name = u"≠"
@@ -1589,12 +1568,10 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
         return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterMultiChoiceHAS.internal_name = "mchas"
 FieldFilterMultiChoiceHAS.human_name = u"contains"
@@ -1605,12 +1582,10 @@ class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
         return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
-        field.polymorphic_upgrade()
         return (field.choice_group,)
 FieldFilterMultiChoiceHASNOT.internal_name = "mchasnot"
 FieldFilterMultiChoiceHASNOT.human_name = u"doesn't contain"
@@ -1826,17 +1801,14 @@ class ContactFieldValue(NgwModel):
 
     def __repr__(self):
         cf = self.contact_field
-        cf.polymorphic_upgrade()
         return 'ContactFieldValue<"'+unicode(self.contact).encode("utf-8")+'", "'+unicode(cf).encode('utf-8')+'", "'+unicode(self).encode('utf-8')+'">'
 
     def __unicode__(self):
         cf = self.contact_field
-        cf.polymorphic_upgrade()
         return cf.format_value_unicode(self.value)
 
     def as_html(self):
         cf = self.contact_field
-        cf.polymorphic_upgrade()
         return cf.format_value_html(self.value)
 
 

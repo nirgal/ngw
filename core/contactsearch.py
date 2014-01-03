@@ -196,7 +196,6 @@ def filter_parse_expression(lexer):
                 params.append(int(lexem.str))
                 
         field = ContactField.objects.get(pk=field_id)
-        field.polymorphic_upgrade()
         filter = field.get_filter_by_name(field_filter_name)
         return filter.bind(*params)
 
@@ -377,7 +376,6 @@ def contactsearch_get_filters(request, field):
     elif field.startswith(u"field_"):
         field_id = int(field[len(u"field_"):])
         field = ContactField.objects.get(pk=field_id)
-        field.polymorphic_upgrade()
         body += u"Add a filter for field of type "+field.human_type_id+u" : "
         body += format_link_list([ (u"javascript:select_filtername('"+filter.internal_name+u"')", no_br(filter.human_name), u"filter_"+filter.internal_name) for filter in field.get_filters() ])
 
@@ -421,7 +419,6 @@ def contactsearch_get_params(request, field, filtername):
     elif field.startswith(u"field_"):
         field_id = int(field[len(u"field_"):])
         field = ContactField.objects.get(pk=field_id)
-        field.polymorphic_upgrade()
         filter = field.get_filter_by_name(filtername)
         filter_internal_beginin = u"ffilter("+unicode(field_id)+u","
 
