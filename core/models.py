@@ -187,43 +187,6 @@ class Contact(NgwModel):
     def is_authenticated(self):
         return True
 
-    def str_member_of(self, gids):
-        #gids = [ g.id for g in cg.self_and_subgroups ]
-        gid = gids[0]
-        try:
-            cig = ContactInGroup.objects.get(contact_id=self.id, group_id=gid)
-            if cig.operator:
-                return u"Operator"
-            elif cig.member:
-                return u"Member"
-            elif cig.invited:
-                return u"Invited"
-            elif cig.declined_invitation:
-                return u"Declined"
-            else:
-                return u"ERROR: invalid contact_in_group flag combinaision"
-        except ContactInGroup.DoesNotExist:
-            pass
-
-        if ContactInGroup.objects.filter(contact_id=self.id, member=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % gid]):
-            return u"Member"+u" "+AUTOMATIC_MEMBER_INDICATOR
-        if ContactInGroup.objects.filter(contact_id=self.id, invited=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % gid]):
-            return u"Invited"+u" "+AUTOMATIC_MEMBER_INDICATOR
-        if ContactInGroup.objects.filter(contact_id=self.id, declined_invitation=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % gid]):
-            return u"Declined"+u" "+AUTOMATIC_MEMBER_INDICATOR
-        else:
-            return u"no"
-
-    def str_member_of_note(self, gid):
-        try:
-            cig = ContactInGroup.objects.get(contact_id=self.id, group_id=gid)
-            note = cig.note
-            if not note:
-                return u''
-            return note
-        except ContactInGroup.DoesNotExist:
-            return u''
-
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
         return u"<a href=\"%(id)d/\">%(name)s</a>" % { 'id': self.id, 'name': html.escape(self.name) }

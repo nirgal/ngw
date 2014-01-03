@@ -46,15 +46,15 @@ $$ LANGUAGE SQL STABLE;
 -- All the groups contact #1 is member of, either directly or by inheritance:
 -- SELECT DISTINCT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=1 AND member;
 
--- All the groups and their subgroups
+-- All the groups and their subgroups:
 -- SELECT contact_group.id, contact_group.name, array(select self_and_subgroups(id)) AS self_and_subgroups FROM contact_group;
 
--- admins:
+-- Members of group #8:
 -- select * from contact where exists (select * from contact_in_group where contact_id=contact.id and group_id in (select self_and_subgroups(8)));
 
 -- SELECT contact_group.id, self_and_subgroups(contact_group.id) as sg FROM contact_group;
 
--- SELECT * FROM contact_in_group, (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id ORDER BY contact_id;
+-- SELECT contact_id, group_id, member, invited, declined_invitation, group_tree.* FROM contact_in_group, (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id ORDER BY contact_id;
 --  contact_id | group_id | operator | member | invited | joined_group_id | sub_group_id 
 -- ------------+----------+----------+--------+---------+-----------------+--------------
 --           1 |        8 | f        | t      | f       |               8 |            8

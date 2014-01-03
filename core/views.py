@@ -286,46 +286,69 @@ def logs(request):
 #
 #######################################################################
 
-def str_member_of_factory(contact_group):
-    #gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: c.str_member_of((contact_group.id,))
+def membership_to_text(contact_with_extra_fields, group_id):
+    # memberships = []
+    # if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
+    #     memberships.append(u"Member")
+    # if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
+    #     memberships.append(u"Invited")
+    # if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
+    #     memberships.append(u"Declined")
+    # if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
+    #     memberships.append(u"Member" + u" " + AUTOMATIC_MEMBER_INDICATOR)
+    # if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
+    #     memberships.append(u"Invited" + u" " + AUTOMATIC_MEMBER_INDICATOR)
+    # if getattr(contact_with_extra_fields, 'group_%s_D' % group_id):
+    #     memberships.append(u"Declined" + u" " + AUTOMATIC_MEMBER_INDICATOR)
+    # return u", ".join(memberships)
+    if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
+        return u"Member"
+    if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
+        return u"Invited"
+    if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
+        return u"Declined"
+    if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
+        return u"Member" + u" " + AUTOMATIC_MEMBER_INDICATOR
+    if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
+        return u"Invited" + u" " + AUTOMATIC_MEMBER_INDICATOR
+    return u''
 
-def str_member_of_note_factory(contact_group):
-    return lambda c: c.str_member_of_note(contact_group.id)
 
-def str_extendedmembership_factory(contact_group, base_url):
-    def str_extendedmembership(contact_group, gids, c):
-        try:
-            cig = ContactInGroup.objects.get(contact_id=c.id, group_id=gids[0])
-        except ContactInGroup.DoesNotExist:
-            cig = None
-        params = {}
-        params['cid'] = c.id
-        params['membership_str'] = c.str_member_of(gids)
-        if cig and cig.note:
-            params['note'] = u'<br>'+html.escape(cig.note)
-        else:
-            params['note'] = u''
-        params['membership_url'] = contact_group.get_absolute_url()+u'members/'+unicode(c.id)+u'/membership'
-        params['title'] = c.name+u' in group '+contact_group.unicode_with_date()
-        params['base_url'] = base_url
 
-        if cig and cig.member:
-            params['is_member_checked'] = u' checked'
-        else:
-            params['is_member_checked'] = u''
-        if cig and cig.invited:
-            params['is_invited_checked'] = u' checked'
-        else:
-            params['is_invited_checked'] = u''
-        if cig and cig.declined_invitation:
-            params['has_declined_invitation_checked'] = u' checked'
-        else:
-            params['has_declined_invitation_checked'] = u''
+def membership_extended_widget(contact_with_extra_fields, contact_group, base_url):
+    attrib_prefix = 'group_%s_' % contact_group.id
+    member = getattr(contact_with_extra_fields, attrib_prefix+'m')
+    invited = getattr(contact_with_extra_fields, attrib_prefix+'i')
+    declined = getattr(contact_with_extra_fields, attrib_prefix+'d')
+    note = getattr(contact_with_extra_fields, attrib_prefix+'note')
 
-        return  u'<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s<div class=membershipextra id="membership_%(cid)d"><a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>' % params
-    #gids = [ g.id for g in contact_group.self_and_subgroups ]
-    return lambda c: str_extendedmembership(contact_group, (contact_group.id,), c)
+    params = {}
+    params['cid'] = contact_with_extra_fields.id
+    params['membership_str'] = membership_to_text(contact_with_extra_fields, contact_group.id)
+    if note:
+        params['note'] = u'<br>'+html.escape(note)
+    else:
+        params['note'] = u''
+    params['membership_url'] = contact_group.get_absolute_url()+u'members/'+unicode(contact_with_extra_fields.id)+u'/membership'
+    params['title'] = contact_with_extra_fields.name+u' in group '+contact_group.unicode_with_date()
+    params['base_url'] = base_url
+
+    if member:
+        params['is_member_checked'] = u' checked'
+    else:
+        params['is_member_checked'] = u''
+    if invited:
+        params['is_invited_checked'] = u' checked'
+    else:
+        params['is_invited_checked'] = u''
+    if declined:
+        params['has_declined_invitation_checked'] = u' checked'
+    else:
+        params['has_declined_invitation_checked'] = u''
+
+    return  u'<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s<div class=membershipextra id="membership_%(cid)d"><a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>' % params
+
+
 
 class ContactQuerySet(RawQuerySet):
     def __init__(self, *args, **kargs):
@@ -339,6 +362,23 @@ class ContactQuerySet(RawQuerySet):
         fieldid = str(fieldid)
         self.qry_from.append('LEFT JOIN contact_field_value AS cfv%(fid)s ON (contact.id = cfv%(fid)s.contact_id AND cfv%(fid)s.contact_field_id = %(fid)s)' % {'fid':fieldid})
         self.qry_fields[DISP_FIELD_PREFIX+fieldid] = 'cfv%(fid)s.value' % {'fid':fieldid}
+
+    def add_group(self, group_id):
+        # TODO: crashes is group is there more than one (viewed from a group with that group selected as a field)
+        # Add fields for direct membership
+        self.qry_fields['group_%s_m' % group_id] = 'cig_%s.member' % group_id
+        self.qry_fields['group_%s_i' % group_id] = 'cig_%s.invited' % group_id
+        self.qry_fields['group_%s_d' % group_id] = 'cig_%s.declined_invitation' % group_id
+        self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
+
+        # Add fields for indirect membership
+        self.qry_fields['group_%s_M' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND member)" % { 'gid': group_id }
+        self.qry_fields['group_%s_I' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND invited)" % { 'gid': group_id }
+        self.qry_fields['group_%s_D' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND declined_invitation)" % { 'gid': group_id }
+
+    def add_group_withnote(self, group_id):
+        self.add_group(group_id)
+        self.qry_fields['group_%s_note' % group_id] = 'cig_%s.note' % group_id
 
     def filter(self, extrawhere):
         self.qry_where.append(extrawhere)
@@ -357,7 +397,7 @@ class ContactQuerySet(RawQuerySet):
 
     def compile(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS %s' % (v, k) for k, v in self.qry_fields.iteritems()])
+        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in self.qry_fields.iteritems()])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE ( ' + ') AND ('.join(self.qry_where) + ' )'
@@ -386,9 +426,10 @@ class ContactQuerySet(RawQuerySet):
 
     def __iter__(self):
         self.compile()
-        print repr(self.raw_query), repr(self.params)
+        #print repr(self.raw_query), repr(self.params)
         for x in RawQuerySet.__iter__(self):
             yield x
+
 
 def contact_make_query_with_fields(fields, current_cg=None, base_url=None, format=u'html'):
     q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
@@ -403,7 +444,15 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
             cg = ContactGroup.objects.get(pk=groupid)
-            cols.append( (cg.name, None, str_member_of_factory(cg), None) )
+            q.add_group(groupid)
+            #cols.append( ('group_%s_m' % groupid, None, 'group_%s_m' % groupid, None))
+            #cols.append( ('group_%s_i' % groupid, None, 'group_%s_i' % groupid, None))
+            #cols.append( ('group_%s_d' % groupid, None, 'group_%s_d' % groupid, None))
+            #cols.append( ('group_%s_M' % groupid, None, 'group_%s_M' % groupid, None))
+            #cols.append( ('group_%s_I' % groupid, None, 'group_%s_I' % groupid, None))
+            #cols.append( ('group_%s_D' % groupid, None, 'group_%s_D' % groupid, None))
+            cols.append( (cg.name, None, lambda c: membership_to_text(c, groupid), None) )
+
         elif prop.startswith(DISP_FIELD_PREFIX):
             fieldid = prop[len(DISP_FIELD_PREFIX):]
 
@@ -418,13 +467,13 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
             raise ValueError(u'Invalid field '+prop)
 
     if current_cg is not None:
-        #cols.append( ('Status', 0, str_action_of_factory(current_cg), None) )
         assert base_url
+        q.add_group_withnote(current_cg.id)
         if format == u'html':
-            cols.append( ('Status', 0, str_extendedmembership_factory(current_cg, base_url), None) )
+            cols.append( ('Status', None, lambda c: membership_extended_widget(c, current_cg, base_url), None) )
         else:
-            cols.append( ('Status', 0, str_member_of_factory(current_cg), None) )
-            cols.append( ('Note', 0, str_member_of_note_factory(current_cg), None) )
+            cols.append( ('Status', None, lambda c: membership_to_text(c, current_cg.id), None) )
+            cols.append( ('Note', None, 'group_%s_note' % current_cg.id, None) )
     return q, cols
 
 
@@ -598,7 +647,7 @@ def contact_edit(request, gid=None, cid=None):
         form = ContactEditForm(id=cid, data=request.POST, contactgroup=cg, request_user=request.user) # FIXME
         if form.is_valid():
             data = form.clean()
-            # print 'saving', repr(form.data)
+            #print 'saving', repr(form.data)
 
             # record the values
 
@@ -1317,6 +1366,7 @@ def contactgroup_members(request, gid, output_format=''):
     ####
     args['nav'] = cg.get_smart_navbar()
     args['nav'].add_component(u'members')
+
     return query_print_entities(request, 'group_detail.html', args)
 
 
