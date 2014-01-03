@@ -4,7 +4,7 @@ from itertools import chain
 from django.conf import settings
 from django import forms
 from django.utils.safestring import mark_safe
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import force_unicode
 from django.utils import html
 
 class NgwCalendarWidget(forms.TextInput):
@@ -39,27 +39,24 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
 class NgwCheckboxSelectMultiple(forms.SelectMultiple):
     def render(self, name, value, attrs=None, choices=()):
         if value is None: value = []
-        has_id = attrs and attrs.has_key('id')
+        has_id = attrs and 'id' in attrs
         final_attrs = self.build_attrs(attrs, name=name)
         output = [u'<ul class=multiplechoice>']
-        str_values = set([smart_unicode(v) for v in value]) # Normalize to strings.
+        # Normalize to strings
+        str_values = set([force_unicode(v) for v in value])
         for i, (option_value, option_label) in enumerate(chain(self.choices, choices)):
             # If an ID attribute was given, add a numeric index as a suffix,
             # so that the checkboxes don't all have the same ID attribute.
             if has_id:
                 final_attrs = dict(final_attrs, id='%s_%s' % (attrs['id'], i))
+                label_for = u' for="%s"' % final_attrs['id']
+            else:
+                label_for = ''
+
             cb = forms.CheckboxInput(final_attrs, check_test=lambda value: value in str_values)
-            option_value = smart_unicode(option_value)
+            option_value = force_unicode(option_value)
             rendered_cb = cb.render(name, option_value)
-            output.append(u'<li><label>%s %s</label></li>' % (rendered_cb, html.escape(smart_unicode(option_label))))
+            option_label = html.conditional_escape(force_unicode(option_label))
+            output.append(u'<li><label%s>%s %s</label></li>' % (label_for, rendered_cb, option_label))
         output.append(u'</ul>')
-        return u'\n'.join(output)
-
-    def id_for_label(self, id_):
-        # See the comment for RadioSelect.id_for_label()
-        if id_:
-            id_ += '_0'
-        return id_
-    id_for_label = classmethod(id_for_label)
-
-
+        return mark_safe(u'\n'.join(output))
