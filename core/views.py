@@ -4,10 +4,10 @@ from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
@@ -49,13 +49,14 @@ def ngw_base_url(request):
         scheme = 'https'
     else:
         scheme = 'http'
-    #FIXME empty scheme is enough, remove that
     return scheme+'://'+request.META['HTTP_HOST']+'/'
 
 
 def logout(request):
     #need to call auth_logout(request) when using auth contrib module
-    return render_to_response('message.html', {'message': mark_safe('Have a nice day!<br><a href="' + ngw_base_url(request) + '">Login again</a>') }, RequestContext(request))
+    return render_to_response('message.html', {
+        'message': mark_safe(u'Have a nice day!<br><a href="%(url)s">Login again</a>' % { 'url': ngw_base_url(request) })
+        }, RequestContext(request))
 
 
 # decorator for requests
@@ -80,9 +81,10 @@ def get_display_fields(user):
     result = []
     default_fields = user.get_fieldvalue_by_id(FIELD_COLUMNS)
     if not default_fields:
-        default_fields = Config.objects.get(pk='columns')
-        if default_fields:
-            default_fields = default_fields.text
+        try:
+            default_fields = Config.objects.get(pk='columns').text
+        except Config.DoesNotExist:
+            pass
     if not default_fields:
         default_fields = u''
     for fname in default_fields.split(u','):
@@ -225,9 +227,6 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
         return unauthorized(request)
 
     title = u'Please confirm deletetion'
-
-    if not o:
-        raise Http404()
 
     confirm = request.GET.get('confirm', u'')
     if confirm:
@@ -538,10 +537,8 @@ def contact_detail(request, gid=None, cid=None):
     cid = int(cid)
     if cid != request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    try:
-        c = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
+
+    c = get_object_or_404(Contact, pk=cid)
 
     rows = []
     for cf in c.get_allfields():
@@ -554,7 +551,7 @@ def contact_detail(request, gid=None, cid=None):
     args = {}
     args['title'] = u'Details for '+unicode(c)
     if gid:
-        cg = ContactGroup.objects.get(pk=gid)
+        cg = get_object_or_404(ContactGroup, pk=gid)
         #args['title'] += u' in group '+cg.unicode_with_date()
         args['contact_group'] = cg
         args['nav'] = cg.get_smart_navbar()
@@ -574,11 +571,9 @@ def contact_vcard(request, gid=None, cid=None):
     cid = int(cid)
     if cid != request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    try:
-        c = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
-    return HttpResponse(c.vcard().encode('utf-8'), mimetype='text/x-vcard')
+    
+    contact = get_object_or_404(Contact, pk=cid)
+    return HttpResponse(contact.vcard().encode('utf-8'), mimetype='text/x-vcard')
 
 
 
@@ -590,10 +585,7 @@ class ContactEditForm(forms.Form):
         contactid = id # FIXME
 
         if contactid:
-            try:
-                contact = Contact.objects.get(pk=contactid)
-            except Contact.DoesNotExist:
-                raise Http404()
+            contact = get_object_or_404(Contact, pk=contactid)
             fields = contact.get_allfields()
         elif contactgroup:
             contactgroupids = [ g.id for g in contactgroup.get_self_and_supergroups() ]
@@ -626,19 +618,13 @@ def contact_edit(request, gid=None, cid=None):
         assert gid, 'Missing required parameter groupid'
 
     if gid: # edit/add in a group
-        try:
-            cg = ContactGroup.objects.get(pk=gid)
-        except ContactGroup.DoesNotExist:
-            raise Http404()
+        cg = get_object_or_404(ContactGroup, pk=gid)
     else: # edit out of a group
         cg = None
 
     objtype = Contact
     if cid:
-        try:
-            contact = Contact.objects.get(pk=cid)
-        except Contact.DoesNotExist:
-            raise Http404()
+        contact = get_object_or_404(Contact, pk=cid)
         title = u'Editing '+unicode(contact)
     else:
         title = u'Adding a new '+objtype.get_class_verbose_name()
@@ -786,10 +772,7 @@ def contact_pass(request, gid=None, cid=None):
     cid = int(cid)
     if cid != request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    try:
-        contact = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
+    contact = get_object_or_404(Contact, pk=cid)
     args = {}
     args['title'] = 'Change password'
     args['contact'] = contact
@@ -801,7 +784,7 @@ def contact_pass(request, gid=None, cid=None):
             contact.set_password(request.user, password)
             messages.add_message(request, messages.SUCCESS, u'Password has been changed sucessfully!')
             if gid:
-                cg = ContactGroup.objects.get(pk=gid)
+                cg = get_object_or_404(ContactGroup, pk=gid)
                 return HttpResponseRedirect(cg.get_absolute_url()+u'members/'+unicode(cid)+u'/')
             else:
                 return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
@@ -809,7 +792,7 @@ def contact_pass(request, gid=None, cid=None):
         form = ContactPasswordForm()
     args['form'] = form
     if gid:
-        cg = ContactGroup.objects.get(pk=gid)
+        cg = get_object_or_404(ContactGroup, pk=gid)
         args['nav'] = cg.get_smart_navbar()
         args['nav'].add_component(u'members')
     else:
@@ -842,18 +825,12 @@ def contact_pass_letter(request, gid=None, cid=None):
     cid = int(cid)
     if cid != request.user.id and not request.user.is_admin():
         return unauthorized(request)
-    try:
-        contact = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
+    contact = get_object_or_404(Contact, pk=cid)
     args = {}
     args['title'] = 'Generate a new password and print a letter'
     args['contact'] = contact
     if gid:
-        try:
-            cg = ContactGroup.objects.get(pk=gid)
-        except ContactGroup.DoesNotExist:
-            raise Http404()
+        cg = get_object_or_404(ContactGroup, pk=gid)
         args['nav'] = cg.get_smart_navbar()
         args['nav'].add_component(u'members')
     else:
@@ -906,22 +883,14 @@ def contact_pass_letter(request, gid=None, cid=None):
 def contact_delete(request, gid=None, cid=None):
     if not request.user.is_admin():
         return unauthorized(request)
-    try:
-        o = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
+    o = get_object_or_404(Contact, pk=cid)
     if gid:
-        try:
-            next_url = ContactGroup.objects.get(pk=gid).get_absolute_url()+u'members/'
-        except ContactGroup.DoesNotExist:
-            raise Http404()
-    else:
-        next_url = reverse('ngw.core.views.contact_list')
-    if gid:
-        cg = ContactGroup.objects.get(pk=gid)
+        cg = get_object_or_404(ContactGroup, pk=gid)
         base_nav = cg.get_smart_navbar()
         base_nav.add_component(u'members')
+        next_url = cg.get_absolute_url()+u'members/'
     else:
+        next_url = reverse('ngw.core.views.contact_list')
         base_nav = None
     return generic_delete(request, o, next_url, base_nav=base_nav)
 
@@ -930,10 +899,7 @@ def contact_delete(request, gid=None, cid=None):
 def contact_filters_add(request, cid=None):
     if not request.user.is_admin():
         return unauthorized(request)
-    try:
-        contact = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
+    contact = get_object_or_404(Contact, pk=cid)
     filter_str = request.GET['filterstr']
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     if filter_list_str:
@@ -952,10 +918,7 @@ def contact_filters_add(request, cid=None):
 def contact_filters_list(request, cid=None):
     if not request.user.is_admin():
         return unauthorized(request)
-    try:
-        contact = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
+    contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     filters = []
     if filter_list_str:
@@ -980,10 +943,7 @@ class FilterEditForm(forms.Form):
 def contact_filters_edit(request, cid=None, fid=None):
     if not request.user.is_admin():
         return unauthorized(request)
-    try:
-        contact = Contact.objects.get(pk=cid)
-    except Contact.DoesNotExist:
-        raise Http404()
+    contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     if not filter_list_str:
         return HttpResponse(u'ERROR: no custom filter for that user')
@@ -1026,7 +986,7 @@ def contact_filters_edit(request, cid=None, fid=None):
 @require_group(GROUP_ADMIN)
 def contact_make_login_mailing(request):
     # select contacts whose password is in state 'Registered', with both 'Adress' and 'City' not null
-    q = Contact.objects.all()
+    q = Contact.objects
     q = q.extra(where=["EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value='%(value)s')" % { 'field_id': FIELD_PASSWORD_STATUS, 'value': '1' }])
     q = q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_STREET}])
     q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_CITY}])
@@ -1250,10 +1210,7 @@ def contactgroup_members(request, gid, output_format=''):
     if request.REQUEST.get(u'savecolumns'):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
-    try:
-        cg = ContactGroup.objects.get(pk=gid)
-    except ContactGroup.DoesNotExist:
-        raise Http404()
+    cg = get_object_or_404(ContactGroup, pk=gid)
 
     display = request.REQUEST.get(u'display', None)
     if display is None:
@@ -1397,10 +1354,7 @@ def contactgroup_edit(request, id):
         return unauthorized(request)
     objtype = ContactGroup
     if id:
-        try:
-            cg = ContactGroup.objects.get(pk=id)
-        except ContactGroup.DoesNotExist:
-            raise Http404()
+        cg = get_object_or_404(ContactGroup, pk=id)
         title = u'Editing '+unicode(cg)
     else:
         title = u'Adding a new '+objtype.get_class_verbose_name()
@@ -1445,10 +1399,7 @@ def contactgroup_edit(request, id):
 
     else: # GET
         if id:
-            try:
-                cg = ContactGroup.objects.get(pk=id)
-            except ContactGroup.DoesNotExist:
-                raise Http404()
+            cg = get_object_or_404(ContactGroup, pk=id)
             initialdata = {
                 'name': cg.name,
                 'description': cg.description,
@@ -1501,7 +1452,7 @@ def on_contactgroup_delete(cg):
 def contactgroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = ContactGroup.objects.get(pk=id)
+    o = get_object_or_404(ContactGroup, pk=id)
     next_url = reverse('ngw.core.views.contactgroup_list')
     if o.system:
         messages.add_message(request, messages.ERROR, u'Group %s is locked and CANNOT be deleted.' % o.name)
@@ -1518,8 +1469,7 @@ def contactgroup_add_contacts_to(request):
     if request.method == 'POST':
         target_gid = request.POST[u'group']
         if target_gid:
-            target_group = ContactGroup.objects.get(pk=target_gid)
-            assert target_group
+            target_group = get_object_or_404(ContactGroup, pk=target_gid)
             t = request.REQUEST.get('type', u'')
             if t == u'Invite':
                 mode = u'i'
@@ -1535,7 +1485,7 @@ def contactgroup_add_contacts_to(request):
                 if not param.startswith(u'contact_'):
                     continue
                 contact_id = param[len(u'contact_'):]
-                contact = Contact.objects.get(pk=contact_id)
+                contact = get_object_or_404(Contact, pk=contact_id)
                 contacts.append(contact)
             target_group.set_member_n(request.user, contacts, mode)
 
@@ -1545,10 +1495,7 @@ def contactgroup_add_contacts_to(request):
 
     gid = request.REQUEST.get(u'gid', u'')
     assert gid
-    try:
-        cg = ContactGroup.objects.get(pk=gid)
-    except ContactGroup.DoesNotExist:
-        raise Http404()
+    cg = get_object_or_404(ContactGroup, pk=gid)
 
     strfilter = request.REQUEST.get(u'filter', u'')
     filter = contactsearch.parse_filterstring(strfilter)
@@ -1627,10 +1574,7 @@ class ContactInGroupForm(forms.Form):
 def contactingroup_edit(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    try:
-        cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
-    except ContactInGroup.DoesNotExist:
-        raise Http404()
+    cig = get_object_or_404(ContactInGroup, contact_id=cid, group_id=gid)
     cg = ContactGroup.objects.get(pk=gid)
     contact = Contact.objects.get(pk=cid)
     args = {}
@@ -1697,12 +1641,9 @@ def contactingroup_edit(request, gid, cid):
 def contactingroup_edit_inline(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    try:
-        cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
-    except ContactInGroup.DoesNotExist:
-        cig = ContactInGroup(contact_id=cid, group_id=gid)
-    cg = ContactGroup.objects.get(pk=gid)
-    contact = Contact.objects.get(pk=cid)
+    cig = ContactInGroup.objects.get_or_create(contact_id=cid, group_id=gid)
+    cg = get_object_or_404(ContactGroup, pk=gid)
+    contact = get_object_or_404(Contact, pk=cid)
     newmembership = request.POST['membership']
     if newmembership == u'invited':
         cig.invited = True
@@ -1731,7 +1672,7 @@ def contactingroup_edit_inline(request, gid, cid):
 def contactingroup_delete(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cg = ContactGroup.objects.get(pk=gid)
+    cg = get_object_or_404(ContactGroup, pk=gid)
     try:
         o = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
     except ContactInGroup.DoesNotExist:
@@ -1752,7 +1693,7 @@ def contactingroup_delete(request, gid, cid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news(request, gid):
-    cg = ContactGroup.objects.get(pk=gid)
+    cg = get_object_or_404(ContactGroup, pk=gid)
     args = {}
     args['title'] = u'News for group '+cg.name
     args['news'] = ContactGroupNews.objects.filter(contact_group=gid)
@@ -1771,9 +1712,9 @@ class NewsEditForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_edit(request, gid, nid):
-    cg = ContactGroup.objects.get(pk=gid)
+    cg = get_object_or_404(ContactGroup, pk=gid)
     if nid:
-        news = ContactGroupNews.objects.get(pk=nid)
+        news = get_object_or_404(ContactGroupNews, pk=nid)
         if str(news.contact_group_id) != gid:
             return HttpResponse(u'ERROR: Group mismatch')
 
@@ -1825,8 +1766,8 @@ def contactgroup_news_edit(request, gid, nid):
 def contactgroup_news_delete(request, gid, nid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cg = ContactGroup.objects.get(pk=gid)
-    o = ContactGroupNews.objects.get(pk=nid)
+    cg = get_object_or_404(ContactGroup, pk=gid)
+    o = get_object_or_404(ContactGroupNews, pk=nid)
     return generic_delete(request, o, cg.get_absolute_url()+u'news/')
 
 class MailmanSyncForm(forms.Form):
@@ -1849,10 +1790,7 @@ Ci-joint votre message original.
     from ngw.extensions.mailman import synchronise_group
     if not request.user.is_admin():
         return unauthorized(request)
-    try:
-        cg = ContactGroup.objects.get(pk=id)
-    except ContactGroup.DoesNotExist:
-        raise Http404()
+    cg = get_object_or_404(ContactGroup, pk=id)
 
     args = {}
     args['title'] = u'Mailman synchronisation'
@@ -1906,7 +1844,7 @@ def field_list(request):
 def field_move_up(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    cf = ContactField.objects.get(pk=id)
+    cf = get_object_or_404(ContactField, pk=id)
     cf.sort_weight -= 15
     cf.save()
     field_renumber()
@@ -1917,7 +1855,7 @@ def field_move_up(request, id):
 def field_move_down(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    cf = ContactField.objects.get(pk=id)
+    cf = get_object_or_404(ContactField, pk=id)
     cf.sort_weight += 15
     cf.save()
     field_renumber()
@@ -2000,7 +1938,7 @@ def field_edit(request, id):
     objtype = ContactField
     initial = {}
     if id:
-        cf = ContactField.objects.get(pk=id)
+        cf = get_object_or_404(ContactField, pk=id)
         title = u'Editing '+unicode(cf)
         initial['name'] = cf.name
         initial['hint'] = cf.hint
@@ -2105,7 +2043,7 @@ def field_edit(request, id):
 def field_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = ContactField.objects.get(pk=id)
+    o = get_object_or_404(ContactField, pk=id)
     next_url = reverse('ngw.core.views.field_list')
     if o.system:
         messages.add_message(request, messages.ERROR, u'Field %s is locked and CANNOT be deleted.' % o.name)
@@ -2279,7 +2217,7 @@ def choicegroup_edit(request, id=None):
         return unauthorized(request)
     objtype = ChoiceGroup
     if id:
-        cg = ChoiceGroup.objects.get(pk=id)
+        cg = get_object_or_404(ChoiceGroup, pk=id)
         title = u'Editing '+unicode(cg)
     else:
         cg = None
@@ -2319,5 +2257,5 @@ def choicegroup_edit(request, id=None):
 def choicegroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
-    o = ChoiceGroup.objects.get(pk=id)
+    o = get_object_or_404(ChoiceGroup, pk=id)
     return generic_delete(request, o, reverse('ngw.core.views.choicegroup_list'))
