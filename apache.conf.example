@@ -123,12 +123,5 @@
         Options +MultiViews
     </Location>
 
-    # Protect subversion folders: 
-    <LocationMatch ".*/\.svn">
-        Order allow,deny
-        Deny from all
-        Satisfy all
-    </LocationMatch>
-
 </VirtualHost>
 
