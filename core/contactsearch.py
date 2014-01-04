@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import urllib2
-from django.http import *
+from django.http import HttpResponse
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.template import RequestContext
@@ -448,7 +448,7 @@ def contactsearch_get_params(request, field, filtername):
             filter_list = parse_filter_list_str(filter_list_str)
         try:
             filterstr = filter_list[int(filtername)][1]
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             return HttpResponse(u"ERROR: Can't find filter #"+filtername)
         js = u"'" + filterstr.replace(u"\\", u"\\\\").replace(u"'", u"\\'") + u"'"
         parameter_types = []

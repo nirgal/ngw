@@ -364,7 +364,7 @@ class ContactQuerySet(RawQuerySet):
         self.qry_fields[DISP_FIELD_PREFIX+fieldid] = 'cfv%(fid)s.value' % {'fid':fieldid}
 
     def add_group(self, group_id):
-        # TODO: crashes is group is there more than one (viewed from a group with that group selected as a field)
+        # TODO: crashes if group is there more than one (viewed from a group with that group selected as a field)
         # Add fields for direct membership
         self.qry_fields['group_%s_m' % group_id] = 'cig_%s.member' % group_id
         self.qry_fields['group_%s_i' % group_id] = 'cig_%s.invited' % group_id
