@@ -8,6 +8,12 @@ oomailing and python-decoratedstr packages can be downloaded at http://www.nirga
 
 Base directory should be /usr/lib/ngw
 
+You need to edit your settings.py:
+- Put your database user/password there
+- Put something in SECRET_KEY:
+  from django.utils.crypto import get_random_string
+  get_random_string(50, 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
+
 Apache
 ======
 Enable ssl, auth_pgsql in apache:
