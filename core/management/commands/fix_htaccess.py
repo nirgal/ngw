@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import NoArgsCommand
 from ngw.core.models import ContactGroup
 
-class Command(BaseCommand):
+class Command(NoArgsCommand):
     help = 'Creates missing folders and their .htaccess after db restore'
 
-    def handle(self, *args, **options):
+    def handle_noargs(self, **options):
         for g in ContactGroup.objects.all():
             g.check_static_folder_created()
