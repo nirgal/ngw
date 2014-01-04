@@ -481,7 +481,7 @@ def get_available_fields():
     result = [ (DISP_NAME, u'Name') ]
     for cf in ContactField.objects.order_by('sort_weight'):
         result.append((DISP_FIELD_PREFIX+unicode(cf.id), cf.name))
-    for cg in ContactGroup.objects.order_by('-date').order_by('name'):
+    for cg in ContactGroup.objects.order_by('-date', 'name'):
         result.append((DISP_GROUP_PREFIX+unicode(cg.id), cg.unicode_with_date()))
     return result
 
@@ -1367,7 +1367,11 @@ def contactgroup_members(request, gid, output_format=''):
     args['nav'] = cg.get_smart_navbar()
     args['nav'].add_component(u'members')
 
-    return query_print_entities(request, 'group_detail.html', args)
+    response = query_print_entities(request, 'group_detail.html', args)
+    #from django.db import connection
+    #import pprint
+    #pprint.PrettyPrinter(indent=4).pprint(connection.queries)
+    return response
 
 
 class ContactGroupForm(forms.Form):
