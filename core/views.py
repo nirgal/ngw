@@ -1303,7 +1303,7 @@ def contactgroup_members(request, gid, output_format=''):
         emails = []
         noemails = []
         for contact in q:
-            c_emails = contact.get_fieldvalues_by_type(EmailContactField)
+            c_emails = contact.get_fieldvalues_by_type('EMAIL')
             if c_emails:
                 emails.append((contact, c_emails[0])) # only the first email
             else:
@@ -1963,7 +1963,7 @@ class FieldEditForm(forms.Form):
         if t:
             cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
         else:
-            cls_contact_field = TextContactField
+            cls_contact_field = ContactField.get_contact_field_type_by_dbid('TEXT')
         if cls_contact_field.has_choice:
             if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
                 del self.fields['choicegroup'].widget.attrs['disabled']

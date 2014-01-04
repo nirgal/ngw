@@ -7,9 +7,11 @@ from django.utils import html
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 from ngw.core.basicauth import login_required
-from ngw.core.models import ( EmptyBoundFilter, AndBoundFilter, OrBoundFilter,
+from ngw.core.models import ( 
     ContactField, ContactGroup, ChoiceGroup,
-    ContactNameMetaField, AllEventsMetaField, FIELD_FILTERS )
+    EmptyBoundFilter, AndBoundFilter, OrBoundFilter,
+    FIELD_FILTERS )
+from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
 #from ngw.core.views import unauthorized
 
 

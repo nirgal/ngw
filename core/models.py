@@ -7,18 +7,14 @@ import os
 from functools import wraps
 from datetime import datetime, timedelta
 import subprocess
-from django.conf import settings
 from django.db import models, connection
 from django import forms
 from django.contrib.auth.hashers import make_password
-from django.utils import http
 from django.http import Http404
 from django.utils import html
 import decoratedstr # Nirgal external package
 from ngw.core.nav import Navbar
-from ngw.core import gpg
 from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #FIXME
-from ngw.core.widgets import NgwCalendarWidget, NgwCheckboxSelectMultiple
 #from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
 from ngw.extensions import hooks
 
@@ -329,10 +325,10 @@ class Contact(NgwModel):
         country = self.get_fieldvalue_by_id(FIELD_COUNTRY)
         vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
 
-        for phone in self.get_fieldvalues_by_type(PhoneContactField):
+        for phone in self.get_fieldvalues_by_type('PHONE'):
             vcf += line(u"TEL", phone)
 
-        for email in self.get_fieldvalues_by_type(EmailContactField):
+        for email in self.get_fieldvalues_by_type('EMAIL'):
             vcf += line(u"EMAIL", email)
 
         bday = self.get_fieldvalue_by_id(FIELD_BIRTHDAY)
@@ -885,42 +881,6 @@ class ContactGroup(NgwModel):
 ########################################
 # Contact Fields
 
-class RibField(forms.Field):
-    # TODO handle international IBAN numbers http://fr.wikipedia.org/wiki/ISO_13616
-    def clean(self, value):
-        """
-        Validate the RIB key
-        """
-        super(RibField, self).clean(value)
-        if value in (None, ""):
-            return None
-        iso_value = ""
-        for c in value:
-            if c == " ":
-                continue # ignore spaces
-            if c >= "0" and c <= "9":
-                iso_value += c
-                continue
-            c = c.upper()
-            if c >= "A" and c <= "I":
-                iso_value += str(ord(c)-64)
-            elif c >= "J" and c <= "R":
-                iso_value += str(ord(c)-73)
-            elif c >= "S" and c <= "Z":
-                iso_value += str(ord(c)-81)
-            else:
-                raise forms.ValidationError("Illegal character "+c)
-
-        if len(iso_value) != 23:
-            raise forms.ValidationError("There must be 23 non blank characters.")
-
-        #print iso_value
-        if int(iso_value) % 97:
-            raise forms.ValidationError("CRC error")
-
-        return value
-
-
 def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     ContactField.types_classes[db_type_id] = cls
     cls.db_type_id = db_type_id
@@ -1014,238 +974,6 @@ def contact_field_initialized_my_manager(sender, **kwargs):
 models.signals.post_init.connect(contact_field_initialized_my_manager, ContactField)
 
 
-class TextContactField(ContactField):
-    class Meta:
-        proxy = True
-    def get_form_fields(self):
-        return forms.CharField(label=self.name, required=False, help_text=self.hint)
-    def get_filters_classes(self):
-        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
-
-class LongTextContactField(ContactField):
-    class Meta:
-        proxy = True
-    def get_form_fields(self):
-        return forms.CharField(label=self.name, widget=forms.Textarea, required=False, help_text=self.hint)
-    def get_filters_classes(self):
-        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(LongTextContactField, u"LONGTEXT", u"Long Text", has_choice=False)
-
-class NumberContactField(ContactField):
-    class Meta:
-        proxy = True
-    def get_form_fields(self):
-        return forms.IntegerField(label=self.name, required=False, help_text=self.hint)
-    def get_filters_classes(self):
-        return (FieldFilterEQ, FieldFilterIEQ, FieldFilterINE, FieldFilterILE, FieldFilterIGE, FieldFilterILT, FieldFilterIGT, FieldFilterNull, FieldFilterNotNull,)
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        try:
-            int(value)
-        except ValueError:
-            return False
-        return True
-register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice=False)
-
-class DateContactField(ContactField):
-    class Meta:
-        proxy = True
-
-    def get_form_fields(self):
-        return forms.DateField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint, widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
-
-    def format_value_html(self, value):
-        value = datetime.strptime(value, '%Y-%m-%d')
-        return ngw_date_format(value)
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        try:
-            datetime.strptime(value, '%Y-%m-%d')
-        except ValueError:
-            return False
-        return True
-    def get_filters_classes(self):
-        return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE,  FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False)
-
-class DateTimeContactField(ContactField):
-    class Meta:
-        proxy = True
-    def get_form_fields(self):
-        return forms.DateTimeField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD HH:MM:SS format."+u" "+self.hint)
-    def format_value_html(self, value):
-        value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        return ngw_datetime_format(value)
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        try:
-            datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            return False
-        return True
-    def get_filters_classes(self):
-        return (FieldFilterEQ, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(DateTimeContactField, u"DATETIME", u"DateTime", has_choice=False)
-
-class EmailContactField(ContactField):
-    class Meta:
-        proxy = True
-    def format_value_html(self, value):
-        if gpg.is_email_secure(value):
-            gpg_indicator = u' <a href="/pks/lookup?op=get&options=mr&extact=on&search='+http.urlquote_plus(value)+'"><img src="'+settings.STATIC_URL+'static/key.jpeg" alt=key title="GPG key available" border=0></a>'
-        else:
-            gpg_indicator = u""
-        return u'<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s' % {'value':value, 'gpg_indicator':gpg_indicator}
-    def get_form_fields(self):
-        return forms.EmailField(label=self.name, required=False, help_text=self.hint)
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        try:
-            forms.EmailField().clean(value)
-        except forms.ValidationError:
-            return False
-        return True
-    def get_filters_classes(self):
-        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(EmailContactField, u"EMAIL", u"E.Mail", has_choice=False)
-
-class PhoneContactField(ContactField):
-    class Meta:
-        proxy = True
-    def format_value_html(self, value):
-        return u'<a href="tel:%(value)s">%(value)s</a>' % {'value':value} # rfc3966
-    def get_form_fields(self):
-        return forms.CharField(label=self.name, max_length=255, required=False, help_text=self.hint)
-    def get_filters_classes(self):
-        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(PhoneContactField, u"PHONE", u"Phone", has_choice=False)
-
-class RibContactField(ContactField):
-    class Meta:
-        proxy = True
-    def get_form_fields(self):
-        return RibField(label=self.name, required=False, help_text=self.hint)
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        try:
-            RibField().clean(value)
-        except forms.ValidationError:
-            return False
-        return True
-    def get_filters_classes(self):
-        return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(RibContactField, u"RIB", u"French bank account", has_choice=False)
-
-class ChoiceContactField(ContactField):
-    class Meta:
-        proxy = True
-    def type_as_html(self):
-        return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
-    def format_value_unicode(self, value):
-        chg = self.choice_group
-        if chg == None:
-            return u"Error"
-        try:
-            c = Choice.objects.get(choice_group_id=chg.id, key=value)
-        except Choice.DoesNotExist:
-            return u"Error"
-        else:
-            return c.value
-    def get_form_fields(self):
-        return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[(u'', u"Unknown")]+self.choice_group.ordered_choices))
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        return Choice.objects.filter(choice_group_id=choice_group_id).filter(key=value).count() == 1
-    def get_filters_classes(self):
-        return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterNull, FieldFilterNotNull,)
-
-register_contact_field_type(ChoiceContactField, u"CHOICE", u"Choice", has_choice=True)
-
-class MultipleChoiceContactField(ContactField):
-    class Meta:
-        proxy = True
-    def type_as_html(self):
-        return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
-    def format_value_unicode(self, value):
-        try:
-            chg = ChoiceGroup.objects.get(pk=self.choice_group_id)
-        except ChoiceGroup.DoesNotExist:
-            print "ChoiceGroup %s was lost!" % self.choice_group_id
-            return u"Error"
-        txt_choice_list = []
-        for cid in value.split(u","):
-            if cid == u"":
-                txt_choice_list.append( "default" ) # this should never occur
-                continue
-            try:
-                c = Choice.objects.get(choice_group_id=chg.id, key=cid)
-            except Choice.DoesNotExist:
-                print u"Choice", cid, "in", chg, "was lost."
-                txt_choice_list.append( "error" )
-            else:
-                txt_choice_list.append( c.value )
-        return u", ".join(txt_choice_list)
-    def get_form_fields(self):
-        return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
-    def formfield_value_to_db_value(self, value):
-        return u",".join(value)
-    def db_value_to_formfield_value(self, value):
-        return value.split(u",")
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        for v in value.split(','):
-            if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=v).count() != 1:
-                return False
-        return True
-    def get_filters_classes(self):
-        return (FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(MultipleChoiceContactField, u"MULTIPLECHOICE", u"Multiple choice", has_choice=True)
-
-
-class PasswordContactField(ContactField):
-    class Meta:
-        proxy = True
-    def format_value_unicode(self, value):
-        return u"********"
-    def get_form_fields(self):
-        return None
-    def formfield_value_to_db_value(self, value):
-        raise NotImplementedError()
-    def db_value_to_formfield_value(self, value):
-        raise NotImplementedError(u"Cannot reverse hash of a password")
-    @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        return len(value)==13 # We are locked with crypt algorithm, right now
-register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_choice=False)
-
-
-class ContactNameMetaField(object):
-    @classmethod
-    def get_filters_classes(cls):
-        return (NameFilterStartsWith, )
-
-    @classmethod
-    def get_filters(cls):
-        return [ filter() for filter in cls.get_filters_classes() ]
-
-    @classmethod
-    def get_filter_by_name(cls, name):
-        return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
-
-
-class AllEventsMetaField(object):
-    @classmethod
-    def get_filters_classes(cls):
-        return (AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore, )
-
-    @classmethod
-    def get_filters(cls):
-        return [ filter() for filter in cls.get_filters_classes() ]
-
-    @classmethod
-    def get_filter_by_name(cls, name):
-        return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
 
 class FilterHelper(object):
     @staticmethod
