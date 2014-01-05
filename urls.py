@@ -9,7 +9,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 groups_urlpatterns = patterns('',
     url(r'^add$', 'ngw.core.views.contactgroup_edit', {'id': None}),
-    url(r'^(?P<id>\d+)/$', 'ngw.core.views.contactgroup_detail'),
+    url(r'^(?P<id>\d+)/$', RedirectView.as_view(url='members/')),
     url(r'^(?P<id>\d+)/edit$', 'ngw.core.views.contactgroup_edit'),
     url(r'^(?P<id>\d+)/delete$', 'ngw.core.views.contactgroup_delete'),
     url(r'^(?P<gid>\d+)/members/$', 'ngw.core.views.contactgroup_members'),

@@ -580,18 +580,17 @@ def contact_vcard(request, gid=None, cid=None):
 class ContactEditForm(forms.Form):
     name = forms.CharField()
 
-    def __init__(self, request_user, id=None, contactgroup=None, *args, **kargs):
+    def __init__(self, request_user, cid=None, contactgroup=None, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        contactid = id # FIXME
 
-        if contactid:
-            contact = get_object_or_404(Contact, pk=contactid)
+        if cid:
+            contact = get_object_or_404(Contact, pk=cid)
             fields = contact.get_allfields()
         elif contactgroup:
             contactgroupids = [ g.id for g in contactgroup.get_self_and_supergroups() ]
             fields = ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
         else:
-            field = [ ]
+            fields = [ ]
 
         # Add all extra fields
         for cf in fields:
@@ -630,7 +629,7 @@ def contact_edit(request, gid=None, cid=None):
         title = u'Adding a new '+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
-        form = ContactEditForm(id=cid, data=request.POST, contactgroup=cg, request_user=request.user) # FIXME
+        form = ContactEditForm(cid=cid, data=request.POST, contactgroup=cg, request_user=request.user) # FIXME
         if form.is_valid():
             data = form.clean()
             #print 'saving', repr(form.data)
@@ -717,7 +716,7 @@ def contact_edit(request, gid=None, cid=None):
                 cf = cfv.contact_field
                 if cf.type != FTYPE_PASSWORD:
                     initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
-            form = ContactEditForm(id=cid, initial=initialdata, request_user=request.user, contactgroup=cg)
+            form = ContactEditForm(cid=cid, initial=initialdata, request_user=request.user, contactgroup=cg)
 
         else:
             for cf in ContactField.objects.all():
@@ -729,9 +728,9 @@ def contact_edit(request, gid=None, cid=None):
 
             if cg:
                 initialdata['groups'] = [ cg.id ]
-                form = ContactEditForm(id=cid, initial=initialdata, contactgroup=cg, request_user=request.user)
+                form = ContactEditForm(cid=cid, initial=initialdata, contactgroup=cg, request_user=request.user)
             else:
-                form = ContactEditForm(id=cid, request_user=request.user)
+                form = ContactEditForm(cid=cid, request_user=request.user)
 
     args = {}
     args['form'] = form
@@ -1180,13 +1179,6 @@ def event_list(request):
     args['today'] = date.today()
     return query_print_entities(request, 'list_events.html', args)
 
-
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_detail(request, id):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    return HttpResponseRedirect(u'./members/')
 
 @login_required()
 @require_group(GROUP_USER_NGW)

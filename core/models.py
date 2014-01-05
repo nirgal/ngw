@@ -848,10 +848,10 @@ class ContactGroup(NgwModel):
             hooks.membership_changed(logged_contact, contact, self)
         return result
 
-    """
-    Like set_member_1 but for several contacts
-    """
     def set_member_n(self, logged_contact, contacts, group_member_mode):
+        """
+        Like set_member_1 but for several contacts
+        """
         added_contacts = []
         changed_contacts = []
         for contact in contacts:
@@ -1448,6 +1448,7 @@ class BoundFilter(BaseBoundFilter):
     # TODO: Rename to FieldBoundFilter
 
     def __init__(self, filter, *args):
+        super(BoundFilter, self).__init__()
         self.filter = filter
         self.args = args
 
@@ -1471,6 +1472,7 @@ class EmptyBoundFilter(BaseBoundFilter):
 
 class AndBoundFilter(BaseBoundFilter):
     def __init__(self, f1, f2):
+        super(AndBoundFilter, self).__init__()
         self.f1 = f1
         self.f2 = f2
     def get_sql_query_where(self, query, *args, **kargs):
@@ -1483,6 +1485,7 @@ class AndBoundFilter(BaseBoundFilter):
 
 class OrBoundFilter(BaseBoundFilter):
     def __init__(self, f1, f2):
+        super(OrBoundFilter, self).__init__()
         self.f1 = f1
         self.f2 = f2
     def get_sql_query_where(self, query, *args, **kargs):
