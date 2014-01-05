@@ -1847,8 +1847,9 @@ def field_move_up(request, id):
     cf = get_object_or_404(ContactField, pk=id)
     cf.sort_weight -= 15
     cf.save()
-    field_renumber()
+    ContactField.renumber()
     return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -1858,19 +1859,8 @@ def field_move_down(request, id):
     cf = get_object_or_404(ContactField, pk=id)
     cf.sort_weight += 15
     cf.save()
-    field_renumber()
+    ContactField.renumber()
     return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
-
-
-def field_renumber():
-    """
-    Update all fields sort_weight so that each weight is previous + 10
-    """
-    new_weigth = 0
-    for cf in ContactField.objects.order_by('sort_weight'):
-        new_weigth += 10
-        cf.sort_weight = new_weigth
-        cf.save()
 
 
 class FieldEditForm(forms.Form):
@@ -2006,7 +1996,7 @@ def field_edit(request, id):
                 cf.sort_weight = int(data['move_after'])
                 cf.save()
 
-            field_renumber()
+            ContactField.renumber()
             messages.add_message(request, messages.SUCCESS, u'Field %s has been changed sucessfully.' % cf.name)
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(cf.get_absolute_url()+u'edit')

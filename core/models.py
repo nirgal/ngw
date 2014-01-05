@@ -966,6 +966,17 @@ class ContactField(NgwModel):
     def get_filter_by_name(self, name):
         return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
 
+    @staticmethod
+    def renumber():
+        """
+        Update all fields sort_weight so that each weight is previous + 10
+        """
+        new_weigth = 0
+        for cf in ContactField.objects.order_by('sort_weight'):
+            new_weigth += 10
+            cf.sort_weight = new_weigth
+            cf.save()
+
 
 def contact_field_initialized_my_manager(sender, **kwargs):
     field = kwargs['instance']
