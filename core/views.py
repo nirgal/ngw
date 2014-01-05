@@ -1087,7 +1087,7 @@ class YearMonthCal:
     def title(self):
         return u'%s %s' % (MONTHES[self.month-1], self.year)
 
-    def prev(self):
+    def prev_month(self):
         year, month = self.year, self.month
         month -= 1
         if month < 1:
@@ -1095,13 +1095,19 @@ class YearMonthCal:
             year -= 1
         return u'%s-%s' % (year, month)
 
-    def next(self):
+    def next_month(self):
         year, month = self.year, self.month
         month += 1
         if month > 12:
             month = 1
             year += 1
         return u'%s-%s' % (year, month)
+
+    def prev_year(self):
+        return u'%s-%s' % (self.year-1, self.month)
+
+    def next_year(self):
+        return u'%s-%s' % (self.year+1, self.month)
 
     def weeks(self):
         first_day_of_month = date(self.year, self.month, 1)
