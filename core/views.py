@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
@@ -24,9 +24,9 @@ from ngw.core import contactsearch
 
 from django.db.models.query import RawQuerySet, sql
 
-DISP_NAME = u'name'
-DISP_FIELD_PREFIX = u'field_'
-DISP_GROUP_PREFIX = u'group_'
+DISP_NAME = 'name'
+DISP_FIELD_PREFIX = 'field_'
+DISP_GROUP_PREFIX = 'group_'
 
 FTYPE_TEXT = 'TEXT'
 FTYPE_LONGTEXT = 'LONGTEXT'
@@ -56,7 +56,7 @@ def ngw_base_url(request):
 def logout(request):
     #need to call auth_logout(request) when using auth contrib module
     return render_to_response('message.html', {
-        'message': mark_safe(u'Have a nice day!<br><a href="%(url)s">Login again</a>' % { 'url': ngw_base_url(request) })
+        'message': mark_safe('Have a nice day!<br><a href="%(url)s">Login again</a>' % { 'url': ngw_base_url(request) })
         }, RequestContext(request))
 
 
@@ -87,9 +87,9 @@ def get_display_fields(user):
         except Config.DoesNotExist:
             pass
     if not default_fields:
-        default_fields = u''
-    for fname in default_fields.split(u','):
-        if fname == u'name':
+        default_fields = ''
+    for fname in default_fields.split(','):
+        if fname == 'name':
             pass
         elif fname.startswith(DISP_GROUP_PREFIX):
             try:
@@ -155,7 +155,7 @@ def test(request):
         'env': os.environ,
         'objtype': Contact,
     }
-    #raise Exception(u'Boum')
+    #raise Exception('Boum')
     return render_to_response('test.html', args, RequestContext(request))
 
 
@@ -167,7 +167,7 @@ def test(request):
 
 def query_print_entities(request, template_name, args, extrasort=None):
     try:
-        object_query_page_length = Config.objects.get(pk=u'query_page_length')
+        object_query_page_length = Config.objects.get(pk='query_page_length')
         NB_LINES_PER_PAGE = int(object_query_page_length.text)
     except (Config.DoesNotExist, ValueError):
         NB_LINES_PER_PAGE = 200
@@ -177,7 +177,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
 
     # get sort column name
     nosort = False
-    order = request.REQUEST.get('_order', u'')
+    order = request.REQUEST.get('_order', '')
 
     if order or not extrasort:
         # disable default sort on column 0 if there's an extrasort parameter
@@ -185,10 +185,10 @@ def query_print_entities(request, template_name, args, extrasort=None):
             intorder = int(order)
         except ValueError:
             if extrasort:
-                order = u''
+                order = ''
                 nosort = True
             else:
-                order = u'0'
+                order = '0'
                 intorder = 0
         if not nosort:
             sort_col = cols[abs(intorder)][3]
@@ -197,7 +197,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
             else:
                 q = q.order_by('-'+sort_col)
     else: # no order and extrasort
-        order = u''
+        order = ''
     if extrasort:
         q = extrasort(q)
 
@@ -227,9 +227,9 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
     if not request.user.is_admin():
         return unauthorized(request)
 
-    title = u'Please confirm deletetion'
+    title = 'Please confirm deletetion'
 
-    confirm = request.GET.get('confirm', u'')
+    confirm = request.GET.get('confirm', '')
     if confirm:
         if ondelete_function:
             ondelete_function(o)
@@ -238,16 +238,16 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
         log.contact_id = request.user.id
         log.action = LOG_ACTION_DEL
         pk_names = (o._meta.pk.attname,) # default django pk name
-        log.target = unicode(o.__class__.__name__)+u' '+u' '.join([unicode(o.__getattribute__(fieldname)) for fieldname in pk_names])
-        log.target_repr = o.get_class_verbose_name()+u' '+name
+        log.target = unicode(o.__class__.__name__)+' '+' '.join([unicode(o.__getattribute__(fieldname)) for fieldname in pk_names])
+        log.target_repr = o.get_class_verbose_name()+' '+name
         o.delete()
         log.save()
-        messages.add_message(request, messages.SUCCESS, u'%s has been deleted sucessfully!' % name)
+        messages.add_message(request, messages.SUCCESS, '%s has been deleted sucessfully!' % name)
         return HttpResponseRedirect(next_url)
     else:
         nav = base_nav or Navbar(o.get_class_navcomponent())
         nav.add_component(o.get_navcomponent())
-        nav.add_component(u'delete')
+        nav.add_component('delete')
         return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
 
 
@@ -289,29 +289,29 @@ def logs(request):
 def membership_to_text(contact_with_extra_fields, group_id):
     # memberships = []
     # if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
-    #     memberships.append(u"Member")
+    #     memberships.append("Member")
     # if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
-    #     memberships.append(u"Invited")
+    #     memberships.append("Invited")
     # if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
-    #     memberships.append(u"Declined")
+    #     memberships.append("Declined")
     # if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
-    #     memberships.append(u"Member" + u" " + AUTOMATIC_MEMBER_INDICATOR)
+    #     memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
     # if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
-    #     memberships.append(u"Invited" + u" " + AUTOMATIC_MEMBER_INDICATOR)
+    #     memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
     # if getattr(contact_with_extra_fields, 'group_%s_D' % group_id):
-    #     memberships.append(u"Declined" + u" " + AUTOMATIC_MEMBER_INDICATOR)
-    # return u", ".join(memberships)
+    #     memberships.append("Declined" + " " + AUTOMATIC_MEMBER_INDICATOR)
+    # return ", ".join(memberships)
     if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
-        return u"Member"
+        return 'Member'
     if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
-        return u"Invited"
+        return 'Invited'
     if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
-        return u"Declined"
+        return 'Declined'
     if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
-        return u"Member" + u" " + AUTOMATIC_MEMBER_INDICATOR
+        return 'Member' + ' ' + AUTOMATIC_MEMBER_INDICATOR
     if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
-        return u"Invited" + u" " + AUTOMATIC_MEMBER_INDICATOR
-    return u''
+        return 'Invited' + ' ' + AUTOMATIC_MEMBER_INDICATOR
+    return ''
 
 
 
@@ -326,27 +326,27 @@ def membership_extended_widget(contact_with_extra_fields, contact_group, base_ur
     params['cid'] = contact_with_extra_fields.id
     params['membership_str'] = membership_to_text(contact_with_extra_fields, contact_group.id)
     if note:
-        params['note'] = u'<br>'+html.escape(note)
+        params['note'] = '<br>'+html.escape(note)
     else:
-        params['note'] = u''
-    params['membership_url'] = contact_group.get_absolute_url()+u'members/'+unicode(contact_with_extra_fields.id)+u'/membership'
-    params['title'] = contact_with_extra_fields.name+u' in group '+contact_group.unicode_with_date()
+        params['note'] = ''
+    params['membership_url'] = contact_group.get_absolute_url()+'members/'+unicode(contact_with_extra_fields.id)+'/membership'
+    params['title'] = contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date()
     params['base_url'] = base_url
 
     if member:
-        params['is_member_checked'] = u' checked'
+        params['is_member_checked'] = ' checked'
     else:
-        params['is_member_checked'] = u''
+        params['is_member_checked'] = ''
     if invited:
-        params['is_invited_checked'] = u' checked'
+        params['is_invited_checked'] = ' checked'
     else:
-        params['is_invited_checked'] = u''
+        params['is_invited_checked'] = ''
     if declined:
-        params['has_declined_invitation_checked'] = u' checked'
+        params['has_declined_invitation_checked'] = ' checked'
     else:
-        params['has_declined_invitation_checked'] = u''
+        params['has_declined_invitation_checked'] = ''
 
-    return  u'<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s<div class=membershipextra id="membership_%(cid)d"><a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>' % params
+    return  '<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s<div class=membershipextra id="membership_%(cid)d"><a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>' % params
 
 
 
@@ -431,16 +431,16 @@ class ContactQuerySet(RawQuerySet):
             yield x
 
 
-def contact_make_query_with_fields(fields, current_cg=None, base_url=None, format=u'html'):
+def contact_make_query_with_fields(fields, current_cg=None, base_url=None, format='html'):
     q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
     cols = []
 
     for prop in fields:
-        if prop == u'name':
-            if format == u'html':
-                cols.append( (u'Name', None, 'name_with_relative_link', 'name') )
+        if prop == 'name':
+            if format == 'html':
+                cols.append( ('Name', None, 'name_with_relative_link', 'name') )
             else:
-                cols.append( (u'Name', None, '__unicode__', 'name') )
+                cols.append( ('Name', None, '__unicode__', 'name') )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
             cg = ContactGroup.objects.get(pk=groupid)
@@ -459,17 +459,17 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
             q.add_field(fieldid)
 
             cf = ContactField.objects.get(pk=fieldid)
-            if format == u'html':
+            if format == 'html':
                 cols.append( (cf.name, cf.format_value_html, prop, prop) )
             else:
                 cols.append( (cf.name, cf.format_value_unicode, prop, prop) )
         else:
-            raise ValueError(u'Invalid field '+prop)
+            raise ValueError('Invalid field '+prop)
 
     if current_cg is not None:
         assert base_url
         q.add_group_withnote(current_cg.id)
-        if format == u'html':
+        if format == 'html':
             cols.append( ('Status', None, lambda c: membership_extended_widget(c, current_cg, base_url), None) )
         else:
             cols.append( ('Status', None, lambda c: membership_to_text(c, current_cg.id), None) )
@@ -478,7 +478,7 @@ def contact_make_query_with_fields(fields, current_cg=None, base_url=None, forma
 
 
 def get_available_fields():
-    result = [ (DISP_NAME, u'Name') ]
+    result = [ (DISP_NAME, 'Name') ]
     for cf in ContactField.objects.order_by('sort_weight'):
         result.append((DISP_FIELD_PREFIX+unicode(cf.id), cf.name))
     for cg in ContactGroup.objects.order_by('-date', 'name'):
@@ -490,7 +490,7 @@ class FieldSelectForm(forms.Form):
     def __init__(self, *args, **kargs):
         #TODO: param user -> fine tuned fields selection
         forms.Form.__init__(self, *args, **kargs)
-        self.fields[u'selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_fields())
+        self.fields['selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_fields())
 
 
 @login_required()
@@ -499,35 +499,35 @@ def contact_list(request):
     if not request.user.is_admin():
         return unauthorized(request)
 
-    strfilter = request.REQUEST.get(u'filter', u'')
+    strfilter = request.REQUEST.get('filter', '')
     filter = contactsearch.parse_filterstring(strfilter)
-    baseurl = u'?filter='+strfilter
+    baseurl = '?filter='+strfilter
 
-    strfields = request.REQUEST.get(u'fields', None)
+    strfields = request.REQUEST.get('fields', None)
     if strfields:
-        fields = strfields.split(u',')
+        fields = strfields.split(',')
         baseurl += '&fields='+strfields
     else:
         fields = get_display_fields(request.user)
-        strfields = u','.join(fields)
+        strfields = ','.join(fields)
 
-    if (request.REQUEST.get(u'savecolumns')):
+    if (request.REQUEST.get('savecolumns')):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
     #print('contact_list:', fields)
-    q, cols = contact_make_query_with_fields(fields, format=u'html')
+    q, cols = contact_make_query_with_fields(fields, format='html')
     q = filter.apply_filter_to_query(q)
 
     args = {}
-    args['title'] = u'Contact list'
+    args['title'] = 'Contact list'
     args['baseurl'] = baseurl
     args['objtype'] = Contact
-    args['nav'] = Navbar(args['objtype'].get_class_absolute_url().split(u'/')[1])
+    args['nav'] = Navbar(args['objtype'].get_class_absolute_url().split('/')[1])
     args['query'] = q
     args['cols'] = cols
     args['filter'] = strfilter
     args['fields'] = strfields
-    args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
+    args['fields_form'] = FieldSelectForm(initial={'selected_fields': fields})
 
     return query_print_entities(request, 'list_contact.html', args)
 
@@ -550,13 +550,13 @@ def contact_detail(request, gid=None, cid=None):
             pass
 
     args = {}
-    args['title'] = u'Details for '+unicode(c)
+    args['title'] = 'Details for '+unicode(c)
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
-        #args['title'] += u' in group '+cg.unicode_with_date()
+        #args['title'] += ' in group '+cg.unicode_with_date()
         args['contact_group'] = cg
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'members')
+        args['nav'].add_component('members')
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(c.get_navcomponent())
@@ -625,9 +625,9 @@ def contact_edit(request, gid=None, cid=None):
     objtype = Contact
     if cid:
         contact = get_object_or_404(Contact, pk=cid)
-        title = u'Editing '+unicode(contact)
+        title = 'Editing '+unicode(contact)
     else:
-        title = u'Adding a new '+objtype.get_class_verbose_name()
+        title = 'Adding a new '+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ContactEditForm(cid=cid, data=request.POST, contactgroup=cg, request_user=request.user) # FIXME
@@ -642,11 +642,11 @@ def contact_edit(request, gid=None, cid=None):
                 if contact.name != data['name']:
                     log = Log(contact_id=request.user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = u'Contact '+unicode(contact.id)
-                    log.target_repr = u'Contact '+contact.name
-                    log.property = u'Name'
-                    log.property_repr = u'Name'
-                    log.change = u'change from '+contact.name+u' to '+data['name']
+                    log.target = 'Contact ' + unicode(contact.id)
+                    log.target_repr = 'Contact ' + contact.name
+                    log.property = 'Name'
+                    log.property_repr = 'Name'
+                    log.change = 'change from ' + contact.name + ' to ' + data['name']
                     log.save()
 
                 contact.name = data['name']
@@ -660,17 +660,17 @@ def contact_edit(request, gid=None, cid=None):
 
                 log = Log(contact_id=request.user.id)
                 log.action = LOG_ACTION_ADD
-                log.target = u'Contact '+unicode(contact.id)
-                log.target_repr = u'Contact '+contact.name
+                log.target = 'Contact ' + unicode(contact.id)
+                log.target_repr = 'Contact ' + contact.name
                 log.save()
 
                 log = Log(contact_id=request.user.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'Contact '+unicode(contact.id)
-                log.target_repr = u'Contact '+contact.name
-                log.property = u'Name'
-                log.property_repr = u'Name'
-                log.change = u'new value is '+contact.name
+                log.target = 'Contact ' + unicode(contact.id)
+                log.target_repr = 'Contact ' + contact.name
+                log.property = 'Name'
+                log.property_repr = 'Name'
+                log.change = 'new value is ' + contact.name
                 log = Log(request.user.id)
 
                 cig = ContactInGroup(contact_id=contact.id, group_id=gid)
@@ -691,21 +691,21 @@ def contact_edit(request, gid=None, cid=None):
                 if newvalue != None:
                     newvalue = cf.formfield_value_to_db_value(newvalue)
                 contact.set_fieldvalue(request.user, cf, newvalue)
-            messages.add_message(request, messages.SUCCESS, u'Contact %s has been saved sucessfully!' % contact.name)
+            messages.add_message(request, messages.SUCCESS, 'Contact %s has been saved sucessfully!' % contact.name)
 
             if cg:
-                base_url = cg.get_absolute_url()+u'members/'+unicode(contact.id)+u'/'
+                base_url = cg.get_absolute_url() + 'members/' + unicode(contact.id) + '/'
             else:
-                base_url = contact.get_class_absolute_url()+unicode(contact.id)+u'/'
+                base_url = contact.get_class_absolute_url() + unicode(contact.id) + '/'
 
             if request.POST.get('_continue', None):
-                return HttpResponseRedirect(base_url+u'edit')
+                return HttpResponseRedirect(base_url + 'edit')
             elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(base_url+u'../add')
+                return HttpResponseRedirect(base_url + '../add')
             elif request.user.is_admin(): # FIXME can read user list is better
                 return HttpResponseRedirect(base_url)
             else:
-                return HttpResponseRedirect(u'/')
+                return HttpResponseRedirect('/')
 
         # else add/update failed validation
     else: # GET /  HEAD
@@ -722,7 +722,7 @@ def contact_edit(request, gid=None, cid=None):
         else:
             for cf in ContactField.objects.all():
                 if cf.default:
-                    if cf.type == FTYPE_DATE and cf.default == u'today':
+                    if cf.type == FTYPE_DATE and cf.default == 'today':
                         initialdata[unicode(cf.id)] = date.today()
                     else:
                         initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cf.default)
@@ -740,14 +740,14 @@ def contact_edit(request, gid=None, cid=None):
     args['objtype'] = objtype
     if gid:
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'members')
+        args['nav'].add_component('members')
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     if cid:
         args['nav'].add_component(contact.get_navcomponent())
-        args['nav'].add_component(u'edit')
+        args['nav'].add_component('edit')
     else:
-        args['nav'].add_component(u'add')
+        args['nav'].add_component('add')
     if cid:
         args['o'] = contact
 
@@ -759,7 +759,7 @@ class ContactPasswordForm(forms.Form):
     confirm_password = forms.CharField(max_length=50, widget=forms.PasswordInput())
 
     def clean(self):
-        if self.cleaned_data.get('new_password', u'') != self.cleaned_data.get('confirm_password', u''):
+        if self.cleaned_data.get('new_password', '') != self.cleaned_data.get('confirm_password', ''):
             raise forms.ValidationError('The passwords must match!')
         return self.cleaned_data
 
@@ -782,10 +782,10 @@ def contact_pass(request, gid=None, cid=None):
             # record the value
             password = form.clean()['new_password']
             contact.set_password(request.user, password)
-            messages.add_message(request, messages.SUCCESS, u'Password has been changed sucessfully!')
+            messages.add_message(request, messages.SUCCESS, 'Password has been changed sucessfully!')
             if gid:
                 cg = get_object_or_404(ContactGroup, pk=gid)
-                return HttpResponseRedirect(cg.get_absolute_url()+u'members/'+unicode(cid)+u'/')
+                return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + unicode(cid) + '/')
             else:
                 return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else: # GET
@@ -794,11 +794,11 @@ def contact_pass(request, gid=None, cid=None):
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'members')
+        args['nav'].add_component('members')
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(u'password')
+    args['nav'].add_component('password')
     try:
         args['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
     except AttributeError:
@@ -809,9 +809,9 @@ def contact_pass(request, gid=None, cid=None):
 @login_required()
 @require_group(GROUP_USER) # not GROUP_USER_NGW
 def hook_change_password(request):
-    newpassword_plain = request.POST.get(u'password')
+    newpassword_plain = request.POST.get('password')
     if not newpassword_plain:
-        return HttpResponse(u'Missing password POST parameter')
+        return HttpResponse('Missing password POST parameter')
     #TODO: check strength
     request.user.set_password(request.user, newpassword_plain)
     return HttpResponse('OK')
@@ -832,18 +832,18 @@ def contact_pass_letter(request, gid=None, cid=None):
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'members')
+        args['nav'].add_component('members')
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(u'password letter')
+    args['nav'].add_component('password letter')
 
     if request.method == 'POST':
         new_password = Contact.generate_password()
 
         # record the value
-        contact.set_password(request.user, new_password, u'2') # Generated and mailed
-        messages.add_message(request, messages.SUCCESS, u'Password has been changed sucessfully!')
+        contact.set_password(request.user, new_password, '2') # Generated and mailed
+        messages.add_message(request, messages.SUCCESS, 'Password has been changed sucessfully!')
 
         fields = {}
         for cf in contact.get_allfields():
@@ -851,7 +851,7 @@ def contact_pass_letter(request, gid=None, cid=None):
                 cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
             except ContactFieldValue.DoesNotExist:
                 continue
-            fields[cf.name] = unicode(cfv).replace(u'\r', u'')
+            fields[cf.name] = unicode(cfv).replace('\r', '')
             #if cfv:
             #    rows.append((cf.name, mark_safe(cfv.as_html())))
         fields['name'] = contact.name
@@ -867,7 +867,7 @@ def contact_pass_letter(request, gid=None, cid=None):
 
         #if gid:
         #    cg = Query(ContactGroup).get(gid)
-        #    return HttpResponseRedirect(cg.get_absolute_url()+u'members/'+unicode(cid)+u'/')
+        #    return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + unicode(cid) + '/')
         #else:
         #    return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
 
@@ -887,8 +887,8 @@ def contact_delete(request, gid=None, cid=None):
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         base_nav = cg.get_smart_navbar()
-        base_nav.add_component(u'members')
-        next_url = cg.get_absolute_url()+u'members/'
+        base_nav.add_component('members')
+        next_url = cg.get_absolute_url() + 'members/'
     else:
         next_url = reverse('ngw.core.views.contact_list')
         base_nav = None
@@ -906,10 +906,10 @@ def contact_filters_add(request, cid=None):
         filter_list = contactsearch.parse_filter_list_str(filter_list_str)
     else:
         filter_list = []
-    filter_list.append((u'No name', filter_str))
-    filter_list_str = u','.join([u'"'+name+u'","'+filterstr+u'"' for name, filterstr in filter_list])
+    filter_list.append(('No name', filter_str))
+    filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
     contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
-    messages.add_message(request, messages.SUCCESS, u'Filter has been added sucessfully!')
+    messages.add_message(request, messages.SUCCESS, 'Filter has been added sucessfully!')
     return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid, len(filter_list)-1)))
 
 
@@ -926,12 +926,12 @@ def contact_filters_list(request, cid=None):
         filters = [ (filtername, contactsearch.parse_filterstring(filter_str).to_html())
                     for filtername, filter_str in filter_list ]
     args = {}
-    args['title'] = u'User custom filters'
+    args['title'] = 'User custom filters'
     args['contact'] = contact
     args['filters'] = filters
     args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component((u'filters', u'custom filters'))
+    args['nav'].add_component(('filters', 'custom filters'))
     return render_to_response('customfilters_user.html', args, RequestContext(request))
 
 
@@ -946,13 +946,13 @@ def contact_filters_edit(request, cid=None, fid=None):
     contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     if not filter_list_str:
-        return HttpResponse(u'ERROR: no custom filter for that user')
+        return HttpResponse('ERROR: no custom filter for that user')
     else:
         filter_list = contactsearch.parse_filter_list_str(filter_list_str)
     try:
         filtername, filterstr = filter_list[int(fid)]
     except (IndexError, ValueError):
-        return HttpResponse(u"ERROR: Can't find filter #"+fid)
+        return HttpResponse("ERROR: Can't find filter #"+fid)
 
     if request.method == 'POST':
         form = FilterEditForm(request.POST)
@@ -961,22 +961,22 @@ def contact_filters_edit(request, cid=None, fid=None):
             #print(repr(filter_list_str))
             filter_list[int(fid)]=(form.clean()['name'], filterstr)
             #print(repr(filter_list))
-            filter_list_str = u','.join([u'"'+name+u'","'+filterstr+u'"' for name, filterstr in filter_list])
+            filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
             #print(repr(filter_list_str))
             contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
-            messages.add_message(request, messages.SUCCESS, u'Filter has been renamed sucessfully!')
+            messages.add_message(request, messages.SUCCESS, 'Filter has been renamed sucessfully!')
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else:
         form = FilterEditForm(initial={ 'name': filtername })
     args = {}
-    args['title'] = u'User custom filter renaming'
+    args['title'] = 'User custom filter renaming'
     args['contact'] = contact
     args['form'] = form
     args['filtername'] = filtername
     args['filter_html'] = contactsearch.parse_filterstring(filterstr).to_html()
     args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component((u'filters', u'custom filters'))
+    args['nav'].add_component(('filters', 'custom filters'))
     args['nav'].add_component((unicode(fid), filtername))
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
@@ -1004,7 +1004,7 @@ def contact_make_login_mailing(request):
         return HttpResponse('File move failed')
     for row in q:
         contact = row[0]
-        contact.set_fieldvalue(request.user, FIELD_PASSWORD_STATUS, u'2')
+        contact.set_fieldvalue(request.user, FIELD_PASSWORD_STATUS, '2')
 
     return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')
 
@@ -1021,14 +1021,14 @@ def contactgroup_list(request):
     LIST_PREVIEW_LEN = 5
     def _trucate_list(l):
         if len(l)>LIST_PREVIEW_LEN:
-            return l[:LIST_PREVIEW_LEN]+[u'…']
+            return l[:LIST_PREVIEW_LEN] + ['…']
         return l
     def _trucate_description(cg):
         DESCRIPTION_MAXLEN = 200
         if len(cg.description) < DESCRIPTION_MAXLEN:
             return cg.description
         else:
-            return cg.description[:DESCRIPTION_MAXLEN]+u'…'
+            return cg.description[:DESCRIPTION_MAXLEN] + '…'
 
 	
     if not request.user.is_admin():
@@ -1037,24 +1037,24 @@ def contactgroup_list(request):
         if cg.field_group:
             fields = cg.contact_fields
             if fields:
-                return u', '.join(['<a href="'+f.get_absolute_url()+'">'+html.escape(f.name)+'</a>' for f in fields])
+                return ', '.join(['<a href="' + f.get_absolute_url() + '">'+html.escape(f.name) + '</a>' for f in fields])
             else:
-                return u'Yes (but none yet)'
+                return 'Yes (but none yet)'
         else:
-            return u'No'
+            return 'No'
 
     q = ContactGroup.objects.filter(date=None)
     cols = [
-        #( u'Date', None, 'html_date', ContactGroup.date ),
-        ( u'Name', None, 'name', 'name' ),
-        ( u'Description', None, lambda cg: _trucate_description(cg), None ),
-        #( u'Description', None, 'description', lambda cg: len(cg.description)<100 and cg.description+u'!!' or cg.description[:100]+u"…", None ),
-        #( u'Contact fields', None, print_fields, 'field_group' ),
-        ( u'Super\u00a0groups', None, lambda cg: u', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups()[:LIST_PREVIEW_LEN+1]])), None ),
-        ( u'Sub\u00a0groups', None, lambda cg: u', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups()][:LIST_PREVIEW_LEN+1])), None ),
-        #( u'Budget\u00a0code', None, 'budget_code', 'budget_code' ),
+        #( 'Date', None, 'html_date', ContactGroup.date ),
+        ( 'Name', None, 'name', 'name' ),
+        ( 'Description', None, lambda cg: _trucate_description(cg), None ),
+        #( 'Description', None, 'description', lambda cg: len(cg.description)<100 and cg.description + '!!' or cg.description[:100] + '…', None ),
+        #( 'Contact fields', None, print_fields, 'field_group' ),
+        ( 'Super\u00a0groups', None, lambda cg: ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups()[:LIST_PREVIEW_LEN+1]])), None ),
+        ( 'Sub\u00a0groups', None, lambda cg: ', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups()][:LIST_PREVIEW_LEN+1])), None ),
+        #( 'Budget\u00a0code', None, 'budget_code', 'budget_code' ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
-        #( u'System\u00a0locked', None, 'system', 'system' ),
+        #( 'System\u00a0locked', None, 'system', 'system' ),
     ]
     args = {}
     args['title'] = 'Select a contact group'
@@ -1066,7 +1066,7 @@ def contactgroup_list(request):
     return query_print_entities(request, 'list.html', args)
 
 
-MONTHES = u'January,February,March,April,May,June,July,August,Septembre,October,November,December'.split(',')
+MONTHES = 'January,February,March,April,May,June,July,August,Septembre,October,November,December'.split(',')
 
 class WeekDate:
     def __init__(self, date, events):
@@ -1086,7 +1086,7 @@ class YearMonthCal:
         self.events = events
 
     def title(self):
-        return u'%s %s' % (MONTHES[self.month-1], self.year)
+        return '%s %s' % (MONTHES[self.month-1], self.year)
 
     def prev_month(self):
         year, month = self.year, self.month
@@ -1094,7 +1094,7 @@ class YearMonthCal:
         if month < 1:
             month = 12
             year -= 1
-        return u'%s-%s' % (year, month)
+        return '%s-%s' % (year, month)
 
     def next_month(self):
         year, month = self.year, self.month
@@ -1102,13 +1102,13 @@ class YearMonthCal:
         if month > 12:
             month = 1
             year += 1
-        return u'%s-%s' % (year, month)
+        return '%s-%s' % (year, month)
 
     def prev_year(self):
-        return u'%s-%s' % (self.year-1, self.month)
+        return '%s-%s' % (self.year-1, self.month)
 
     def next_year(self):
-        return u'%s-%s' % (self.year+1, self.month)
+        return '%s-%s' % (self.year+1, self.month)
 
     def weeks(self):
         first_day_of_month = date(self.year, self.month, 1)
@@ -1141,7 +1141,7 @@ def event_list(request):
     year = month = None
     if dt is not None:
         try:
-            year, month = dt.split(u'-')
+            year, month = dt.split('-')
             year = int(year)
             month = int(month)
         except ValueError:
@@ -1164,9 +1164,9 @@ def event_list(request):
     q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date)
 
     cols = [
-        ( u'Date', None, 'html_date', 'date' ),
-        ( u'Name', None, 'name', 'name' ),
-        ( u'Description', None, 'description', 'description' ),
+        ( 'Date', None, 'html_date', 'date' ),
+        ( 'Name', None, 'name', 'name' ),
+        ( 'Description', None, 'description', 'description' ),
     ]
 
     month_events = {}
@@ -1176,12 +1176,12 @@ def event_list(request):
         month_events[cg.date].append(cg)
 
     args = {}
-    args['title'] = u'Events'
+    args['title'] = 'Events'
     args['query'] = q
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = Navbar()
-    args['nav'].add_component(('events', u'Events'))
+    args['nav'].add_component(('events', 'Events'))
     args['year_month'] = YearMonthCal(year, month, month_events)
     args['today'] = date.today()
     return query_print_entities(request, 'list_events.html', args)
@@ -1193,69 +1193,69 @@ def contactgroup_members(request, gid, output_format=''):
     if not request.user.is_admin():
         return unauthorized(request)
 
-    strfilter = request.REQUEST.get(u'filter', u'')
+    strfilter = request.REQUEST.get('filter', '')
     filter = contactsearch.parse_filterstring(strfilter)
-    baseurl = u'?filter='+strfilter
+    baseurl = '?filter='+strfilter
 
-    strfields = request.REQUEST.get(u'fields', None)
+    strfields = request.REQUEST.get('fields', None)
     if strfields:
-        fields = strfields.split(u',')
+        fields = strfields.split(',')
         baseurl += '&fields='+strfields
     else:
         fields = get_display_fields(request.user)
-        strfields = u','.join(fields)
+        strfields = ','.join(fields)
         #baseurl doesn't need to have default fields
 
-    if request.REQUEST.get(u'savecolumns'):
+    if request.REQUEST.get('savecolumns'):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
     cg = get_object_or_404(ContactGroup, pk=gid)
 
-    display = request.REQUEST.get(u'display', None)
+    display = request.REQUEST.get('display', None)
     if display is None:
         display = cg.get_default_display()
-    baseurl += u'&display='+display
+    baseurl += '&display='+display
 
     args = {}
-    args['fields_form'] = FieldSelectForm(initial={u'selected_fields': fields})
-    if output_format == u'csv':
-        query_format = u'text'
+    args['fields_form'] = FieldSelectForm(initial={'selected_fields': fields})
+    if output_format == 'csv':
+        query_format = 'text'
     else:
-        query_format = u'html'
+        query_format = 'html'
     q, cols = contact_make_query_with_fields(fields, current_cg=cg, base_url=baseurl, format=query_format)
 
     cig_conditions_flags = []
-    if u'm' in display:
-        cig_conditions_flags.append(u'member=True')
+    if 'm' in display:
+        cig_conditions_flags.append('member=True')
         args['display_member'] = 1
-    if u'i' in display:
-        cig_conditions_flags.append(u'invited=True')
+    if 'i' in display:
+        cig_conditions_flags.append('invited=True')
         args['display_invited'] = 1
-    if u'd' in display:
-        cig_conditions_flags.append(u'declined_invitation=True')
+    if 'd' in display:
+        cig_conditions_flags.append('declined_invitation=True')
         args['display_declined'] = 1
 
     if cig_conditions_flags:
-        cig_conditions_flags = u' AND (%s)' % u' OR '.join(cig_conditions_flags)
+        cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
-        cig_conditions_flags = u' AND False' # display nothing
+        cig_conditions_flags = ' AND False' # display nothing
 
-    if u'g' in display:
-        cig_conditions_group = u'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
+    if 'g' in display:
+        cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
         args['display_subgroups'] = 1
     else:
-        cig_conditions_group = u'group_id=%d' % cg.id
+        cig_conditions_group = 'group_id=%d' % cg.id
 
-    q = q.filter(u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND '+cig_conditions_group+cig_conditions_flags+u')')
+    q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND ' + cig_conditions_group + cig_conditions_flags + ')')
     q = filter.apply_filter_to_query(q)
 
-    if output_format == u'vcards':
+    if output_format == 'vcards':
         #FIXME: This works but is really inefficient (try it on a large group!)
-        result = u''
+        result = ''
         for contact in q:
             result += contact.vcard()
         return HttpResponse(result.encode('utf-8'), mimetype='text/x-vcard')
-    elif output_format == u'emails':
+    elif output_format == 'emails':
         emails = []
         noemails = []
         for contact in q:
@@ -1268,29 +1268,29 @@ def contactgroup_members(request, gid, output_format=''):
             return cmp(remove_decoration(a[0].name.lower()), remove_decoration(b[0].name.lower()))
         emails.sort(email_sort)
 
-        args['title'] = u'Emails for '+cg.name
+        args['title'] = 'Emails for ' + cg.name
         args['strfilter'] = strfilter
         args['filter'] = filter
         args['cg'] = cg
         args['emails'] = emails
         args['noemails'] = noemails
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'members')
-        args['nav'].add_component(u'emails')
+        args['nav'].add_component('members')
+        args['nav'].add_component('emails')
         return render_to_response('emails.html', args, RequestContext(request))
-    elif output_format == u'csv':
-        result = u''
+    elif output_format == 'csv':
+        result = ''
         def _quote_csv(u):
-            return u'"'+u.replace(u'"', u'\\"')+u'"'
+            return '"' + u.replace('"', '\\"') + '"'
         for i, col in enumerate(cols):
             if i: # not first column
-                result += u','
+                result += ','
             result += _quote_csv(col[0])
         result += '\n'
         for row in q:
             for i, col in enumerate(cols):
                 if i: # not first column
-                    result += u','
+                    result += ','
                 v = ngw_display(row, col)
                 if v == None:
                     continue
@@ -1302,13 +1302,13 @@ def contactgroup_members(request, gid, output_format=''):
     try:
         files = os.listdir(folder)
     except OSError as (errno, errmsg):
-        messages.add_message(request, messages.ERROR, u'Error while reading shared files list in %s: %s' % (folder, errmsg))
+        messages.add_message(request, messages.ERROR, 'Error while reading shared files list in %s: %s' % (folder, errmsg))
         files = []
     if '.htaccess' in files:
         files.remove('.htaccess')
     files.sort()
 
-    args['title'] = u'Contacts of group '+cg.unicode_with_date()
+    args['title'] = 'Contacts of group ' + cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
     args['display'] = display
     args['query'] = q
@@ -1321,7 +1321,7 @@ def contactgroup_members(request, gid, output_format=''):
     args['fields'] = strfields
     ####
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(u'members')
+    args['nav'].add_component('members')
 
     response = query_print_entities(request, 'group_detail.html', args)
     #from django.db import connection
@@ -1333,12 +1333,12 @@ def contactgroup_members(request, gid, output_format=''):
 class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
-    date = forms.DateField(required=False, help_text=u'Use YYYY-MM-DD format. Leave empty for permanent groups.', widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
+    date = forms.DateField(required=False, help_text='Use YYYY-MM-DD format. Leave empty for permanent groups.', widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
     budget_code = forms.CharField(required=False, max_length=10)
-    sticky = forms.BooleanField(required=False, help_text=u'If set, automatic membership because of subgroups becomes permanent. Use with caution.')
-    field_group = forms.BooleanField(required=False, help_text=u'Does that group yield specific fields to its members?')
-    mailman_address = forms.CharField(required=False, max_length=255, help_text=u'Mailing list address, if the group is linked to a mailing list.')
-    has_news = forms.BooleanField(required=False, help_text=u'Does that group supports internal news system?')
+    sticky = forms.BooleanField(required=False, help_text='If set, automatic membership because of subgroups becomes permanent. Use with caution.')
+    field_group = forms.BooleanField(required=False, help_text='Does that group yield specific fields to its members?')
+    mailman_address = forms.CharField(required=False, max_length=255, help_text='Mailing list address, if the group is linked to a mailing list.')
+    has_news = forms.BooleanField(required=False, help_text='Does that group supports internal news system?')
     direct_supergroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, *args, **kargs):
@@ -1354,9 +1354,9 @@ def contactgroup_edit(request, id):
     objtype = ContactGroup
     if id:
         cg = get_object_or_404(ContactGroup, pk=id)
-        title = u'Editing '+unicode(cg)
+        title = 'Editing '+unicode(cg)
     else:
-        title = u'Adding a new '+objtype.get_class_verbose_name()
+        title = 'Adding a new '+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ContactGroupForm(request.POST)
@@ -1384,15 +1384,15 @@ def contactgroup_edit(request, id):
             # supergroups have no properties (yet!): just recreate the array with brute force
             cg.set_direct_supergroups_ids(new_direct_supergroups_id)
 
-            messages.add_message(request, messages.SUCCESS, u'Group %s has been changed sucessfully!' % cg.unicode_with_date())
+            messages.add_message(request, messages.SUCCESS, 'Group %s has been changed sucessfully!' % cg.unicode_with_date())
 
             cg.check_static_folder_created()
             Contact.check_login_created(request.user) # subgroups change
 
             if request.POST.get('_continue', None):
-                return HttpResponseRedirect(cg.get_absolute_url()+u'edit')
+                return HttpResponseRedirect(cg.get_absolute_url() + 'edit')
             elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(cg.get_class_absolute_url()+u'add')
+                return HttpResponseRedirect(cg.get_class_absolute_url() + 'add')
             else:
                 return HttpResponseRedirect(cg.get_absolute_url())
 
@@ -1421,10 +1421,10 @@ def contactgroup_edit(request, id):
     if id:
         args['o'] = cg
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(u'edit')
+        args['nav'].add_component('edit')
     else:
         args['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-        args['nav'].add_component(u'add')
+        args['nav'].add_component('add')
 
     return render_to_response('edit.html', args, RequestContext(request))
 
@@ -1454,7 +1454,7 @@ def contactgroup_delete(request, id):
     o = get_object_or_404(ContactGroup, pk=id)
     next_url = reverse('ngw.core.views.contactgroup_list')
     if o.system:
-        messages.add_message(request, messages.ERROR, u'Group %s is locked and CANNOT be deleted.' % o.name)
+        messages.add_message(request, messages.ERROR, 'Group %s is locked and CANNOT be deleted.' % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
@@ -1466,71 +1466,71 @@ def contactgroup_add_contacts_to(request):
         return unauthorized(request)
 
     if request.method == 'POST':
-        target_gid = request.POST[u'group']
+        target_gid = request.POST['group']
         if target_gid:
             target_group = get_object_or_404(ContactGroup, pk=target_gid)
-            t = request.REQUEST.get('type', u'')
-            if t == u'Invite':
-                mode = u'i'
-            elif t == u'Member':
-                mode = u'm'
-            elif t == u'Declined invitation':
-                mode = u'd'
+            t = request.REQUEST.get('type', '')
+            if t == 'Invite':
+                mode = 'i'
+            elif t == 'Member':
+                mode = 'm'
+            elif t == 'Declined invitation':
+                mode = 'd'
             else:
                 raise Exception('Unsupported membership type '+t.encode('utf8'))
 
             contacts = []
             for param in request.POST:
-                if not param.startswith(u'contact_'):
+                if not param.startswith('contact_'):
                     continue
-                contact_id = param[len(u'contact_'):]
+                contact_id = param[len('contact_'):]
                 contact = get_object_or_404(Contact, pk=contact_id)
                 contacts.append(contact)
             target_group.set_member_n(request.user, contacts, mode)
 
             return HttpResponseRedirect(target_group.get_absolute_url())
         else:
-            messages.add_message(request, messages.ERROR, u'You must select a target group')
+            messages.add_message(request, messages.ERROR, 'You must select a target group')
 
-    gid = request.REQUEST.get(u'gid', u'')
+    gid = request.REQUEST.get('gid', '')
     assert gid
     cg = get_object_or_404(ContactGroup, pk=gid)
 
-    strfilter = request.REQUEST.get(u'filter', u'')
+    strfilter = request.REQUEST.get('filter', '')
     filter = contactsearch.parse_filterstring(strfilter)
 
-    q, cols = contact_make_query_with_fields([], format=u'html') #, current_cg=cg)
+    q, cols = contact_make_query_with_fields([], format='html') #, current_cg=cg)
 
     q = q.order_by('name')
 
-    display = request.REQUEST.get(u'display', None)
+    display = request.REQUEST.get('display', None)
     if display is None:
         display = cg.get_default_display()
     cig_conditions_flags = []
-    if u'm' in display:
-        cig_conditions_flags.append(u'member=True')
-    if u'i' in display:
-        cig_conditions_flags.append(u'invited=True')
-    if u'd' in display:
-        cig_conditions_flags.append(u'declined_invitation=True')
+    if 'm' in display:
+        cig_conditions_flags.append('member=True')
+    if 'i' in display:
+        cig_conditions_flags.append('invited=True')
+    if 'd' in display:
+        cig_conditions_flags.append('declined_invitation=True')
 
     if cig_conditions_flags:
-        cig_conditions_flags = u' AND (%s)' % u' OR '.join(cig_conditions_flags)
+        cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
-        cig_conditions_flags = u' AND False' # display nothing
+        cig_conditions_flags = ' AND False' # display nothing
 
-    if u'g' in display:
-        cig_conditions_group = u'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
+    if 'g' in display:
+        cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
     else:
-        cig_conditions_group = u'group_id=%d' % cg.id
+        cig_conditions_group = 'group_id=%d' % cg.id
 
-    q = q.filter(u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND '+cig_conditions_group+cig_conditions_flags+u')')
+    q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND ' + cig_conditions_group+cig_conditions_flags + ')')
     q = filter.apply_filter_to_query(q)
 
     args = {}
     args['title'] = 'Add contacts to a group'
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component((u'add_contacts_to', u'add contacts to'))
+    args['nav'].add_component(('add_contacts_to', 'add contacts to'))
     args['groups'] = ContactGroup.objects.order_by('-date', 'name')
     args['query'] = q
     return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
@@ -1577,7 +1577,7 @@ def contactingroup_edit(request, gid, cid):
     cg = ContactGroup.objects.get(pk=gid)
     contact = Contact.objects.get(pk=cid)
     args = {}
-    args['title'] = u'Contact '+unicode(contact)+u' in group '+cg.unicode_with_date()
+    args['title'] = 'Contact ' + unicode(contact) + ' in group ' + cg.unicode_with_date()
     args['cg'] = cg
     args['contact'] = contact
     args['objtype'] = ContactInGroup
@@ -1602,7 +1602,7 @@ def contactingroup_edit(request, gid, cid):
             cig.member = data['member']
             cig.operator = data['operator']
             cig.note = data['note']
-            messages.add_message(request, messages.SUCCESS, u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
+            messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
             cig.save()
             hooks.membership_changed(request.user, contact, cg)
@@ -1612,27 +1612,27 @@ def contactingroup_edit(request, gid, cid):
 
     args['form'] = form
 
-    inherited_info = u''
+    inherited_info = ''
 
     automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND member AND group_id=contact_group.id)' % (gid, cid)]).exclude(id=gid).order_by('-date', 'name')
     #print(automember_groups.query)
     if automember_groups:
-        inherited_info += u'Automatically member because member of subgroup(s):<br>'
+        inherited_info += 'Automatically member because member of subgroup(s):<br>'
         for sub_cg in automember_groups:
-            inherited_info += u'<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
-        inherited_info += u'<br>'
+            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
+        inherited_info += '<br>'
 
     autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND invited AND group_id=contact_group.id)' % (gid, cid)]).exclude(id=gid).order_by('-date', 'name')
     if autoinvited_groups:
-        inherited_info += u'Automatically invited because invited in subgroup(s):<br>'
+        inherited_info += 'Automatically invited because invited in subgroup(s):<br>'
         for sub_cg in autoinvited_groups:
-            inherited_info += u'<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
+            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
     args['inherited_info'] = mark_safe(inherited_info)
 
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(u'members')
+    args['nav'].add_component('members')
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(u'membership')
+    args['nav'].add_component('membership')
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
 @login_required()
@@ -1644,25 +1644,25 @@ def contactingroup_edit_inline(request, gid, cid):
     cg = get_object_or_404(ContactGroup, pk=gid)
     contact = get_object_or_404(Contact, pk=cid)
     newmembership = request.POST['membership']
-    if newmembership == u'invited':
+    if newmembership == 'invited':
         cig.invited = True
         cig.declined_invitation = False
         cig.member = False
         cig.operator = False
-    elif newmembership == u'member':
+    elif newmembership == 'member':
         cig.invited = False
         cig.declined_invitation = False
         cig.member = True
         # cig.operator can be any value
-    elif newmembership == u'declined_invitation':
+    elif newmembership == 'declined_invitation':
         cig.invited = False
         cig.declined_invitation = True
         cig.member = False
         cig.operator = False
     else:
-        raise Exception(u'invalid membership '+request.POST['membership'])
+        raise Exception('invalid membership '+request.POST['membership'])
     cig.save()
-    messages.add_message(request, messages.SUCCESS, u'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
+    messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
     hooks.membership_changed(request.user, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
 
@@ -1676,10 +1676,10 @@ def contactingroup_delete(request, gid, cid):
         o = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
     except ContactInGroup.DoesNotExist:
         return HttpResponse('Error, that contact is not a direct member. Please check subgroups')
-    #messages.add_message(request, messages.SUCCESS, u'%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
+    #messages.add_message(request, messages.SUCCESS, '%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
     base_nav = cg.get_smart_navbar()
-    base_nav.add_component(u'members')
-    return generic_delete(request, o, next_url=cg.get_absolute_url()+u'members/', base_nav=base_nav)
+    base_nav.add_component('members')
+    return generic_delete(request, o, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
     # TODO: realnav bar is 'remove', not 'delete'
 
 
@@ -1694,12 +1694,12 @@ def contactingroup_delete(request, gid, cid):
 def contactgroup_news(request, gid):
     cg = get_object_or_404(ContactGroup, pk=gid)
     args = {}
-    args['title'] = u'News for group '+cg.name
+    args['title'] = 'News for group ' + cg.name
     args['news'] = ContactGroupNews.objects.filter(contact_group=gid)
     args['cg'] = cg
     args['objtype'] = ContactGroupNews
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(u'news')
+    args['nav'].add_component('news')
     return render_to_response('news.html', args, RequestContext(request))
 
 
@@ -1715,7 +1715,7 @@ def contactgroup_news_edit(request, gid, nid):
     if nid:
         news = get_object_or_404(ContactGroupNews, pk=nid)
         if str(news.contact_group_id) != gid:
-            return HttpResponse(u'ERROR: Group mismatch')
+            return HttpResponse('ERROR: Group mismatch')
 
     if request.method == 'POST':
         form = NewsEditForm(request.POST)
@@ -1729,7 +1729,7 @@ def contactgroup_news_edit(request, gid, nid):
             news.title = data['title']
             news.text = data['text']
             news.save()
-            messages.add_message(request, messages.SUCCESS, u'News %s has been changed sucessfully!' % news)
+            messages.add_message(request, messages.SUCCESS, 'News %s has been changed sucessfully!' % news)
 
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(news.get_absolute_url())
@@ -1744,19 +1744,19 @@ def contactgroup_news_edit(request, gid, nid):
             initial['text'] = news.text
         form = NewsEditForm(initial=initial)
     args = {}
-    args['title'] = u'News edition'
+    args['title'] = 'News edition'
     args['cg'] = cg
     args['form'] = form
     if nid:
         args['o'] = news
         args['id'] = nid
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(u'news')
+    args['nav'].add_component('news')
     if nid:
         args['nav'].add_component(news.get_navcomponent())
-        args['nav'].add_component(u'edit')
+        args['nav'].add_component('edit')
     else:
-        args['nav'].add_component(u'add')
+        args['nav'].add_component('add')
 
     return render_to_response('edit.html', args, RequestContext(request))
 
@@ -1767,7 +1767,7 @@ def contactgroup_news_delete(request, gid, nid):
         return unauthorized(request)
     cg = get_object_or_404(ContactGroup, pk=gid)
     o = get_object_or_404(ContactGroupNews, pk=nid)
-    return generic_delete(request, o, cg.get_absolute_url()+u'news/')
+    return generic_delete(request, o, cg.get_absolute_url() + 'news/')
 
 class MailmanSyncForm(forms.Form):
     mail = forms.CharField(widget=forms.Textarea)
@@ -1792,9 +1792,9 @@ Ci-joint votre message original.
     cg = get_object_or_404(ContactGroup, pk=id)
 
     args = {}
-    args['title'] = u'Mailman synchronisation'
+    args['title'] = 'Mailman synchronisation'
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(u'mailman')
+    args['nav'].add_component('mailman')
     args['cg'] = cg
 
     if request.method == 'POST':
@@ -1865,7 +1865,7 @@ def field_move_down(request, id):
 class FieldEditForm(forms.Form):
     name = forms.CharField()
     hint = forms.CharField(required=False, widget=forms.Textarea)
-    contact_group = forms.CharField(label=u'Only for', required=False, widget=forms.Select)
+    contact_group = forms.CharField(label='Only for', required=False, widget=forms.Select)
     type = forms.CharField(widget=forms.Select)
     choicegroup = forms.CharField(required=False, widget=forms.Select)
     default_value = forms.CharField(required=False)
@@ -1879,7 +1879,7 @@ class FieldEditForm(forms.Form):
 
         self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id)
             for cls in ContactField.types_classes.itervalues() ] # TODO: Sort
-        js_test_type_has_choice = u' || '.join([ u"this.value=='"+cls.db_type_id+"'"
+        js_test_type_has_choice = ' || '.join([ "this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
             if cls.has_choice ])
         self.fields['type'].widget.attrs = { 'onchange': mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choicegroup'].disabled = 0; } else { document.forms['objchange']['choicegroup'].value = ''; document.forms['objchange']['choicegroup'].disabled = 1; }") }
@@ -1928,7 +1928,7 @@ def field_edit(request, id):
     initial = {}
     if id:
         cf = get_object_or_404(ContactField, pk=id)
-        title = u'Editing '+unicode(cf)
+        title = 'Editing '+unicode(cf)
         initial['name'] = cf.name
         initial['hint'] = cf.hint
         initial['contact_group'] = cf.contact_group_id
@@ -1938,7 +1938,7 @@ def field_edit(request, id):
         initial['move_after'] = cf.sort_weight-5
     else:
         cf = None
-        title = u'Adding a new '+objtype.get_class_verbose_name()
+        title = 'Adding a new '+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = FieldEditForm(cf, request.POST, initial=initial)
@@ -1976,7 +1976,7 @@ def field_edit(request, id):
                             args['deletion_details'] = deletion_details
                             for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
                                 args[k] = data[k]
-                            args['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), (u'edit', u'delete imcompatible data'))
+                            args['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', 'delete imcompatible data'))
                             return render_to_response('type_change.html', args, RequestContext(request))
 
                     cf.type = data['type']
@@ -1996,11 +1996,11 @@ def field_edit(request, id):
                 cf.save()
 
             ContactField.renumber()
-            messages.add_message(request, messages.SUCCESS, u'Field %s has been changed sucessfully.' % cf.name)
+            messages.add_message(request, messages.SUCCESS, 'Field %s has been changed sucessfully.' % cf.name)
             if request.POST.get('_continue', None):
-                return HttpResponseRedirect(cf.get_absolute_url()+u'edit')
+                return HttpResponseRedirect(cf.get_absolute_url()+'edit')
             elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(cf.get_class_absolute_url()+u'add')
+                return HttpResponseRedirect(cf.get_class_absolute_url()+'add')
             else:
                 return HttpResponseRedirect(reverse('ngw.core.views.field_list'))
         # else validation error
@@ -2021,9 +2021,9 @@ def field_edit(request, id):
     args['nav'] = Navbar(ContactField.get_class_navcomponent())
     if id:
         args['nav'].add_component(cf.get_navcomponent())
-        args['nav'].add_component(u'edit')
+        args['nav'].add_component('edit')
     else:
-        args['nav'].add_component(u'add')
+        args['nav'].add_component('add')
     return render_to_response('edit.html', args, RequestContext(request))
 
 
@@ -2035,7 +2035,7 @@ def field_delete(request, id):
     o = get_object_or_404(ContactField, pk=id)
     next_url = reverse('ngw.core.views.field_list')
     if o.system:
-        messages.add_message(request, messages.ERROR, u'Field %s is locked and CANNOT be deleted.' % o.name)
+        messages.add_message(request, messages.ERROR, 'Field %s is locked and CANNOT be deleted.' % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url)
 
@@ -2067,8 +2067,8 @@ class ChoicesWidget(forms.MultiWidget):
         widgets = []
         attrs_value = attrs or {}
         attrs_key = attrs or {}
-        attrs_value['style'] = u'width:90%'
-        attrs_key['style'] = u'width:9%; margin-left:1ex;'
+        attrs_value['style'] = 'width:90%'
+        attrs_key['style'] = 'width:9%; margin-left:1ex;'
 
         for i in range(ndisplay):
             widgets.append(forms.TextInput(attrs=attrs_value))
@@ -2077,7 +2077,7 @@ class ChoicesWidget(forms.MultiWidget):
         self.ndisplay = ndisplay
     def decompress(self, value):
         if value:
-            return value.split(u',')
+            return value.split(',')
         nonelist = []
         for i in range(self.ndisplay):
             nonelist.append(None)
@@ -2094,12 +2094,12 @@ class ChoicesField(forms.MultiValueField):
         self.ndisplay = ndisplay
     def compress(self, data_list):
         if data_list:
-            return u','.join(data_list)
+            return ','.join(data_list)
         return None
     def clean(self, value):
         # check there is no duplicate keys
         # necessary since keys are the id used in <select>
-        possibles_values = forms.MultiValueField.clean(self, value).split(u',')
+        possibles_values = forms.MultiValueField.clean(self, value).split(',')
         #print('possibles_values=', repr(possibles_values))
         keys = []
         for i in range(len(possibles_values)/2):
@@ -2135,8 +2135,8 @@ class ChoiceGroupForm(forms.Form):
                 ndisplay += 1
 
         for i in range(3): # add 3 blank lines to add data
-            self.initial['possible_values'].append(u'')
-            self.initial['possible_values'].append(u'')
+            self.initial['possible_values'].append('')
+            self.initial['possible_values'].append('')
             ndisplay += 1
         self.fields['possible_values'] = ChoicesField(required=False, widget=ChoicesWidget(ndisplay=ndisplay), ndisplay=ndisplay)
 
@@ -2195,7 +2195,7 @@ class ChoiceGroupForm(forms.Form):
             #print('ADDING', k)
             cg.choices.create(key=k, value=v)
 
-        messages.add_message(request, messages.SUCCESS, u'Choice %s has been saved sucessfully.' % cg.name)
+        messages.add_message(request, messages.SUCCESS, 'Choice %s has been saved sucessfully.' % cg.name)
         return cg
 
 
@@ -2207,19 +2207,19 @@ def choicegroup_edit(request, id=None):
     objtype = ChoiceGroup
     if id:
         cg = get_object_or_404(ChoiceGroup, pk=id)
-        title = u'Editing '+unicode(cg)
+        title = 'Editing '+unicode(cg)
     else:
         cg = None
-        title = u'Adding a new '+objtype.get_class_verbose_name()
+        title = 'Adding a new '+objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ChoiceGroupForm(cg, request.POST)
         if form.is_valid():
             cg = form.save(cg, request)
             if request.POST.get('_continue', None):
-                return HttpResponseRedirect(cg.get_absolute_url()+u'edit')
+                return HttpResponseRedirect(cg.get_absolute_url()+'edit')
             elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(cg.get_class_absolute_url()+u'add')
+                return HttpResponseRedirect(cg.get_class_absolute_url()+'add')
             else:
                 return HttpResponseRedirect(reverse('ngw.core.views.choicegroup_list'))
     else:
@@ -2235,9 +2235,9 @@ def choicegroup_edit(request, id=None):
     args['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
     if id:
         args['nav'].add_component(cg.get_navcomponent())
-        args['nav'].add_component(u'edit')
+        args['nav'].add_component('edit')
     else:
-        args['nav'].add_component(u'add')
+        args['nav'].add_component('add')
     return render_to_response('edit.html', args, RequestContext(request))
 
 

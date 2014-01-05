@@ -3,54 +3,55 @@
 #
 # Database settings is defined in ~/.pgpass
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import sys
 import os
 import psycopg2
 import psycopg2.extensions
 import logging
-if __name__ != "__main__":
-    print("XMPP synchronisation extension for NGW loading.")
+if __name__ != '__main__':
+    print('XMPP synchronisation extension for NGW loading.')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
 from ngw.core.models import ( ContactFieldValue, ContactGroup,
     FIELD_LOGIN, FIELD_PASSWORD_PLAIN )
 from ngw.extensions import hooks
 
-DATABASE_NAME = u'ejabberd'
+DATABASE_NAME = 'ejabberd'
     
-__db = None
+__db__ = None
 def get_common_db():
-    global __db
-    if not __db:
+    global __db__
+    if not __db__:
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-        for line in file(os.path.sep.join([os.getenv('HOME', '/var/www'), '.pgpass'])):
+        for line in open(os.path.sep.join([os.getenv('HOME', '/var/www'), '.pgpass'])):
+            line = unicode(line, 'utf8', 'replace')
             line = line[:-1] # remove \n
             host, port, user, database, password = line.split(':')
             if database == DATABASE_NAME:
-                __db = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-                __db.set_client_encoding('UTF8')
+                __db__ = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+                __db__.set_client_encoding('UTF8')
                 break
-    return __db
+    return __db__
 
-__cursor = None
+__cursor__ = None
 def get_common_cursor():
-    global __cursor
-    if not __cursor:
-        __cursor = get_common_db().cursor()
-    return __cursor
+    global __cursor__
+    if not __cursor__:
+        __cursor__ = get_common_db().cursor()
+    return __cursor__
 
 def sync_user(u):
     f_login = u.get_fieldvalue_by_id(FIELD_LOGIN)
     logging.debug("Sync'ing %s", f_login)
     f_login = f_login.lower()
     f_password = ContactFieldValue.objects.get(contact_id=u.id, contact_field_id=FIELD_PASSWORD_PLAIN).value
-    sql = u'INSERT INTO users (username, password) SELECT %s, %s WHERE NOT EXISTS (SELECT * FROM users WHERE username=%s)' 
+    sql = 'INSERT INTO users (username, password) SELECT %s, %s WHERE NOT EXISTS (SELECT * FROM users WHERE username=%s)' 
     get_common_cursor().execute(sql, (f_login, f_password, f_login))
 
-    sql = u'UPDATE users SET password=%s WHERE username=%s'
+    sql = 'UPDATE users SET password=%s WHERE username=%s'
     get_common_cursor().execute(sql, (f_password, f_login))
     return f_login
 
@@ -68,9 +69,9 @@ def cross_subscribe(login1, login2):
 
     def _subscribe1(login1, login2):
         params = { 'username': login1, 'jid': login2+'@hp.greenpeace.fr', 'nick': login2 }
-        sql = u"INSERT INTO rosterusers (username, jid, nick, subscription, ask, askmessage, server) SELECT %(username)s, %(jid)s, %(nick)s, 'B', 'N', '', 'N' WHERE NOT EXISTS (SELECT * FROM rosterusers WHERE username=%(username)s AND jid=%(jid)s)"
+        sql = "INSERT INTO rosterusers (username, jid, nick, subscription, ask, askmessage, server) SELECT %(username)s, %(jid)s, %(nick)s, 'B', 'N', '', 'N' WHERE NOT EXISTS (SELECT * FROM rosterusers WHERE username=%(username)s AND jid=%(jid)s)"
         get_common_cursor().execute(sql, params)
-        sql = u"UPDATE rosterusers SET subscription='B', ask='N', server='N', type='item' WHERE username=%(username)s AND jid=%(jid)s"
+        sql = "UPDATE rosterusers SET subscription='B', ask='N', server='N', type='item' WHERE username=%(username)s AND jid=%(jid)s"
         get_common_cursor().execute(sql, params)
     _subscribe1(login1, login2)
     _subscribe1(login2, login1)
@@ -159,7 +160,7 @@ if __name__ == "__main__":
     remove_unknown(login_set)
 
     for l1l2 in options.add_subs:
-        l1, l2 = l1l2.split(u':')
+        l1, l2 = l1l2.split(':')
         # Check the logins do exists in the database
         login1 = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=l1)
         login2 = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=l2)
@@ -175,6 +176,5 @@ if __name__ == "__main__":
         clean_rostergroup(u.get_fieldvalue_by_id(FIELD_LOGIN).lower())
     get_common_db().commit()
 
-if __name__ != "__main__":
-    print("XMPP synchronisation extension for NGW loaded.")
-
+if __name__ != '__main__':
+    print('XMPP synchronisation extension for NGW loaded.')

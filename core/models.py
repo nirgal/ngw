@@ -3,7 +3,7 @@
 # Also note: You'll have to insert the output of 'manage.py sqlall core'
 # into your database.
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os
 from functools import wraps
 from datetime import datetime, timedelta
@@ -41,7 +41,7 @@ FIELD_PHPBB_USERID = 73
 FIELD_PASSWORD_PLAIN = 74
 FIELD_PASSWORD_STATUS = 75
 
-AUTOMATIC_MEMBER_INDICATOR = u"⁂"
+AUTOMATIC_MEMBER_INDICATOR = '⁂'
 
 
 # Ends with a /
@@ -60,7 +60,7 @@ class NgwModel(models.Model):
 
     @classmethod
     def get_class_urlfragment(cls):
-        return unicode(cls.__name__.lower(), "utf8")+u"s"
+        return unicode(cls.__name__.lower(), 'utf8') + 's'
 
     def get_urlfragment(self):
         return unicode(self.id)
@@ -74,10 +74,10 @@ class NgwModel(models.Model):
 
     @classmethod
     def get_class_absolute_url(cls):
-        return u"/"+cls.get_class_urlfragment()+u"/"
+        return '/' + cls.get_class_urlfragment() + '/'
 
     def get_absolute_url(self):
-        return self.get_class_absolute_url()+unicode(self.id)+u"/"
+        return self.get_class_absolute_url() + unicode(self.id) + '/'
 
     class Meta:
         abstract = True
@@ -99,30 +99,30 @@ class Log(NgwModel):
     property_repr = models.TextField(blank=True, null=True)
     change = models.TextField(blank=True, null=True)
     class Meta:
-        db_table = u'log'
+        db_table = 'log'
 
     #def __unicode__(self):
-    #    return u"%(date)s: %(contactname)s %(type_and_data)s"% {
-    #            u'date': self.dt.isoformat(),
-    #            u'contactname': self.contact.name,
-    #            u'action_and_data': self.action_and_data(),
+    #    return '%(date)s: %(contactname)s %(type_and_data)s' % {
+    #            'date': self.dt.isoformat(),
+    #            'contactname': self.contact.name,
+    #            'action_and_data': self.action_and_data(),
     #            }
     #
     #def action_and_data(self):
     #    if self.action==LOG_ACTION_CHANGE:
-    #        return u"%(property)s %(target)s: %(change)s"% {
-    #            u'target': self.target_repr,
-    #            u'property': self.property_repr,
-    #            u'change': self.change,
+    #        return '%(property)s %(target)s: %(change)s' % {
+    #            'target': self.target_repr,
+    #            'property': self.property_repr,
+    #            'change': self.change,
     #            }
 
     def small_date(self):
         return self.dt.strftime('%Y-%m-%d %H:%M:%S')
 
     def action_txt(self):
-        return { LOG_ACTION_ADD: u"Add",
-                 LOG_ACTION_CHANGE: u"Update",
-                 LOG_ACTION_DEL: u"Delete"}[self.action]
+        return { LOG_ACTION_ADD: 'Add',
+                 LOG_ACTION_CHANGE: 'Update',
+                 LOG_ACTION_DEL: 'Delete'}[self.action]
 
 
 class Config(NgwModel):
@@ -131,7 +131,7 @@ class Config(NgwModel):
     def __unicode__(self):
         return self.id
     class Meta:
-        db_table = u'config'
+        db_table = 'config'
 
 
 class Choice(NgwModel):
@@ -142,15 +142,15 @@ class Choice(NgwModel):
     def __unicode__(self):
         return self.value
     class Meta:
-        db_table = u'choice'
+        db_table = 'choice'
 
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, blank=True)
     sort_by_key = models.BooleanField()
     class Meta:
-        db_table = u'choice_group'
-        verbose_name = u"choices list"
+        db_table = 'choice_group'
+        verbose_name = 'choices list'
 
     def __unicode__(self):
         return self.name
@@ -173,10 +173,10 @@ class Contact(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     class Meta:
-        db_table = u'contact'
+        db_table = 'contact'
 
     def __repr__(self):
-        return 'Contact <'+self.name.encode('utf-8')+'>'
+        return b'Contact <' + self.name.encode('utf-8') + b'>'
 
     def __unicode__(self):
         return self.name
@@ -186,7 +186,7 @@ class Contact(NgwModel):
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
-        return u"<a href=\"%(id)d/\">%(name)s</a>" % { 'id': self.id, 'name': html.escape(self.name) }
+        return '<a href="%(id)d/">%(name)s</a>' % { 'id': self.id, 'name': html.escape(self.name) }
 
 
     def get_directgroups_member(self):
@@ -242,7 +242,7 @@ class Contact(NgwModel):
         try:
             cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
         except ContactFieldValue.DoesNotExist:
-            return u""
+            return ''
         return unicode(cfv)
 
     def set_fieldvalue(self, user, field, newvalue):
@@ -263,24 +263,24 @@ class Contact(NgwModel):
                 if cfv.value != newvalue:
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = u"Contact "+unicode(self.id)
-                    log.target_repr = u"Contact "+self.name
+                    log.target = 'Contact ' + unicode(self.id)
+                    log.target_repr = 'Contact ' + self.name
                     log.property = unicode(field_id)
                     log.property_repr = field.name
-                    log.change = u"change from "+unicode(cfv)
+                    log.change = 'change from ' + unicode(cfv)
                     cfv.value = newvalue
-                    log.change += u" to "+unicode(cfv)
+                    log.change += ' to ' + unicode(cfv)
                     cfv.save()
                     log.save()
                     hooks.contact_field_changed(user, field_id, self)
             else:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_DEL
-                log.target = u"Contact "+unicode(self.id)
-                log.target_repr = u"Contact "+self.name
+                log.target = 'Contact ' + unicode(self.id)
+                log.target_repr = 'Contact ' + self.name
                 log.property = unicode(field_id)
                 log.property_repr = field.name
-                log.change = u"old value was "+unicode(cfv)
+                log.change = 'old value was ' + unicode(cfv)
                 cfv.delete()
                 log.save()
                 hooks.contact_field_changed(user, field_id, self)
@@ -288,8 +288,8 @@ class Contact(NgwModel):
             if newvalue:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u"Contact "+unicode(self.id)
-                log.target_repr = u"Contact "+self.name
+                log.target = 'Contact ' + unicode(self.id)
+                log.target_repr = 'Contact ' + self.name
                 log.property = unicode(field_id)
                 log.property_repr = field.name
                 cfv = ContactFieldValue()
@@ -297,7 +297,7 @@ class Contact(NgwModel):
                 cfv.contact_field = field
                 cfv.value = newvalue
                 cfv.save()
-                log.change = u"new value is "+unicode(cfv)
+                log.change = 'new value is ' + unicode(cfv)
                 log.save()
                 hooks.contact_field_changed(user, field_id, self)
 
@@ -308,40 +308,40 @@ class Contact(NgwModel):
 
     def vcard(self):
         # http://www.ietf.org/rfc/rfc2426.txt
-        vcf = u""
+        vcf = ''
         def line(key, value):
-            value = value.replace("\\", "\\\\")
-            value = value.replace("\r", "")
-            value = value.replace("\n", "\\n")
-            return key+":"+value+"\r\n"
-        vcf += line(u"BEGIN", u"VCARD")
-        vcf += line(u"VERSION", u"3.0")
-        vcf += line(u"FN", self.name)
-        vcf += line(u"N", self.name)
+            value = value.replace('\\', '\\\\')
+            value = value.replace('\r', '')
+            value = value.replace('\n', '\\n')
+            return key + ':' + value + '\r\n'
+        vcf += line('BEGIN', 'VCARD')
+        vcf += line('VERSION', '3.0')
+        vcf += line('FN', self.name)
+        vcf += line('N', self.name)
 
 
         street = self.get_fieldvalue_by_id(FIELD_STREET)
         postal_code = self.get_fieldvalue_by_id(FIELD_POSTCODE)
         city = self.get_fieldvalue_by_id(FIELD_CITY)
         country = self.get_fieldvalue_by_id(FIELD_COUNTRY)
-        vcf += line(u"ADR", u";;"+street+u";"+city+u";;"+postal_code+u";"+country)
+        vcf += line('ADR', ';;' + street + ';' + city + ';;' + postal_code + ';' + country)
 
         for phone in self.get_fieldvalues_by_type('PHONE'):
-            vcf += line(u"TEL", phone)
+            vcf += line('TEL', phone)
 
         for email in self.get_fieldvalues_by_type('EMAIL'):
-            vcf += line(u"EMAIL", email)
+            vcf += line('EMAIL', email)
 
         bday = self.get_fieldvalue_by_id(FIELD_BIRTHDAY)
         if bday:
-            vcf += line(u"BDAY", unicode(bday))
+            vcf += line('BDAY', unicode(bday))
 
-        vcf += line(u"END", u"VCARD")
+        vcf += line('END', 'VCARD')
         return vcf
 
     def get_addr_semicol(self):
         "Returns address in a form compatible with googlemap query"
-        return self.get_fieldvalue_by_id(FIELD_STREET)+u";"+self.get_fieldvalue_by_id(FIELD_POSTCODE)+u";"+self.get_fieldvalue_by_id(FIELD_CITY)+u";"+self.get_fieldvalue_by_id(FIELD_COUNTRY)
+        return self.get_fieldvalue_by_id(FIELD_STREET) + ';' + self.get_fieldvalue_by_id(FIELD_POSTCODE) + ';' + self.get_fieldvalue_by_id(FIELD_CITY) + ';' + self.get_fieldvalue_by_id(FIELD_COUNTRY)
 
     # TODO: migrate to new django.contrib.messages framework
     def push_message(self, message):
@@ -385,9 +385,9 @@ class Contact(NgwModel):
         self.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
         if new_password_status is None:
             if self.id == user.id:
-                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'3') # User defined
+                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, '3') # User defined
             else:
-                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, u'1') # Generated
+                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, '1') # Generated
         else:
             self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, new_password_status)
 
@@ -437,13 +437,13 @@ class ContactGroup(NgwModel):
     #direct_supergroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none1+')
     #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')
     class Meta:
-        db_table = u'contact_group'
+        db_table = 'contact_group'
 
     def __unicode__(self):
         return self.name
 
     def __repr__(self):
-        return 'ContactGroup<'+str(self.id)+self.name.encode('utf-8')+'>'
+        return b'ContactGroup <' + str(self.id) + self.name.encode('utf-8') + b'>'
 
     def get_smart_navbar(self):
         nav = Navbar()
@@ -456,9 +456,9 @@ class ContactGroup(NgwModel):
 
     def get_absolute_url(self):
         if self.date:
-            return '/events/'+unicode(self.id)+u"/"
+            return '/events/' + unicode(self.id) + '/'
         else:
-            return self.get_class_absolute_url()+unicode(self.id)+u"/"
+            return self.get_class_absolute_url() + unicode(self.id) + '/'
 
 
     def get_direct_supergroups_ids(self):
@@ -528,14 +528,14 @@ class ContactGroup(NgwModel):
     def supergroups_includinghtml(self):
         sgs = self.get_supergroups()
         if not sgs:
-            return u""
-        return u" (implies "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
+            return ''
+        return ' (implies ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
 
     def subgroups_includinghtml(self):
         sgs = self.get_subgroups()
         if not sgs:
-            return u""
-        return u" (including "+u", ".join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs])+u")"
+            return ''
+        return ' (including ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
 
     # See group_add_contacts_to.html
     def is_event(self):
@@ -545,19 +545,19 @@ class ContactGroup(NgwModel):
         if self.date:
             return ngw_date_format(self.date)
         else:
-            return u''
+            return ''
 
     def unicode_with_date(self):
         """ Returns the name of the group, and the date if there's one"""
         result = self.name
         if self.date:
-            result += u' ‧ '+ngw_date_format(self.date)
+            result += ' ‧ '+ngw_date_format(self.date)
         return result
 
     def mailman_request_address(self):
         ''' Adds -request before the @ of the address '''
         if self.mailman_address:
-            return self.mailman_address.replace(u'@', u'-request@')
+            return self.mailman_address.replace('@', '-request@')
 
 
     def static_folder(self):
@@ -601,11 +601,11 @@ class ContactGroup(NgwModel):
 
     def get_default_display(self):
         if not self.date:
-            return u'mg'
+            return 'mg'
         if self.date > datetime.utcnow().date():
-            return u'mig'
+            return 'mig'
         else:
-            return u'mg'
+            return 'mg'
 
 
     def set_member_1(self, logged_contact, contact, group_member_mode):
@@ -631,94 +631,94 @@ class ContactGroup(NgwModel):
         add_mode = set()
         del_mode = set()
 
-        if group_member_mode and group_member_mode[0] in u'+-':
+        if group_member_mode and group_member_mode[0] in '+-':
             for letter in group_member_mode:
-                if letter in u'+-':
+                if letter in '+-':
                     operation = letter
-                elif letter == u'm':
-                    if operation == u'+':
-                        add_mode.add(u'm')
-                        del_mode.discard(u'm')
-                        add_mode.discard(u'i')
-                        del_mode.add(u'i')
-                        add_mode.discard(u'd')
-                        del_mode.add(u'd')
-                    else: # operation == u'-'
-                        add_mode.discard(u'm')
-                        del_mode.add(u'm')
-                        add_mode.discard(u'o')
-                        del_mode.add(u'o')
-                elif letter == u'i':
-                    if operation == u'+':
-                        add_mode.discard(u'm')
-                        del_mode.add(u'm')
-                        add_mode.add(u'i')
-                        del_mode.discard(u'i')
-                        add_mode.discard(u'd')
-                        del_mode.add(u'd')
-                        add_mode.discard(u'o')
-                        del_mode.add(u'o')
-                    else: # operation == u'-'
-                        add_mode.discard(u'i')
-                        del_mode.add(u'i')
-                elif letter == u'd':
-                    if operation == u'+':
-                        add_mode.discard(u'm')
-                        del_mode.add(u'm')
-                        add_mode.discard(u'i')
-                        del_mode.add(u'i')
-                        add_mode.add(u'd')
-                        del_mode.discard(u'd')
-                        add_mode.discard(u'o')
-                        del_mode.add(u'o')
-                    else: # operation == u'-'
-                        add_mode.discard(u'd')
-                        del_mode.add(u'd')
-                elif letter == u'o':
-                    if operation == u'+':
-                        add_mode.add(u'm')
-                        del_mode.discard(u'm')
-                        add_mode.discard(u'i')
-                        del_mode.add(u'i')
-                        add_mode.discard(u'd')
-                        del_mode.add(u'd')
-                        add_mode.add(u'o')
-                        del_mode.discard(u'o')
-                    else: # operation == u'-'
-                        add_mode.discard(u'o')
-                        del_mode.add(u'o')
+                elif letter == 'm':
+                    if operation == '+':
+                        add_mode.add('m')
+                        del_mode.discard('m')
+                        add_mode.discard('i')
+                        del_mode.add('i')
+                        add_mode.discard('d')
+                        del_mode.add('d')
+                    else: # operation == '-'
+                        add_mode.discard('m')
+                        del_mode.add('m')
+                        add_mode.discard('o')
+                        del_mode.add('o')
+                elif letter == 'i':
+                    if operation == '+':
+                        add_mode.discard('m')
+                        del_mode.add('m')
+                        add_mode.add('i')
+                        del_mode.discard('i')
+                        add_mode.discard('d')
+                        del_mode.add('d')
+                        add_mode.discard('o')
+                        del_mode.add('o')
+                    else: # operation == '-'
+                        add_mode.discard('i')
+                        del_mode.add('i')
+                elif letter == 'd':
+                    if operation == '+':
+                        add_mode.discard('m')
+                        del_mode.add('m')
+                        add_mode.discard('i')
+                        del_mode.add('i')
+                        add_mode.add('d')
+                        del_mode.discard('d')
+                        add_mode.discard('o')
+                        del_mode.add('o')
+                    else: # operation == '-'
+                        add_mode.discard('d')
+                        del_mode.add('d')
+                elif letter == 'o':
+                    if operation == '+':
+                        add_mode.add('m')
+                        del_mode.discard('m')
+                        add_mode.discard('i')
+                        del_mode.add('i')
+                        add_mode.discard('d')
+                        del_mode.add('d')
+                        add_mode.add('o')
+                        del_mode.discard('o')
+                    else: # operation == '-'
+                        add_mode.discard('o')
+                        del_mode.add('o')
 
         else:
             # set mode, no + nor -
-            if u'+' in group_member_mode or u'-' in group_member_mode:
+            if '+' in group_member_mode or '-' in group_member_mode:
                 raise ValueError("Can't set mode %s" % group_member_mode)
-            if u'm' in group_member_mode:
-                if u'i' in group_member_mode or u'd' in group_member_mode:
+            if 'm' in group_member_mode:
+                if 'i' in group_member_mode or 'd' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode.add(u'm')
-                del_mode.add(u'i')
-                del_mode.add(u'd')
-            if u'i' in group_member_mode:
-                if u'm' in group_member_mode or u'd' in group_member_mode or u'o' in group_member_mode:
+                add_mode.add('m')
+                del_mode.add('i')
+                del_mode.add('d')
+            if 'i' in group_member_mode:
+                if 'm' in group_member_mode or 'd' in group_member_mode or 'o' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                del_mode.add(u'm')
-                add_mode.add(u'i')
-                del_mode.add(u'd')
-                del_mode.add(u'o')
-            if u'd' in group_member_mode:
-                if u'm' in group_member_mode or u'i' in group_member_mode or u'o' in group_member_mode:
+                del_mode.add('m')
+                add_mode.add('i')
+                del_mode.add('d')
+                del_mode.add('o')
+            if 'd' in group_member_mode:
+                if 'm' in group_member_mode or 'i' in group_member_mode or 'o' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                del_mode.add(u'm')
-                del_mode.add(u'i')
-                add_mode.add(u'd')
-                del_mode.add(u'o')
-            if u'o' in group_member_mode:
-                if u'i' in group_member_mode or u'd' in group_member_mode:
+                del_mode.add('m')
+                del_mode.add('i')
+                add_mode.add('d')
+                del_mode.add('o')
+            if 'o' in group_member_mode:
+                if 'i' in group_member_mode or 'd' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode.add(u'm')
-                del_mode.add(u'i')
-                del_mode.add(u'd')
-                add_mode.add(u'o')
+                add_mode.add('m')
+                del_mode.add('i')
+                del_mode.add('d')
+                add_mode.add('o')
 
         try:
             cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
@@ -729,109 +729,109 @@ class ContactGroup(NgwModel):
             cig = ContactInGroup(contact_id=contact.id, group_id=self.id)
             log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_ADD
-            log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-            log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+            log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
             log.save()
             result = LOG_ACTION_ADD
 
         #print("ok +", add_mode, "-", del_mode)
-        if u'm' in add_mode:
+        if 'm' in add_mode:
             if not cig.member:
                 cig.member = True
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'member'
-                log.property_repr = u'Member'
-                log.change = u'new value is true'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'member'
+                log.property_repr = 'Member'
+                log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if u'm' in del_mode:
+        if 'm' in del_mode:
             if cig.member:
                 cig.member = False
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'member'
-                log.property_repr = u'Member'
-                log.change = u'new value is false'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'member'
+                log.property_repr = 'Member'
+                log.change = 'new value is false'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if u'i' in add_mode:
+        if 'i' in add_mode:
             if not cig.invited:
                 cig.invited = True
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'invited'
-                log.property_repr = u'Invited'
-                log.change = u'new value is true'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'invited'
+                log.property_repr = 'Invited'
+                log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if u'i' in del_mode:
+        if 'i' in del_mode:
             if cig.invited:
                 cig.invited = False
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'invited'
-                log.property_repr = u'Invited'
-                log.change = u'new value is false'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'invited'
+                log.property_repr = 'Invited'
+                log.change = 'new value is false'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if u'd' in add_mode:
+        if 'd' in add_mode:
             if not cig.declined_invitation:
                 cig.declined_invitation = True
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'declined_invitation'
-                log.property_repr = u'Declined invitation'
-                log.change = u'new value is true'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'declined_invitation'
+                log.property_repr = 'Declined invitation'
+                log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if u'd' in del_mode:
+        if 'd' in del_mode:
             if cig.declined_invitation:
                 cig.declined_invitation = False
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'declined_invitation'
-                log.property_repr = u'Declined invitation'
-                log.change = u'new value is false'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'declined_invitation'
+                log.property_repr = 'Declined invitation'
+                log.change = 'new value is false'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if u'o' in add_mode:
+        if 'o' in add_mode:
             if not cig.operator:
                 cig.operator = True
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'operator'
-                log.property_repr = u'Operator'
-                log.change = u'new value is true'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'operator'
+                log.property_repr = 'Operator'
+                log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if u'o' in del_mode:
+        if 'o' in del_mode:
             if cig.operator:
                 cig.operator = False
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-                log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
-                log.property = u'operator'
-                log.property_repr = u'Operator'
-                log.change = u'new value is false'
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'operator'
+                log.property_repr = 'Operator'
+                log.change = 'new value is false'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
@@ -839,8 +839,8 @@ class ContactGroup(NgwModel):
             cig.delete()
             log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_DEL
-            log.target = u'ContactInGroup '+unicode(contact.id)+u' '+unicode(self.id)
-            log.target_repr = u'Membership contact '+contact.name+u' in group '+self.unicode_with_date()
+            log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
             result = LOG_ACTION_CHANGE
         else:
             cig.save()
@@ -863,18 +863,18 @@ class ContactGroup(NgwModel):
                 changed_contacts.append(contact)
 
         if added_contacts:
-            msgpart_contacts = u', '.join([c.name for c in added_contacts])
+            msgpart_contacts = ', '.join([c.name for c in added_contacts])
             if len(added_contacts)==1:
-                msg = u'Contact %s has been added in %s with status %s.'
+                msg = 'Contact %s has been added in %s with status %s.'
             else:
-                msg = u'Contacts %s have been added in %s with status %s.'
+                msg = 'Contacts %s have been added in %s with status %s.'
             logged_contact.push_message(msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
         if changed_contacts:
-            msgpart_contacts = u', '.join([c.name for c in changed_contacts])
+            msgpart_contacts = ', '.join([c.name for c in changed_contacts])
             if len(changed_contacts)==1:
-                msg = u'Contact %s allready was in %s. Status has been changed to %s.'
+                msg = 'Contact %s allready was in %s. Status has been changed to %s.'
             else:
-                msg = u'Contacts %s allready were in %s. Status have been changed to %s.'
+                msg = 'Contacts %s allready were in %s. Status have been changed to %s.'
             logged_contact.push_message(msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
 
 
@@ -907,15 +907,15 @@ class ContactField(NgwModel):
     system = models.BooleanField()
     default = models.TextField(blank=True)
     class Meta:
-        db_table = u'contact_field'
+        db_table = 'contact_field'
         ordering = 'sort_weight',
 
     @classmethod
     def get_class_absolute_url(cls):
-        return u"/contactfields/"
+        return '/contactfields/'
 
     def __repr__(self):
-        return "ContactField<"+str(self.id)+","+self.name.encode('utf8')+','+self.type.encode('utf8')+">"
+        return b'ContactField <' + str(self.id) + b',' + self.name.encode('utf8') + b',' + self.type.encode('utf8') + b'>'
 
     def __unicode__(self):
         return self.name
@@ -981,7 +981,7 @@ class ContactField(NgwModel):
 
 def contact_field_initialized_my_manager(sender, **kwargs):
     field = kwargs['instance']
-    assert field.type is not None, u"Polymorphic abstract class must be created with type defined"
+    assert field.type is not None, 'Polymorphic abstract class must be created with type defined'
     field.polymorphic_upgrade()
 models.signals.post_init.connect(contact_field_initialized_my_manager, ContactField)
 
@@ -1003,14 +1003,14 @@ class FilterHelper(object):
         params_sql = { }
         for k, v in kargs.iteritems():
             #print(k, "=", v)
-            auto_param_name = u"autoparam_"+unicode(len(query.params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
+            auto_param_name = 'autoparam_' + unicode(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
             if isinstance(v, unicode):
-                params_where[ k ] = u'%('+auto_param_name+k+u')s'
+                params_where[ k ] = '%(' + auto_param_name + k + ')s'
                 params_sql[ auto_param_name+k ] = v
             elif isinstance(v, int):
                 params_where[ k ] = v
             else:
-                raise Exception(u"Unsupported type "+unicode(type(v)))
+                raise Exception('Unsupported type ' + unicode(type(v)))
         where = where % params_where
         return where, params_sql
 
@@ -1043,14 +1043,14 @@ class Filter(FilterHelper):
 class NameFilterStartsWith(Filter):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return u'(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', { 'value_name1':u"^"+value, 'value_name2':u" "+value }
+        return '(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', { 'value_name1': '^' + value, 'value_name2': ' '+value }
     def to_html(self, value):
-        return u"<b>Name</b> "+self.__class__.human_name+u" \""+unicode(value)+u"\""
+        return '<b>Name</b> ' + self.__class__.human_name + ' "' + unicode(value) + '"'
 
     def get_param_types(self):
         return (unicode,)
-NameFilterStartsWith.internal_name = "startswith"
-NameFilterStartsWith.human_name = u"has a word starting with"
+NameFilterStartsWith.internal_name = 'startswith'
+NameFilterStartsWith.human_name = 'has a word starting with'
 
 class FieldFilter(Filter):
     """ Helper abstract class for field filters """
@@ -1061,15 +1061,15 @@ class FieldFilterOp0(FieldFilter):
     """ Helper abstract class for field filters that takes no parameter """
     def to_html(self):
         field = ContactField.objects.get(pk=self.field_id)
-        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name
+        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name
 
 class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
-        result = u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" "
+        result = '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' '
         if isinstance(value, unicode):
-            value = u'"'+value+u'"'
+            value = '"' + value + '"'
         else:
             value = unicode(value)
         return result+value
@@ -1078,220 +1078,220 @@ class FieldFilterOp1(FieldFilter):
 class FieldFilterStartsWith(FieldFilterOp1):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', { 'field_id':self.field_id, 'value1':u"^"+value, 'value2':u" "+value}
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', { 'field_id':self.field_id, 'value1': '^'+value, 'value2': ' '+value}
     def get_param_types(self):
         return (unicode,)
-FieldFilterStartsWith.internal_name = "startswith"
-FieldFilterStartsWith.human_name = u"has a word starting with"
+FieldFilterStartsWith.internal_name = 'startswith'
+FieldFilterStartsWith.human_name = 'has a word starting with'
 
 
 class FieldFilterEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value}
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (unicode,)
-FieldFilterEQ.internal_name = "eq"
-FieldFilterEQ.human_name = u"="
+FieldFilterEQ.internal_name = 'eq'
+FieldFilterEQ.human_name = '='
 
 
 class FieldFilterNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterNEQ.internal_name = "neq"
-FieldFilterNEQ.human_name = u"≠"
+FieldFilterNEQ.internal_name = 'neq'
+FieldFilterNEQ.human_name = '≠'
 
 
 class FieldFilterLE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterLE.internal_name = "le"
-FieldFilterLE.human_name = u"≤"
+FieldFilterLE.internal_name = 'le'
+FieldFilterLE.human_name = '≤'
 
 
 class FieldFilterGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterGE.internal_name = "ge"
-FieldFilterGE.human_name = u"≥"
+FieldFilterGE.internal_name = 'ge'
+FieldFilterGE.human_name = '≥'
 
 
 class FieldFilterLIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterLIKE.internal_name = "like"
-FieldFilterLIKE.human_name = u"SQL LIKE"
+FieldFilterLIKE.internal_name = 'like'
+FieldFilterLIKE.human_name = 'SQL LIKE'
 
 
 class FieldFilterILIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
         return (unicode,)
-FieldFilterILIKE.internal_name = "ilike"
-FieldFilterILIKE.human_name = u"SQL ILIKE"
+FieldFilterILIKE.internal_name = 'ilike'
+FieldFilterILIKE.human_name = 'SQL ILIKE'
 
 
 class FieldFilterNull(FieldFilterOp0):
     def get_sql_where_params(self):
-        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
     def get_param_types(self):
         return ()
-FieldFilterNull.internal_name = "null"
-FieldFilterNull.human_name = u"is undefined"
+FieldFilterNull.internal_name = 'null'
+FieldFilterNull.human_name = 'is undefined'
 
 
 class FieldFilterNotNull(FieldFilterOp0):
     def get_sql_where_params(self):
-        return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
+        return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
     def get_param_types(self):
         return ()
-FieldFilterNotNull.internal_name = "notnull"
-FieldFilterNotNull.human_name = u"is defined"
+FieldFilterNotNull.internal_name = 'notnull'
+FieldFilterNotNull.human_name = 'is defined'
 
 
 class FieldFilterIEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterIEQ.internal_name = "ieq"
-FieldFilterIEQ.human_name = u"="
+FieldFilterIEQ.internal_name = 'ieq'
+FieldFilterIEQ.human_name = '='
 
 
 class FieldFilterINE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterINE.internal_name = "ineq"
-FieldFilterINE.human_name = u"≠"
+FieldFilterINE.internal_name = 'ineq'
+FieldFilterINE.human_name = '≠'
 
 
 class FieldFilterILT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterILT.internal_name = "ilt"
-FieldFilterILT.human_name = u"<"
+FieldFilterILT.internal_name = 'ilt'
+FieldFilterILT.human_name = '<'
 
 
 class FieldFilterIGT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterIGT.internal_name = "igt"
-FieldFilterIGT.human_name = u">"
+FieldFilterIGT.internal_name = 'igt'
+FieldFilterIGT.human_name = '>'
 
 
 class FieldFilterILE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterILE.internal_name = "ile"
-FieldFilterILE.human_name = u"≤"
+FieldFilterILE.internal_name = 'ile'
+FieldFilterILE.human_name = '≤'
 
 
 class FieldFilterIGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterIGE.internal_name = "ige"
-FieldFilterIGE.human_name = u"≥"
+FieldFilterIGE.internal_name = 'ige'
+FieldFilterIGE.human_name = '≥'
 
 
 class FieldFilterAGE_GE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
+        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterAGE_GE.internal_name = "agege"
-FieldFilterAGE_GE.human_name = u"Age (years) ≥"
+FieldFilterAGE_GE.internal_name = 'agege'
+FieldFilterAGE_GE.human_name = 'Age (years) ≥'
 
 
 class FieldFilterVALID_GT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
+        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
     def get_param_types(self):
         return (int,)
-FieldFilterVALID_GT.internal_name = "validitygt"
-FieldFilterVALID_GT.human_name = u"date until event ≥"
+FieldFilterVALID_GT.internal_name = 'validitygt'
+FieldFilterVALID_GT.human_name = 'date until event ≥'
 
 
 class FieldFilterFUTURE(FieldFilterOp0):
     def get_sql_where_params(self):
-        return u'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', { 'field_id': self.field_id }
+        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', { 'field_id': self.field_id }
     def get_param_types(self):
         return ()
-FieldFilterFUTURE.internal_name = "future"
-FieldFilterFUTURE.human_name = u"In the future"
+FieldFilterFUTURE.internal_name = 'future'
+FieldFilterFUTURE.human_name = 'In the future'
 
 
 class FieldFilterChoiceEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
         return (field.choice_group,)
-FieldFilterChoiceEQ.internal_name = "ceq"
-FieldFilterChoiceEQ.human_name = u"="
+FieldFilterChoiceEQ.internal_name = 'ceq'
+FieldFilterChoiceEQ.human_name = '='
 
 
 class FieldFilterChoiceNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
         return (field.choice_group,)
-FieldFilterChoiceNEQ.internal_name = "cneq"
-FieldFilterChoiceNEQ.human_name = u"≠"
+FieldFilterChoiceNEQ.internal_name = 'cneq'
+FieldFilterChoiceNEQ.human_name = '≠'
 
 
 class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
+        return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
         return (field.choice_group,)
-FieldFilterMultiChoiceHAS.internal_name = "mchas"
-FieldFilterMultiChoiceHAS.human_name = u"contains"
+FieldFilterMultiChoiceHAS.internal_name = 'mchas'
+FieldFilterMultiChoiceHAS.human_name = 'contains'
 
 
 class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return u'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
         field = ContactField.objects.get(self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return u"<b>"+html.escape(field.name)+u"</b> "+self.__class__.human_name+u" \""+html.escape(cfv.value)+u"\""
+        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
         field = ContactField.objects.get(self.field_id)
         return (field.choice_group,)
-FieldFilterMultiChoiceHASNOT.internal_name = "mchasnot"
-FieldFilterMultiChoiceHASNOT.human_name = u"doesn't contain"
+FieldFilterMultiChoiceHASNOT.internal_name = 'mchasnot'
+FieldFilterMultiChoiceHASNOT.human_name = "doesn't contain"
 
 
 
@@ -1299,134 +1299,134 @@ class GroupFilterIsMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
     def get_param_types(self):
         return ()
-GroupFilterIsMember.internal_name = "memberof"
-GroupFilterIsMember.human_name = u"is member of group"
+GroupFilterIsMember.internal_name = 'memberof'
+GroupFilterIsMember.human_name = 'is member of group'
 
 
 class GroupFilterIsNotMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
     def get_param_types(self):
         return ()
-GroupFilterIsNotMember.internal_name = "notmemberof"
-GroupFilterIsNotMember.human_name = u"is not member of group"
+GroupFilterIsNotMember.internal_name = 'notmemberof'
+GroupFilterIsNotMember.human_name = 'is not member of group'
 
 
 class GroupFilterIsInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
     def get_param_types(self):
         return ()
-GroupFilterIsInvited.internal_name = "ginvited"
-GroupFilterIsInvited.human_name = u"has been invited in group"
+GroupFilterIsInvited.internal_name = 'ginvited'
+GroupFilterIsInvited.human_name = 'has been invited in group'
 
 
 class GroupFilterIsNotInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
     def get_param_types(self):
         return ()
-GroupFilterIsNotInvited.internal_name = "gnotinvited"
-GroupFilterIsNotInvited.human_name = u"has not been invited in group"
+GroupFilterIsNotInvited.internal_name = 'gnotinvited'
+GroupFilterIsNotInvited.human_name = 'has not been invited in group'
 
 
 class GroupFilterDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return u'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
     def get_param_types(self):
         return ()
 GroupFilterDeclinedInvitation.internal_name = "gdeclined"
-GroupFilterDeclinedInvitation.human_name = u"has declined invitation in group"
+GroupFilterDeclinedInvitation.human_name = 'has declined invitation in group'
 
 
 class GroupFilterNotDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return u'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name+u" <b>"+group.unicode_with_date()+"</b>"
+        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
     def get_param_types(self):
         return ()
-GroupFilterNotDeclinedInvitation.internal_name = "gnotdeclined"
-GroupFilterNotDeclinedInvitation.human_name = u"has not declined invitation in group"
+GroupFilterNotDeclinedInvitation.internal_name = 'gnotdeclined'
+GroupFilterNotDeclinedInvitation.human_name = 'has not declined invitation in group'
 
 
 class AllEventsNotReactedSince(Filter):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return u'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(date)s AND (operator OR member OR declined_invitation))', { 'date':value }
+        return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(date)s AND (operator OR member OR declined_invitation))', { 'date':value }
     def to_html(self, value):
-        return self.__class__.human_name+u" \""+unicode(value)+u"\""
+        return self.__class__.human_name + ' "' + unicode(value) + '"'
     def get_param_types(self):
         return (unicode,) # TODO
-AllEventsNotReactedSince.internal_name = "notreactedsince"
-AllEventsNotReactedSince.human_name = u"has not reacted to any invitation since"
+AllEventsNotReactedSince.internal_name = 'notreactedsince'
+AllEventsNotReactedSince.human_name = 'has not reacted to any invitation since'
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
-        return u'(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) < '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) < '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
     def to_html(self, value):
-        return self.__class__.human_name+u" \""+unicode(value)+u"\""
+        return self.__class__.human_name + ' "' + unicode(value) + '"'
     def get_param_types(self):
         return (int,)
-AllEventsReactionYearRatioLess.internal_name = "yearreactionratioless"
-AllEventsReactionYearRatioLess.human_name = u"1 year invitation reaction % less than"
+AllEventsReactionYearRatioLess.internal_name = 'yearreactionratioless'
+AllEventsReactionYearRatioLess.human_name = '1 year invitation reaction % less than'
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
-        return u'(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) > '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) > '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
     def to_html(self, value):
-        return self.__class__.human_name+u" \""+unicode(value)+u"\""
+        return self.__class__.human_name + ' "' + unicode(value) + '"'
     def get_param_types(self):
         return (int,)
-AllEventsReactionYearRatioMore.internal_name = "yearreactionratiomore"
-AllEventsReactionYearRatioMore.human_name = u"1 year invitation reaction % more than"
+AllEventsReactionYearRatioMore.internal_name = 'yearreactionratiomore'
+AllEventsReactionYearRatioMore.human_name = '1 year invitation reaction % more than'
 
 
 
@@ -1442,7 +1442,7 @@ class BaseBoundFilter(FilterHelper):
 
     @staticmethod
     def indent(indent_level):
-        return u"\u00a0"*4*indent_level
+        return '\u00a0' * 4 * indent_level
 
 
 class BoundFilter(BaseBoundFilter):
@@ -1454,9 +1454,10 @@ class BoundFilter(BaseBoundFilter):
         self.args = args
 
     def __repr__(self):
-        return "BoundFilter<" + \
-            ",".join([repr(self.filter)]+[repr(arg) for arg in self.args]) \
-            +">"
+        return b'BoundFilter <' + \
+            b','.join([repr(self.filter)] + [repr(arg) for arg in self.args]) \
+            + b'>'
+
     def get_sql_where_params(self):
         return self.filter.get_sql_where_params(*self.args)
 
@@ -1468,7 +1469,7 @@ class EmptyBoundFilter(BaseBoundFilter):
     def apply_filter_to_query(self, query):
         return query
     def to_html(self, indent_level=0):
-        return self.indent(indent_level)+u"All contacts"
+        return self.indent(indent_level) + 'All contacts'
 
 
 class AndBoundFilter(BaseBoundFilter):
@@ -1479,9 +1480,9 @@ class AndBoundFilter(BaseBoundFilter):
     def get_sql_query_where(self, query, *args, **kargs):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
-        return query, u"((" + where1 + u') AND (' + where2 + u'))'
+        return query, '((' + where1 + ') AND (' + where2 + '))'
     def to_html(self, indent_level=0):
-        return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"AND<br>"+ self.f2.to_html(indent_level+1)
+        return self.f1.to_html(indent_level+1) + '<br>' + self.indent(indent_level) + 'AND<br>' + self.f2.to_html(indent_level+1)
 
 
 class OrBoundFilter(BaseBoundFilter):
@@ -1492,9 +1493,9 @@ class OrBoundFilter(BaseBoundFilter):
     def get_sql_query_where(self, query, *args, **kargs):
         query, where1 = self.f1.get_sql_query_where(query)
         query, where2 = self.f2.get_sql_query_where(query)
-        return query, u"((" + where1 + u') OR (' + where2 + u'))'
+        return query, '((' + where1 + ') OR (' + where2 + '))'
     def to_html(self, indent_level=0):
-        return self.f1.to_html(indent_level+1) + u"<br>"+self.indent(indent_level)+u"OR<br>"+ self.f2.to_html(indent_level+1)
+        return self.f1.to_html(indent_level+1) + '<br>' + self.indent(indent_level) + 'OR<br>' + self.f2.to_html(indent_level+1)
 
 
 class ContactFieldValue(NgwModel):
@@ -1503,11 +1504,11 @@ class ContactFieldValue(NgwModel):
     contact_field = models.ForeignKey(ContactField, related_name='values')
     value = models.TextField(blank=True)
     class Meta:
-        db_table = u'contact_field_value'
+        db_table = 'contact_field_value'
 
     def __repr__(self):
         cf = self.contact_field
-        return 'ContactFieldValue<"'+unicode(self.contact).encode("utf-8")+'", "'+unicode(cf).encode('utf-8')+'", "'+unicode(self).encode('utf-8')+'">'
+        return b'ContactFieldValue <"' + unicode(self.contact).encode('utf-8') + b'", "' + unicode(cf).encode('utf-8') + b'", "' + unicode(self).encode('utf-8') + b'">'
 
     def __unicode__(self):
         cf = self.contact_field
@@ -1523,10 +1524,10 @@ class GroupInGroup(NgwModel):
     father = models.ForeignKey(ContactGroup, related_name='direct_gig_subgroups')
     subgroup = models.ForeignKey(ContactGroup, related_name='direct_gig_supergroups')
     class Meta:
-        db_table = u'group_in_group'
+        db_table = 'group_in_group'
 
     def __repr__(self):
-        return 'GroupInGroup <%s %s>' % (self.subgroup_id, self.father_id)
+        return b'GroupInGroup <%s %s>' % (self.subgroup_id, self.father_id)
 
 
 
@@ -1540,13 +1541,13 @@ class ContactInGroup(NgwModel):
     declined_invitation = models.BooleanField()
     note = models.TextField(blank=True)
     class Meta:
-        db_table = u'contact_in_group'
+        db_table = 'contact_in_group'
 
     def __repr__(self):
-        return "ContactInGroup<%s,%s>" % (self.contact_id, self.group_id)
+        return b'ContactInGroup<%s,%s>' % (self.contact_id, self.group_id)
 
     def __unicode__(self):
-        return u"contact %(contactname)s in group %(groupname)s" % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
+        return 'contact %(contactname)s in group %(groupname)s' % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
 
     @classmethod
     def get_class_navcomponent(cls):
@@ -1556,7 +1557,7 @@ class ContactInGroup(NgwModel):
         return self.contact.get_navcomponent()
 
     def get_absolute_url(self):
-        return self.contact_group.get_absolute_url()+u"members/"+str(self.contact_id)+u"/membership"
+        return self.contact_group.get_absolute_url() + 'members/' + str(self.contact_id) + '/membership'
 
 
 class ContactSysMsg(NgwModel):
@@ -1564,7 +1565,7 @@ class ContactSysMsg(NgwModel):
     contact = models.ForeignKey(Contact)
     message = models.TextField()
     class Meta:
-        db_table = u'contact_sysmsg'
+        db_table = 'contact_sysmsg'
 
 
 class ContactGroupNews(NgwModel):
@@ -1576,15 +1577,15 @@ class ContactGroupNews(NgwModel):
     text = models.TextField()
 
     class Meta:
-        db_table = u'contact_group_news'
+        db_table = 'contact_group_news'
         ordering = '-date',
-        verbose_name = u"news"
+        verbose_name = 'news'
         verbose_name_plural = 'news'
 
     def __unicode__(self):
         return self.title
 
     def get_absolute_url(self):
-        return self.contact_group.get_absolute_url()+u"news/"+str(self.id)+"/"
+        return self.contact_group.get_absolute_url() + 'news/' + str(self.id) + '/'
 
 

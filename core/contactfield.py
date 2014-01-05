@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from datetime import datetime
 from django import forms
 from django.utils import http
@@ -60,7 +60,7 @@ class TextContactField(ContactField):
         return forms.CharField(label=self.name, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(TextContactField, u"TEXT", u"Text", has_choice=False)
+register_contact_field_type(TextContactField, 'TEXT', 'Text', has_choice=False)
 
 class LongTextContactField(ContactField):
     class Meta:
@@ -69,7 +69,7 @@ class LongTextContactField(ContactField):
         return forms.CharField(label=self.name, widget=forms.Textarea, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(LongTextContactField, u"LONGTEXT", u"Long Text", has_choice=False)
+register_contact_field_type(LongTextContactField, 'LONGTEXT', 'Long Text', has_choice=False)
 
 class NumberContactField(ContactField):
     class Meta:
@@ -85,14 +85,14 @@ class NumberContactField(ContactField):
         except ValueError:
             return False
         return True
-register_contact_field_type(NumberContactField, u"NUMBER", u"Number", has_choice=False)
+register_contact_field_type(NumberContactField, 'NUMBER', 'Number', has_choice=False)
 
 class DateContactField(ContactField):
     class Meta:
         proxy = True
 
     def get_form_fields(self):
-        return forms.DateField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD format."+u" "+self.hint, widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
+        return forms.DateField(label=self.name, required=False, help_text='Use YYYY-MM-DD format.' + ' ' + self.hint, widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
 
     def format_value_html(self, value):
         value = datetime.strptime(value, '%Y-%m-%d')
@@ -106,13 +106,13 @@ class DateContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE,  FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(DateContactField, u"DATE", u"Date", has_choice=False)
+register_contact_field_type(DateContactField, 'DATE', 'Date', has_choice=False)
 
 class DateTimeContactField(ContactField):
     class Meta:
         proxy = True
     def get_form_fields(self):
-        return forms.DateTimeField(label=self.name, required=False, help_text=u"Use YYYY-MM-DD HH:MM:SS format."+u" "+self.hint)
+        return forms.DateTimeField(label=self.name, required=False, help_text='Use YYYY-MM-DD HH:MM:SS format.' + ' ' + self.hint)
     def format_value_html(self, value):
         value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         return ngw_datetime_format(value)
@@ -125,17 +125,17 @@ class DateTimeContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(DateTimeContactField, u"DATETIME", u"DateTime", has_choice=False)
+register_contact_field_type(DateTimeContactField, 'DATETIME', 'DateTime', has_choice=False)
 
 class EmailContactField(ContactField):
     class Meta:
         proxy = True
     def format_value_html(self, value):
         if gpg.is_email_secure(value):
-            gpg_indicator = u' <a href="/pks/lookup?op=get&options=mr&extact=on&search='+http.urlquote_plus(value)+'"><img src="'+settings.STATIC_URL+'static/key.jpeg" alt=key title="GPG key available" border=0></a>'
+            gpg_indicator = ' <a href="/pks/lookup?op=get&options=mr&extact=on&search=' + http.urlquote_plus(value) + '"><img src="' + settings.STATIC_URL + 'static/key.jpeg" alt=key title="GPG key available" border=0></a>'
         else:
-            gpg_indicator = u""
-        return u'<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s' % {'value':value, 'gpg_indicator':gpg_indicator}
+            gpg_indicator = ''
+        return '<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s' % {'value':value, 'gpg_indicator':gpg_indicator}
     def get_form_fields(self):
         return forms.EmailField(label=self.name, required=False, help_text=self.hint)
     @classmethod
@@ -147,18 +147,18 @@ class EmailContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(EmailContactField, u"EMAIL", u"E.Mail", has_choice=False)
+register_contact_field_type(EmailContactField, 'EMAIL', 'E.Mail', has_choice=False)
 
 class PhoneContactField(ContactField):
     class Meta:
         proxy = True
     def format_value_html(self, value):
-        return u'<a href="tel:%(value)s">%(value)s</a>' % {'value':value} # rfc3966
+        return '<a href="tel:%(value)s">%(value)s</a>' % {'value':value} # rfc3966
     def get_form_fields(self):
         return forms.CharField(label=self.name, max_length=255, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(PhoneContactField, u"PHONE", u"Phone", has_choice=False)
+register_contact_field_type(PhoneContactField, 'PHONE', 'Phone', has_choice=False)
 
 class RibContactField(ContactField):
     class Meta:
@@ -174,63 +174,63 @@ class RibContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(RibContactField, u"RIB", u"French bank account", has_choice=False)
+register_contact_field_type(RibContactField, 'RIB', 'French bank account', has_choice=False)
 
 class ChoiceContactField(ContactField):
     class Meta:
         proxy = True
     def type_as_html(self):
-        return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
+        return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
     def format_value_unicode(self, value):
         chg = self.choice_group
         if chg == None:
-            return u"Error"
+            return 'Error'
         try:
             c = Choice.objects.get(choice_group_id=chg.id, key=value)
         except Choice.DoesNotExist:
-            return u"Error"
+            return 'Error'
         else:
             return c.value
     def get_form_fields(self):
-        return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[(u'', u"Unknown")]+self.choice_group.ordered_choices))
+        return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[('', 'Unknown')]+self.choice_group.ordered_choices))
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         return Choice.objects.filter(choice_group_id=choice_group_id).filter(key=value).count() == 1
     def get_filters_classes(self):
         return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterNull, FieldFilterNotNull,)
 
-register_contact_field_type(ChoiceContactField, u"CHOICE", u"Choice", has_choice=True)
+register_contact_field_type(ChoiceContactField, 'CHOICE', 'Choice', has_choice=True)
 
 class MultipleChoiceContactField(ContactField):
     class Meta:
         proxy = True
     def type_as_html(self):
-        return self.str_type_base() + u" (<a href='"+self.choice_group.get_absolute_url()+u"'>"+html.escape(self.choice_group.name)+u"</a>)"
+        return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
     def format_value_unicode(self, value):
         try:
             chg = ChoiceGroup.objects.get(pk=self.choice_group_id)
         except ChoiceGroup.DoesNotExist:
             print("ChoiceGroup %s was lost!" % self.choice_group_id)
-            return u"Error"
+            return 'Error'
         txt_choice_list = []
-        for cid in value.split(u","):
-            if cid == u"":
+        for cid in value.split(','):
+            if cid == '':
                 txt_choice_list.append( "default" ) # this should never occur
                 continue
             try:
                 c = Choice.objects.get(choice_group_id=chg.id, key=cid)
             except Choice.DoesNotExist:
-                print(u"Choice", cid, "in", chg, "was lost.")
+                print('Choice', cid, 'in', chg, 'was lost.')
                 txt_choice_list.append( "error" )
             else:
                 txt_choice_list.append( c.value )
-        return u", ".join(txt_choice_list)
+        return ', '.join(txt_choice_list)
     def get_form_fields(self):
         return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
     def formfield_value_to_db_value(self, value):
-        return u",".join(value)
+        return ','.join(value)
     def db_value_to_formfield_value(self, value):
-        return value.split(u",")
+        return value.split(',')
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         for v in value.split(','):
@@ -239,24 +239,24 @@ class MultipleChoiceContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(MultipleChoiceContactField, u"MULTIPLECHOICE", u"Multiple choice", has_choice=True)
+register_contact_field_type(MultipleChoiceContactField, 'MULTIPLECHOICE', 'Multiple choice', has_choice=True)
 
 
 class PasswordContactField(ContactField):
     class Meta:
         proxy = True
     def format_value_unicode(self, value):
-        return u"********"
+        return '********'
     def get_form_fields(self):
         return None
     def formfield_value_to_db_value(self, value):
         raise NotImplementedError()
     def db_value_to_formfield_value(self, value):
-        raise NotImplementedError(u"Cannot reverse hash of a password")
+        raise NotImplementedError('Cannot reverse hash of a password')
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         return len(value)==13 # We are locked with crypt algorithm, right now
-register_contact_field_type(PasswordContactField, u"PASSWORD", u"Password", has_choice=False)
+register_contact_field_type(PasswordContactField, 'PASSWORD', 'Password', has_choice=False)
 
 
 class ContactNameMetaField(object):

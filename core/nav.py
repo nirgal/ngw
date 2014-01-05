@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from django.utils import html
 
 # TODO: We should realy make all the calls to Navbar from url.py
@@ -10,7 +10,7 @@ class Navbar(object):
     This is a breadcrumb builder, to build a navigation bar.
     '''
     def __init__(self, *args):
-        self.components = [ (u'', u'Home') ]
+        self.components = [ ('', 'Home') ]
         for arg in args:
             self.add_component(arg)
 
@@ -22,17 +22,17 @@ class Navbar(object):
             self.components.append((arg, arg))
         
     def geturl(self, idx):
-        return u''.join(self.components[i][0]+u'/' for i in range(idx+1))
+        return ''.join(self.components[i][0] + '/' for i in range(idx+1))
 
     def getfragment(self, idx):
-        result = u''
+        result = ''
         if idx != len(self.components)-1:
-            result += u'<a href="'+self.geturl(idx)+'\">'
+            result += '<a href="'+self.geturl(idx)+'\">'
         result += html.escape(self.components[idx][1])
         if idx != len(self.components)-1:
-            result += u'</a>'
+            result += '</a>'
         return result
 
     def __unicode__(self):
-        return u' › '.join([self.getfragment(i) for i in range(len(self.components)) ])
+        return ' › '.join([self.getfragment(i) for i in range(len(self.components)) ])
 

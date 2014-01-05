@@ -1,15 +1,17 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
+from __future__ import print_function, unicode_literals
 import os
 import random
 import sys
 import uno
+import subprocess
 from time import sleep
 from com.sun.star.connection import NoConnectException
 from com.sun.star.uno import Exception as UnoException
 from com.sun.star.beans import PropertyValue
 
-TMPDIR = "/tmp"
+TMPDIR = '/tmp'
 
 def get_outputprefix():
     """ generate a random filename so that there is no file in TMPDIR that starts
@@ -70,13 +72,13 @@ def ngw_mailmerge2(filename_in, fields):
     found = document.findFirst(find_replace)
     while found:
         field_name = found.getString()[2:-2]
-        found.setString(fields.get(field_name, u'FIELD NOT FOUND'))
+        found.setString(fields.get(field_name, 'FIELD NOT FOUND'))
         found = document.findNext(found.getEnd(), find_replace)
 
     oldumask = os.umask(0077)
     os.umask(0007)
 
-    filename_out = TMPDIR + '/' + get_outputprefix() + u'.pdf'
+    filename_out = TMPDIR + '/' + get_outputprefix() + '.pdf'
 
     p1 = PropertyValue()
     p1.Name = 'Overwrite'
@@ -97,8 +99,11 @@ def ngw_mailmerge2(filename_in, fields):
 
 
 if __name__ == "__main__":
-    ids = [ sys.argv[x] for x in range(1, len(sys.argv)) ]
     #xcontext = oo_bootstrap()
-    result = ngw_mailmerge("/usr/lib/ngw/mailing/forms/welcome.odt", ids)
-    print(result)
+    for name in sys.argv[1:]:
+        name = unicode(name, 'utf8')
+        result = ngw_mailmerge2("/usr/lib/ngw/mailing/forms/welcome.odt", {'name': name})
+        result = result.split('/')[-1]
+        subprocess.call(["sudo", "/usr/bin/mvoomail", result, '/usr/lib/ngw/mailing/generated'])
+        print('/usr/lib/ngw/mailing/generated/'+result)
     

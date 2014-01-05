@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from django.contrib.messages.storage.base import BaseStorage
 from ngw.core.models import ContactSysMsg
 

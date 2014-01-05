@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from django.contrib.auth.hashers import check_password
 from ngw.core.models import ( Contact, ContactFieldValue,
     FIELD_LOGIN, FIELD_PASSWORD )
@@ -29,7 +29,7 @@ class NgwAuthBackend(object):
         dbpassword = ContactFieldValue.objects.get(contact_id=contact.id, contact_field_id=FIELD_PASSWORD).value
         if not dbpassword:
             return None
-        if check_password(password, u'crypt$$'+dbpassword):
+        if check_password(password, 'crypt$$'+dbpassword):
             if self.enable_lastconnection_updates:
                 contact.update_lastconnection()
             return contact

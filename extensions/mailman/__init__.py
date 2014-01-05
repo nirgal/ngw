@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import sys
 import os
-if __name__ != "__main__":
-    print("Mailman synchronisation extension for NGW loading.")
+if __name__ != '__main__':
+    print('Mailman synchronisation extension for NGW loading.')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
 from ngw.extensions import hooks
@@ -49,10 +49,10 @@ def parse_who_result(mailcontent):
 
 def format_mailadd(name, email):
     if name:
-        result = name + u' '
+        result = name + ' '
     else:
-        result = u''
-    result += u'<%s>' % email
+        result = ''
+    result += '<%s>' % email
     return result
 
 def synchronise_group(cg, mailcontent):
@@ -71,33 +71,33 @@ def synchronise_group(cg, mailcontent):
             name_base = ''
         mailman_names = [ name for name, email in mailman_members if email == email_base ]
         if not mailman_names:
-            result.append((format_mailadd(c.name, email_base) + u" from database is not registered in mailman!",
+            result.append((format_mailadd(c.name, email_base) + ' from database is not registered in mailman!',
                            None,
                            format_mailadd(c.name, email_base)))
         else:
             mailman_name = mailman_names[0]
             if mailman_name != name_base:
-                result.append((u'<%s> is called "%s" in mailman but it should be "%s"' % \
+                result.append(('<%s> is called "%s" in mailman but it should be "%s"' % \
                                   (email_base, mailman_name, name_base),
                                format_mailadd(mailman_name, email_base),
                                format_mailadd(name_base, email_base)))
             mailman_members.remove((mailman_name, email_base))
 
     for name, email in mailman_members:
-        result.append((format_mailadd(name, email) + u" should not be registered in mailman.",
+        result.append((format_mailadd(name, email) + ' should not be registered in mailman.',
                        format_mailadd(name, email),
                        None))
     return result
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options] filename dump|normalize|check")
-    parser.add_option("-g", "--group", action="store", dest='groupid', type="int", help="specify groupid")
+    parser = OptionParser(usage='%prog [options] filename dump|normalize|check')
+    parser.add_option('-g', '--group', action='store', dest='groupid', type='int', help='specify groupid')
 
     (options, args) = parser.parse_args()
 
     if len(args)!=2:
-        print("Need exactly 2 arguments\n", file=sys.stderr)
+        print('Need exactly 2 arguments\n', file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)
     
@@ -128,9 +128,9 @@ if __name__ == "__main__":
                 print('<%s>' % email)
 
     elif action == 'check':
-        assert options.groupid is not None, "You must use -g option"
+        assert options.groupid is not None, 'You must use -g option'
         cg = ContactGroup.objects.get(pk=options.groupid)
-        print("Synching", cg.name)
+        print('Synching', cg.name)
         
         msg, unsubscribe_list, subscribe_list = synchronise_group(cg, filecontent)
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
 
     else:
-        print("unknow action", action, file=sys.stderr)
+        print('unknow action', action, file=sys.stderr)
 
-if __name__ != "__main__":
-    print("mailman synchronisation extension for NGW loaded.", file=sys.stderr)
+if __name__ != '__main__':
+    print('mailman synchronisation extension for NGW loaded.', file=sys.stderr)

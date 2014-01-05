@@ -1,6 +1,6 @@
 # -*- encofing: utf8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import inspect
 from django import template
 #from django.utils import html
@@ -9,17 +9,17 @@ register = template.Library()
 
 @register.filter
 def nav_is_active(navbar, tabname):
-    if len(navbar.components)<2:
-        activetab = u''
+    if len(navbar.components) < 2:
+        activetab = ''
     else:
         activetab = navbar.components[1][0]
     if activetab == tabname:
-        return u"id=active"
-    return u''
+        return 'id=active'
+    return ''
 
 @register.filter
 def escape_amp_query(txt):
-    return txt.replace(u'&', u'%26')
+    return txt.replace('&', '%26')
 
 @register.filter
 def ngw_date_format(dt):
@@ -37,7 +37,7 @@ def pagenumber_iterator(page, npages):
 
 @register.filter
 def order_absmatch(order, column_index):
-    if order == u'':
+    if order == '':
         return False
     if order[0] != '-':
         return int(order) == column_index
@@ -46,7 +46,7 @@ def order_absmatch(order, column_index):
 
 @register.filter
 def order_isreverted(order):
-    return order and order[0] == "-"
+    return order and order[0] == '-'
 
 @register.filter
 def get(object, index):
@@ -61,7 +61,7 @@ def get_notnull(object, index):
 
 @register.filter
 def ngw_display(obj, coldesc):
-    #return u"ngwtags.py disabled"
+    #return 'ngwtags.py disabled'
 
     # If coldesc[2] is a function
     if inspect.isfunction(coldesc[2]):
@@ -73,7 +73,7 @@ def ngw_display(obj, coldesc):
         if inspect.ismethod(result):
             result = result()
         if result == None:
-            return u""
+            return ''
         #result = html.escape(result)
 
     if inspect.isfunction(coldesc[1]):

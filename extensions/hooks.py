@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 # __hooks_group_hierarchy_changed__ = []
 # def on_group_hierarchy_changed(func):

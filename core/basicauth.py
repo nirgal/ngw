@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
 """
 This module implements RFC2617 "http basic auth"
 """
-from __future__ import print_function
+
+from __future__ import print_function, unicode_literals
 import base64
 from functools import wraps
 from django.contrib.auth import authenticate as auth_authenticate
@@ -36,7 +36,7 @@ def login_required():
         @wraps(f)
         def wrapper(request, *args, **kargs):
             if not hasattr(request, 'user'):
-                return HttpResponseAuthenticate(u'Password required')
+                return HttpResponseAuthenticate('Password required')
             return f(request, *args, **kargs)
         return wrapper
     return decorator
@@ -49,7 +49,7 @@ class AuthenticationMiddleware:
     Warning, if no user is logged in, user will NOT be set (unlike django)
     """
     def process_request(self, request):
-        if request.path == u'/logout':
+        if request.path == '/logout':
             return # special hack, so that //logout@exemple.net/logout will work
         try:
             auth = request.META.pop('HTTP_AUTHORIZATION')
@@ -58,8 +58,6 @@ class AuthenticationMiddleware:
             return # It is ok not to be logged in (logout view, ...)
         assert auth.startswith('Basic '), "Invalid authentification scheme"
         username, password = base64.decodestring(auth[len('Basic '):]).split(':', 2)
-        username = unicode(username, 'utf-8', 'replace')
-        password = unicode(password, 'utf-8', 'replace')
         user = auth_authenticate(username=username, password=password)
         if not user:
             return HttpResponseAuthenticate("Invalid username/password")
