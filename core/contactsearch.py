@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+from __future__ import print_function
 import urllib2
 from django.http import HttpResponse
 from django.utils.safestring import mark_safe
@@ -310,7 +311,7 @@ def filter_parse_expression_root(lexer):
 
 
 def parse_filterstring(sfilter):
-    #print "Parsing", sfilter
+    #print("Parsing", sfilter)
     return filter_parse_expression_root(FilterLexer(sfilter).parse())
 
     
@@ -354,7 +355,7 @@ def parse_filter_list_str(txt):
     list = txt.split(u',')
     for idx in xrange(len(list)-1, 0, -1):
         if list[idx-1][-1] != u'"' or list[idx][0] != u'"':
-            #print "merging elements ", idx-1, "and", idx, "of", repr(list)
+            #print("merging elements ", idx-1, "and", idx, "of", repr(list))
             list[idx-1] += u"," + list[idx]
             del list[idx]
     for idx in xrange(len(list)):

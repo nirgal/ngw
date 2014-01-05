@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+from __future__ import print_function
 from datetime import datetime
 from django import forms
 from django.utils import http
@@ -43,7 +44,7 @@ class RibField(forms.Field):
         if len(iso_value) != 23:
             raise forms.ValidationError("There must be 23 non blank characters.")
 
-        #print iso_value
+        #print(iso_value)
         if int(iso_value) % 97:
             raise forms.ValidationError("CRC error")
 
@@ -209,7 +210,7 @@ class MultipleChoiceContactField(ContactField):
         try:
             chg = ChoiceGroup.objects.get(pk=self.choice_group_id)
         except ChoiceGroup.DoesNotExist:
-            print "ChoiceGroup %s was lost!" % self.choice_group_id
+            print("ChoiceGroup %s was lost!" % self.choice_group_id)
             return u"Error"
         txt_choice_list = []
         for cid in value.split(u","):
@@ -219,7 +220,7 @@ class MultipleChoiceContactField(ContactField):
             try:
                 c = Choice.objects.get(choice_group_id=chg.id, key=cid)
             except Choice.DoesNotExist:
-                print u"Choice", cid, "in", chg, "was lost."
+                print(u"Choice", cid, "in", chg, "was lost.")
                 txt_choice_list.append( "error" )
             else:
                 txt_choice_list.append( c.value )

@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+from __future__ import print_function
 from itertools import chain
 from django.conf import settings
 from django import forms

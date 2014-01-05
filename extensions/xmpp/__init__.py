@@ -3,14 +3,15 @@
 #
 # Database settings is defined in ~/.pgpass
 
-if __name__ != "__main__":
-    print "XMPP synchronisation extension for NGW loading."
-
+from __future__ import print_function
 import sys
 import os
 import psycopg2
 import psycopg2.extensions
 import logging
+if __name__ != "__main__":
+    print("XMPP synchronisation extension for NGW loading.")
+
 if __name__ == "__main__":
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
@@ -143,7 +144,7 @@ if __name__ == "__main__":
     #    sql_setdebug(True)
 
     if len(args):
-        print >> sys.stderr, "That script takes not argument\n"
+        print("That script takes not argument\n", file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)
     
@@ -175,5 +176,5 @@ if __name__ == "__main__":
     get_common_db().commit()
 
 if __name__ != "__main__":
-    print "XMPP synchronisation extension for NGW loaded."
+    print("XMPP synchronisation extension for NGW loaded.")
 

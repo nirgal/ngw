@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import random
 import sys
@@ -99,5 +100,5 @@ if __name__ == "__main__":
     ids = [ sys.argv[x] for x in range(1, len(sys.argv)) ]
     #xcontext = oo_bootstrap()
     result = ngw_mailmerge("/usr/lib/ngw/mailing/forms/welcome.odt", ids)
-    print result
+    print(result)
     

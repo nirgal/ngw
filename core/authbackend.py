@@ -1,5 +1,6 @@
 # -*- encoding: utf8 -*-
 
+from __future__ import print_function
 from django.contrib.auth.hashers import check_password
 from ngw.core.models import ( Contact, ContactFieldValue,
     FIELD_LOGIN, FIELD_PASSWORD )

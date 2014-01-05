@@ -1,5 +1,6 @@
 # -*- encoding: utf8 -*-
 
+from __future__ import print_function
 from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
@@ -94,26 +95,26 @@ def get_display_fields(user):
             try:
                 groupid = int(fname[len(DISP_GROUP_PREFIX):])
             except ValueError:
-                print 'Error in default fields: %s has invalid syntax.' % fname.encode('utf8')
+                print('Error in default fields: %s has invalid syntax.' % fname.encode('utf8'))
                 continue
             try:
                 ContactGroup.objects.get(pk=groupid)
             except ContactGroup.DoesNotExist:
-                print 'Error in default fields: There is no group #%d.' % groupid
+                print('Error in default fields: There is no group #%d.' % groupid)
                 continue
         elif fname.startswith(DISP_FIELD_PREFIX):
             try:
                 fieldid = int(fname[len(DISP_FIELD_PREFIX):])
             except ValueError:
-                print 'Error in default fields: %s has invalid syntax.' % fname.encode('utf8')
+                print('Error in default fields: %s has invalid syntax.' % fname.encode('utf8'))
                 continue
             try:
                 ContactField.objects.get(pk=fieldid)
             except ContactField.DoesNotExist:
-                print 'Error in default fields: There is no field #%d.' % fieldid
+                print('Error in default fields: There is no field #%d.' % fieldid)
                 continue
         else:
-            print 'Error in default fields: Invalid syntax in "%s".' % fname.encode('utf8')
+            print('Error in default fields: Invalid syntax in "%s".' % fname.encode('utf8'))
             continue
         result.append(fname)
     if not result:
@@ -425,7 +426,7 @@ class ContactQuerySet(RawQuerySet):
 
     def __iter__(self):
         self.compile()
-        #print repr(self.raw_query), repr(self.params)
+        #print(repr(self.raw_query), repr(self.params))
         for x in RawQuerySet.__iter__(self):
             yield x
 
@@ -513,7 +514,7 @@ def contact_list(request):
     if (request.REQUEST.get(u'savecolumns')):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
-    #print 'contact_list:', fields
+    #print('contact_list:', fields)
     q, cols = contact_make_query_with_fields(fields, format=u'html')
     q = filter.apply_filter_to_query(q)
 
@@ -632,7 +633,7 @@ def contact_edit(request, gid=None, cid=None):
         form = ContactEditForm(cid=cid, data=request.POST, contactgroup=cg, request_user=request.user) # FIXME
         if form.is_valid():
             data = form.clean()
-            #print 'saving', repr(form.data)
+            #print('saving', repr(form.data))
 
             # record the values
 
@@ -956,12 +957,12 @@ def contact_filters_edit(request, cid=None, fid=None):
     if request.method == 'POST':
         form = FilterEditForm(request.POST)
         if form.is_valid():
-            #print repr(filter_list)
-            #print repr(filter_list_str)
+            #print(repr(filter_list))
+            #print(repr(filter_list_str))
             filter_list[int(fid)]=(form.clean()['name'], filterstr)
-            #print repr(filter_list)
+            #print(repr(filter_list))
             filter_list_str = u','.join([u'"'+name+u'","'+filterstr+u'"' for name, filterstr in filter_list])
-            #print repr(filter_list_str)
+            #print(repr(filter_list_str))
             contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
             messages.add_message(request, messages.SUCCESS, u'Filter has been renamed sucessfully!')
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
@@ -990,14 +991,14 @@ def contact_make_login_mailing(request):
     q = q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_STREET}])
     q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_CITY}])
     ids = [ row.id for row in q ]
-    #print ids
+    #print(ids)
     if not ids:
         return HttpResponse('No waiting mail')
 
     result = ngw_mailmerge('/usr/lib/ngw/mailing/forms/welcome.odt', [str(id) for id in ids])
     if not result:
         return HttpResponse('File generation failed')
-    #print result
+    #print(result)
     filename = os.path.basename(result)
     if subprocess.call(['sudo', '/usr/bin/mvoomail', os.path.splitext(filename)[0], '/usr/lib/ngw/mailing/generated/']):
         return HttpResponse('File move failed')
@@ -1435,13 +1436,13 @@ def on_contactgroup_delete(cg):
     supergroups_ids = set(cg.get_direct_supergroups_ids())
     for subcg in cg.get_direct_subgroups():
         sub_super = set(subcg.get_direct_supergroups_ids())
-        #print repr(subcg), "had these fathers:", sub_super
+        #print(repr(subcg), "had these fathers:", sub_super)
         sub_super = sub_super | supergroups_ids - { cg.id }
         if not sub_super:
             sub_super = { GROUP_EVERYBODY }
-        #print repr(subcg), "new fathers:", sub_super
+        #print(repr(subcg), "new fathers:", sub_super)
         subcg.set_direct_supergroups_ids(sub_super)
-        #print repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids()
+        #print(repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids())
     # TODO: delete static folder
 
 
@@ -1614,7 +1615,7 @@ def contactingroup_edit(request, gid, cid):
     inherited_info = u''
 
     automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND member AND group_id=contact_group.id)' % (gid, cid)]).exclude(id=gid).order_by('-date', 'name')
-    #print automember_groups.query
+    #print(automember_groups.query)
     if automember_groups:
         inherited_info += u'Automatically member because member of subgroup(s):<br>'
         for sub_cg in automember_groups:
@@ -1941,7 +1942,7 @@ def field_edit(request, id):
 
     if request.method == 'POST':
         form = FieldEditForm(cf, request.POST, initial=initial)
-        #print request.POST
+        #print(request.POST)
         if form.is_valid():
             data = form.clean()
             if not id:
@@ -2099,7 +2100,7 @@ class ChoicesField(forms.MultiValueField):
         # check there is no duplicate keys
         # necessary since keys are the id used in <select>
         possibles_values = forms.MultiValueField.clean(self, value).split(u',')
-        #print 'possibles_values=', repr(possibles_values)
+        #print('possibles_values=', repr(possibles_values))
         keys = []
         for i in range(len(possibles_values)/2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
@@ -2178,20 +2179,20 @@ class ChoiceGroupForm(forms.Form):
                 auto_key += 1
                 choices[k] = v
 
-        #print 'choices=', choices
+        #print('choices=', choices)
 
         for c in cg.choices.all():
             k = c.key
             if k in choices.keys():
-                #print 'UPDATING', k
+                #print('UPDATING', k)
                 c.value = choices[k]
                 c.save()
                 del choices[k]
             else: # that key has be deleted
-                #print 'DELETING', k
+                #print('DELETING', k)
                 c.delete()
         for k, v in choices.iteritems():
-            #print 'ADDING', k
+            #print('ADDING', k)
             cg.choices.create(key=k, value=v)
 
         messages.add_message(request, messages.SUCCESS, u'Choice %s has been saved sucessfully.' % cg.name)

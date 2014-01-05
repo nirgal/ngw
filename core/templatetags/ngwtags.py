@@ -1,5 +1,6 @@
 # -*- encofing: utf8 -*-
 
+from __future__ import print_function
 import inspect
 from django import template
 #from django.utils import html
@@ -76,12 +77,12 @@ def ngw_display(obj, coldesc):
         #result = html.escape(result)
 
     if inspect.isfunction(coldesc[1]):
-        #print "isfunction"
+        #print("isfunction")
         return coldesc[1](result)
     if inspect.ismethod(coldesc[1]):
-        #print "ismethod"
+        #print("ismethod")
         result =  coldesc[1](result)
-        #print result
+        #print(result)
         return result
 
     try:

@@ -3,6 +3,7 @@
 """
 This module implements RFC2617 "http basic auth"
 """
+from __future__ import print_function
 import base64
 from functools import wraps
 from django.contrib.auth import authenticate as auth_authenticate

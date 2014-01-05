@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
+from __future__ import print_function
 import sys
 import os
 if __name__ != "__main__":
-    print "Mailman synchronisation extension for NGW loading."
-    print >> sys.stderr, "Mailman synchronisation extension for NGW loading."
+    print("Mailman synchronisation extension for NGW loading.")
 
 if __name__ == "__main__":
     sys.path += [ '/usr/lib/' ]
@@ -69,7 +69,7 @@ def synchronise_group(cg, mailcontent):
         name_base = c.name
         if name_base == email_base:
             name_base = ''
-        mailman_names = [ name for name,email in mailman_members if email == email_base ]
+        mailman_names = [ name for name, email in mailman_members if email == email_base ]
         if not mailman_names:
             result.append((format_mailadd(c.name, email_base) + u" from database is not registered in mailman!",
                            None,
@@ -83,7 +83,7 @@ def synchronise_group(cg, mailcontent):
                                format_mailadd(name_base, email_base)))
             mailman_members.remove((mailman_name, email_base))
 
-    for name,email in mailman_members:
+    for name, email in mailman_members:
         result.append((format_mailadd(name, email) + u" should not be registered in mailman.",
                        format_mailadd(name, email),
                        None))
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     if len(args)!=2:
-        print >> sys.stderr, "Need exactly 2 arguments\n"
+        print("Need exactly 2 arguments\n", file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)
     
@@ -110,48 +110,48 @@ if __name__ == "__main__":
         mailman_members = parse_who_result(filecontent)
         for name, email in mailman_members:
             if name:
-                print name, '->', normalize_name(name),
-            print '<%s>' % email
+                print(name, '->', normalize_name(name), end=' ')
+            print('<%s>' % email)
     elif action == 'normalize':
         mailman_members = parse_who_result(filecontent)
-        print '*'
-        print 'unscrubsribe:'
+        print('*')
+        print('unscrubsribe:')
         for name, email in mailman_members:
             if name != normalize_name(name):
-                print name,
-                print '<%s>' % email
-        print '*'
-        print 'scrubsribe:'
+                print(name, end=' ')
+                print('<%s>' % email)
+        print('*')
+        print('scrubsribe:')
         for name, email in mailman_members:
             if name != normalize_name(name):
-                print normalize_name(name),
-                print '<%s>' % email
+                print(normalize_name(name), end=' ')
+                print('<%s>' % email)
 
     elif action == 'check':
         assert options.groupid is not None, "You must use -g option"
         cg = ContactGroup.objects.get(pk=options.groupid)
-        print "Synching", cg.name
+        print("Synching", cg.name)
         
         msg, unsubscribe_list, subscribe_list = synchronise_group(cg, filecontent)
 
-        print msg
+        print(msg)
 
-        print '*'*80
-        print 'unscubscribe'
+        print('*'*80)
+        print('unscubscribe')
         for cmd in unsubscribe_list:
-            print cmd
-        print
-        print
-        print '*'*80
-        print 'subscribe'
+            print(cmd)
+        print()
+        print()
+        print('*'*80)
+        print('subscribe')
         for cmd in subscribe_list:
-            print cmd
-        print
-        print
+            print(cmd)
+        print()
+        print()
 
 
     else:
-        print >> sys.stderr, "unknow action" + action
+        print("unknow action", action, file=sys.stderr)
 
 if __name__ != "__main__":
-    print >> sys.stderr, "mailman synchronisation extension for NGW loaded."
+    print("mailman synchronisation extension for NGW loaded.", file=sys.stderr)

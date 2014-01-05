@@ -3,6 +3,7 @@
 # Also note: You'll have to insert the output of 'manage.py sqlall core'
 # into your database.
 
+from __future__ import print_function
 import os
 from functools import wraps
 from datetime import datetime, timedelta
@@ -221,7 +222,7 @@ class Contact(NgwModel):
 
     def get_allfields(self):
         contactgroupids = [ g.id for g in self.get_allgroups_withfields() ]
-        #print "contactgroupids=", contactgroupids
+        #print("contactgroupids=", contactgroupids)
         return ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
 
     def get_fieldvalues_by_type(self, type_):
@@ -503,11 +504,11 @@ class ContactGroup(NgwModel):
 #        return Query(Contact).filter(Contact.id.in_(cids))
 #
 #    #    s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
-#    #    #print "members=", s, ":"
+#    #    #print("members=", s, ":")
 #    #    result =  []
 #    #    for cid in Session.execute(s):
 #    #        result.append(Query(Contact).get(cid[0]))
-#    #        #print cid[0]
+#    #        #print(cid[0])
 #    #    return result
 
 #    def get_members_query(self):
@@ -571,11 +572,11 @@ class ContactGroup(NgwModel):
         assert(self.id)
         dirname = self.static_folder()
         if not os.path.isdir(dirname):
-            print "Creating missing directory for group %i" % self.id
+            print("Creating missing directory for group %i" % self.id)
             os.mkdir(dirname)
         htaccess_path = os.path.join(dirname, ".htaccess")
         if not os.path.isfile(htaccess_path):
-            print "Creating missing .htaccess file for group %i" % self.id
+            print("Creating missing .htaccess file for group %i" % self.id)
             f = open(htaccess_path, 'w')
             f.write("Require group %i\n" % self.id)
             f.close()
@@ -595,7 +596,7 @@ class ContactGroup(NgwModel):
         w2 = "EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id=contact.id AND contact_field_value.contact_field_id=%s AND contact_field_value.value LIKE '%s')" % \
                     (FIELD_BIRTHDAY, datetime.today().strftime('%%%%-%m-%d'))
         q = q.extra(where=[w2])
-        #print q.query
+        #print(q.query)
         return q
 
     def get_default_display(self):
@@ -733,7 +734,7 @@ class ContactGroup(NgwModel):
             log.save()
             result = LOG_ACTION_ADD
 
-        #print "ok +", add_mode, "-", del_mode
+        #print("ok +", add_mode, "-", del_mode)
         if u'm' in add_mode:
             if not cig.member:
                 cig.member = True
@@ -1001,7 +1002,7 @@ class FilterHelper(object):
         params_where = { }
         params_sql = { }
         for k, v in kargs.iteritems():
-            #print k,"=",v
+            #print(k, "=", v)
             auto_param_name = u"autoparam_"+unicode(len(query.params))+u"_" # resolve conflicts in sucessive calls to apply_where_to_query
             if isinstance(v, unicode):
                 params_where[ k ] = u'%('+auto_param_name+k+u')s'

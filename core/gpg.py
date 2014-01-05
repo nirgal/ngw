@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-GPG_HOME = "/var/lib/ngw/"
-
+from __future__ import print_function
 import subprocess
 from django.http import HttpResponse
+
+GPG_HOME = "/var/lib/ngw/"
 
 # TODO: use --edit-key deluid to keep only one uid per key ?
 
@@ -16,22 +17,22 @@ def subprocess_run(*args):
 #def _split_uid(uid):
 #    p1 = uid.find('<')
 #    p2 = uid.find('>')
-#    #print p1,p2, len(uid)
+#    #print(p1, p2, len(uid))
 #    if p1==-1 or p2==-1 or p2!=len(uid)-1:
-#        print "Error parsing uid uid in gpg --list-keys"
+#        print("Error parsing uid uid in gpg --list-keys")
 #        continue
 #    mail = uid[p1+1:p2]
 #    name = uid[:p1].strip()
-#    #print "*", mail, "*", name, "*", id
+#    #print("*", mail, "*", name, "*", id)
 #    return name, mail
 
 
 def parse_pgp_listkey(output):
     keyring = {}
     for line in output.split('\n'):
-        #print repr(line)
+        #print(repr(line))
         items = line.split(':')
-        #print items
+        #print(items)
         if items[0] == 'pub':
             id = items[4]
             keyring[id] = { 'uids': [ items[9] ], 'length': items[2], 'algo': items[3], 'date': items[5] }
@@ -52,8 +53,8 @@ def is_email_secure(mail_address):
 def loadkeyring():
     ret, out, err = subprocess_run("gpg", "--homedir", GPG_HOME, "--list-keys", "--with-colons")
     if ret:
-        print err
-        print "gpg failed."
+        print(err)
+        print("gpg failed.")
     return parse_pgp_listkey(out)
 
 
@@ -92,4 +93,4 @@ if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser()
     (options, args) = parser.parse_args()
-    print loadkeyring()
+    print(loadkeyring())

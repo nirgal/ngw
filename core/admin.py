@@ -1,4 +1,5 @@
 # This file is unused
+from __future__ import print_function
 from django.contrib import admin
 from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
     ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
