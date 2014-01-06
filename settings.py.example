@@ -45,7 +45,7 @@ USE_I18N = True
 USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
-USE_TZ = True
+USE_TZ = False
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
@@ -72,7 +72,9 @@ STATICFILES_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     '/usr/lib/ngw/static/',
+    #'/usr/share/pyshared/django/contrib/admin/static/',
     ('javascript', '/usr/share/javascript'),
+    ('mailing-generated', '/usr/lib/ngw/mailing/generated'),
 )
 
 # List of finder classes that know how to find static files in

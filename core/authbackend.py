@@ -14,7 +14,7 @@ class NgwAuthBackend(object):
     supports_inactive_user = False
     
     # Set to True if apache doesn't do it by itself
-    enable_lastconnection_updates = True
+    enable_lastconnection_updates = False
 
     def authenticate(self, username=None, password=None):
         if not username or not password:
