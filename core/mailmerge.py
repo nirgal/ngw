@@ -25,35 +25,7 @@ def get_outputprefix():
     raise ValueError("Can't generate a random prefix")
 
     
-def ngw_mailmerge(filename_in, ids):
-    outputprefix = get_outputprefix()
-
-    local = uno.getComponentContext()
-    resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
-    context = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
-    mailmerge = context.ServiceManager.createInstanceWithContext("com.sun.star.text.MailMerge", context)
-    #mailmerge = xcontext.getServiceManager().createInstanceWithContext("com.sun.star.text.MailMerge", xcontext)
-    mailmerge.DataSourceName = "ngw"
-    mailmerge.CommandType = uno.getConstantByName("com.sun.star.sdb.CommandType.TABLE") # see com.sun.star.sdb.CommandType
-    mailmerge.Command = "public.mailinginfo"
-    if ids:
-        mailmerge.Filter = '"id" IN ('+','.join(ids)+')'
-    #mailmerge.Filter='"id"=1'
-    mailmerge.DocumentURL = uno.systemPathToFileUrl(filename_in)
-    mailmerge.OutputType = uno.getConstantByName("com.sun.star.text.MailMergeType.FILE") # see com.sun.star.text.MailMergeType
-    mailmerge.OutputURL = uno.systemPathToFileUrl(TMPDIR)
-    mailmerge.FileNamePrefix = outputprefix
-    mailmerge.SaveAsSingleFile = True
-    mailmerge.execute(())  # BOUM
-    mailmerge.dispose()
-
-    for fn in os.listdir(TMPDIR):
-        if fn.startswith(outputprefix):
-            return os.path.join(TMPDIR, fn)
-
-
-
-def ngw_mailmerge2(filename_in, fields):
+def ngw_mailmerge(filename_in, fields, target_dir):
     local = uno.getComponentContext()
     resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
     context = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
@@ -75,8 +47,7 @@ def ngw_mailmerge2(filename_in, fields):
         found.setString(fields.get(field_name, 'FIELD NOT FOUND'))
         found = document.findNext(found.getEnd(), find_replace)
 
-    oldumask = os.umask(0077)
-    os.umask(0007)
+    oldumask = os.umask(0007)
 
     filename_out = TMPDIR + '/' + get_outputprefix() + '.pdf'
 
@@ -88,22 +59,23 @@ def ngw_mailmerge2(filename_in, fields):
     p2.Value = 'writer_pdf_Export'
     document.storeToURL(uno.systemPathToFileUrl(filename_out), (p1, p2))
 
-    # move to final directory, overriding and permissions
-    #subprocess.call(["sudo", "/usr/bin/mvoomail", 'guideogm.pdf', '/usr/lib/guideogm/www/'])
-
     document.dispose()
+
     os.umask(oldumask)
 
-    return filename_out
+    basefilename_out = os.path.basename(filename_out)
+    # move to final directory, overriding any permissions
+    if subprocess.call(["sudo", "/usr/bin/mvoomail", basefilename_out, target_dir]):
+        print('File move failed')
+        return None
 
+    return basefilename_out
 
 
 if __name__ == "__main__":
     #xcontext = oo_bootstrap()
     for name in sys.argv[1:]:
         name = unicode(name, 'utf8')
-        result = ngw_mailmerge2("/usr/lib/ngw/mailing/forms/welcome.odt", {'name': name})
-        result = result.split('/')[-1]
-        subprocess.call(["sudo", "/usr/bin/mvoomail", result, '/usr/lib/ngw/mailing/generated'])
-        print('/usr/lib/ngw/mailing/generated/'+result)
+        filename = ngw_mailmerge2("/usr/lib/ngw/mailing/forms/resetpassword.odt", {'name': name}, '/usr/lib/ngw/mailing/generated/')
+        print(filename)
     

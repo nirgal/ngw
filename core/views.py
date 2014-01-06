@@ -19,7 +19,7 @@ from ngw.core.models import *
 from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
-from ngw.core.mailmerge import ngw_mailmerge, ngw_mailmerge2
+from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core import contactsearch
 
 from django.db.models.query import RawQuerySet, sql
@@ -857,19 +857,9 @@ def contact_pass_letter(request, gid=None, cid=None):
         fields['name'] = contact.name
         fields['password'] = new_password
 
-        result = ngw_mailmerge2('/usr/lib/ngw/mailing/forms/welcome2.odt', fields)
-        if not result:
+        filename = ngw_mailmerge(settings.PASSWORD_LETTER, fields, '/usr/lib/ngw/mailing/generated/')
+        if not filename:
             return HttpResponse('File generation failed')
-
-        filename = os.path.basename(result)
-        if subprocess.call(['sudo', '/usr/bin/mvoomail', filename, '/usr/lib/ngw/mailing/generated/']):
-            return HttpResponse('File move failed')
-
-        #if gid:
-        #    cg = Query(ContactGroup).get(gid)
-        #    return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + unicode(cid) + '/')
-        #else:
-        #    return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
 
         url = ngw_base_url(request) + 'mailing-generated/' + filename
         html_message = 'File generated in <a href="%(url)s">%(url)s</a>.' % { 'url': url}
@@ -982,31 +972,31 @@ def contact_filters_edit(request, cid=None, fid=None):
     return render_to_response('customfilter_user.html', args, RequestContext(request))
 
 
-@login_required()
-@require_group(GROUP_ADMIN)
-def contact_make_login_mailing(request):
-    # select contacts whose password is in state 'Registered', with both 'Adress' and 'City' not null
-    q = Contact.objects
-    q = q.extra(where=["EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value='%(value)s')" % { 'field_id': FIELD_PASSWORD_STATUS, 'value': '1' }])
-    q = q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_STREET}])
-    q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_CITY}])
-    ids = [ row.id for row in q ]
-    #print(ids)
-    if not ids:
-        return HttpResponse('No waiting mail')
-
-    result = ngw_mailmerge('/usr/lib/ngw/mailing/forms/welcome.odt', [str(id) for id in ids])
-    if not result:
-        return HttpResponse('File generation failed')
-    #print(result)
-    filename = os.path.basename(result)
-    if subprocess.call(['sudo', '/usr/bin/mvoomail', os.path.splitext(filename)[0], '/usr/lib/ngw/mailing/generated/']):
-        return HttpResponse('File move failed')
-    for row in q:
-        contact = row[0]
-        contact.set_fieldvalue(request.user, FIELD_PASSWORD_STATUS, '2')
-
-    return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')
+#@login_required()
+#@require_group(GROUP_ADMIN)
+#def contact_make_login_mailing(request):
+#    # select contacts whose password is in state 'Registered', with both 'Adress' and 'City' not null
+#    q = Contact.objects
+#    q = q.extra(where=["EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value='%(value)s')" % { 'field_id': FIELD_PASSWORD_STATUS, 'value': '1' }])
+#    q = q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_STREET}])
+#    q.extra(where=['EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i)' % { 'field_id': FIELD_CITY}])
+#    ids = [ row.id for row in q ]
+#    #print(ids)
+#    if not ids:
+#        return HttpResponse('No waiting mail')
+#
+#    result = ngw_mailmerge('/usr/lib/ngw/mailing/forms/welcome.odt', [str(id) for id in ids])
+#    if not result:
+#        return HttpResponse('File generation failed')
+#    #print(result)
+#    filename = os.path.basename(result)
+#    if subprocess.call(['sudo', '/usr/bin/mvoomail', os.path.splitext(filename)[0], '/usr/lib/ngw/mailing/generated/']):
+#        return HttpResponse('File move failed')
+#    for row in q:
+#        contact = row[0]
+#        contact.set_fieldvalue(request.user, FIELD_PASSWORD_STATUS, '2')
+#
+#    return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')
 
 
 #######################################################################

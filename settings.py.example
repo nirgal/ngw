@@ -83,7 +83,7 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-# Make this unique, and don't share it with anybody.
+# Make this unique, and don't share it with anybody. See README file.
 SECRET_KEY = ''
 
 # List of callables that know how to import templates from various sources.
@@ -188,5 +188,5 @@ LOGGING = {
 APPEND_SLASH = False
 MESSAGE_STORAGE = 'ngw.core.messages.NgwMessageStorage'
 
-# Set to True to enable libreoffice mailings:
-#PASSWORD_LETTER = True
+# Uncomment next line to enable password reset though libreoffice mailings:
+#PASSWORD_LETTER = '/usr/lib/ngw/mailing/forms/resetpassword.odt'
