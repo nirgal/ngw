@@ -189,4 +189,4 @@ APPEND_SLASH = False
 MESSAGE_STORAGE = 'ngw.core.messages.NgwMessageStorage'
 
 # Uncomment next line to enable password reset though libreoffice mailings:
-#PASSWORD_LETTER = '/usr/lib/ngw/mailing/forms/resetpassword.odt'
+#PASSWORD_LETTER = '/usr/lib/ngw/mailing/templates/resetpassword.odt'

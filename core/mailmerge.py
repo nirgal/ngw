@@ -76,6 +76,6 @@ if __name__ == "__main__":
     #xcontext = oo_bootstrap()
     for name in sys.argv[1:]:
         name = unicode(name, 'utf8')
-        filename = ngw_mailmerge2("/usr/lib/ngw/mailing/forms/resetpassword.odt", {'name': name}, '/usr/lib/ngw/mailing/generated/')
+        filename = ngw_mailmerge("/usr/lib/ngw/mailing/templates/resetpassword.odt", {'name': name}, '.')
         print(filename)
     
