@@ -27,9 +27,9 @@ Create a database ngw with owner ngw:
   postgres@localhost:~$ createdb ngw -E unicode -O ngw
 
 Create the structure, populate the initial data, and create the extra views and functions:
-  $ psql -h localhost -U ngw test -f sql/structure.sql
-  $ psql -h localhost -U ngw test -f sql/initialdata.sql
-  $ psql -h localhost -U ngw test -f sql/functions.sql
+  $ psql -h localhost -U ngw ngw -f sql/structure.sql
+  $ psql -h localhost -U ngw ngw -f sql/initialdata.sql
+  $ psql -h localhost -U ngw ngw -f sql/functions.sql
 
 This will create an admin account:
 login: admin
