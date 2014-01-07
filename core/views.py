@@ -224,9 +224,6 @@ def query_print_entities(request, template_name, args, extrasort=None):
 
 # Helper function that is never call directly, hence the lack of authentification check
 def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
-    if not request.user.is_admin():
-        return unauthorized(request)
-
     title = 'Please confirm deletetion'
 
     confirm = request.GET.get('confirm', '')
