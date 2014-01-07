@@ -287,31 +287,22 @@ def logs(request):
 #######################################################################
 
 def membership_to_text(contact_with_extra_fields, group_id):
-    # memberships = []
-    # if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
-    #     memberships.append("Member")
-    # if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
-    #     memberships.append("Invited")
-    # if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
-    #     memberships.append("Declined")
-    # if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
-    #     memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
-    # if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
-    #     memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
-    # if getattr(contact_with_extra_fields, 'group_%s_D' % group_id):
-    #     memberships.append("Declined" + " " + AUTOMATIC_MEMBER_INDICATOR)
-    # return ", ".join(memberships)
+    memberships = []
     if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
-        return 'Member'
-    if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
-        return 'Invited'
-    if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
-        return 'Declined'
-    if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
-        return 'Member' + ' ' + AUTOMATIC_MEMBER_INDICATOR
-    if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
-        return 'Invited' + ' ' + AUTOMATIC_MEMBER_INDICATOR
-    return ''
+        memberships.append("Member")
+    elif getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
+        memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
+    elif getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
+        memberships.append("Invited")
+    elif getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
+        memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
+    elif getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
+        memberships.append("Declined")
+
+    if getattr(contact_with_extra_fields, 'group_%s_o' % group_id):
+        memberships.append("Operator")
+
+    return ", ".join(memberships)
 
 
 
@@ -369,12 +360,12 @@ class ContactQuerySet(RawQuerySet):
         self.qry_fields['group_%s_m' % group_id] = 'cig_%s.member' % group_id
         self.qry_fields['group_%s_i' % group_id] = 'cig_%s.invited' % group_id
         self.qry_fields['group_%s_d' % group_id] = 'cig_%s.declined_invitation' % group_id
+        self.qry_fields['group_%s_o' % group_id] = 'cig_%s.operator' % group_id
         self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
 
         # Add fields for indirect membership
         self.qry_fields['group_%s_M' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND member)" % { 'gid': group_id }
         self.qry_fields['group_%s_I' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND invited)" % { 'gid': group_id }
-        self.qry_fields['group_%s_D' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND declined_invitation)" % { 'gid': group_id }
 
     def add_group_withnote(self, group_id):
         self.add_group(group_id)
@@ -1563,7 +1554,7 @@ class ContactInGroupForm(forms.Form):
 def contactingroup_edit(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cig = get_object_or_404(ContactInGroup, contact_id=cid, group_id=gid)
+    cig, created = ContactInGroup.objects.get_or_create(contact_id=cid, group_id=gid)
     cg = ContactGroup.objects.get(pk=gid)
     contact = Contact.objects.get(pk=cid)
     args = {}
@@ -1571,13 +1562,13 @@ def contactingroup_edit(request, gid, cid):
     args['cg'] = cg
     args['contact'] = contact
     args['objtype'] = ContactInGroup
+
     initial = {}
-    if cig:
-        initial['invited'] = cig.invited
-        initial['declined_invitation'] = cig.declined_invitation
-        initial['member'] = cig.member
-        initial['operator'] = cig.operator
-        initial['note'] = cig.note
+    initial['invited'] = cig.invited
+    initial['declined_invitation'] = cig.declined_invitation
+    initial['member'] = cig.member
+    initial['operator'] = cig.operator
+    initial['note'] = cig.note
 
     if request.method == 'POST':
         form = ContactInGroupForm(request.POST, initial=initial)
@@ -1585,8 +1576,6 @@ def contactingroup_edit(request, gid, cid):
             data = form.cleaned_data
             if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator']:
                 return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid))) # TODO update logins deletion, call membership hooks
-            if not cig:
-                cig = ContactInGroup(contact_id=contact.id, croup_id=cg.id)
             cig.invited = data['invited']
             cig.declined_invitation = data['declined_invitation']
             cig.member = data['member']
@@ -1630,7 +1619,7 @@ def contactingroup_edit(request, gid, cid):
 def contactingroup_edit_inline(request, gid, cid):
     if not request.user.is_admin():
         return unauthorized(request)
-    cig = ContactInGroup.objects.get_or_create(contact_id=cid, group_id=gid)
+    cig, created = ContactInGroup.objects.get_or_create(contact_id=cid, group_id=gid)
     cg = get_object_or_404(ContactGroup, pk=gid)
     contact = get_object_or_404(Contact, pk=cid)
     newmembership = request.POST['membership']
