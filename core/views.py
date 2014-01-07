@@ -1285,6 +1285,16 @@ def contactgroup_members(request, gid, output_format=''):
     except OSError as (errno, errmsg):
         messages.add_message(request, messages.ERROR, 'Error while reading shared files list in %s: %s' % (folder, errmsg))
         files = []
+
+    # listdir() returns some data in utf-8, we want everything in unicode:
+    unicode_files = []
+    for file in files:
+        if isinstance(file, unicode):
+            unicode_files.append(file)
+        else:
+            unicode_files.append(unicode(file, 'utf8', 'replace'))
+    files = unicode_files
+
     if '.htaccess' in files:
         files.remove('.htaccess')
     files.sort()
