@@ -6,14 +6,14 @@ ALTER TABLE choice SET WITH OIDS;
 ALTER TABLE group_in_group SET WITH OIDS;
 
 
-DROP VIEW mailinginfo;
-DROP VIEW auth_users_ngw;
-DROP VIEW auth_users_bb;
-DROP VIEW auth_users;
-DROP VIEW auth_user_groups;
-DROP VIEW apache_log;
-DROP FUNCTION self_and_subgroups(integer);
-DROP FUNCTION self_and_supergroups(integer);
+DROP VIEW IF EXISTS mailinginfo;
+DROP VIEW IF EXISTS auth_users_ngw;
+DROP VIEW IF EXISTS auth_users_bb;
+DROP VIEW IF EXISTS auth_users;
+DROP VIEW IF EXISTS auth_user_groups;
+DROP VIEW IF EXISTS apache_log;
+DROP FUNCTION IF EXISTS self_and_subgroups(integer);
+DROP FUNCTION IF EXISTS self_and_supergroups(integer);
 
 
 -- That function returns the set of subgroups of a given group
