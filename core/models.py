@@ -226,9 +226,9 @@ class Contact(NgwModel):
         return ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
 
     def get_fieldvalues_by_type(self, type_):
-        if issubclass(type_, ContactField):
+        if isinstance(type_, ContactField):
             type_ = type_.db_type_id
-        assert type_.__class__ == unicode
+        assert isinstance(type_, unicode)
         fields = ContactField.objects.filter(type=type_).order_by('sort_weight')
         # TODO: check authority
         result = []
