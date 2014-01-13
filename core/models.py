@@ -20,16 +20,17 @@ from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #
 from ngw.extensions import hooks
 
 GROUP_EVERYBODY = 1 # Group "Contact"
-GROUP_USER = 2      # With login & password
+GROUP_USER = 2      # With login & password (does NOT mean it can access NGW, see bellow)
 GROUP_ADMIN = 8
+GROUP_OBSERVERS = 9
 GROUP_USER_NGW = 52
 GROUP_USER_PHPBB = 53
 
-FIELD_LOGIN = 1
-FIELD_PASSWORD = 2
-FIELD_LASTCONNECTION = 3
-FIELD_COLUMNS = 4
-FIELD_FILTERS = 5
+FIELD_LOGIN = 1             # GROUP_USER
+FIELD_PASSWORD = 2          # GROUP_USER
+FIELD_LASTCONNECTION = 3    # GROUP_USER
+FIELD_COLUMNS = 4           # GROUP_USER
+FIELD_FILTERS = 5           # GROUP_USER
 
 FIELD_BIRTHDAY = 6
 FIELD_EMAIL = 7
@@ -191,7 +192,7 @@ class Contact(NgwModel):
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is a direct member of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND member)' % self.id])
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND member)' % self.id]).order_by('-date', 'name')
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
@@ -220,14 +221,39 @@ class Contact(NgwModel):
         "returns the list of groups with field_group ON that contact is member of."
         return self.get_allgroups_member().filter(field_group=True)
 
-    def get_allfields(self):
+    def _get_allfields(self):
+        '''
+        Returns a query with all the fields that self has gained, that is you
+        will not get fields that belong to a group is not a member of.
+        You should probaly use get_all_visible_fields or get_all_writable_fields
+        '''
         contactgroupids = [ g.id for g in self.get_allgroups_withfields() ]
         #print("contactgroupids=", contactgroupids)
         return ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
 
+    def get_all_visible_fields(self, user_id):
+        '''
+        Like _get_allfields() but check user_id has read permission
+        '''
+        fields = self._get_allfields()
+        if user_id == self.id:
+            return fields
+        else:
+            return fields.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id])
+
+    def get_all_writable_fields(self, user_id):
+        '''
+        Like _get_allfields() but check user_id has write permission
+        '''
+        fields = self._get_allfields()
+        if user_id == self.id:
+            return fields
+        else:
+            return fields.extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user_id])
+
     def get_fieldvalues_by_type(self, type_):
         if issubclass(type_, ContactField):
-            type_ = type_.db_type_id
+            type_ == type_.db_type_id
         assert type_.__class__ == unicode
         fields = ContactField.objects.filter(type=type_).order_by('sort_weight')
         # TODO: check authority
@@ -462,7 +488,19 @@ class ContactGroup(NgwModel):
 
 
     def get_direct_supergroups_ids(self):
-        return [gig.father_id for gig in GroupInGroup.objects.filter(subgroup_id=self.id)]
+        """
+        Returns all the direct supergroup ids
+        """
+        return [gig.father_id \
+            for gig in GroupInGroup.objects.filter(subgroup_id=self.id)]
+
+    def get_visible_direct_supergroups_ids(self, cid):
+        """
+        Returns the direct supergroup ids that are visible by contact cid
+        """
+        return [gig.father_id \
+            for gig in GroupInGroup.objects.filter(subgroup_id=self.id).extra(where=[
+                'perm_c_can_see_cg(%s, group_in_group.father_id)' % cid ])]
 
     def get_direct_supergroups(self):
         return ContactGroup.objects.filter(direct_gig_subgroups__subgroup_id=self.id)
@@ -525,17 +563,19 @@ class ContactGroup(NgwModel):
         "Name will then be clickable in the list"
         return self.get_absolute_url()
 
-    def supergroups_includinghtml(self):
-        sgs = self.get_supergroups()
-        if not sgs:
-            return ''
-        return ' (implies ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
+    # Don't use that, we need to check permissions
+    #def supergroups_includinghtml(self):
+    #    sgs = self.get_supergroups()
+    #    if not sgs:
+    #        return ''
+    #    return ' (implies ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
 
-    def subgroups_includinghtml(self):
-        sgs = self.get_subgroups()
-        if not sgs:
-            return ''
-        return ' (including ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
+    # Don't use that, we need to check permissions
+    #def subgroups_includinghtml(self):
+    #    sgs = self.get_subgroups()
+    #    if not sgs:
+    #        return ''
+    #    return ' (including ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
 
     # See group_add_contacts_to.html
     def is_event(self):

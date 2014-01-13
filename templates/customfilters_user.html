@@ -5,7 +5,7 @@
     <div class=box>
     {% if filters %}
         {% for f in filters %}
-        ‣ <a href="./{{forloop.counter0}}">{{f|get:0}}</a><br>
+        ‣ <a href="./{{forloop.counter0}}">{{f}}</a><br>
         {%comment%}{{f|get:1|safe}}<br>{%endcomment%}
         {% endfor %}
         </div>

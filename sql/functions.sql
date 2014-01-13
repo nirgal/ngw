@@ -6,19 +6,15 @@ ALTER TABLE choice SET WITH OIDS;
 ALTER TABLE group_in_group SET WITH OIDS;
 
 
-DROP VIEW IF EXISTS mailinginfo;
-DROP VIEW IF EXISTS auth_users_ngw;
-DROP VIEW IF EXISTS auth_users_bb;
-DROP VIEW IF EXISTS auth_users;
-DROP VIEW IF EXISTS auth_user_groups;
-DROP VIEW IF EXISTS apache_log;
-DROP FUNCTION IF EXISTS self_and_subgroups(integer);
-DROP FUNCTION IF EXISTS self_and_supergroups(integer);
+DROP VIEW IF EXISTS mailinginfo; -- legacy view to delete
+DROP VIEW IF EXISTS auth_users_ngw; -- legacy view to delete
 
 
 -- That function returns the set of subgroups of a given group
 -- Has been tested with bugus setup where A is in B and B in A.
-CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
+CREATE OR REPLACE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer
+LANGUAGE SQL STABLE
+AS $$
     WITH RECURSIVE subgroups AS (
         -- Non-recursive term
         SELECT $1 AS self_and_subgroup
@@ -27,11 +23,13 @@ CREATE FUNCTION self_and_subgroups(integer) RETURNS SETOF integer AS $$
         SELECT subgroup_id AS self_and_subgroup FROM group_in_group JOIN subgroups ON group_in_group.father_id=subgroups.self_and_subgroup
     )
     SELECT * FROM subgroups;
-$$ LANGUAGE SQL STABLE;
+$$;
 
 
 -- That function returns the set of supergroups of a given group
-CREATE FUNCTION self_and_supergroups(integer) RETURNS SETOF integer AS $$
+CREATE OR REPLACE FUNCTION self_and_supergroups(integer) RETURNS SETOF integer
+LANGUAGE SQL STABLE
+AS $$
     WITH RECURSIVE supergroups AS (
         -- Non-recursive term
         SELECT $1 AS self_and_supergroup
@@ -40,7 +38,7 @@ CREATE FUNCTION self_and_supergroups(integer) RETURNS SETOF integer AS $$
         SELECT father_id AS self_and_supergroup FROM group_in_group JOIN supergroups ON group_in_group.subgroup_id=supergroups.self_and_supergroup
     )
     SELECT * FROM supergroups;
-$$ LANGUAGE SQL STABLE;
+$$;
 
 
 -- All the groups contact #1 is member of, either directly or by inheritance:
@@ -78,27 +76,24 @@ $$ LANGUAGE SQL STABLE;
 -- CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, joined_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id;
 --CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, automatic_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
 --
-CREATE VIEW auth_user_groups ( login, gid ) AS 
+
+-- That query is used by apache module auth_pgsql to authenticate users:
+CREATE OR REPLACE VIEW auth_users (login, password) AS
+    SELECT login_values.value, password_values.value
+    FROM contact_field_value AS login_values
+    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
+    WHERE login_values.contact_field_id=1;
+
+-- That query is used by apache module auth_pgsql to check groups:
+CREATE OR REPLACE VIEW auth_user_groups ( login, gid ) AS 
     SELECT DISTINCT login_values.value, automatic_group_id
         FROM contact_in_group 
         JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
         (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
         WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
 
-CREATE VIEW auth_users (login, password) AS
-    SELECT login_values.value, password_values.value
-    FROM contact_field_value AS login_values
-    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
-    WHERE login_values.contact_field_id=1;
-
-CREATE VIEW auth_users_ngw (login, password) AS
-    SELECT login_values.value, password_values.value
-    FROM contact_field_value AS login_values
-    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
-    WHERE login_values.contact_field_id=1
-        AND EXISTS (SELECT * FROM auth_user_groups WHERE auth_user_groups.login=login_values.value AND auth_user_groups.gid=52);
-
-CREATE VIEW auth_users_bb (login, password) AS
+-- That query is used by apache module auth_pgsql to authenticate users in the phpbb extension:
+CREATE OR REPLACE VIEW auth_users_bb (login, password) AS
     SELECT login_values.value, password_values.value
     FROM contact_field_value AS login_values
     JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
@@ -108,14 +103,13 @@ CREATE VIEW auth_users_bb (login, password) AS
 -- This is a helper view for apache module auth_pgsql:
 -- Auth_PG_log_table points to this
 -- "lastconection" gets updated at each request
-
-CREATE VIEW apache_log (login, lastconnection) AS
+CREATE OR REPLACE VIEW apache_log (login, lastconnection) AS
     SELECT login_values.value, lastconnection_values.value
     FROM contact_field_value AS login_values
     JOIN contact_field_value AS lastconnection_values ON (login_values.contact_id=lastconnection_values.contact_id AND lastconnection_values.contact_field_id=3)
     WHERE login_values.contact_field_id=1;
 
-CREATE RULE apache_log_ins AS ON INSERT TO apache_log
+CREATE OR REPLACE RULE apache_log_ins AS ON INSERT TO apache_log
     DO INSTEAD
     (
         -- Create lastconnection value if missing
@@ -179,3 +173,62 @@ CREATE RULE apache_log_ins AS ON INSERT TO apache_log
 --             AND contact_id = NEW.id;
 --         -- TODO: raise if other value changed
 --     );
+
+
+
+CREATE OR REPLACE FUNCTION c_ismemberof_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT EXISTS(SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups($2)) AND member) FROM contact WHERE contact.id=$1;
+$$;
+
+CREATE OR REPLACE FUNCTION c_operatorof_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT operator FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
+$$;
+
+
+-- See core/perms.py for a full description of these functions:
+
+CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_operatorof_cg($1, $2);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_change_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_see_members_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR $2=1 OR c_operatorof_cg($1, $2);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_change_members_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_view_fields_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR c_operatorof_cg($1, $2);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_write_fields_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_change_fields_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8);
+$$;
+
+
+--  Get the list of groups whose member can be seen by contact cid:
+
+-- CREATE OR REPLACE FUNCTION perm_c_can_see_c(integer, integer) RETURNS boolean
+-- LANGUAGE SQL STABLE AS $$
+--     SELECT EXISTS( c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR ;
+-- $$;
+

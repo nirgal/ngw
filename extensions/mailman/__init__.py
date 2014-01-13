@@ -90,6 +90,7 @@ def synchronise_group(cg, mailcontent):
     return result
 
 if __name__ == '__main__':
+    from ngw.core.models import ContactGroup
     from optparse import OptionParser
     parser = OptionParser(usage='%prog [options] filename dump|normalize|check')
     parser.add_option('-g', '--group', action='store', dest='groupid', type='int', help='specify groupid')

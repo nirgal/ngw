@@ -8,17 +8,30 @@
     {% for row in rows %}
         {{ row|get:0 }}: <b>{{ row|get:1 }}</b><br>
     {% endfor %}
-    {% for g in contact.get_directgroups_member %}
-        {% if not forloop.counter0 %}Member of groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date|ngw_date_format }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+    {% for g in contact.get_directgroups_member|group_visible_by:request.user.id %}
+        {% if forloop.first %}Member of groups:<br>{% endif %}
+        &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
+        {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
+        {% if forloop.first %}( implies {%else%}, {% endif %}
+        {{ sg|group_with_link }}
+        {% if forloop.last %}){% endif %}
+        {% endfor %}
+        <br> 
     {% endfor %}
-    {% for g in contact.get_directgroups_invited %}
-        {% if not forloop.counter0 %}Invited in groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date|ngw_date_format }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+    {% for g in contact.get_directgroups_invited|group_visible_by:request.user.id %}
+        {% if not forloop.first %}Invited in groups:<br>{% endif %}
+        &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
+        {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
+        {% if forloop.first %}( implies {%else%}, {% endif %}
+        {{ sg|group_with_link }}
+        {% if forloop.last %}){% endif %}
+        {% endfor %}
+        <br> 
     {% endfor %}
-    {% for g in contact.get_directgroups_declinedinvitation %}
-        {% if not forloop.counter0 %}Declined invitation in groups:<br>{% endif %}
-        &nbsp;&nbsp;&nbsp;<b><a href="{{ g.get_absolute_url }}">{{ g.name }}</a></b>{% if g.date %} {{ g.date|ngw_date_format }}{% endif %} {{ g.supergroups_includinghtml|safe }}<br> 
+    {% for g in contact.get_directgroups_declinedinvitation|group_visible_by:request.user.id %}
+        {% if not forloop.first %}Declined invitation in groups:<br>{% endif %}
+        &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
+        <br> 
     {% endfor %}
 
     </table>

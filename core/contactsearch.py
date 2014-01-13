@@ -2,6 +2,7 @@
 
 from __future__ import print_function, unicode_literals
 import urllib2
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.utils.safestring import mark_safe
 from django.utils import html
@@ -13,7 +14,7 @@ from ngw.core.models import (
     EmptyBoundFilter, AndBoundFilter, OrBoundFilter,
     FIELD_FILTERS )
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
-#from ngw.core.views import unauthorized
+from ngw.core import perms
 
 
 
@@ -118,7 +119,12 @@ class FilterLexer(object):
                 raise LexicalError('Unexpected character')
 
 
-def filter_parse_expression(lexer):
+def _filter_parse_expression(lexer, user_id):
+    '''
+    Filter parser.
+    Returns a BoundFilter, that is a filter reader to apply, that includes parameters.
+    user_id is there only to check security priviledges.
+    '''
     try:
         lexem = lexer.next()
     except StopIteration:
@@ -129,13 +135,13 @@ def filter_parse_expression(lexer):
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
             raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
 
-        subfilter1 = filter_parse_expression(lexer)
+        subfilter1 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
             raise ("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
         
-        subfilter2 = filter_parse_expression(lexer)
+        subfilter2 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.RPARENTHESIS:
@@ -149,13 +155,13 @@ def filter_parse_expression(lexer):
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
             raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
 
-        subfilter1 = filter_parse_expression(lexer)
+        subfilter1 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
             raise ("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
         
-        subfilter2 = filter_parse_expression(lexer)
+        subfilter2 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.RPARENTHESIS:
@@ -199,6 +205,11 @@ def filter_parse_expression(lexer):
                 params.append(int(lexem.str))
                 
         field = ContactField.objects.get(pk=field_id)
+
+        # Security check: user must have read access that field
+        if not perms.c_can_view_fields_cg(user_id, field.contact_group_id):
+            raise PermissionDenied
+
         filter = field.get_filter_by_name(field_filter_name)
         return filter.bind(*params)
 
@@ -235,7 +246,11 @@ def filter_parse_expression(lexer):
                 params.append(lexem.str)
             elif lexem.type == FilterLexer.Lexem.Type.INT:
                 params.append(int(lexem.str))
-                
+
+        # Security check: user must have access to members list of that group
+        if not perms.c_can_see_members_cg(user_id, group_id):
+            raise PermissionDenied
+
         filter = ContactGroup.objects.get(pk=group_id).get_filter_by_name(group_filter_name)
         return filter.bind(*params)
 
@@ -299,8 +314,11 @@ def filter_parse_expression(lexer):
         raise FilterSyntaxError("Unexpected %s." % unicode(repr(lexem), 'utf8'))
     
 
-def filter_parse_expression_root(lexer):
-    exp = filter_parse_expression(lexer)
+def _filter_parse_expression_root(lexer, user_id):
+    '''
+    Calls _filter_parse_expression() and check nothing is left after the end
+    '''
+    exp = _filter_parse_expression(lexer, user_id)
     try:
         lexem = lexer.next()
     except StopIteration:
@@ -309,9 +327,13 @@ def filter_parse_expression_root(lexer):
         raise FilterSyntaxError("Unexpected %s after end of string." % unicode(repr(lexem), 'utf8'))
 
 
-def parse_filterstring(sfilter):
+def parse_filterstring(sfilter, user_id):
+    '''
+    Parse sfilter string, checking user_id priviledges.
+    Returns a bound filter.
+    '''
     #print("Parsing", sfilter)
-    return filter_parse_expression_root(FilterLexer(sfilter).parse())
+    return _filter_parse_expression_root(FilterLexer(sfilter).parse(), user_id)
 
     
 
@@ -320,29 +342,35 @@ def parse_filterstring(sfilter):
 
 @login_required()
 def editfilter(request):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    filter = parse_filterstring('')
+    '''
+    This is the basic widget to build and combine filters during a search
+    '''
+    # Security is handled by the parser
+    filter = parse_filterstring('', request.user.id)
     return render_to_response('filter.html', {'filter_html':mark_safe(filter.to_html())}, RequestContext(request))
 
 
 @login_required()
 def contactsearch_get_fields(request, kind):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    
+    '''
+    This is the second step in the building of a contact search filter:
+    Select field or group or event ...
+    '''
     body = ""
     if kind == 'field':
         body += "Add a field: "
-        body += format_link_list([("javascript:select_field('name')", "Name", "field_name")]+[ ("javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), "field_field_"+unicode(cf.id)) for cf in ContactField.objects.order_by('sort_weight')])
+        fields = ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id]).order_by('sort_weight')
+        body += format_link_list([("javascript:select_field('name')", "Name", "field_name")]+[ ("javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), "field_field_"+unicode(cf.id)) for cf in fields])
     elif kind == 'group':
         body += "Add a group: "
-        body += format_link_list([ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in ContactGroup.objects.filter(date=None)])
+        groups = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('name')
+        body += format_link_list([ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups])
     elif kind == 'event':
         body += "Add an event: "
+        groups = ContactGroup.objects.exclude(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
         body += format_link_list(
             [ ("javascript:select_field('allevents')", no_br('All events'), "field_allevents") ] +
-            [ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in ContactGroup.objects.exclude(date=None)])
+            [ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups])
     elif kind == 'custom':
         body += "Add a custom filter: "
         body += format_link_list([ ("javascript:select_field('custom_user')", "Custom filters for "+request.user.name, 'field_custom_user')])
@@ -350,7 +378,12 @@ def contactsearch_get_fields(request, kind):
         body += "ERROR in get_fields: kind=="+kind
     return HttpResponse(body)
 
+
 def parse_filter_list_str(txt):
+    '''
+    This takes a filter list stored in the database and returns a list of tupples
+    ( filtername, filter_string )
+    '''
     list = txt.split(',')
     for idx in xrange(len(list)-1, 0, -1):
         if list[idx-1][-1] != '"' or list[idx][0] != '"':
@@ -367,9 +400,11 @@ def parse_filter_list_str(txt):
 
 @login_required()
 def contactsearch_get_filters(request, field):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    
+    '''
+    This is the third step in building a contact search filter:
+    Display operators such as "is lower than" to apply to the "field" selected.
+    Acutally, field can an event, or other things...
+    '''
     body = ""
     if field == 'name':
         body += "Add a filter for name : "
@@ -407,9 +442,12 @@ def contactsearch_get_filters(request, field):
 
 @login_required()
 def contactsearch_get_params(request, field, filtername):
-    if not request.user.is_admin():
-        return unauthorized(request)
-    
+    '''
+    This is the last step in building a contact search filter:
+    After selecting a "field" and a filtername (operator), user enters a paramter.
+    The parameter type depends of the filter. Can be a string, a date, ...
+    '''
+
     previous_filter = request.GET.get('previous_filter', '')
     filter = None
 
@@ -420,11 +458,15 @@ def contactsearch_get_params(request, field, filtername):
     elif field.startswith('field_'):
         field_id = int(field[len('field_'):])
         field = ContactField.objects.get(pk=field_id)
+        if not perms.c_can_view_fields_cg(request.user.id, field.contact_group_id):
+            raise PermissionDenied
         filter = field.get_filter_by_name(filtername)
         filter_internal_beginin = 'ffilter(' + unicode(field_id) + ','
 
     elif field.startswith('group_'):
         group_id = int(field[len('group_'):])
+        if not perms.c_can_see_members_cg(request.user.id, group_id):
+            raise PermissionDenied
         group = ContactGroup.objects.get(pk=group_id)
         filter = group.get_filter_by_name(filtername)
         filter_internal_beginin = 'gfilter(' + unicode(group_id) + ','
@@ -510,11 +552,12 @@ def contactsearch_get_params(request, field, filtername):
 
 @login_required()
 def contactsearch_filter_to_html(request):
-    if not request.user.is_admin():
-        return unauthorized(request)
- 
+    '''
+    Convert a filter string into a nice indented html block
+    with fieldid replaced by field names and so on.
+    Security is checked by filter parser.
+    '''
     strfilter = request.META['QUERY_STRING'] or ""
     strfilter = urllib2.unquote(strfilter)
-    strfilter = unicode(strfilter, 'utf8')
-    filter = parse_filterstring(strfilter)
+    filter = parse_filterstring(strfilter, request.user.id)
     return HttpResponse(filter.to_html())

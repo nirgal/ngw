@@ -71,6 +71,7 @@ COPY contact_group (id, name, description, field_group, date, budget_code, syste
 1	Contacts	Ensemble des contacts	t	\N		t		f	f
 2	Utilisateurs	Ensemble des personnes qui ont un identifiant et un mot de passe.\r\nVoir aussi "Utilisateurs NGW" et "Utilisateurs Forum".	t	\N		t	\N	f	f
 8	Admins	Ils peuvent ajouter des contacts dans n'importe quel groupe, et tout voir.	f	\N		t		f	f
+9	Observateurs	Ils peuvent tout voir, mais n'ont pas accès en écriture sur les groupes.	f	\N		t		f	f
 52	Utilisateurs NGW	Les personnes de ce groupe peuvent se connecter à la base de données.	f	\N		t	\N	f	f
 53	Utilisateurs Forum	Les personnes de ce groupe peuvent se connecter au forum (non disponible).	t	\N		t	\N	f	f
 \.
@@ -124,7 +125,6 @@ COPY contact_field_value (contact_id, contact_field_id, value) FROM stdin;
 --
 
 COPY contact_in_group (contact_id, group_id, operator, member, invited, declined_invitation, note) FROM stdin;
-1	52	t	t	f	f	\N
 1	8	f	t	f	f	\N
 \.
 
@@ -138,4 +138,5 @@ COPY group_in_group (father_id, subgroup_id) FROM stdin;
 2	53
 2	52
 52	8
+52	9
 \.

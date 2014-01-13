@@ -6,9 +6,9 @@ import random
 import sys
 import uno
 import subprocess
-from time import sleep
-from com.sun.star.connection import NoConnectException
-from com.sun.star.uno import Exception as UnoException
+#from time import sleep
+#from com.sun.star.connection import NoConnectException
+#from com.sun.star.uno import Exception as UnoException
 from com.sun.star.beans import PropertyValue
 
 TMPDIR = '/tmp'

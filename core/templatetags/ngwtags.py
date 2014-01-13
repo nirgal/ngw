@@ -3,7 +3,8 @@
 from __future__ import print_function, unicode_literals
 import inspect
 from django import template
-#from django.utils import html
+from django.utils import html
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -94,3 +95,10 @@ def ngw_display(obj, coldesc):
         pass 
     return result
 
+@register.filter
+def group_visible_by(contact_groups_query, user_id):
+    return contact_groups_query.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % user_id ])
+
+@register.filter
+def group_with_link(contact_group):
+    return mark_safe('<a href="'+contact_group.get_absolute_url()+'">'+html.escape(contact_group.unicode_with_date())+'</a>')

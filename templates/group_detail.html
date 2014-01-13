@@ -40,16 +40,24 @@
 {% endblock %}
 
 {% block presubmitbar %}
-    {% if cg.get_direct_subgroups %}
-        <h1 class=boxheader>Sub groups</h1>
-        <div class=box>
-        People in sub-groups automatically are members / invited.
-        <br>
-        {% for sg in cg.get_direct_subgroups  %}
-        ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a>{{sg.subgroups_includinghtml|safe}}<br>
-        {% endfor %}
-        </div>
-    {% endif %}
+    {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
+        {% if forloop.first %}
+            <h1 class=boxheader>Sub groups</h1>
+            <div class=box>
+                People in sub-groups automatically are members / invited.
+                <br>
+        {% endif %}
+                ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a>
+                {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
+                {% if forloop.first %}( including {%else%}, {% endif %}
+                {{ ssg|group_with_link }}
+                {% if forloop.last %}){% endif %}
+                {% endfor %}
+                <br>
+        {% if forloop.last %}
+            </div>
+        {% endif %}
+    {% endfor %}
     
     {% for f in files %}
         {% if forloop.first %}
