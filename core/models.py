@@ -252,9 +252,9 @@ class Contact(NgwModel):
             return fields.extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user_id])
 
     def get_fieldvalues_by_type(self, type_):
-        if issubclass(type_, ContactField):
-            type_ == type_.db_type_id
-        assert type_.__class__ == unicode
+        if isinstance(type_, ContactField):
+            type_ = type_.db_type_id
+        assert isinstance(type_, unicode)
         fields = ContactField.objects.filter(type=type_).order_by('sort_weight')
         # TODO: check authority
         result = []
