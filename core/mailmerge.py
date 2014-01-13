@@ -6,8 +6,7 @@ import random
 import sys
 import uno
 import subprocess
-#from time import sleep
-#from com.sun.star.connection import NoConnectException
+from com.sun.star.connection import NoConnectException
 #from com.sun.star.uno import Exception as UnoException
 from com.sun.star.beans import PropertyValue
 
@@ -28,7 +27,11 @@ def get_outputprefix():
 def ngw_mailmerge(filename_in, fields, target_dir):
     local = uno.getComponentContext()
     resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
-    context = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
+    try:
+        context = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
+    except NoConnectException:
+        print("Can't reach libreoffice on localhost on UDP port 2002")
+        raise
 
     desktop = context.ServiceManager.createInstance('com.sun.star.frame.Desktop')
     document = desktop.loadComponentFromURL(uno.systemPathToFileUrl(filename_in), '_blank', 0, ())
