@@ -13,31 +13,15 @@ SET search_path = public, pg_catalog;
 
 SET default_tablespace = '';
 
-SET default_with_oids = true;
-
 --
 -- Name: contact_field_value; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE contact_field_value (
-    contact_id integer NOT NULL,
+    contact_id serial NOT NULL,
     contact_field_id integer NOT NULL,
     value text
-);
-
-
-SET default_with_oids = false;
-
---
--- Name: contact_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE contact_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
+) WITH OIDS;
 
 
 --
@@ -45,12 +29,10 @@ CREATE SEQUENCE contact_id_seq
 --
 
 CREATE TABLE contact (
-    id integer DEFAULT nextval('contact_id_seq'::regclass) NOT NULL,
+    id serial NOT NULL,
     name character varying(255) NOT NULL
 );
 
-
-SET default_with_oids = true;
 
 --
 -- Name: contact_in_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -64,29 +46,15 @@ CREATE TABLE contact_in_group (
     invited boolean DEFAULT false NOT NULL,
     declined_invitation boolean DEFAULT false NOT NULL,
     note text
-);
+) WITH OIDS;
 
-
---
--- Name: contact_group_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE contact_group_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-SET default_with_oids = false;
 
 --
 -- Name: contact_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE contact_group (
-    id integer DEFAULT nextval('contact_group_id_seq'::regclass) NOT NULL,
+    id serial NOT NULL,
     name character varying(255) NOT NULL,
     description text,
     field_group boolean DEFAULT false NOT NULL,
@@ -99,8 +67,6 @@ CREATE TABLE contact_group (
 );
 
 
-SET default_with_oids = true;
-
 --
 -- Name: choice; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
@@ -109,29 +75,15 @@ CREATE TABLE choice (
     choice_group_id integer NOT NULL,
     key character varying(255) DEFAULT ''::character varying NOT NULL,
     value character varying(255) DEFAULT ''::character varying NOT NULL
-);
+) WITH OIDS;
 
-
---
--- Name: choice_group_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE choice_group_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-SET default_with_oids = false;
 
 --
 -- Name: choice_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE choice_group (
-    id integer DEFAULT nextval('choice_group_id_seq'::regclass) NOT NULL,
+    id serial NOT NULL,
     name character varying(255),
     sort_by_key boolean DEFAULT false NOT NULL
 );
@@ -148,23 +100,11 @@ CREATE TABLE config (
 
 
 --
--- Name: contact_field_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE contact_field_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
 -- Name: contact_field; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE contact_field (
-    id integer DEFAULT nextval('contact_field_id_seq'::regclass) NOT NULL,
+    id serial NOT NULL,
     name character varying(255) NOT NULL,
     hint text,
     type character varying(15) DEFAULT 'TEXT'::character varying NOT NULL,
@@ -181,7 +121,7 @@ CREATE TABLE contact_field (
 --
 
 CREATE TABLE contact_group_news (
-    id integer NOT NULL,
+    id serial NOT NULL,
     author_id integer,
     contact_group_id integer,
     date timestamp without time zone NOT NULL,
@@ -191,48 +131,15 @@ CREATE TABLE contact_group_news (
 
 
 --
--- Name: contact_group_news_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE contact_group_news_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: contact_group_news_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE contact_group_news_id_seq OWNED BY contact_group_news.id;
-
-
---
--- Name: contact_sysmsg_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE contact_sysmsg_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
 -- Name: contact_sysmsg; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE contact_sysmsg (
-    id integer DEFAULT nextval('contact_sysmsg_id_seq'::regclass) NOT NULL,
+    id serial NOT NULL,
     contact_id integer NOT NULL,
     message text NOT NULL
 );
 
-
-SET default_with_oids = true;
 
 --
 -- Name: group_in_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -241,7 +148,7 @@ SET default_with_oids = true;
 CREATE TABLE group_in_group (
     father_id integer NOT NULL,
     subgroup_id integer NOT NULL
-);
+) WITH OIDS;
 
 
 --
@@ -251,14 +158,12 @@ CREATE TABLE group_in_group (
 COMMENT ON COLUMN group_in_group.father_id IS 'Automatic member';
 
 
-SET default_with_oids = false;
-
 --
 -- Name: log; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE log (
-    id integer NOT NULL,
+    id serial NOT NULL,
     dt timestamp without time zone NOT NULL,
     contact_id integer NOT NULL,
     action integer NOT NULL,
@@ -268,39 +173,6 @@ CREATE TABLE log (
     property_repr text,
     change text
 );
-
-
---
--- Name: log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE log_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE log_id_seq OWNED BY log.id;
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY contact_group_news ALTER COLUMN id SET DEFAULT nextval('contact_group_news_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY log ALTER COLUMN id SET DEFAULT nextval('log_id_seq'::regclass);
 
 
 --
