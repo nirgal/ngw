@@ -830,7 +830,7 @@ def contact_pass(request, gid=None, cid=None):
     if gid is not None:
         gid = int(gid)
     cid = int(cid)
-    if cid != request.user.id and not perms.c_can_write_fields_cg(GROUP_USER):
+    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     args = {}
@@ -883,7 +883,7 @@ def contact_pass_letter(request, gid=None, cid=None):
     if gid is not None:
         gid = int(gid)
     cid = int(cid)
-    if cid != request.user.id and not perms.c_can_write_fields_cg(GROUP_USER):
+    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     args = {}
@@ -948,7 +948,7 @@ def contact_delete(request, gid=None, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_add(request, cid=None):
-    if cid != request.user.id and not perms.c_can_write_fields_cg(GROUP_USER):
+    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     filter_str = request.GET['filterstr']
