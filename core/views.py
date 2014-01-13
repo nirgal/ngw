@@ -309,6 +309,7 @@ def membership_extended_widget(contact_with_extra_fields, contact_group, base_ur
     member = getattr(contact_with_extra_fields, attrib_prefix+'m')
     invited = getattr(contact_with_extra_fields, attrib_prefix+'i')
     declined = getattr(contact_with_extra_fields, attrib_prefix+'d')
+    #operator = getattr(contact_with_extra_fields, attrib_prefix+'o')
     note = getattr(contact_with_extra_fields, attrib_prefix+'note')
 
     params = {}
@@ -335,7 +336,20 @@ def membership_extended_widget(contact_with_extra_fields, contact_group, base_ur
     else:
         params['has_declined_invitation_checked'] = ''
 
-    return  '<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s<div class=membershipextra id="membership_%(cid)d"><a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>%(title)s<br><form action="%(cid)d/membershipinline" method=post><input type=hidden name="next_url" value="../../members/%(base_url)s"><input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label><input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label><input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label><br><a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a></form></div>' % params
+    return  '''
+<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s
+<div class=membershipextra id="membership_%(cid)d">
+    <a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>
+    %(title)s<br>
+    <form action="%(cid)d/membershipinline" method=post>
+        <input type=hidden name="next_url" value="../../members/%(base_url)s">
+        <input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label>
+        <input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label>
+        <input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label>
+        <br>
+        <a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a>
+    </form>
+</div>''' % params
 
 
 
@@ -1271,12 +1285,17 @@ def contactgroup_members(request, gid, output_format=''):
     if 'd' in display:
         cig_conditions_flags.append('declined_invitation=True')
         args['display_declined'] = 1
+    if 'o' in display:
+        cig_conditions_flags.append('operator=True')
+        args['display_operator'] = 1
 
     if cig_conditions_flags:
         cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
         cig_conditions_flags = ' AND False' # display nothing
 
+    if 'g' in display and 'o' in display:
+        raise ValueError("Can't display both inherited memberships and operators")
     if 'g' in display:
         cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
         args['display_subgroups'] = 1
@@ -1567,12 +1586,16 @@ def contactgroup_add_contacts_to(request):
         cig_conditions_flags.append('invited=True')
     if 'd' in display:
         cig_conditions_flags.append('declined_invitation=True')
+    if 'o' in display:
+        cig_conditions_flags.append('operator=True')
 
     if cig_conditions_flags:
         cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
         cig_conditions_flags = ' AND False' # display nothing
 
+    if 'g' in display and 'o' in display:
+        raise ValueError("Can't display both inherited memberships and operators")
     if 'g' in display:
         cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
     else:
@@ -1608,17 +1631,15 @@ class ContactInGroupForm(forms.Form):
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['invited'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.declined_invitation.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}'}
-        self.fields['declined_invitation'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.member.checked=false; this.form.operator.checked=false;}'}
-        self.fields['member'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; } else { this.form.operator.checked=false;}'}
-        self.fields['operator'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; this.form.member.checked=true; }'}
+        self.fields['invited'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.declined_invitation.checked=false; this.form.member.checked=false;}'}
+        self.fields['declined_invitation'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.member.checked=false;}'}
+        self.fields['member'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; }'}
 
     def clean(self):
         data = self.cleaned_data
         if  (data['invited'] and data['declined_invitation']) \
          or (data['declined_invitation'] and data['member']) \
-         or (data['invited'] and data['member']) \
-         or (data['operator'] and not data['member']):
+         or (data['invited'] and data['member']):
             raise forms.ValidationError('Invalid flags combinaison')
         return data
 
@@ -1708,24 +1729,16 @@ def contactingroup_edit_inline(request, gid, cid):
     contact = get_object_or_404(Contact, pk=cid)
     newmembership = request.POST['membership']
     if newmembership == 'invited':
-        cig.invited = True
-        cig.declined_invitation = False
-        cig.member = False
-        cig.operator = False
+        flags = '+i'
     elif newmembership == 'member':
-        cig.invited = False
-        cig.declined_invitation = False
-        cig.member = True
-        # cig.operator can be any value
+        flags = '+m'
     elif newmembership == 'declined_invitation':
-        cig.invited = False
-        cig.declined_invitation = True
-        cig.member = False
-        cig.operator = False
+        flags = '+d'
+    elif newmembership == 'operator':
+        flags = '+o'
     else:
         raise Exception('invalid membership '+request.POST['membership'])
-    cig.save()
-    messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
+    cg.set_member_1(request.user, contact, flags)
     hooks.membership_changed(request.user, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
 

@@ -652,18 +652,17 @@ class ContactGroup(NgwModel):
         """
         group_member_mode is a combinaison of letters 'mido'
         if it starts with '+', the mode will be added (dropping incompatible ones).
-        Example '+o' actually means '+m-id+o'
-                '+d' actually means '-mi+d-o'
+        Example '+d' actually means '-mi+d'
         if it starst with '-', the mode will be deleted
         TODO enforce that:
         m/i/d are mutually exclusive
-        o require m
         returns
         LOG_ACTION_ADD if added
         LOG_ACTION_CHANGE if changed
         LOG_ACTION_DEL if deleted
         0 other wise
         If the contact was not in the group, it will be added.
+        If new mode is empty, the contact will be removed from the group.
         """
 
         result = 0
@@ -677,56 +676,32 @@ class ContactGroup(NgwModel):
                     operation = letter
                 elif letter == 'm':
                     if operation == '+':
-                        add_mode.add('m')
-                        del_mode.discard('m')
-                        add_mode.discard('i')
-                        del_mode.add('i')
-                        add_mode.discard('d')
-                        del_mode.add('d')
+                        add_mode = add_mode | {'m'} - {'i', 'd'}
+                        del_mode = del_mode - {'m'} | {'i', 'd'}
                     else: # operation == '-'
-                        add_mode.discard('m')
-                        del_mode.add('m')
-                        add_mode.discard('o')
-                        del_mode.add('o')
+                        del_mode |= {'m'}
+                        add_mode -= {'m'}
                 elif letter == 'i':
                     if operation == '+':
-                        add_mode.discard('m')
-                        del_mode.add('m')
-                        add_mode.add('i')
-                        del_mode.discard('i')
-                        add_mode.discard('d')
-                        del_mode.add('d')
-                        add_mode.discard('o')
-                        del_mode.add('o')
+                        add_mode = add_mode | {'i'} - {'m', 'd'}
+                        del_mode = del_mode - {'i'} | {'m', 'd'}
                     else: # operation == '-'
-                        add_mode.discard('i')
-                        del_mode.add('i')
+                        del_mode |= {'i'}
+                        add_mode -= {'i'}
                 elif letter == 'd':
                     if operation == '+':
-                        add_mode.discard('m')
-                        del_mode.add('m')
-                        add_mode.discard('i')
-                        del_mode.add('i')
-                        add_mode.add('d')
-                        del_mode.discard('d')
-                        add_mode.discard('o')
-                        del_mode.add('o')
+                        add_mode = add_mode | {'d'} - {'m', 'i'}
+                        del_mode = del_mode - {'d'} | {'m', 'i'}
                     else: # operation == '-'
-                        add_mode.discard('d')
-                        del_mode.add('d')
+                        del_mode |= {'d'}
+                        add_mode -= {'d'}
                 elif letter == 'o':
                     if operation == '+':
-                        add_mode.add('m')
-                        del_mode.discard('m')
-                        add_mode.discard('i')
-                        del_mode.add('i')
-                        add_mode.discard('d')
-                        del_mode.add('d')
-                        add_mode.add('o')
-                        del_mode.discard('o')
+                        add_mode |= {'o'}
+                        del_mode -= {'o'}
                     else: # operation == '-'
-                        add_mode.discard('o')
-                        del_mode.add('o')
+                        del_mode |= {'o'}
+                        add_mode -= {'o'}
 
         else:
             # set mode, no + nor -
@@ -735,30 +710,23 @@ class ContactGroup(NgwModel):
             if 'm' in group_member_mode:
                 if 'i' in group_member_mode or 'd' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode.add('m')
-                del_mode.add('i')
-                del_mode.add('d')
+                add_mode |= {'m'}
+                del_mode |= {'i', 'd'}
             if 'i' in group_member_mode:
-                if 'm' in group_member_mode or 'd' in group_member_mode or 'o' in group_member_mode:
+                if 'm' in group_member_mode or 'd' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                del_mode.add('m')
-                add_mode.add('i')
-                del_mode.add('d')
-                del_mode.add('o')
+                add_mode |= {'i'}
+                del_mode |= {'m', 'd'}
             if 'd' in group_member_mode:
-                if 'm' in group_member_mode or 'i' in group_member_mode or 'o' in group_member_mode:
+                if 'm' in group_member_mode or 'i' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                del_mode.add('m')
-                del_mode.add('i')
-                add_mode.add('d')
-                del_mode.add('o')
+                add_mode |= {'d'}
+                del_mode |= {'m', 'i'}
+
             if 'o' in group_member_mode:
-                if 'i' in group_member_mode or 'd' in group_member_mode:
-                    raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode.add('m')
-                del_mode.add('i')
-                del_mode.add('d')
-                add_mode.add('o')
+                add_mode |= {'o'}
+            else:
+                del_mode |= {'o'}
 
         try:
             cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
@@ -875,7 +843,7 @@ class ContactGroup(NgwModel):
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if not cig.member and not cig.invited and not cig.declined_invitation:
+        if not cig.member and not cig.invited and not cig.declined_invitation and not cig.operator:
             cig.delete()
             log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_DEL
