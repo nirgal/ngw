@@ -13,4 +13,7 @@ def contactcount(request):
     """
     This context processor just add a "contactcount" key
     """
-    return {'contactcount': Contact.objects.count() }
+    if hasattr(request, 'user'):
+        return {'contactcount': Contact.objects.count() }
+    else:
+        return ()
