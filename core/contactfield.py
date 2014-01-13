@@ -6,9 +6,18 @@ from django import forms
 from django.utils import http
 from django.utils import html
 from django.conf import settings
-from ngw.core.models import ContactField, ChoiceGroup, Choice, register_contact_field_type
-from ngw.core.models import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
-#, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
+from ngw.core.models import ( ContactField, ChoiceGroup, Choice,
+    register_contact_field_type )
+from ngw.core.models import (NameFilterStartsWith, FieldFilterStartsWith,
+    FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE,
+    FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,
+    FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT,
+    FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT,
+    FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ,
+    FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT,
+    AllEventsNotReactedSince, AllEventsReactionYearRatioLess,
+    AllEventsReactionYearRatioMore)
+    #, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
 from ngw.core import gpg
 from ngw.core.widgets import NgwCalendarWidget, NgwCheckboxSelectMultiple
 from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #FIXME

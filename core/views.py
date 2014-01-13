@@ -967,7 +967,7 @@ def contact_filters_add(request, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_list(request, cid=None):
-    if cid != request.user.id and not perms.c_can_view_fields_cg(GROUP_USER):
+    if cid != request.user.id and not perms.c_can_view_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
@@ -992,8 +992,8 @@ class FilterEditForm(forms.Form):
 @require_group(GROUP_USER_NGW)
 def contact_filters_edit(request, cid=None, fid=None):
     # Warning, here fid is the index in the filter list of a given user
-    if not request.user.is_admin():
-        return unauthorized(request)
+    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
+        raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     if not filter_list_str:
@@ -1354,25 +1354,28 @@ def contactgroup_members(request, gid, output_format=''):
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
 
-    folder = cg.static_folder()
-    try:
-        files = os.listdir(folder)
-    except OSError as (errno, errmsg):
-        messages.add_message(request, messages.ERROR, 'Error while reading shared files list in %s: %s' % (folder, errmsg))
-        files = []
+    if perms.c_can_see_files_cg(request.user.id, gid):
+        folder = cg.static_folder()
+        try:
+            files = os.listdir(folder)
+        except OSError as (errno, errmsg):
+            messages.add_message(request, messages.ERROR, 'Error while reading shared files list in %s: %s' % (folder, errmsg))
+            files = []
 
-    # listdir() returns some data in utf-8, we want everything in unicode:
-    unicode_files = []
-    for file in files:
-        if isinstance(file, unicode):
-            unicode_files.append(file)
-        else:
-            unicode_files.append(unicode(file, 'utf8', 'replace'))
-    files = unicode_files
+        # listdir() returns some data in utf-8, we want everything in unicode:
+        unicode_files = []
+        for file in files:
+            if isinstance(file, unicode):
+                unicode_files.append(file)
+            else:
+                unicode_files.append(unicode(file, 'utf8', 'replace'))
+        files = unicode_files
 
-    if '.htaccess' in files:
-        files.remove('.htaccess')
-    files.sort()
+        if '.htaccess' in files:
+            files.remove('.htaccess')
+        files.sort()
+    else:
+        files = None
 
     args['title'] = 'Contacts of group ' + cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
@@ -1769,6 +1772,8 @@ def contactingroup_delete(request, gid, cid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news(request, gid):
+    if not perms.c_can_see_news_cg(request.user.id, gid):
+        raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
     args = {}
     args['title'] = 'News for group ' + cg.name
@@ -1788,6 +1793,8 @@ class NewsEditForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_edit(request, gid, nid):
+    if not perms.c_can_change_news_cg(request.user.id, gid):
+        raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
     if nid:
         news = get_object_or_404(ContactGroupNews, pk=nid)
@@ -1840,8 +1847,8 @@ def contactgroup_news_edit(request, gid, nid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_delete(request, gid, nid):
-    if not request.user.is_admin():
-        return unauthorized(request)
+    if not perms.c_can_change_news_cg(request.user.id, gid):
+        raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
     o = get_object_or_404(ContactGroupNews, pk=nid)
     return generic_delete(request, o, cg.get_absolute_url() + 'news/')

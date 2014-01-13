@@ -224,6 +224,26 @@ LANGUAGE SQL STABLE AS $$
     SELECT c_ismemberof_cg($1, 8);
 $$;
 
+CREATE OR REPLACE FUNCTION perm_c_can_see_news_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_change_news_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_see_files_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_change_files_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8);
+$$;
+
 
 --  Get the list of groups whose member can be seen by contact cid:
 
