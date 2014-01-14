@@ -186,12 +186,17 @@ LANGUAGE SQL STABLE AS $$
     SELECT operator FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
 $$;
 
+CREATE OR REPLACE FUNCTION c_viewerof_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT viewer FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
+$$;
+
 
 -- See core/perms.py for a full description of these functions:
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_operatorof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_operatorof_cg($1, $2) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_cg(integer, integer) RETURNS boolean
@@ -201,7 +206,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_members_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR $2=1 OR c_operatorof_cg($1, $2);
+    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR $2=1 OR c_operatorof_cg($1, $2) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_members_cg(integer, integer) RETURNS boolean
@@ -211,7 +216,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_view_fields_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR c_operatorof_cg($1, $2);
+    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR c_operatorof_cg($1, $2) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_write_fields_cg(integer, integer) RETURNS boolean
@@ -226,7 +231,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_news_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_news_cg(integer, integer) RETURNS boolean
@@ -236,7 +241,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_files_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_files_cg(integer, integer) RETURNS boolean

@@ -132,12 +132,14 @@ CREATE TABLE contact_in_group (
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     operator boolean DEFAULT false NOT NULL,
+    viewer boolean DEFAULT false NOT NULL,
     member boolean DEFAULT false NOT NULL,
     invited boolean DEFAULT false NOT NULL,
     declined_invitation boolean DEFAULT false NOT NULL,
     note text,
     PRIMARY KEY (contact_id, group_id)
 ) WITH OIDS;
+-- ALTER TABLE contact_in_group ADD COLUMN viewer boolean DEFAULT false NOT NULL;
 
 
 --

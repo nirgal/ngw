@@ -217,6 +217,14 @@ class Contact(NgwModel):
         "returns the list of groups that contact has been invited to."
         return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND declined_invitation)' % self.id])
 
+    def get_directgroups_operator(self):
+        "returns the list of groups that contact is an operator of."
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND operator)' % self.id])
+
+    def get_directgroups_viewer(self):
+        "returns the list of groups that contact is a viewer of."
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND viewer)' % self.id])
+
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
         return self.get_allgroups_member().filter(field_group=True)
@@ -697,8 +705,8 @@ class ContactGroup(NgwModel):
                         add_mode -= {'d'}
                 elif letter == 'o':
                     if operation == '+':
-                        add_mode |= {'o'}
-                        del_mode -= {'o'}
+                        add_mode = add_mode | {'o'} - {'v'}
+                        del_mode = del_mode - {'o'} | {'v'}
                     else: # operation == '-'
                         del_mode |= {'o'}
                         add_mode -= {'o'}
@@ -727,6 +735,10 @@ class ContactGroup(NgwModel):
                 add_mode |= {'o'}
             else:
                 del_mode |= {'o'}
+            if 'v' in group_member_mode:
+                add_mode |= {'v'}
+            else:
+                del_mode |= {'v'}
 
         try:
             cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
@@ -843,7 +855,32 @@ class ContactGroup(NgwModel):
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if not cig.member and not cig.invited and not cig.declined_invitation and not cig.operator:
+        if 'v' in add_mode:
+            if not cig.viewer:
+                cig.viewer = True
+                log = Log(contact_id=logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'viewer'
+                log.property_repr = 'Viewer'
+                log.change = 'new value is true'
+                log.save()
+                result = result or LOG_ACTION_CHANGE
+        if 'v' in del_mode:
+            if cig.viewer:
+                cig.viewer = False
+                log = Log(contact_id=logged_contact.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                log.property = 'viewer'
+                log.property_repr = 'Viewer'
+                log.change = 'new value is false'
+                log.save()
+                result = result or LOG_ACTION_CHANGE
+
+        if not cig.member and not cig.invited and not cig.declined_invitation and not cig.operator and not cig.viewer:
             cig.delete()
             log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_DEL
@@ -1544,6 +1581,7 @@ class ContactInGroup(NgwModel):
     contact = models.ForeignKey(Contact)
     group = models.ForeignKey(ContactGroup)
     operator = models.BooleanField()
+    viewer = models.BooleanField()
     member = models.BooleanField()
     invited = models.BooleanField()
     declined_invitation = models.BooleanField()

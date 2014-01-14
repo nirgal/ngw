@@ -41,6 +41,8 @@ FTYPE_CHOICE = 'CHOICE'
 FTYPE_MULTIPLECHOICE = 'MULTIPLECHOICE'
 FTYPE_PASSWORD = 'PASSWORD'
 
+DEBUG_MEMBERSHIPS = True
+
 #######################################################################
 #
 # Login / Logout
@@ -286,19 +288,38 @@ def logs(request):
 
 def membership_to_text(contact_with_extra_fields, group_id):
     memberships = []
-    if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
-        memberships.append("Member")
-    elif getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
-        memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
-    elif getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
-        memberships.append("Invited")
-    elif getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
-        memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
-    elif getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
-        memberships.append("Declined")
+    if DEBUG_MEMBERSHIPS:
+        if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
+            memberships.append("Member")
+        if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
+            memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
+        if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
+            memberships.append("Invited")
+        if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
+            memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
+        if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
+            memberships.append("Declined")
 
-    if getattr(contact_with_extra_fields, 'group_%s_o' % group_id):
-        memberships.append("Operator")
+        if getattr(contact_with_extra_fields, 'group_%s_o' % group_id):
+            memberships.append("Operator")
+        if getattr(contact_with_extra_fields, 'group_%s_v' % group_id):
+            memberships.append("Viewer")
+    else:
+        if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
+            memberships.append("Member")
+        elif getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
+            memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
+        elif getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
+            memberships.append("Invited")
+        elif getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
+            memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
+        elif getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
+            memberships.append("Declined")
+
+        if getattr(contact_with_extra_fields, 'group_%s_o' % group_id):
+            memberships.append("Operator")
+        if getattr(contact_with_extra_fields, 'group_%s_v' % group_id):
+            memberships.append("Viewer")
 
     return ", ".join(memberships)
 
@@ -310,6 +331,7 @@ def membership_extended_widget(contact_with_extra_fields, contact_group, base_ur
     invited = getattr(contact_with_extra_fields, attrib_prefix+'i')
     declined = getattr(contact_with_extra_fields, attrib_prefix+'d')
     #operator = getattr(contact_with_extra_fields, attrib_prefix+'o')
+    #viewer = getattr(contact_with_extra_fields, attrib_prefix+'v')
     note = getattr(contact_with_extra_fields, attrib_prefix+'note')
 
     params = {}
@@ -381,6 +403,7 @@ class ContactQuerySet(RawQuerySet):
         self.qry_fields['group_%s_i' % group_id] = 'cig_%s.invited' % group_id
         self.qry_fields['group_%s_d' % group_id] = 'cig_%s.declined_invitation' % group_id
         self.qry_fields['group_%s_o' % group_id] = 'cig_%s.operator' % group_id
+        self.qry_fields['group_%s_v' % group_id] = 'cig_%s.viewer' % group_id
         self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
 
         # Add fields for indirect membership
@@ -1288,14 +1311,17 @@ def contactgroup_members(request, gid, output_format=''):
     if 'o' in display:
         cig_conditions_flags.append('operator=True')
         args['display_operator'] = 1
+    if 'v' in display:
+        cig_conditions_flags.append('viewer=True')
+        args['display_viewer'] = 1
 
     if cig_conditions_flags:
         cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
         cig_conditions_flags = ' AND False' # display nothing
 
-    if 'g' in display and 'o' in display:
-        raise ValueError("Can't display both inherited memberships and operators")
+    if 'g' in display and ('o' in display or 'v' in display):
+        raise ValueError("Can't display both inherited memberships and operators/viewers")
     if 'g' in display:
         cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
         args['display_subgroups'] = 1
@@ -1591,13 +1617,15 @@ def contactgroup_add_contacts_to(request):
         cig_conditions_flags.append('declined_invitation=True')
     if 'o' in display:
         cig_conditions_flags.append('operator=True')
+    if 'v' in display:
+        cig_conditions_flags.append('viewer=True')
 
     if cig_conditions_flags:
         cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
         cig_conditions_flags = ' AND False' # display nothing
 
-    if 'g' in display and 'o' in display:
+    if 'g' in display and ('o' in display or 'v' in display):
         raise ValueError("Can't display both inherited memberships and operators")
     if 'g' in display:
         cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
@@ -1630,6 +1658,7 @@ class ContactInGroupForm(forms.Form):
     declined_invitation = forms.BooleanField(required=False)
     member = forms.BooleanField(required=False)
     operator = forms.BooleanField(required=False)
+    viewer = forms.BooleanField(required=False)
     note = forms.CharField(required=False)
 
     def __init__(self, *args, **kargs):
@@ -1637,12 +1666,13 @@ class ContactInGroupForm(forms.Form):
         self.fields['invited'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.declined_invitation.checked=false; this.form.member.checked=false;}'}
         self.fields['declined_invitation'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.member.checked=false;}'}
         self.fields['member'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; }'}
+        self.fields['operator'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.viewer.checked=true; }'}
 
     def clean(self):
         data = self.cleaned_data
-        if  (data['invited'] and data['declined_invitation']) \
-         or (data['declined_invitation'] and data['member']) \
-         or (data['invited'] and data['member']):
+        if   (data['invited'] and data['declined_invitation']) \
+          or (data['declined_invitation'] and data['member']) \
+          or (data['invited'] and data['member']) :
             raise forms.ValidationError('Invalid flags combinaison')
         return data
 
@@ -1666,18 +1696,20 @@ def contactingroup_edit(request, gid, cid):
     initial['declined_invitation'] = cig.declined_invitation
     initial['member'] = cig.member
     initial['operator'] = cig.operator
+    initial['viewer'] = cig.viewer
     initial['note'] = cig.note
 
     if request.method == 'POST':
         form = ContactInGroupForm(request.POST, initial=initial)
         if form.is_valid():
             data = form.cleaned_data
-            if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator']:
+            if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator'] and not data['viewer']:
                 return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid))) # TODO update logins deletion, call membership hooks
             cig.invited = data['invited']
             cig.declined_invitation = data['declined_invitation']
             cig.member = data['member']
             cig.operator = data['operator']
+            cig.viewer = data['viewer']
             cig.note = data['note']
             messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
@@ -1737,8 +1769,6 @@ def contactingroup_edit_inline(request, gid, cid):
         flags = '+m'
     elif newmembership == 'declined_invitation':
         flags = '+d'
-    elif newmembership == 'operator':
-        flags = '+o'
     else:
         raise Exception('invalid membership '+request.POST['membership'])
     cg.set_member_1(request.user, contact, flags)

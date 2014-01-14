@@ -16,22 +16,34 @@
         {{ sg|group_with_link }}
         {% if forloop.last %}){% endif %}
         {% endfor %}
-        <br> 
+        <br>
     {% endfor %}
     {% for g in contact.get_directgroups_invited|group_visible_by:request.user.id %}
-        {% if not forloop.first %}Invited in groups:<br>{% endif %}
+        {% if forloop.first %}Invited in groups:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
         {% if forloop.first %}( implies {%else%}, {% endif %}
         {{ sg|group_with_link }}
         {% if forloop.last %}){% endif %}
         {% endfor %}
-        <br> 
+        <br>
     {% endfor %}
     {% for g in contact.get_directgroups_declinedinvitation|group_visible_by:request.user.id %}
-        {% if not forloop.first %}Declined invitation in groups:<br>{% endif %}
+        {% if forloop.first %}Declined invitation in groups:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
-        <br> 
+        <br>
+    {% endfor %}
+
+    {% for g in contact.get_directgroups_operator|group_visible_by:request.user.id %}
+        {% if forloop.first %}Operator of groups:<br>{% endif %}
+        &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
+        <br>
+    {% endfor %}
+
+    {% for g in contact.get_directgroups_viewer|group_visible_by:request.user.id %}
+        {% if forloop.first %}Viewer of groups:<br>{% endif %}
+        &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
+        <br>
     {% endfor %}
 
     </table>

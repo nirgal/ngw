@@ -26,6 +26,7 @@
         if (form.id_display_declined.checked) display+="d";
         if (form.id_display_subgroups.checked) display+="g";
         if (form.id_display_operator.checked) display+="o";
+        if (form.id_display_viewer.checked) display+="v";
         document.forms['mainform'].display.value=display;
         document.forms['mainform'].submit();
     }
@@ -34,8 +35,9 @@
     <input type=checkbox name="display_member" id="id_display_member" {% if display_member %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">Members</label>
     <input type=checkbox name="display_invited" id="id_display_invited" {% if display_invited %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">Invited people</label>
     <input type=checkbox name="display_declined" id="id_display_declined" {% if display_declined %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">Declined invitations</label>
-    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="this.form.display_operator.checked=false; submit_display(this.form);"><label for="id_display_subgroups">Include subgroups</label>
+    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="this.form.display_operator.checked=false; sthis.form.display_viewer.checked=false; submit_display(this.form);"><label for="id_display_subgroups">Include subgroups</label>
     <input type=checkbox name="display_operator" id="id_display_operator" {% if display_operator %}checked {% endif %}onchange="this.form.display_subgroups.checked=false; submit_display(this.form);"><label for="id_display_operator">Operators</label>
+    <input type=checkbox name="display_viewer" id="id_display_viewer" {% if display_viewer %}checked {% endif %}onchange="this.form.display_subgroups.checked=false; submit_display(this.form);"><label for="id_display_viewer">Viewers</label>
     </form>
     <br>
     {{ block.super }}
