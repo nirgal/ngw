@@ -141,7 +141,7 @@ def unauthorized(request):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def home(request):
-    operator_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.group_id = contact_group.id AND contact_in_group.contact_id=%s AND operator)' % request.user.id])
+    operator_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.group_id = contact_group.id AND contact_in_group.contact_id=%s AND contact_in_group.flags & %s <> 0)' % (request.user.id, CIGFLAG_OPERATOR)])
     return render_to_response('home.html', {
         'title': 'Home page',
         'nav': Navbar(),
@@ -288,51 +288,59 @@ def logs(request):
 
 def membership_to_text(contact_with_extra_fields, group_id):
     memberships = []
+    flags = getattr(contact_with_extra_fields, 'group_%s_flags' % group_id)
+    if flags is None:
+        flags = 0
     if DEBUG_MEMBERSHIPS:
-        if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
+        if flags & CIGFLAG_MEMBER:
             memberships.append("Member")
         if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
             memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        if getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
+        if flags & CIGFLAG_INVITED:
             memberships.append("Invited")
         if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
             memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        if getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
+        if flags & CIGFLAG_DECLINED:
             memberships.append("Declined")
 
-        if getattr(contact_with_extra_fields, 'group_%s_o' % group_id):
+        if flags & CIGFLAG_OPERATOR:
             memberships.append("Operator")
-        if getattr(contact_with_extra_fields, 'group_%s_v' % group_id):
+        if flags & CIGFLAG_VIEWER:
             memberships.append("Viewer")
     else:
-        if getattr(contact_with_extra_fields, 'group_%s_m' % group_id):
+        if flags & CIGFLAG_MEMBER:
             memberships.append("Member")
         elif getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
             memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        elif getattr(contact_with_extra_fields, 'group_%s_i' % group_id):
+        elif flags & CIGFLAG_INVITED:
             memberships.append("Invited")
         elif getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
             memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        elif getattr(contact_with_extra_fields, 'group_%s_d' % group_id):
+        elif flags & CIGFLAG_DECLINED:
             memberships.append("Declined")
 
-        if getattr(contact_with_extra_fields, 'group_%s_o' % group_id):
+        if flags & CIGFLAG_OPERATOR:
             memberships.append("Operator")
-        if getattr(contact_with_extra_fields, 'group_%s_v' % group_id):
+        if flags & CIGFLAG_VIEWER:
             memberships.append("Viewer")
 
-    return ", ".join(memberships)
+    if memberships:
+        return ', '.join(memberships)
+    else:
+        return 'No'
 
 
 
 def membership_extended_widget(contact_with_extra_fields, contact_group, base_url):
-    attrib_prefix = 'group_%s_' % contact_group.id
-    member = getattr(contact_with_extra_fields, attrib_prefix+'m')
-    invited = getattr(contact_with_extra_fields, attrib_prefix+'i')
-    declined = getattr(contact_with_extra_fields, attrib_prefix+'d')
-    #operator = getattr(contact_with_extra_fields, attrib_prefix+'o')
-    #viewer = getattr(contact_with_extra_fields, attrib_prefix+'v')
-    note = getattr(contact_with_extra_fields, attrib_prefix+'note')
+    flags = getattr(contact_with_extra_fields, 'group_%s_flags' % contact_group.id)
+    if flags is None:
+        flags = 0
+    member = flags & CIGFLAG_MEMBER
+    invited = flags & CIGFLAG_INVITED
+    declined = flags & CIGFLAG_DECLINED
+    #operator = flags & CIGFLAG_OPERATOR
+    #viewer = flags & CIGFLAG_VIEWER
+    note = getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id)
 
     params = {}
     params['cid'] = contact_with_extra_fields.id
@@ -399,16 +407,15 @@ class ContactQuerySet(RawQuerySet):
         '''
         # TODO: crashes if group is there more than one (viewed from a group with that group selected as a field)
         # Add fields for direct membership
-        self.qry_fields['group_%s_m' % group_id] = 'cig_%s.member' % group_id
-        self.qry_fields['group_%s_i' % group_id] = 'cig_%s.invited' % group_id
-        self.qry_fields['group_%s_d' % group_id] = 'cig_%s.declined_invitation' % group_id
-        self.qry_fields['group_%s_o' % group_id] = 'cig_%s.operator' % group_id
-        self.qry_fields['group_%s_v' % group_id] = 'cig_%s.viewer' % group_id
+        self.qry_fields['group_%s_flags' % group_id] = 'cig_%s.flags' % group_id
         self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
 
         # Add fields for indirect membership
-        self.qry_fields['group_%s_M' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND member)" % { 'gid': group_id }
-        self.qry_fields['group_%s_I' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND invited)" % { 'gid': group_id }
+        # TODO: Use postgresql bit_or aggregate function to get all inherited flags at once in a single column
+        # http://www.postgresql.org/docs/current/static/functions-aggregate.html
+        # self.qry_fields['group_%s_inherited_flags' % group_id] = 'bit_or(flags) ....'
+        self.qry_fields['group_%s_M' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND contact_in_group.flags & %(flags)s <> 0)" % { 'gid': group_id, 'flags': CIGFLAG_MEMBER }
+        self.qry_fields['group_%s_I' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND contact_in_group.flags & %(flags)s <> 0)" % { 'gid': group_id, 'flags': CIGFLAG_INVITED }
 
     def add_group_withnote(self, group_id):
         '''
@@ -494,13 +501,10 @@ def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=No
 
             cg = ContactGroup.objects.get(pk=groupid)
 
-            #cols.append( ('group_%s_m' % groupid, None, 'group_%s_m' % groupid, None))
-            #cols.append( ('group_%s_i' % groupid, None, 'group_%s_i' % groupid, None))
-            #cols.append( ('group_%s_d' % groupid, None, 'group_%s_d' % groupid, None))
+            cols.append( (cg.name, None, lambda c: membership_to_text(c, groupid), None) )
+            #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
             #cols.append( ('group_%s_M' % groupid, None, 'group_%s_M' % groupid, None))
             #cols.append( ('group_%s_I' % groupid, None, 'group_%s_I' % groupid, None))
-            #cols.append( ('group_%s_D' % groupid, None, 'group_%s_D' % groupid, None))
-            cols.append( (cg.name, None, lambda c: membership_to_text(c, groupid), None) )
 
         elif prop.startswith(DISP_FIELD_PREFIX):
             fieldid = prop[len(DISP_FIELD_PREFIX):]
@@ -523,6 +527,9 @@ def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=No
         q.add_group_withnote(current_cg.id)
         if format == 'html':
             cols.append( ('Status', None, lambda c: membership_extended_widget(c, current_cg, base_url), None) )
+            #cols.append( ('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
+            #cols.append( ('group_%s_M' % current_cg.id, None, 'group_%s_M' % current_cg.id, None))
+            #cols.append( ('group_%s_I' % current_cg.id, None, 'group_%s_I' % current_cg.id, None))
         else:
             cols.append( ('Status', None, lambda c: membership_to_text(c, current_cg.id), None) )
             cols.append( ('Note', None, 'group_%s_note' % current_cg.id, None) )
@@ -1300,19 +1307,19 @@ def contactgroup_members(request, gid, output_format=''):
 
     cig_conditions_flags = []
     if 'm' in display:
-        cig_conditions_flags.append('member=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_MEMBER)
         args['display_member'] = 1
     if 'i' in display:
-        cig_conditions_flags.append('invited=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_INVITED)
         args['display_invited'] = 1
     if 'd' in display:
-        cig_conditions_flags.append('declined_invitation=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_DECLINED)
         args['display_declined'] = 1
     if 'o' in display:
-        cig_conditions_flags.append('operator=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_OPERATOR)
         args['display_operator'] = 1
     if 'v' in display:
-        cig_conditions_flags.append('viewer=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_VIEWER)
         args['display_viewer'] = 1
 
     if cig_conditions_flags:
@@ -1569,15 +1576,19 @@ def contactgroup_add_contacts_to(request):
             if not perms.c_can_change_members_cg(request.user.id, target_gid):
                 raise PermissionDenied
             target_group = get_object_or_404(ContactGroup, pk=target_gid)
-            t = request.REQUEST.get('type', '')
-            if t == 'Invite':
-                mode = 'i'
-            elif t == 'Member':
-                mode = 'm'
-            elif t == 'Declined invitation':
-                mode = 'd'
-            else:
-                raise Exception('Unsupported membership type '+t.encode('utf8'))
+            modes=''
+            if request.REQUEST.get('membership_member', False):
+                modes += '+m'
+            if request.REQUEST.get('membership_invited', False):
+                modes += '+i'
+            if request.REQUEST.get('membership_declined', False):
+                modes += '+d'
+            if request.REQUEST.get('membership_operator', False):
+                modes += '+o'
+            if request.REQUEST.get('membership_viewer', False):
+                modes += '+v'
+            if not modes:
+                raise ValueError('You must select at least one mode')
 
             contacts = []
             for param in request.POST:
@@ -1586,7 +1597,7 @@ def contactgroup_add_contacts_to(request):
                 contact_id = param[len('contact_'):]
                 contact = get_object_or_404(Contact, pk=contact_id)
                 contacts.append(contact)
-            target_group.set_member_n(request.user, contacts, mode)
+            target_group.set_member_n(request.user, contacts, modes)
 
             return HttpResponseRedirect(target_group.get_absolute_url())
         else:
@@ -1610,15 +1621,15 @@ def contactgroup_add_contacts_to(request):
         display = cg.get_default_display()
     cig_conditions_flags = []
     if 'm' in display:
-        cig_conditions_flags.append('member=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_MEMBER)
     if 'i' in display:
-        cig_conditions_flags.append('invited=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_INVITED)
     if 'd' in display:
-        cig_conditions_flags.append('declined_invitation=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_DECLINED)
     if 'o' in display:
-        cig_conditions_flags.append('operator=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_OPERATOR)
     if 'v' in display:
-        cig_conditions_flags.append('viewer=True')
+        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_VIEWER)
 
     if cig_conditions_flags:
         cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
@@ -1682,7 +1693,10 @@ class ContactInGroupForm(forms.Form):
 def contactingroup_edit(request, gid, cid):
     if not perms.c_can_change_members_cg(request.user.id, gid):
         raise PermissionDenied
-    cig, created = ContactInGroup.objects.get_or_create(contact_id=cid, group_id=gid)
+    try:
+        cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
+    except ContactInGroup.DoesNotExist:
+        cig = ContactInGroup(contact_id=cid, group_id=gid, flags=0)
     cg = ContactGroup.objects.get(pk=gid)
     contact = Contact.objects.get(pk=cid)
     args = {}
@@ -1692,11 +1706,11 @@ def contactingroup_edit(request, gid, cid):
     args['objtype'] = ContactInGroup
 
     initial = {}
-    initial['invited'] = cig.invited
-    initial['declined_invitation'] = cig.declined_invitation
-    initial['member'] = cig.member
-    initial['operator'] = cig.operator
-    initial['viewer'] = cig.viewer
+    initial['invited'] = (cig.flags & CIGFLAG_INVITED) != 0
+    initial['declined_invitation'] = (cig.flags & CIGFLAG_DECLINED) != 0
+    initial['member'] = (cig.flags & CIGFLAG_MEMBER) != 0
+    initial['operator'] = (cig.flags & CIGFLAG_OPERATOR) != 0
+    initial['viewer'] = (cig.flags & CIGFLAG_VIEWER) != 0
     initial['note'] = cig.note
 
     if request.method == 'POST':
@@ -1705,12 +1719,17 @@ def contactingroup_edit(request, gid, cid):
             data = form.cleaned_data
             if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator'] and not data['viewer']:
                 return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid))) # TODO update logins deletion, call membership hooks
-            cig.invited = data['invited']
-            cig.declined_invitation = data['declined_invitation']
-            cig.member = data['member']
-            cig.operator = data['operator']
-            cig.viewer = data['viewer']
-            cig.note = data['note']
+            cig.flags = 0
+            if data['member']:
+                cig.flags |= CIGFLAG_MEMBER
+            if data['invited']:
+                cig.flags |= CIGFLAG_INVITED
+            if data['declined_invitation']:
+                cig.flags |= CIGFLAG_DECLINED
+            if data['operator']:
+                cig.flags |= CIGFLAG_OPERATOR
+            if data['viewer']:
+                cig.flags |= CIGFLAG_VIEWER
             messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
             cig.save()
@@ -1723,7 +1742,7 @@ def contactingroup_edit(request, gid, cid):
 
     inherited_info = ''
 
-    automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND member AND group_id=contact_group.id)' % (gid, cid)]).exclude(id=gid).order_by('-date', 'name')
+    automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, CIGFLAG_MEMBER)]).exclude(id=gid).order_by('-date', 'name')
     visible_automember_groups = automember_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     invisible_automember_groups = automember_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     #print(automember_groups.query)
@@ -1735,7 +1754,7 @@ def contactingroup_edit(request, gid, cid):
             inherited_info += '<li>Hidden group(s)...'
         inherited_info += '<br>'
 
-    autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND invited AND group_id=contact_group.id)' % (gid, cid)]).exclude(id=gid).order_by('-date', 'name')
+    autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, CIGFLAG_INVITED)]).exclude(id=gid).order_by('-date', 'name')
     visible_autoinvited_groups = autoinvited_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     invisible_autoinvited_groups = autoinvited_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     if autoinvited_groups:
@@ -1759,7 +1778,6 @@ def contactingroup_edit(request, gid, cid):
 def contactingroup_edit_inline(request, gid, cid):
     if not perms.c_can_change_members_cg(request.user.id, gid):
         raise PermissionDenied
-    cig, created = ContactInGroup.objects.get_or_create(contact_id=cid, group_id=gid)
     cg = get_object_or_404(ContactGroup, pk=gid)
     contact = get_object_or_404(Contact, pk=cid)
     newmembership = request.POST['membership']

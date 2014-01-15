@@ -44,6 +44,12 @@ FIELD_PASSWORD_STATUS = 75
 
 AUTOMATIC_MEMBER_INDICATOR = '⁂'
 
+CIGFLAG_MEMBER   =  1 # 'm'
+CIGFLAG_INVITED  =  2 # 'i'
+CIGFLAG_DECLINED =  4 # 'd'
+CIGFLAG_OPERATOR =  8 # 'o'
+CIGFLAG_VIEWER   = 16 # 'v'
+
 
 # Ends with a /
 GROUP_STATIC_DIR = "/usr/lib/ngw/static/static/g/"
@@ -192,15 +198,15 @@ class Contact(NgwModel):
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is a direct member of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND member)' % self.id]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)]).order_by('-date', 'name')
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
-        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=%s AND member)' % self.id])
+        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=%s AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
 
     def get_directgroups_invited(self):
-        "returns the list of groups that contact has been invited to."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND invited)' % self.id])
+        "returns the list of groups that contact has been invited to, directly without group inheritance"
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_INVITED)]).order_by('-date', 'name')
 
 #    def get_allgroups_invited(self):
 #        "returns the list of groups that contact has been invited to."
@@ -214,16 +220,16 @@ class Contact(NgwModel):
 #        return groups
 
     def get_directgroups_declinedinvitation(self):
-        "returns the list of groups that contact has been invited to."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND declined_invitation)' % self.id])
+        "returns the list of groups that contact has been invited to and he declined the invitation."
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_DECLINED)]).order_by('-date', 'name')
 
     def get_directgroups_operator(self):
         "returns the list of groups that contact is an operator of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND operator)' % self.id])
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_OPERATOR)]).order_by('-date', 'name')
 
     def get_directgroups_viewer(self):
         "returns the list of groups that contact is a viewer of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND viewer)' % self.id])
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_VIEWER)]).order_by('-date', 'name')
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
@@ -430,7 +436,7 @@ class Contact(NgwModel):
     def check_login_created(logged_contact):
         # Create login for all members of GROUP_USER
         cursor = connection.cursor()
-        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {"GROUP_USER":GROUP_USER, "FIELD_LOGIN":FIELD_LOGIN})
+        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN})
         for uid, in cursor:
             contact = Contact.objects.get(pk=uid)
             new_login = contact.generate_login()
@@ -438,12 +444,12 @@ class Contact(NgwModel):
             contact.set_password(logged_contact, contact.generate_password())
             logged_contact.push_message("Login information generated for User %s."%(contact.name))
 
-        for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.member)"%{"GROUP_USER":GROUP_USER, "FIELD_LOGIN":FIELD_LOGIN}]):
+        for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
             cfv.delete()
             logged_contact.push_message("Delete login information for User %s."%(cfv.contact.name))
 
     def is_member_of(self, group_id):
-        cin = ContactInGroup.objects.filter(contact_id=self.id, member=True).extra(where=['group_id IN (SELECT self_and_subgroups(%s))' % group_id])
+        cin = ContactInGroup.objects.filter(contact_id=self.id).extra(where=['flags & %s <> 0' % CIGFLAG_MEMBER, 'group_id IN (SELECT self_and_subgroups(%s))' % group_id])
         return len(cin) > 0
 
     def is_admin(self):
@@ -563,8 +569,7 @@ class ContactGroup(NgwModel):
 #        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True)
 
     def get_all_members(self):
-        return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.id])
-#    members = property(get_members)
+        return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
 
 
     def get_link_name(self):
@@ -675,8 +680,8 @@ class ContactGroup(NgwModel):
 
         result = 0
 
-        add_mode = set()
-        del_mode = set()
+        add_mode = 0
+        del_mode = 0
 
         if group_member_mode and group_member_mode[0] in '+-':
             for letter in group_member_mode:
@@ -684,32 +689,39 @@ class ContactGroup(NgwModel):
                     operation = letter
                 elif letter == 'm':
                     if operation == '+':
-                        add_mode = add_mode | {'m'} - {'i', 'd'}
-                        del_mode = del_mode - {'m'} | {'i', 'd'}
+                        add_mode = (add_mode | CIGFLAG_MEMBER) & ~(CIGFLAG_INVITED | CIGFLAG_DECLINED)
+                        del_mode = del_mode & ~CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED
                     else: # operation == '-'
-                        del_mode |= {'m'}
-                        add_mode -= {'m'}
+                        del_mode |= CIGFLAG_MEMBER
+                        add_mode &= ~CIGFLAG_MEMBER
                 elif letter == 'i':
                     if operation == '+':
-                        add_mode = add_mode | {'i'} - {'m', 'd'}
-                        del_mode = del_mode - {'i'} | {'m', 'd'}
+                        add_mode = (add_mode | CIGFLAG_INVITED) & ~(CIGFLAG_MEMBER | CIGFLAG_DECLINED)
+                        del_mode = del_mode & ~CIGFLAG_INVITED | CIGFLAG_MEMBER | CIGFLAG_DECLINED
                     else: # operation == '-'
-                        del_mode |= {'i'}
-                        add_mode -= {'i'}
+                        del_mode |= CIGFLAG_INVITED
+                        add_mode &= ~CIGFLAG_INVITED
                 elif letter == 'd':
                     if operation == '+':
-                        add_mode = add_mode | {'d'} - {'m', 'i'}
-                        del_mode = del_mode - {'d'} | {'m', 'i'}
+                        add_mode = (add_mode | CIGFLAG_DECLINED) & ~ (CIGFLAG_MEMBER | CIGFLAG_INVITED)
+                        del_mode = del_mode & ~CIGFLAG_DECLINED | CIGFLAG_MEMBER | CIGFLAG_INVITED
                     else: # operation == '-'
-                        del_mode |= {'d'}
-                        add_mode -= {'d'}
+                        del_mode |= CIGFLAG_DECLINED
+                        add_mode &= ~CIGFLAG_DECLINED
                 elif letter == 'o':
                     if operation == '+':
-                        add_mode = add_mode | {'o'} - {'v'}
-                        del_mode = del_mode - {'o'} | {'v'}
+                        add_mode |= CIGFLAG_OPERATOR
+                        del_mode &= ~CIGFLAG_OPERATOR
                     else: # operation == '-'
-                        del_mode |= {'o'}
-                        add_mode -= {'o'}
+                        del_mode |= CIGFLAG_OPERATOR
+                        add_mode &= ~CIGFLAG_OPERATOR
+                elif letter == 'v':
+                    if operation == '+':
+                        add_mode |= CIGFLAG_VIEWER
+                        del_mode &= ~CIGFLAG_VIEWER
+                    else: # operation == '-'
+                        del_mode |= CIGFLAG_VIEWER
+                        add_mode &= ~CIGFLAG_VIEWER
 
         else:
             # set mode, no + nor -
@@ -718,27 +730,27 @@ class ContactGroup(NgwModel):
             if 'm' in group_member_mode:
                 if 'i' in group_member_mode or 'd' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode |= {'m'}
-                del_mode |= {'i', 'd'}
+                add_mode |= CIGFLAG_MEMBER
+                del_mode |= CIGFLAG_INVITED | CIGFLAG_DECLINED
             if 'i' in group_member_mode:
                 if 'm' in group_member_mode or 'd' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode |= {'i'}
-                del_mode |= {'m', 'd'}
+                add_mode |= CIGFLAG_INVITED
+                del_mode |= CIGFLAG_MEMBER | CIGFLAG_DECLINED
             if 'd' in group_member_mode:
                 if 'm' in group_member_mode or 'i' in group_member_mode:
                     raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode |= {'d'}
-                del_mode |= {'m', 'i'}
+                add_mode |= CIGFLAG_DECLINED
+                del_mode |= CIGFLAG_MEMBER | CIGFLAG_INVITED
 
             if 'o' in group_member_mode:
-                add_mode |= {'o'}
+                add_mode |= CIGFLAG_OPERATOR
             else:
-                del_mode |= {'o'}
+                del_mode |= CIGFLAG_OPERATOR
             if 'v' in group_member_mode:
-                add_mode |= {'v'}
+                add_mode |= CIGFLAG_VIEWER
             else:
-                del_mode |= {'v'}
+                del_mode |= CIGFLAG_VIEWER
 
         try:
             cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
@@ -746,7 +758,7 @@ class ContactGroup(NgwModel):
             if not add_mode:
                 return result # 0 = no change
 
-            cig = ContactInGroup(contact_id=contact.id, group_id=self.id)
+            cig = ContactInGroup(contact_id=contact.id, group_id=self.id, flags=0)
             log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_ADD
             log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -755,9 +767,9 @@ class ContactGroup(NgwModel):
             result = LOG_ACTION_ADD
 
         #print("ok +", add_mode, "-", del_mode)
-        if 'm' in add_mode:
-            if not cig.member:
-                cig.member = True
+        if add_mode & CIGFLAG_MEMBER:
+            if not cig.flags & CIGFLAG_MEMBER:
+                cig.flags |= CIGFLAG_MEMBER
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -767,9 +779,9 @@ class ContactGroup(NgwModel):
                 log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if 'm' in del_mode:
-            if cig.member:
-                cig.member = False
+        if del_mode & CIGFLAG_MEMBER:
+            if cig.flags & CIGFLAG_MEMBER:
+                cig.flags &= ~CIGFLAG_MEMBER
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -780,9 +792,9 @@ class ContactGroup(NgwModel):
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if 'i' in add_mode:
-            if not cig.invited:
-                cig.invited = True
+        if add_mode & CIGFLAG_INVITED:
+            if not cig.flags & CIGFLAG_INVITED:
+                cig.flags |= CIGFLAG_INVITED
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -792,9 +804,9 @@ class ContactGroup(NgwModel):
                 log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if 'i' in del_mode:
-            if cig.invited:
-                cig.invited = False
+        if del_mode & CIGFLAG_INVITED:
+            if cig.flags & CIGFLAG_INVITED:
+                cig.flags &= ~CIGFLAG_INVITED
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -805,9 +817,9 @@ class ContactGroup(NgwModel):
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if 'd' in add_mode:
-            if not cig.declined_invitation:
-                cig.declined_invitation = True
+        if add_mode & CIGFLAG_DECLINED:
+            if not cig.flags & CIGFLAG_DECLINED:
+                cig.flags |= CIGFLAG_DECLINED
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -817,9 +829,9 @@ class ContactGroup(NgwModel):
                 log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if 'd' in del_mode:
-            if cig.declined_invitation:
-                cig.declined_invitation = False
+        if del_mode & CIGFLAG_DECLINED:
+            if cig.flags & CIGFLAG_DECLINED:
+                cig.flags &= ~ CIGFLAG_DECLINED
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -830,9 +842,9 @@ class ContactGroup(NgwModel):
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if 'o' in add_mode:
-            if not cig.operator:
-                cig.operator = True
+        if add_mode & CIGFLAG_OPERATOR:
+            if not cig.flags & CIGFLAG_OPERATOR:
+                cig.flags |= CIGFLAG_OPERATOR
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -842,9 +854,9 @@ class ContactGroup(NgwModel):
                 log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if 'o' in del_mode:
-            if cig.operator:
-                cig.operator = False
+        if del_mode & CIGFLAG_OPERATOR:
+            if cig.flags & CIGFLAG_OPERATOR:
+                cig.flags &= ~CIGFLAG_OPERATOR
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -855,9 +867,9 @@ class ContactGroup(NgwModel):
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if 'v' in add_mode:
-            if not cig.viewer:
-                cig.viewer = True
+        if add_mode & CIGFLAG_VIEWER:
+            if not cig.flags & CIGFLAG_VIEWER:
+                cig.flags |= CIGFLAG_VIEWER
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -867,9 +879,9 @@ class ContactGroup(NgwModel):
                 log.change = 'new value is true'
                 log.save()
                 result = result or LOG_ACTION_CHANGE
-        if 'v' in del_mode:
-            if cig.viewer:
-                cig.viewer = False
+        if del_mode & CIGFLAG_VIEWER:
+            if cig.flags & CIGFLAG_VIEWER:
+                cig.flags &= ~CIGFLAG_VIEWER
                 log = Log(contact_id=logged_contact.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
@@ -880,7 +892,7 @@ class ContactGroup(NgwModel):
                 log.save()
                 result = result or LOG_ACTION_CHANGE
 
-        if not cig.member and not cig.invited and not cig.declined_invitation and not cig.operator and not cig.viewer:
+        if not cig.flags:
             cig.delete()
             log = Log(contact_id=logged_contact.id)
             log.action = LOG_ACTION_DEL
@@ -893,6 +905,7 @@ class ContactGroup(NgwModel):
         if result:
             hooks.membership_changed(logged_contact, contact, self)
         return result
+
 
     def set_member_n(self, logged_contact, contacts, group_member_mode):
         """
@@ -1344,7 +1357,7 @@ class GroupFilterIsMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_MEMBER), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1361,7 +1374,7 @@ class GroupFilterIsNotMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND member)' % self.group_id, {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_MEMBER), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1378,7 +1391,7 @@ class GroupFilterIsInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_INVITED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1395,7 +1408,7 @@ class GroupFilterIsNotInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND invited)' % self.group_id, {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_INVITED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1412,7 +1425,7 @@ class GroupFilterDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_DECLINED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1429,7 +1442,7 @@ class GroupFilterNotDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND declined_invitation)' % self.group_id, {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_DECLINED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1445,17 +1458,17 @@ GroupFilterNotDeclinedInvitation.human_name = 'has not declined invitation in gr
 class AllEventsNotReactedSince(Filter):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(date)s AND (operator OR member OR declined_invitation))', { 'date':value }
+        return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (CIGFLAG_MEMBER | CIGFLAG_DECLINED), { 'date':value }
     def to_html(self, value):
         return self.__class__.human_name + ' "' + unicode(value) + '"'
     def get_param_types(self):
-        return (unicode,) # TODO
+        return (unicode,) # TODO: Accept date parameters
 AllEventsNotReactedSince.internal_name = 'notreactedsince'
 AllEventsNotReactedSince.human_name = 'has not reacted to any invitation since'
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) < '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) < ' + str(value/100.) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': unicode((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
     def to_html(self, value):
         return self.__class__.human_name + ' "' + unicode(value) + '"'
     def get_param_types(self):
@@ -1465,7 +1478,7 @@ AllEventsReactionYearRatioLess.human_name = '1 year invitation reaction % less t
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND (operator OR member OR declined_invitation)) > '+str(value/100.)+' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s)', { 'refdate':unicode(((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) > ' + str(value/100.) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': unicode((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
     def to_html(self, value):
         return self.__class__.human_name + ' "' + unicode(value) + '"'
     def get_param_types(self):
@@ -1580,11 +1593,7 @@ class ContactInGroup(NgwModel):
     oid = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact)
     group = models.ForeignKey(ContactGroup)
-    operator = models.BooleanField()
-    viewer = models.BooleanField()
-    member = models.BooleanField()
-    invited = models.BooleanField()
-    declined_invitation = models.BooleanField()
+    flags = models.IntegerField()
     note = models.TextField(blank=True)
     class Meta:
         db_table = 'contact_in_group'

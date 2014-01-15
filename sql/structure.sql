@@ -131,15 +131,27 @@ CREATE INDEX contact_field_value_contact_id_index ON contact_field_value USING b
 CREATE TABLE contact_in_group (
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
-    operator boolean DEFAULT false NOT NULL,
-    viewer boolean DEFAULT false NOT NULL,
-    member boolean DEFAULT false NOT NULL,
-    invited boolean DEFAULT false NOT NULL,
-    declined_invitation boolean DEFAULT false NOT NULL,
+    flags integer NOT NULL,
+--    operator boolean DEFAULT false NOT NULL,
+--    viewer boolean DEFAULT false NOT NULL,
+--    member boolean DEFAULT false NOT NULL,
+--    invited boolean DEFAULT false NOT NULL,
+--    declined_invitation boolean DEFAULT false NOT NULL,
     note text,
     PRIMARY KEY (contact_id, group_id)
 ) WITH OIDS;
 -- ALTER TABLE contact_in_group ADD COLUMN viewer boolean DEFAULT false NOT NULL;
+-- ALTER TABLE contact_in_group ADD COLUMN flags integer DEFAULT 0 NOT NULL;
+-- UPDATE contact_in_group SET flags = flags | 1 WHERE member;
+-- UPDATE contact_in_group SET flags = flags | 2 WHERE invited;
+-- UPDATE contact_in_group SET flags = flags | 4 WHERE declined_invitation;
+-- UPDATE contact_in_group SET flags = flags | 8 WHERE operator;
+-- UPDATE contact_in_group SET flags = flags | 16 WHERE viewer;
+-- ALTER TABLE contact_in_group DROP column member;
+-- ALTER TABLE contact_in_group DROP column invited;
+-- ALTER TABLE contact_in_group DROP column declined_invitation;
+-- ALTER TABLE contact_in_group DROP column operator;
+-- ALTER TABLE contact_in_group DROP column viewer;
 
 
 --

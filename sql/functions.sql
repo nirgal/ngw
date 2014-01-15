@@ -42,13 +42,13 @@ $$;
 
 
 -- All the groups contact #1 is member of, either directly or by inheritance:
--- SELECT DISTINCT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=1 AND member;
+-- SELECT DISTINCT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=1 AND flags & 1 <> 0;
 
 -- All the groups and their subgroups:
 -- SELECT contact_group.id, contact_group.name, array(select self_and_subgroups(id)) AS self_and_subgroups FROM contact_group;
 
 -- Members of group #8:
--- select * from contact where exists (select * from contact_in_group where contact_id=contact.id and group_id in (select self_and_subgroups(8)));
+-- select * from contact where exists (select * from contact_in_group where contact_id=contact.id and group_id in (select self_and_subgroups(8)) and flags & 1 <> 0);
 
 -- SELECT contact_group.id, self_and_subgroups(contact_group.id) as sg FROM contact_group;
 
@@ -74,7 +74,7 @@ $$;
 --HS SELECT DISTINCT contact_id, contact.login, joined_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id ORDER BY contact_id;
 
 -- CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, joined_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id;
---CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, automatic_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
+--CREATE VIEW auth_user_groups ( login, gid ) AS SELECT DISTINCT contact.login, automatic_group_id FROM contact_in_group JOIN contact ON (contact.id=contact_in_group.contact_id), (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.flags & 1 <> 0;
 --
 
 -- That query is used by apache module auth_pgsql to authenticate users:
@@ -90,7 +90,7 @@ CREATE OR REPLACE VIEW auth_user_groups ( login, gid ) AS
         FROM contact_in_group 
         JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
         (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
-        WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.member;
+        WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.flags & 1 <> 0;
 
 -- That query is used by apache module auth_pgsql to authenticate users in the phpbb extension:
 CREATE OR REPLACE VIEW auth_users_bb (login, password) AS
@@ -144,9 +144,9 @@ CREATE OR REPLACE RULE apache_log_ins AS ON INSERT TO apache_log
 --    '' AS last_name,
 --    email_values.value AS email,
 --    'crypt$$'||password_values.value AS password,
---    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(52)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND member AND contact_in_group.contact_id=contact.id) AS is_staff,
---    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(2)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND member AND contact_in_group.contact_id=contact.id) AS is_active,
---    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(8)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND member AND contact_in_group.contact_id=contact.id) AS is_superuser,
+--    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(52)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND flags & 1 <> 0 AND contact_in_group.contact_id=contact.id) AS is_staff,
+--    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(2)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND flags & 1 <> 0 AND contact_in_group.contact_id=contact.id) AS is_active,
+--    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(8)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND flags & 1 <> 0 AND contact_in_group.contact_id=contact.id) AS is_superuser,
 --    lastconnection_values.value AS last_login,
 --    '1970-01-01 00:00:00'::timestamp AS date_joined
 -- FROM contact
@@ -178,17 +178,17 @@ CREATE OR REPLACE RULE apache_log_ins AS ON INSERT TO apache_log
 
 CREATE OR REPLACE FUNCTION c_ismemberof_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT EXISTS(SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups($2)) AND member) FROM contact WHERE contact.id=$1;
+    SELECT EXISTS(SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups($2)) AND flags & 1 <> 0) FROM contact WHERE contact.id=$1;
 $$;
 
 CREATE OR REPLACE FUNCTION c_operatorof_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT operator FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
+    SELECT flags & 8 <> 0 FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
 $$;
 
 CREATE OR REPLACE FUNCTION c_viewerof_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT viewer FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
+    SELECT flags & 16 <> 0 FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
 $$;
 
 

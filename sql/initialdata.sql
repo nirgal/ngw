@@ -124,8 +124,8 @@ COPY contact_field_value (contact_id, contact_field_id, value) FROM stdin;
 -- Data for Name: contact_in_group; Type: TABLE DATA; Schema: public; Owner: ngw
 --
 
-COPY contact_in_group (contact_id, group_id, operator, viewer, member, invited, declined_invitation, note) FROM stdin;
-1	8	t	f	t	f	f	\N
+COPY contact_in_group (contact_id, group_id, flags, note) FROM stdin;
+1	8	9	\N
 \.
 
 
