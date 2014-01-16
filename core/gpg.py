@@ -3,9 +3,10 @@
 
 from __future__ import print_function, unicode_literals
 import subprocess
+from django.conf import settings
 from django.http import HttpResponse
 
-GPG_HOME = '/var/lib/ngw/'
+GPG_HOME = getattr(settings, 'GPG_HOME', None)
 
 # TODO: use --edit-key deluid to keep only one uid per key ?
 
@@ -43,6 +44,11 @@ def parse_pgp_listkey(output):
 
 
 def is_email_secure(mail_address):
+    '''
+    Returns True if a GPG public key is available in the local keyring.
+    '''
+    if not GPG_HOME:
+        return False
     ret, out, err = subprocess_run('gpg', '--homedir', GPG_HOME, '--list-keys', '--with-colons', '--no-auto-check-trustdb', '<'+mail_address+'>')
     if ret:
         return False # gpg error
@@ -50,6 +56,9 @@ def is_email_secure(mail_address):
     return len(keyring_1) > 0
     
 def loadkeyring():
+    if not GPG_HOME:
+        print('WARNING: No keyring available')
+        return {}
     ret, out, err = subprocess_run('gpg', '--homedir', GPG_HOME, '--list-keys', '--with-colons', '--no-auto-check-trustdb')
     if ret:
         print(err)
@@ -62,6 +71,8 @@ def __build_content(title, body):
 
 # HKP views
 def lookup(request):
+    if not GPG_HOME:
+        return HttpResponse('Keyring is disabled. Check your GPG_HOME settings', 'text/html', 404)
     op = request.GET.get('op', '')
     search = request.GET.get('search', '')
     options = request.GET.get('options', '').split(',')
