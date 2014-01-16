@@ -22,7 +22,6 @@ CREATE TABLE config (
     text text
 );
 
-
 --
 -- Name: contact; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
@@ -31,7 +30,6 @@ CREATE TABLE contact (
     id serial NOT NULL PRIMARY KEY,
     name character varying(255) NOT NULL UNIQUE
 );
-
 
 --
 -- Name: contact_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -73,12 +71,7 @@ CREATE TABLE choice (
     PRIMARY KEY (choice_group_id, key)
 ) WITH OIDS;
 
-
---
--- Name: choice_choice_group_id_index; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE INDEX choice_choice_group_id_index ON choice USING btree (choice_group_id);
+CREATE INDEX choice_choice_group_id_index ON choice (choice_group_id);
 
 
 --
@@ -109,19 +102,8 @@ CREATE TABLE contact_field_value (
     PRIMARY KEY (contact_id, contact_field_id)
 ) WITH OIDS;
 
-
---
--- Name: contact_field_value_contact_field_id_index; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE INDEX contact_field_value_contact_field_id_index ON contact_field_value USING btree (contact_field_id);
-
-
---
--- Name: contact_field_value_contact_id_index; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE INDEX contact_field_value_contact_id_index ON contact_field_value USING btree (contact_id);
+CREATE INDEX contact_field_value_contact_id_index ON contact_field_value (contact_id);
+CREATE INDEX contact_field_value_contact_field_id_index ON contact_field_value (contact_field_id);
 
 
 --
@@ -132,27 +114,12 @@ CREATE TABLE contact_in_group (
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     flags integer NOT NULL,
---    operator boolean DEFAULT false NOT NULL,
---    viewer boolean DEFAULT false NOT NULL,
---    member boolean DEFAULT false NOT NULL,
---    invited boolean DEFAULT false NOT NULL,
---    declined_invitation boolean DEFAULT false NOT NULL,
     note text,
     PRIMARY KEY (contact_id, group_id)
 ) WITH OIDS;
--- ALTER TABLE contact_in_group ADD COLUMN viewer boolean DEFAULT false NOT NULL;
--- ALTER TABLE contact_in_group ADD COLUMN flags integer DEFAULT 0 NOT NULL;
--- UPDATE contact_in_group SET flags = flags | 1 WHERE member;
--- UPDATE contact_in_group SET flags = flags | 2 WHERE invited;
--- UPDATE contact_in_group SET flags = flags | 4 WHERE declined_invitation;
--- UPDATE contact_in_group SET flags = flags | 8 WHERE operator;
--- UPDATE contact_in_group SET flags = flags | 16 WHERE viewer;
--- ALTER TABLE contact_in_group DROP column member;
--- ALTER TABLE contact_in_group DROP column invited;
--- ALTER TABLE contact_in_group DROP column declined_invitation;
--- ALTER TABLE contact_in_group DROP column operator;
--- ALTER TABLE contact_in_group DROP column viewer;
 
+CREATE INDEX contact_in_group_contact_id_index ON contact_in_group (contact_id);
+CREATE INDEX contact_in_group_group_id_index ON contact_in_group (group_id);
 
 --
 -- Name: contact_group_news; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -178,12 +145,7 @@ CREATE TABLE contact_sysmsg (
     message text NOT NULL
 );
 
-
---
--- Name: contact_sysmsg_contact_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE INDEX contact_sysmsg_contact_id_idx ON contact_sysmsg USING btree (contact_id);
+CREATE INDEX contact_sysmsg_contact_id_idx ON contact_sysmsg (contact_id);
 
 
 --
@@ -196,13 +158,22 @@ CREATE TABLE group_in_group (
     PRIMARY KEY (father_id, subgroup_id)
 ) WITH OIDS;
 
+CREATE INDEX group_in_group_contact_id_index ON group_in_group (father_id);
+CREATE INDEX group_in_group_group_id_index ON group_in_group (subgroup_id);
 
 --
--- Name: COLUMN group_in_group.father_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: group_manage_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
-COMMENT ON COLUMN group_in_group.father_id IS 'Automatic member';
+CREATE TABLE group_manage_group (
+    father_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
+    subgroup_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
+    flags integer NOT NULL,
+    PRIMARY KEY (father_id, subgroup_id)
+) WITH OIDS;
 
+CREATE INDEX group_manage_group_contact_id_index ON group_manage_group (father_id);
+CREATE INDEX group_manage_group_group_id_index ON group_manage_group (subgroup_id);
 
 --
 -- Name: log; Type: TABLE; Schema: public; Owner: -; Tablespace: 

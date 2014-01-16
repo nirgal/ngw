@@ -545,28 +545,27 @@ class ContactGroup(NgwModel):
         return self.get_self_and_subgroups().exclude(id=self.id)
 
 
-#    def get_direct_members(self):
-#        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.member==True))
-#        cids = [ cig.contact_id for cig in cigs ]
-#        return Query(Contact).filter(Contact.id.in_(cids))
-#
-#    def get_direct_invited(self):
-#        cigs = Query(ContactInGroup).filter(and_(ContactInGroup.group_id==self.id, ContactInGroup.invited==True))
-#        cids = [ cig.contact_id for cig in cigs ]
-#        return Query(Contact).filter(Contact.id.in_(cids))
-#
-#    #    s = select([contact_in_group_table.c.contact_id], and_(contact_in_group_table.c.group_id.in_(gids), contact_in_group_table.c.member==True)).distinct()
-#    #    #print("members=", s, ":")
-#    #    result =  []
-#    #    for cid in Session.execute(s):
-#    #        result.append(Query(Contact).get(cid[0]))
-#    #        #print(cid[0])
-#    #    return result
+    def get_visible_operator_mananger_groups_ids(self, cid):
+        '''
+        Returns a list of groups ids whose members automatically gets operator
+        priviledges on self, and are visbile contact cid.
+        '''
+        return [gig.father_id \
+            for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(where=[
+                'flags & %s <> 0' % CIGFLAG_OPERATOR,
+                'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid ])]
 
-#    def get_members_query(self):
-#        #TODO optimize me
-#        gids = [ g.id for g in self.self_and_subgroups ]
-#        return Query(Contact).filter(ContactInGroup.contact_id==Contact.id).filter(ContactInGroup.group_id.in_(gids)).filter(ContactInGroup.member==True)
+
+    def get_visible_viewer_mananger_groups_ids(self, cid):
+        '''
+        Returns a list of groups ids whose members automatically gets viewer
+        priviledges on self, and are visbile contact cid.
+        '''
+        return [gig.father_id \
+            for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(where=[
+                'flags & %s <> 0' % CIGFLAG_VIEWER,
+                'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid ])]
+
 
     def get_all_members(self):
         return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
@@ -1586,6 +1585,18 @@ class GroupInGroup(NgwModel):
 
     def __repr__(self):
         return b'GroupInGroup <%s %s>' % (self.subgroup_id, self.father_id)
+
+
+class GroupManageGroup(NgwModel):
+    oid = models.AutoField(primary_key=True)
+    father = models.ForeignKey(ContactGroup, related_name='direct_gmg_subgroups')
+    subgroup = models.ForeignKey(ContactGroup, related_name='direct_gmg_supergroups')
+    flags = models.IntegerField()
+    class Meta:
+        db_table = 'group_manage_group'
+
+    def __repr__(self):
+        return b'GroupManageGroup <%s %s>' % (self.subgroup_id, self.father_id)
 
 
 

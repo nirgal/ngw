@@ -41,7 +41,7 @@ FTYPE_CHOICE = 'CHOICE'
 FTYPE_MULTIPLECHOICE = 'MULTIPLECHOICE'
 FTYPE_PASSWORD = 'PASSWORD'
 
-DEBUG_MEMBERSHIPS = True
+DEBUG_MEMBERSHIPS = False
 
 #######################################################################
 #
@@ -1133,8 +1133,8 @@ def contactgroup_list(request):
         ( 'Description', None, lambda cg: _trucate_description(cg), None ),
         #( 'Description', None, 'description', lambda cg: len(cg.description)<100 and cg.description + '!!' or cg.description[:100] + '…', None ),
         #( 'Contact fields', None, print_fields, 'field_group' ),
-        ( 'Super\u00a0groups', None, lambda cg: ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups()[:LIST_PREVIEW_LEN+1]])), None ),
-        ( 'Sub\u00a0groups', None, lambda cg: ', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups()][:LIST_PREVIEW_LEN+1])), None ),
+        ( 'Super\u00a0groups', None, lambda cg: ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])[:LIST_PREVIEW_LEN+1]])), None ),
+        ( 'Sub\u00a0groups', None, lambda cg: ', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])][:LIST_PREVIEW_LEN+1])), None ),
         #( 'Budget\u00a0code', None, 'budget_code', 'budget_code' ),
         #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
         #( 'System\u00a0locked', None, 'system', 'system' ),
@@ -1441,11 +1441,15 @@ class ContactGroupForm(forms.Form):
     field_group = forms.BooleanField(required=False, help_text='Does that group yield specific fields to its members?')
     mailman_address = forms.CharField(required=False, max_length=255, help_text='Mailing list address, if the group is linked to a mailing list.')
     has_news = forms.BooleanField(required=False, help_text='Does that group supports internal news system?')
-    direct_supergroups = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('groups', False))
+    direct_supergroups = forms.MultipleChoiceField(required=False, help_text='Members will automatically be granted membership in these groups.', widget=FilterMultipleSelectWidget('groups', False))
+    operator_groups = forms.MultipleChoiceField(required=False, help_text='Members of these groups will automatically be granted administrative priviledges.', widget=FilterMultipleSelectWidget('groups', False))
+    viewer_groups = forms.MultipleChoiceField(required=False, help_text='Members of these groups will automatically be granted viewer priviledges.', widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, for_user, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('date', 'name') ]
+        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
+        self.fields['operator_groups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
+        self.fields['viewer_groups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
 
 
 @login_required()
@@ -1456,7 +1460,7 @@ def contactgroup_edit(request, id):
         cg = get_object_or_404(ContactGroup, pk=id)
         if not perms.c_can_change_cg(request.user.id, id):
             raise PermissionDenied
-        title = 'Editing '+unicode(cg)
+        title = 'Editing ' + cg.unicode_with_date()
     else:
         title = 'Adding a new '+objtype.get_class_verbose_name()
 
@@ -1478,6 +1482,7 @@ def contactgroup_edit(request, id):
             cg.has_news = data['has_news']
             cg.save()
 
+            # Update the super groups
             old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(request.user.id))
             new_direct_supergroups_id = set([int(i) for i in data['direct_supergroups']])
             if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
@@ -1492,6 +1497,50 @@ def contactgroup_edit(request, id):
                 GroupInGroup(father_id=sgid, subgroup_id=cg.id).save()
             for sgid in supergroup_removed:
                 GroupInGroup.objects.get(father_id=sgid, subgroup_id=cg.id).delete()
+
+            # Update the operator groups
+            old_operator_groups_ids = set(cg.get_visible_operator_mananger_groups_ids(request.user.id))
+            new_operator_groups_ids = set([int(ogid) for ogid in data['operator_groups']])
+            operatorgroup_added = new_operator_groups_ids - old_operator_groups_ids
+            operatorgroup_removed = old_operator_groups_ids - new_operator_groups_ids
+            print('operatorgroup_added=', operatorgroup_added)
+            print('operatorgroup_removed=', operatorgroup_removed)
+            for ogid in operatorgroup_added:
+                try:
+                    gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
+                except GroupManageGroup.DoesNotExist:
+                    gmg = GroupManageGroup(father_id=ogid, subgroup_id=cg.id, flags=0)
+                gmg.flags |= CIGFLAG_OPERATOR
+                gmg.save()
+            for ogid in operatorgroup_removed:
+                gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
+                gmg.flags &= ~ CIGFLAG_OPERATOR
+                if gmg.flags:
+                    gmg.save()
+                else:
+                    gmg.delete()
+
+            # Update the viewer groups
+            old_viewer_groups_ids = set(cg.get_visible_viewer_mananger_groups_ids(request.user.id))
+            new_viewer_groups_ids = set([int(ogid) for ogid in data['viewer_groups']])
+            viewergroup_added = new_viewer_groups_ids - old_viewer_groups_ids
+            viewergroup_removed = old_viewer_groups_ids - new_viewer_groups_ids
+            print('viewergroup_added=', viewergroup_added)
+            print('viewergroup_removed=', viewergroup_removed)
+            for vgid in viewergroup_added:
+                try:
+                    gmg = GroupManageGroup.objects.get(father_id=vgid, subgroup_id=cg.id)
+                except GroupManageGroup.DoesNotExist:
+                    gmg = GroupManageGroup(father_id=vgid, subgroup_id=cg.id, flags=0)
+                gmg.flags |= CIGFLAG_VIEWER
+                gmg.save()
+            for vgid in viewergroup_removed:
+                gmg = GroupManageGroup.objects.get(father_id=vgid, subgroup_id=cg.id)
+                gmg.flags &= ~ CIGFLAG_VIEWER
+                if gmg.flags:
+                    gmg.save()
+                else:
+                    gmg.delete()
 
             messages.add_message(request, messages.SUCCESS, 'Group %s has been changed sucessfully!' % cg.unicode_with_date())
 
@@ -1516,7 +1565,9 @@ def contactgroup_edit(request, id):
                 'budget_code': cg.budget_code,
                 'mailman_address': cg.mailman_address,
                 'has_news': cg.has_news,
-                'direct_supergroups': cg.get_visible_direct_supergroups_ids(request.user.id)
+                'direct_supergroups': cg.get_visible_direct_supergroups_ids(request.user.id),
+                'operator_groups': cg.get_visible_operator_mananger_groups_ids(request.user.id),
+                'viewer_groups': cg.get_visible_viewer_mananger_groups_ids(request.user.id),
             }
             form = ContactGroupForm(request.user.id, initialdata)
         else: # add new one

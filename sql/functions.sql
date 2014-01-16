@@ -181,14 +181,26 @@ LANGUAGE SQL STABLE AS $$
     SELECT EXISTS(SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups($2)) AND flags & 1 <> 0) FROM contact WHERE contact.id=$1;
 $$;
 
+-- C is operator of group CG if any of this condition is true:
+-- * He is a direct operator (flag8)
+-- * He is a member (flag1), either directly or indirectly, of a group that has operator (flag8) priviledges
 CREATE OR REPLACE FUNCTION c_operatorof_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT flags & 8 <> 0 FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
+    SELECT
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2 AND flags & 8 <> 0)
+    OR
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(group_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & 8 <> 0) AND contact_in_group.flags & 1 <> 0);
 $$;
 
+-- C is viewer of group CG if any of this condition is true:
+-- * He is a direct operator (flag8) or viewer (flag16)
+-- * He is a member (flag1), either directly or indirectly, of a group that has operator or viewer (flag16) priviledges
 CREATE OR REPLACE FUNCTION c_viewerof_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT flags & 16 <> 0 FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2;
+    SELECT
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2 AND flags & (8|16) <> 0)
+    OR
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(group_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & (8|16) <> 0) AND contact_in_group.flags & 1 <> 0);
 $$;
 
 
@@ -196,7 +208,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_operatorof_cg($1, $2) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_cg(integer, integer) RETURNS boolean
@@ -206,7 +218,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_members_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR $2=1 OR c_operatorof_cg($1, $2) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_members_cg(integer, integer) RETURNS boolean
@@ -216,7 +228,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_view_fields_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT (c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9)) OR c_operatorof_cg($1, $2) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_write_fields_cg(integer, integer) RETURNS boolean
@@ -226,7 +238,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_fields_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8);
+    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_news_cg(integer, integer) RETURNS boolean
@@ -236,7 +248,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_news_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8);
+    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_files_cg(integer, integer) RETURNS boolean
@@ -246,7 +258,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_files_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8);
+    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
 $$;
 
 
