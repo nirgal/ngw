@@ -557,7 +557,11 @@ def contactsearch_filter_to_html(request):
     with fieldid replaced by field names and so on.
     Security is checked by filter parser.
     '''
-    strfilter = request.META['QUERY_STRING'] or ""
-    strfilter = urllib2.unquote(strfilter)
+    strfilter = request.META['QUERY_STRING']
+    if strfilter:
+        strfilter = urllib2.unquote(strfilter)
+        strfilter = unicode(strfilter, 'utf-8')
+    else:
+        strfilter = ''
     filter = parse_filterstring(strfilter, request.user.id)
     return HttpResponse(filter.to_html())
