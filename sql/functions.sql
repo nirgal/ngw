@@ -189,7 +189,7 @@ LANGUAGE SQL STABLE AS $$
     SELECT
     EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2 AND flags & 8 <> 0)
     OR
-    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(group_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & 8 <> 0) AND contact_in_group.flags & 1 <> 0);
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & 8 <> 0) AND contact_in_group.flags & 1 <> 0);
 $$;
 
 -- C is viewer of group CG if any of this condition is true:
@@ -200,7 +200,7 @@ LANGUAGE SQL STABLE AS $$
     SELECT
     EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2 AND flags & (8|16) <> 0)
     OR
-    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(group_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & (8|16) <> 0) AND contact_in_group.flags & 1 <> 0);
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & (8|16) <> 0) AND contact_in_group.flags & 1 <> 0);
 $$;
 
 
