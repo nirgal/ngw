@@ -1785,6 +1785,7 @@ def contactingroup_edit(request, gid, cid):
                 cig.flags |= CIGFLAG_OPERATOR
             if data['viewer']:
                 cig.flags |= CIGFLAG_VIEWER
+            cig.note = data['note']
             messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
             cig.save()
