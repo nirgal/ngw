@@ -664,13 +664,13 @@ def contact_vcard(request, gid=None, cid=None):
 
 
 class ContactEditForm(forms.Form):
-    name = forms.CharField()
-
     def __init__(self, user_id, cid=None, contactgroup=None, *args, **kargs):
         # Note that user_id is the id of the contact making the query, not the
         # one beeing edited
         forms.Form.__init__(self, *args, **kargs)
 
+        if perms.c_can_write_fields_cg(user_id, GROUP_EVERYBODY):
+            self.fields['name'] = forms.CharField()
         if cid:
             contact = get_object_or_404(Contact, pk=cid)
             cfields = contact.get_all_writable_fields(user_id)
@@ -732,20 +732,24 @@ def contact_edit(request, gid=None, cid=None):
 
             # 1/ The contact name
             if cid:
-                if contact.name != data['name']:
-                    log = Log(contact_id=request.user.id)
-                    log.action = LOG_ACTION_CHANGE
-                    log.target = 'Contact ' + unicode(contact.id)
-                    log.target_repr = 'Contact ' + contact.name
-                    log.property = 'Name'
-                    log.property_repr = 'Name'
-                    log.change = 'change from ' + contact.name + ' to ' + data['name']
-                    log.save()
+                if perms.c_can_write_fields_cg(request.user.id, GROUP_EVERYBODY):
+                    if contact.name != data['name']:
+                        log = Log(contact_id=request.user.id)
+                        log.action = LOG_ACTION_CHANGE
+                        log.target = 'Contact ' + unicode(contact.id)
+                        log.target_repr = 'Contact ' + contact.name
+                        log.property = 'Name'
+                        log.property_repr = 'Name'
+                        log.change = 'change from ' + contact.name + ' to ' + data['name']
+                        log.save()
 
-                contact.name = data['name']
-                contact.save()
+                    contact.name = data['name']
+                    contact.save()
 
             else:
+                if not perms.c_can_write_fields_cg(request.user.id, GROUP_EVERYBODY):
+                    # If user can't write name, we have a problem creating a new contact
+                    raise PermissionDenied
                 contact = Contact(name=data['name'])
                 contact.save()
 
