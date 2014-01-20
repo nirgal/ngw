@@ -115,7 +115,6 @@ COPY contact_field_value (contact_id, contact_field_id, value) FROM stdin;
 1	11	75000
 1	14	Paris
 1	48	fr
-1	74	hahlahT8
 1	75	3
 \.
 
