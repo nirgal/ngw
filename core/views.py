@@ -332,6 +332,9 @@ def membership_to_text(contact_with_extra_fields, group_id):
     else:
         return 'No'
 
+def membership_to_text_factory(group_id):
+    return lambda contact_with_extra_fields: \
+        membership_to_text(contact_with_extra_fields, group_id)
 
 
 def membership_extended_widget(contact_with_extra_fields, contact_group, base_url):
@@ -347,6 +350,7 @@ def membership_extended_widget(contact_with_extra_fields, contact_group, base_ur
 
     params = {}
     params['cid'] = contact_with_extra_fields.id
+    params['gid'] = contact_group.id
     params['membership_str'] = membership_to_text(contact_with_extra_fields, contact_group.id)
     if note:
         params['note'] = '<br>'+html.escape(note)
@@ -385,6 +389,10 @@ def membership_extended_widget(contact_with_extra_fields, contact_group, base_ur
 </div>''' % params
 
 
+def membership_extended_widget_factory(contact_group, base_url):
+    return lambda contact_with_extra_fields: \
+        membership_extended_widget(contact_with_extra_fields, contact_group, base_url)
+
 
 class ContactQuerySet(RawQuerySet):
     def __init__(self, *args, **kargs):
@@ -408,9 +416,13 @@ class ContactQuerySet(RawQuerySet):
         Add a group to query.
         The caller is reponsible for checking requesting user is authorized to view that group's members.
         '''
-        # TODO: crashes if group is there more than one (viewed from a group with that group selected as a field)
+        group_flags_key = 'group_%s_flags' % group_id
+        if group_flags_key in self.qry_fields:
+            # We already have these fields
+            return
+
         # Add fields for direct membership
-        self.qry_fields['group_%s_flags' % group_id] = 'cig_%s.flags' % group_id
+        self.qry_fields[group_flags_key] = 'cig_%s.flags' % group_id
         self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
 
         # Add fields for indirect membership
@@ -502,10 +514,9 @@ def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=No
 
             cg = ContactGroup.objects.get(pk=groupid)
 
-            cols.append( (cg.name, None, lambda c: membership_to_text(c, groupid), None) )
+            cols.append( (cg.name, None, membership_to_text_factory(groupid), None) )
+            #cols.append( (cg.name, None, lambda c: membership_extended_widget(c, cg, base_url), None) )
             #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
-            #cols.append( ('group_%s_M' % groupid, None, 'group_%s_M' % groupid, None))
-            #cols.append( ('group_%s_I' % groupid, None, 'group_%s_I' % groupid, None))
 
         elif prop.startswith(DISP_FIELD_PREFIX):
             fieldid = prop[len(DISP_FIELD_PREFIX):]
@@ -529,8 +540,6 @@ def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=No
         if format == 'html':
             cols.append( ('Status', None, lambda c: membership_extended_widget(c, current_cg, base_url), None) )
             #cols.append( ('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
-            #cols.append( ('group_%s_M' % current_cg.id, None, 'group_%s_M' % current_cg.id, None))
-            #cols.append( ('group_%s_I' % current_cg.id, None, 'group_%s_I' % current_cg.id, None))
         else:
             cols.append( ('Status', None, lambda c: membership_to_text(c, current_cg.id), None) )
             cols.append( ('Note', None, 'group_%s_note' % current_cg.id, None) )
@@ -586,6 +595,7 @@ def contact_list(request):
     q, cols = contact_make_query_with_fields(request.user.id, fields, format='html')
     q = filter.apply_filter_to_query(q)
 
+    # TODO:
     # We need to select only members who are in a group whose members the
     # request.user can see:
     #q.qry_where.append('')
