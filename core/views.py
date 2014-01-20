@@ -291,14 +291,17 @@ def membership_to_text(contact_with_extra_fields, group_id):
     flags = getattr(contact_with_extra_fields, 'group_%s_flags' % group_id)
     if flags is None:
         flags = 0
+    flags_inherited = getattr(contact_with_extra_fields, 'group_%s_inherited_flags' % group_id)
+    if flags_inherited is None:
+        flags_inherited = 0
     if DEBUG_MEMBERSHIPS:
         if flags & CIGFLAG_MEMBER:
             memberships.append("Member")
-        if getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
+        if flags_inherited & CIGFLAG_MEMBER:
             memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
         if flags & CIGFLAG_INVITED:
             memberships.append("Invited")
-        if getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
+        if flags_inherited & CIGFLAG_INVITED:
             memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
         if flags & CIGFLAG_DECLINED:
             memberships.append("Declined")
@@ -310,11 +313,11 @@ def membership_to_text(contact_with_extra_fields, group_id):
     else:
         if flags & CIGFLAG_MEMBER:
             memberships.append("Member")
-        elif getattr(contact_with_extra_fields, 'group_%s_M' % group_id):
+        elif flags_inherited & CIGFLAG_MEMBER:
             memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
         elif flags & CIGFLAG_INVITED:
             memberships.append("Invited")
-        elif getattr(contact_with_extra_fields, 'group_%s_I' % group_id):
+        elif flags_inherited & CIGFLAG_INVITED:
             memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
         elif flags & CIGFLAG_DECLINED:
             memberships.append("Declined")
@@ -411,11 +414,9 @@ class ContactQuerySet(RawQuerySet):
         self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
 
         # Add fields for indirect membership
-        # TODO: Use postgresql bit_or aggregate function to get all inherited flags at once in a single column
-        # http://www.postgresql.org/docs/current/static/functions-aggregate.html
-        # self.qry_fields['group_%s_inherited_flags' % group_id] = 'bit_or(flags) ....'
-        self.qry_fields['group_%s_M' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND contact_in_group.flags & %(flags)s <> 0)" % { 'gid': group_id, 'flags': CIGFLAG_MEMBER }
-        self.qry_fields['group_%s_I' % group_id] = "EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id <> %(gid)s AND contact_in_group.flags & %(flags)s <> 0)" % { 'gid': group_id, 'flags': CIGFLAG_INVITED }
+        # Use postgresql 'bit_or' aggregate function to get all inherited flags at once in a single column
+        self.qry_fields['group_%s_inherited_flags' % group_id] = 'cig_inherited_%s.flags' % group_id
+        self.qry_from.append('LEFT JOIN (SELECT contact_id, bit_or(flags) AS flags FROM contact_in_group WHERE contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id<>%(gid)s GROUP BY contact_id) AS cig_inherited_%(gid)s ON (contact.id = cig_inherited_%(gid)s.contact_id)' % {'gid': group_id})
 
     def add_group_withnote(self, group_id):
         '''
@@ -1150,7 +1151,6 @@ def contactgroup_list(request):
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-    #return query_print_entities(request, 'list_groups.html', args)
     return query_print_entities(request, 'list.html', args)
 
 
