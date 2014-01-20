@@ -44,24 +44,26 @@
 {% endblock %}
 
 {% block presubmitbar %}
-    {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
-        {% if forloop.first %}
-            <h1 class=boxheader>Sub groups</h1>
-            <div class=box>
-                People in sub-groups automatically are members / invited.
-                <br>
-        {% endif %}
-                ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a>
-                {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
-                {% if forloop.first %}( including {%else%}, {% endif %}
-                {{ ssg|group_with_link }}
-                {% if forloop.last %}){% endif %}
-                {% endfor %}
-                <br>
-        {% if forloop.last %}
-            </div>
-        {% endif %}
-    {% endfor %}
+    {% ifnotequal cg.id 1 %}
+        {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
+            {% if forloop.first %}
+                <h1 class=boxheader>Sub groups</h1>
+                <div class=box>
+                    People in sub-groups automatically are members / invited.
+                    <br>
+            {% endif %}
+                    ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a>
+                    {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
+                    {% if forloop.first %}( including {%else%}, {% endif %}
+                    {{ ssg|group_with_link }}
+                    {% if forloop.last %}){% endif %}
+                    {% endfor %}
+                    <br>
+            {% if forloop.last %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endifnotequal %}
     
     {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
         {% if forloop.first %}
