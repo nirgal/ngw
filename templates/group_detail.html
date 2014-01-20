@@ -63,6 +63,17 @@
         {% endif %}
     {% endfor %}
     
+    {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
+        {% if forloop.first %}
+            <h1 class=boxheader>Groups that have some access to {{ cg.unicode_with_date }}</h1>
+            <div class=box>
+        {% endif %}
+                ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a><br>
+        {% if forloop.last %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
     {% for f in files %}
         {% if forloop.first %}
             <h1 class=boxheader>Files</h1>

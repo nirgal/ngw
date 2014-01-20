@@ -566,6 +566,9 @@ class ContactGroup(NgwModel):
                 'flags & %s <> 0' % CIGFLAG_VIEWER,
                 'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid ])]
 
+    def get_manager_groups(self):
+        return ContactGroup.objects \
+            .filter(direct_gmg_subgroups__subgroup_id=self.id)
 
     def get_all_members(self):
         return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
