@@ -895,6 +895,7 @@ def contact_pass(request, gid=None, cid=None):
     args['nav'].add_component('password')
     try:
         args['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
+        # So here the 'reset by letter' button will be enabled
     except AttributeError:
         pass # it's ok not to have a letter
     return render_to_response('password.html', args, RequestContext(request))
