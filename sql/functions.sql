@@ -1,3 +1,8 @@
+-- Migration script
+UPDATE contact_field SET contact_group_id=52 WHERE id=4;
+UPDATE contact_field SET contact_group_id=52 WHERE id=5;
+
+
 
 -- That function returns the set of subgroups of a given group
 -- Has been tested with bugus setup where A is in B and B in A.
