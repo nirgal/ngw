@@ -39,12 +39,141 @@ function selectAll(target_checked) {
 
 <h1 class=boxheader>Select membership mode</h1>
 <div class=box>
-<input type=checkbox id=membership_member name=membership_member checked onchange="if (this.checked) { this.form.membership_invited.checked=false; this.form.membership_declined.checked=false; }"><label for=membership_member>Member</label>
-<input type=checkbox id=membership_invited name=membership_invited onchange="if (this.checked) { this.form.membership_member.checked=false; this.form.membership_declined.checked=false; }"><label for=membership_invited>Invited</label>
-<input type=checkbox id=membership_declined name=membership_declined onchange="if (this.checked) { this.form.membership_member.checked=false; this.form.membership_invited.checked=false; }"><label for=membership_declined>Declined invitation</label>
+<input type=checkbox id=membership_member name=membership_member checked onchange="
+    if (this.checked) {
+        this.form.membership_invited.checked=false;
+        this.form.membership_declined.checked=false;
+    }
+"><label for=membership_member>Member</label>
+<input type=checkbox id=membership_invited name=membership_invited onchange="
+    if (this.checked) {
+        this.form.membership_member.checked=false;
+        this.form.membership_declined.checked=false;
+    }
+"><label for=membership_invited>Invited</label>
+<input type=checkbox id=membership_declined name=membership_declined onchange="
+    if (this.checked) {
+        this.form.membership_member.checked=false;
+        this.form.membership_invited.checked=false;
+    }
+"><label for=membership_declined>Declined invitation</label>
 <br>
-<input type=checkbox id=membership_operator name=membership_operator><label for=membership_operator>Operator</label>
-<input type=checkbox id=membership_viewer name=membership_viewer><label for=membership_viewer>Viewer</label>
+<input type=checkbox id=membership_operator name=membership_operator onchange="
+    if (this.checked) {
+        this.form.membership_viewer.checked=true;
+        this.form.membership_see_group.checked=true;
+        this.form.membership_change_group.checked=true;
+        this.form.membership_see_members.checked=true;
+        this.form.membership_change_members.checked=true;
+        this.form.membership_view_fields.checked=true;
+        this.form.membership_write_fields.checked=true;
+        this.form.membership_view_news.checked=true;
+        this.form.membership_write_news.checked=true;
+        this.form.membership_view_files.checked=true;
+        this.form.membership_write_files.checked=true;
+    }
+"><label for=membership_operator>Operator</label>
+<input type=checkbox id=membership_viewer name=membership_viewer onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+        this.form.membership_see_members.checked=true;
+        this.form.membership_view_fields.checked=true;
+        this.form.membership_view_news.checked=true;
+        this.form.membership_view_files.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+    }
+"><label for=membership_viewer>Viewer</label>
+<input type=checkbox id=membership_see_group name=membership_see_group onchange="
+    if (!this.checked) {
+        this.form.membership_operator.checked=false;
+        this.form.membership_viewer.checked=false;
+        this.form.membership_change_group.checked=false;
+        this.form.membership_see_members.checked=false;
+        this.form.membership_change_members.checked=false;
+        this.form.membership_view_fields.checked=false;
+        this.form.membership_write_fields.checked=false;
+        this.form.membership_view_news.checked=false;
+        this.form.membership_write_news.checked=false;
+        this.form.membership_view_files.checked=false;
+        this.form.membership_write_files.checked=false;
+    }
+"><label for=membership_see_group>Can see group</label>
+<input type=checkbox id=membership_change_group name=membership_change_group onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+    }
+"><label for=membership_change_group>Group editor</label>
+<input type=checkbox id=membership_see_members name=membership_see_members onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+        this.form.membership_viewer.checked=false;
+        this.form.membership_change_members.checked=false;
+    }
+"><label for=membership_see_members>Can see members</label>
+<input type=checkbox id=membership_change_members name=membership_change_members onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+        this.form.membership_see_members.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+    }
+"><label for=membership_change_members>Can change members</label>
+<input type=checkbox id=membership_view_fields name=membership_view_fields onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+        this.form.membership_viewer.checked=false;
+        this.form.membership_write_fields.checked=false;
+    }
+"><label for=membership_view_fields>Can view fields</label>
+<input type=checkbox id=membership_write_fields name=membership_write_fields onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+        this.form.membership_view_fields.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+    }
+"><label for=membership_write_fields>Can write fields</label>
+<input type=checkbox id=membership_view_news name=membership_view_news onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+        this.form.membership_viewer.checked=false;
+        this.form.membership_write_news.checked=false;
+    }
+"><label for=membership_view_news>Can view news</label>
+<input type=checkbox id=membership_write_news name=membership_write_news onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+        this.form.membership_view_news.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+    }
+"><label for=membership_write_news>Can write news</label>
+<input type=checkbox id=membership_view_files name=membership_view_files onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+        this.form.membership_viewer.checked=false;
+        this.form.membership_write_files.checked=false;
+    }
+"><label for=membership_view_files>Can view files</label>
+<input type=checkbox id=membership_write_files name=membership_write_files onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+        this.form.membership_view_files.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+    }
+"><label for=membership_write_files>Can upload files</label>
 </div>
 
 {% block submitbar %}

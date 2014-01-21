@@ -306,10 +306,6 @@ def membership_to_text(contact_with_extra_fields, group_id):
         if flags & CIGFLAG_DECLINED:
             memberships.append("Declined")
 
-        if flags & CIGFLAG_OPERATOR:
-            memberships.append("Operator")
-        if flags & CIGFLAG_VIEWER:
-            memberships.append("Viewer")
     else:
         if flags & CIGFLAG_MEMBER:
             memberships.append("Member")
@@ -322,10 +318,28 @@ def membership_to_text(contact_with_extra_fields, group_id):
         elif flags & CIGFLAG_DECLINED:
             memberships.append("Declined")
 
-        if flags & CIGFLAG_OPERATOR:
-            memberships.append("Operator")
-        if flags & CIGFLAG_VIEWER:
-            memberships.append("Viewer")
+    if flags & CIGFLAG_OPERATOR:
+        memberships.append("Operator")
+    if flags & CIGFLAG_VIEWER:
+        memberships.append("Viewer")
+    if flags & CIGFLAG_CHANGE_CG:
+        memberships.append("Group editor")
+    if flags & CIGFLAG_CHANGE_MEMBERS:
+        memberships.append("Change members")
+    if flags & CIGFLAG_SEE_MEMBERS:
+        memberships.append("See members")
+    if flags & CIGFLAG_WRITE_FIELDS:
+        memberships.append("Write fields")
+    if flags & CIGFLAG_VIEW_FIELDS:
+        memberships.append("Read fields")
+    if flags & CIGFLAG_WRITE_NEWS:
+        memberships.append("Write news")
+    if flags & CIGFLAG_VIEW_NEWS:
+        memberships.append("Read news")
+    if flags & CIGFLAG_WRITE_FILES:
+        memberships.append("Upload files")
+    if flags & CIGFLAG_VIEW_FILES:
+        memberships.append("Read files")
 
     if memberships:
         return ', '.join(memberships)
@@ -344,8 +358,6 @@ def membership_extended_widget(contact_with_extra_fields, contact_group, base_ur
     member = flags & CIGFLAG_MEMBER
     invited = flags & CIGFLAG_INVITED
     declined = flags & CIGFLAG_DECLINED
-    #operator = flags & CIGFLAG_OPERATOR
-    #viewer = flags & CIGFLAG_VIEWER
     note = getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id)
 
     params = {}
@@ -1653,6 +1665,26 @@ def contactgroup_add_contacts_to(request):
                 modes += '+o'
             if request.REQUEST.get('membership_viewer', False):
                 modes += '+v'
+            if request.REQUEST.get('membership_see_group', False):
+                modes += '+e'
+            if request.REQUEST.get('membership_change_group', False):
+                modes += '+E'
+            if request.REQUEST.get('membership_see_members', False):
+                modes += '+c'
+            if request.REQUEST.get('membership_change_members', False):
+                modes += '+C'
+            if request.REQUEST.get('membership_view_fields', False):
+                modes += '+f'
+            if request.REQUEST.get('membership_write_fields', False):
+                modes += '+F'
+            if request.REQUEST.get('membership_view_news', False):
+                modes += '+n'
+            if request.REQUEST.get('membership_write_news', False):
+                modes += '+N'
+            if request.REQUEST.get('membership_view_files', False):
+                modes += '+u'
+            if request.REQUEST.get('membership_write_files', False):
+                modes += '+U'
             if not modes:
                 raise ValueError('You must select at least one mode')
 
@@ -1732,23 +1764,148 @@ def contactgroup_add_contacts_to(request):
 
 class ContactInGroupForm(forms.Form):
     invited = forms.BooleanField(required=False)
-    declined_invitation = forms.BooleanField(required=False)
+    declined = forms.BooleanField(required=False)
     member = forms.BooleanField(required=False)
-    operator = forms.BooleanField(required=False)
-    viewer = forms.BooleanField(required=False)
+    operator = forms.BooleanField(required=False, help_text='Full administrator of that group.')
+    viewer = forms.BooleanField(required=False, help_text='Can see everything, but read only access.')
+    see_group = forms.BooleanField(label='Can see group exists',required=False)
+    change_group = forms.BooleanField(label='Can change group', required=False, help_text='Can change the group itself, delete it.')
+    see_members = forms.BooleanField(label='Can see members', required=False)
+    change_members = forms.BooleanField(label='Can change members', required=False)
+    view_fields = forms.BooleanField(label='Can view fields', required=False, help_text='Can view the fields (like "address" or "email") associated with that group. Few groups support that.')
+    write_fields = forms.BooleanField(label='Can wrte fields', required=False)
+    view_news = forms.BooleanField(label='Can view news', required=False, help_text='View the news of that group. Few groups support that.')
+    write_news = forms.BooleanField(label='Can write news', required=False)
+    view_files = forms.BooleanField(label='Can view uploaded files', required=False, help_text='View the uploaded files. Few group supports that.')
+    write_files = forms.BooleanField(label='Can upload files', required=False)
     note = forms.CharField(required=False)
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['invited'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.declined_invitation.checked=false; this.form.member.checked=false;}'}
-        self.fields['declined_invitation'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.member.checked=false;}'}
-        self.fields['member'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.invited.checked=false; this.form.declined_invitation.checked=false; }'}
-        self.fields['operator'].widget.attrs = { 'onchange': 'if (this.checked) { this.form.viewer.checked=true; }'}
+        self.fields['invited'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.declined.checked=false;
+                this.form.member.checked=false;
+            }'''}
+        self.fields['declined'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.invited.checked=false;
+                this.form.member.checked=false;
+            }'''}
+        self.fields['member'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.invited.checked=false;
+                this.form.declined.checked=false;
+            }'''}
+        self.fields['operator'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.viewer.checked=true;
+                this.form.see_group.checked=true;
+                this.form.change_group.checked=true;
+                this.form.see_members.checked=true;
+                this.form.change_members.checked=true;
+                this.form.view_fields.checked=true;
+                this.form.write_fields.checked=true;
+                this.form.view_news.checked=true;
+                this.form.write_news.checked=true;
+                this.form.view_files.checked=true;
+                this.form.write_files.checked=true;
+            }'''}
+        self.fields['viewer'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+                this.form.see_members.checked=true;
+                this.form.view_fields.checked=true;
+                this.form.view_news.checked=true;
+                this.form.view_files.checked=true;
+            } else {
+                this.form.operator.checked=false;
+            }'''}
+        self.fields['see_group'].widget.attrs = { 'onchange': '''
+            if (!this.checked) {
+                this.form.operator.checked=false;
+                this.form.viewer.checked=false;
+                this.form.change_group.checked=false;
+                this.form.see_members.checked=false;
+                this.form.change_members.checked=false;
+                this.form.view_fields.checked=false;
+                this.form.write_fields.checked=false;
+                this.form.view_news.checked=false;
+                this.form.write_news.checked=false;
+                this.form.view_files.checked=false;
+                this.form.write_files.checked=false;
+            }'''}
+        self.fields['change_group'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+            } else {
+                this.form.operator.checked=false;
+            }'''}
+        self.fields['see_members'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+            } else {
+                this.form.operator.checked=false;
+                this.form.viewer.checked=false;
+                this.form.change_members.checked=false;
+            }'''}
+        self.fields['change_members'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+                this.form.see_members.checked=true;
+            } else {
+                this.form.operator.checked=false;
+            }'''}
+        self.fields['view_fields'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+            } else {
+                this.form.operator.checked=false;
+                this.form.viewer.checked=false;
+                this.form.write_fields.checked=false;
+            }'''}
+        self.fields['write_fields'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+                this.form.view_fields.checked=true;
+            } else {
+                this.form.operator.checked=false;
+            }'''}
+        self.fields['view_news'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+            } else {
+                this.form.operator.checked=false;
+                this.form.viewer.checked=false;
+                this.form.write_news.checked=false;
+            }'''}
+        self.fields['write_news'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+                this.form.view_news.checked=true;
+            } else {
+                this.form.operator.checked=false;
+            }'''}
+        self.fields['view_files'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+            } else {
+                this.form.operator.checked=false;
+                this.form.viewer.checked=false;
+                this.form.write_files.checked=false;
+            }'''}
+        self.fields['write_files'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+                this.form.view_files.checked=true;
+            } else {
+                this.form.operator.checked=false;
+            }'''}
 
     def clean(self):
         data = self.cleaned_data
-        if   (data['invited'] and data['declined_invitation']) \
-          or (data['declined_invitation'] and data['member']) \
+        if   (data['invited'] and data['declined']) \
+          or (data['declined'] and data['member']) \
           or (data['invited'] and data['member']) :
             raise forms.ValidationError('Invalid flags combinaison')
         return data
@@ -1772,31 +1929,22 @@ def contactingroup_edit(request, gid, cid):
     args['objtype'] = ContactInGroup
 
     initial = {}
-    initial['invited'] = (cig.flags & CIGFLAG_INVITED) != 0
-    initial['declined_invitation'] = (cig.flags & CIGFLAG_DECLINED) != 0
-    initial['member'] = (cig.flags & CIGFLAG_MEMBER) != 0
-    initial['operator'] = (cig.flags & CIGFLAG_OPERATOR) != 0
-    initial['viewer'] = (cig.flags & CIGFLAG_VIEWER) != 0
+    for intval, code, txt in TRANS_CIGFLAG:
+        initial[txt] = (cig.flags & intval) != 0
     initial['note'] = cig.note
 
     if request.method == 'POST':
         form = ContactInGroupForm(request.POST, initial=initial)
         if form.is_valid():
             data = form.cleaned_data
-            if not data['invited'] and not data['declined_invitation'] and not data['member'] and not data['operator'] and not data['viewer']:
-                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid))) # TODO update logins deletion, call membership hooks
             cig.flags = 0
-            if data['member']:
-                cig.flags |= CIGFLAG_MEMBER
-            if data['invited']:
-                cig.flags |= CIGFLAG_INVITED
-            if data['declined_invitation']:
-                cig.flags |= CIGFLAG_DECLINED
-            if data['operator']:
-                cig.flags |= CIGFLAG_OPERATOR
-            if data['viewer']:
-                cig.flags |= CIGFLAG_VIEWER
+            for intval, code, txt in TRANS_CIGFLAG:
+                if data[txt]:
+                    cig.flags |= intval
+            if not cig.flags:
+                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid)))
             cig.note = data['note']
+            # TODO: use set_member_1 for logs
             messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request.user)
             cig.save()

@@ -1,14 +1,3 @@
--- Rigth now, NGW can only be installed from a backup. So you'll probably never user this file
-
-ALTER TABLE contact_field_value SET WITH OIDS;
-ALTER TABLE contact_in_group SET WITH OIDS;
-ALTER TABLE choice SET WITH OIDS;
-ALTER TABLE group_in_group SET WITH OIDS;
-
-
-DROP VIEW IF EXISTS mailinginfo; -- legacy view to delete
-DROP VIEW IF EXISTS auth_users_ngw; -- legacy view to delete
-
 
 -- That function returns the set of subgroups of a given group
 -- Has been tested with bugus setup where A is in B and B in A.
@@ -181,15 +170,25 @@ LANGUAGE SQL STABLE AS $$
     SELECT EXISTS(SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND contact_in_group.group_id IN (SELECT self_and_subgroups($2)) AND flags & 1 <> 0) FROM contact WHERE contact.id=$1;
 $$;
 
+
+-- C "operates" group CG with at least one of the flags if:
+-- * He directly has a matching flag in group
+-- * He is a member (flag1), either directly or indirectly, of a group that has a matching flag priviledge
+CREATE OR REPLACE FUNCTION c_has_cg_permany(integer, integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2 AND flags & $3 <> 0)
+    OR
+    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & $3 <> 0) AND contact_in_group.flags & 1 <> 0);
+$$;
+
+
 -- C is operator of group CG if any of this condition is true:
 -- * He is a direct operator (flag8)
 -- * He is a member (flag1), either directly or indirectly, of a group that has operator (flag8) priviledges
 CREATE OR REPLACE FUNCTION c_operatorof_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT
-    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2 AND flags & 8 <> 0)
-    OR
-    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & 8 <> 0) AND contact_in_group.flags & 1 <> 0);
+    SELECT c_has_cg_permany($1, $2, 8);
 $$;
 
 -- C is viewer of group CG if any of this condition is true:
@@ -197,10 +196,7 @@ $$;
 -- * He is a member (flag1), either directly or indirectly, of a group that has operator or viewer (flag16) priviledges
 CREATE OR REPLACE FUNCTION c_viewerof_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT
-    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND contact_in_group.group_id=$2 AND flags & (8|16) <> 0)
-    OR
-    EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=$1 AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=$2 AND group_manage_group.flags & (8|16) <> 0) AND contact_in_group.flags & 1 <> 0);
+    SELECT c_has_cg_permany($1, $2, 8|16);
 $$;
 
 
@@ -208,57 +204,58 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|32);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|64);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_members_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|128);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_members_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|64);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_view_fields_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|512);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_write_fields_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|1024);
 $$;
 
+-- FIXME: like perm_c_can_change_cg
 CREATE OR REPLACE FUNCTION perm_c_can_change_fields_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+    SELECT perm_c_can_change_cg($1, $2);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_news_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|2048);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_news_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|4096);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_files_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_viewerof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|8192);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_files_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_operatorof_cg($1, $2);
+    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|16384);
 $$;
 
 

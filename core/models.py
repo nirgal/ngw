@@ -44,12 +44,46 @@ FIELD_PASSWORD_STATUS = 75
 
 AUTOMATIC_MEMBER_INDICATOR = '⁂'
 
-CIGFLAG_MEMBER   =  1 # 'm'
-CIGFLAG_INVITED  =  2 # 'i'
-CIGFLAG_DECLINED =  4 # 'd'
-CIGFLAG_OPERATOR =  8 # 'o'
-CIGFLAG_VIEWER   = 16 # 'v'
+CIGFLAG_MEMBER         =     1 # 'm'ember
+CIGFLAG_INVITED        =     2 # 'i'nvited
+CIGFLAG_DECLINED       =     4 # 'd'eclined invitation
+CIGFLAG_OPERATOR       =     8 # 'o'pertor
+CIGFLAG_VIEWER         =    16 # 'v'iewer
+CIGFLAG_SEE_CG         =    32 # 'e'xistance
+CIGFLAG_CHANGE_CG      =    64 # 'E'
+CIGFLAG_SEE_MEMBERS    =   128 # 'c'ontent
+CIGFLAG_CHANGE_MEMBERS =   256 # 'C'
+CIGFLAG_VIEW_FIELDS    =   512 # 'f'ields
+CIGFLAG_WRITE_FIELDS   =  1024 # 'F'
+CIGFLAG_VIEW_NEWS      =  2048 # 'n'ews
+CIGFLAG_WRITE_NEWS     =  4096 # 'N'
+CIGFLAG_VIEW_FILES     =  8192 # 'u'ploaded
+CIGFLAG_WRITE_FILES    = 16384 # 'U'
 
+TRANS_CIGFLAG = (
+    (CIGFLAG_MEMBER, 'm', 'member'),
+    (CIGFLAG_INVITED, 'i', 'invited'),
+    (CIGFLAG_DECLINED, 'd', 'declined'),
+    (CIGFLAG_OPERATOR, 'o', 'operator'),
+    (CIGFLAG_VIEWER, 'v', 'viewer'),
+    (CIGFLAG_SEE_CG, 'e', 'see_group'),
+    (CIGFLAG_CHANGE_CG, 'E', 'change_group'),
+    (CIGFLAG_SEE_MEMBERS, 'c', 'see_members'),
+    (CIGFLAG_CHANGE_MEMBERS, 'C', 'change_members'),
+    (CIGFLAG_VIEW_FIELDS, 'f', 'view_fields'),
+    (CIGFLAG_WRITE_FIELDS, 'F', 'write_fields'),
+    (CIGFLAG_VIEW_NEWS, 'n', 'view_news'),
+    (CIGFLAG_WRITE_NEWS, 'N', 'write_news'),
+    (CIGFLAG_VIEW_FILES, 'u', 'view_files'),
+    (CIGFLAG_WRITE_FILES, 'U', 'write_files'),
+)
+
+# dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
+TRANS_CIGFLAG_CODE2INT = {}
+TRANS_CIGFLAG_CODE2TXT = {}
+for intval, code, txt in TRANS_CIGFLAG:
+    TRANS_CIGFLAG_CODE2INT[code] = intval
+    TRANS_CIGFLAG_CODE2TXT[code] = txt
 
 # Ends with a /
 GROUP_STATIC_DIR = "/usr/lib/ngw/static/static/g/"
@@ -685,74 +719,41 @@ class ContactGroup(NgwModel):
         add_mode = 0
         del_mode = 0
 
-        if group_member_mode and group_member_mode[0] in '+-':
-            for letter in group_member_mode:
-                if letter in '+-':
-                    operation = letter
-                elif letter == 'm':
-                    if operation == '+':
-                        add_mode = (add_mode | CIGFLAG_MEMBER) & ~(CIGFLAG_INVITED | CIGFLAG_DECLINED)
-                        del_mode = del_mode & ~CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED
-                    else: # operation == '-'
-                        del_mode |= CIGFLAG_MEMBER
-                        add_mode &= ~CIGFLAG_MEMBER
-                elif letter == 'i':
-                    if operation == '+':
-                        add_mode = (add_mode | CIGFLAG_INVITED) & ~(CIGFLAG_MEMBER | CIGFLAG_DECLINED)
-                        del_mode = del_mode & ~CIGFLAG_INVITED | CIGFLAG_MEMBER | CIGFLAG_DECLINED
-                    else: # operation == '-'
-                        del_mode |= CIGFLAG_INVITED
-                        add_mode &= ~CIGFLAG_INVITED
-                elif letter == 'd':
-                    if operation == '+':
-                        add_mode = (add_mode | CIGFLAG_DECLINED) & ~ (CIGFLAG_MEMBER | CIGFLAG_INVITED)
-                        del_mode = del_mode & ~CIGFLAG_DECLINED | CIGFLAG_MEMBER | CIGFLAG_INVITED
-                    else: # operation == '-'
-                        del_mode |= CIGFLAG_DECLINED
-                        add_mode &= ~CIGFLAG_DECLINED
-                elif letter == 'o':
-                    if operation == '+':
-                        add_mode |= CIGFLAG_OPERATOR
-                        del_mode &= ~CIGFLAG_OPERATOR
-                    else: # operation == '-'
-                        del_mode |= CIGFLAG_OPERATOR
-                        add_mode &= ~CIGFLAG_OPERATOR
-                elif letter == 'v':
-                    if operation == '+':
-                        add_mode |= CIGFLAG_VIEWER
-                        del_mode &= ~CIGFLAG_VIEWER
-                    else: # operation == '-'
-                        del_mode |= CIGFLAG_VIEWER
-                        add_mode &= ~CIGFLAG_VIEWER
-
-        else:
-            # set mode, no + nor -
-            if '+' in group_member_mode or '-' in group_member_mode:
-                raise ValueError("Can't set mode %s" % group_member_mode)
-            if 'm' in group_member_mode:
-                if 'i' in group_member_mode or 'd' in group_member_mode:
-                    raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode |= CIGFLAG_MEMBER
-                del_mode |= CIGFLAG_INVITED | CIGFLAG_DECLINED
-            if 'i' in group_member_mode:
-                if 'm' in group_member_mode or 'd' in group_member_mode:
-                    raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode |= CIGFLAG_INVITED
-                del_mode |= CIGFLAG_MEMBER | CIGFLAG_DECLINED
-            if 'd' in group_member_mode:
-                if 'm' in group_member_mode or 'i' in group_member_mode:
-                    raise ValueError("Can't set mode %s" % group_member_mode)
-                add_mode |= CIGFLAG_DECLINED
-                del_mode |= CIGFLAG_MEMBER | CIGFLAG_INVITED
-
-            if 'o' in group_member_mode:
-                add_mode |= CIGFLAG_OPERATOR
+        assert group_member_mode and group_member_mode[0] in '+-', 'Invalid membership mode'
+        for letter in group_member_mode:
+            if letter in '+-':
+                operation = letter
+            elif letter == 'm':
+                if operation == '+':
+                    add_mode = (add_mode | CIGFLAG_MEMBER) & ~(CIGFLAG_INVITED | CIGFLAG_DECLINED)
+                    del_mode = del_mode & ~CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED
+                else: # operation == '-'
+                    del_mode |= CIGFLAG_MEMBER
+                    add_mode &= ~CIGFLAG_MEMBER
+            elif letter == 'i':
+                if operation == '+':
+                    add_mode = (add_mode | CIGFLAG_INVITED) & ~(CIGFLAG_MEMBER | CIGFLAG_DECLINED)
+                    del_mode = del_mode & ~CIGFLAG_INVITED | CIGFLAG_MEMBER | CIGFLAG_DECLINED
+                else: # operation == '-'
+                    del_mode |= CIGFLAG_INVITED
+                    add_mode &= ~CIGFLAG_INVITED
+            elif letter == 'd':
+                if operation == '+':
+                    add_mode = (add_mode | CIGFLAG_DECLINED) & ~ (CIGFLAG_MEMBER | CIGFLAG_INVITED)
+                    del_mode = del_mode & ~CIGFLAG_DECLINED | CIGFLAG_MEMBER | CIGFLAG_INVITED
+                else: # operation == '-'
+                    del_mode |= CIGFLAG_DECLINED
+                    add_mode &= ~CIGFLAG_DECLINED
+            elif letter in 'iveEcCfFnNuU':
+                intmode = TRANS_CIGFLAG_CODE2INT[letter]
+                if operation == '+':
+                    add_mode |= intmode
+                    del_mode &= ~intmode
+                else: # operation == '-'
+                    del_mode |= intmode
+                    add_mode &= ~intmode
             else:
-                del_mode |= CIGFLAG_OPERATOR
-            if 'v' in group_member_mode:
-                add_mode |= CIGFLAG_VIEWER
-            else:
-                del_mode |= CIGFLAG_VIEWER
+                raise ValueError('Unknown mode "%s"' % letter)
 
         try:
             cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
@@ -768,131 +769,32 @@ class ContactGroup(NgwModel):
             log.save()
             result = LOG_ACTION_ADD
 
-        #print("ok +", add_mode, "-", del_mode)
-        if add_mode & CIGFLAG_MEMBER:
-            if not cig.flags & CIGFLAG_MEMBER:
-                cig.flags |= CIGFLAG_MEMBER
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'member'
-                log.property_repr = 'Member'
-                log.change = 'new value is true'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-        if del_mode & CIGFLAG_MEMBER:
-            if cig.flags & CIGFLAG_MEMBER:
-                cig.flags &= ~CIGFLAG_MEMBER
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'member'
-                log.property_repr = 'Member'
-                log.change = 'new value is false'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-
-        if add_mode & CIGFLAG_INVITED:
-            if not cig.flags & CIGFLAG_INVITED:
-                cig.flags |= CIGFLAG_INVITED
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'invited'
-                log.property_repr = 'Invited'
-                log.change = 'new value is true'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-        if del_mode & CIGFLAG_INVITED:
-            if cig.flags & CIGFLAG_INVITED:
-                cig.flags &= ~CIGFLAG_INVITED
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'invited'
-                log.property_repr = 'Invited'
-                log.change = 'new value is false'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-
-        if add_mode & CIGFLAG_DECLINED:
-            if not cig.flags & CIGFLAG_DECLINED:
-                cig.flags |= CIGFLAG_DECLINED
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'declined_invitation'
-                log.property_repr = 'Declined invitation'
-                log.change = 'new value is true'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-        if del_mode & CIGFLAG_DECLINED:
-            if cig.flags & CIGFLAG_DECLINED:
-                cig.flags &= ~ CIGFLAG_DECLINED
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'declined_invitation'
-                log.property_repr = 'Declined invitation'
-                log.change = 'new value is false'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-
-        if add_mode & CIGFLAG_OPERATOR:
-            if not cig.flags & CIGFLAG_OPERATOR:
-                cig.flags |= CIGFLAG_OPERATOR
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'operator'
-                log.property_repr = 'Operator'
-                log.change = 'new value is true'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-        if del_mode & CIGFLAG_OPERATOR:
-            if cig.flags & CIGFLAG_OPERATOR:
-                cig.flags &= ~CIGFLAG_OPERATOR
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'operator'
-                log.property_repr = 'Operator'
-                log.change = 'new value is false'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-
-        if add_mode & CIGFLAG_VIEWER:
-            if not cig.flags & CIGFLAG_VIEWER:
-                cig.flags |= CIGFLAG_VIEWER
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'viewer'
-                log.property_repr = 'Viewer'
-                log.change = 'new value is true'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
-        if del_mode & CIGFLAG_VIEWER:
-            if cig.flags & CIGFLAG_VIEWER:
-                cig.flags &= ~CIGFLAG_VIEWER
-                log = Log(contact_id=logged_contact.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
-                log.property = 'viewer'
-                log.property_repr = 'Viewer'
-                log.change = 'new value is false'
-                log.save()
-                result = result or LOG_ACTION_CHANGE
+        for flag in 'midoveEcCfFnNuU':
+            intflag = TRANS_CIGFLAG_CODE2INT[flag]
+            if add_mode & intflag:
+                if not cig.flags & intflag:
+                    cig.flags |= intflag
+                    log = Log(contact_id=logged_contact.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                    log.property = TRANS_CIGFLAG_CODE2TXT[flag]
+                    log.property_repr = log.property.replace('_', ' ').capitalize()
+                    log.change = 'new value is true'
+                    log.save()
+                    result = result or LOG_ACTION_CHANGE
+            if del_mode & intflag:
+                if cig.flags & intflag:
+                    cig.flags &= ~intflag
+                    log = Log(contact_id=logged_contact.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                    log.property = TRANS_CIGFLAG_CODE2TXT[flag]
+                    log.property_repr = log.property.replace('_', ' ').capitalize()
+                    log.change = 'new value is false'
+                    log.save()
+                    result = result or LOG_ACTION_CHANGE
 
         if not cig.flags:
             cig.delete()
