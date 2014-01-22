@@ -433,7 +433,7 @@ class ContactQuerySet(RawQuerySet):
             # We already have these fields
             return
 
-        # Add fields for direct membership
+        # Add fields for direct membership / admin
         self.qry_fields[group_flags_key] = 'cig_%s.flags' % group_id
         self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
 
@@ -1472,14 +1472,51 @@ class ContactGroupForm(forms.Form):
     mailman_address = forms.CharField(required=False, max_length=255, help_text='Mailing list address, if the group is linked to a mailing list.')
     has_news = forms.BooleanField(required=False, help_text='Does that group supports internal news system?')
     direct_supergroups = forms.MultipleChoiceField(required=False, help_text='Members will automatically be granted membership in these groups.', widget=FilterMultipleSelectWidget('groups', False))
-    operator_groups = forms.MultipleChoiceField(required=False, help_text='Members of these groups will automatically be granted administrative priviledges.', widget=FilterMultipleSelectWidget('groups', False))
-    viewer_groups = forms.MultipleChoiceField(required=False, help_text='Members of these groups will automatically be granted viewer priviledges.', widget=FilterMultipleSelectWidget('groups', False))
+    operator_groups = forms.MultipleChoiceField(required=False,
+        help_text='Members of these groups will automatically be granted administrative priviledges.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    viewer_groups = forms.MultipleChoiceField(required=False,
+        help_text="Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things.",
+            widget=FilterMultipleSelectWidget('groups', False))
+    see_group_groups = forms.MultipleChoiceField(label='Existence seer groups', required=False,
+        help_text='Members of these groups will automatically be granted priviledge to know that current group exists.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    change_group_groups = forms.MultipleChoiceField(label='Editor groups', required=False, 
+        help_text='Members of these groups will automatically be granted priviledge to change/delete the current group.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    see_members_groups = forms.MultipleChoiceField(label='Members seer groups', required=False,
+        help_text='Members of these groups will automatically be granted priviledge to see the list of members.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    change_members_groups = forms.MultipleChoiceField(label='Members changing groups', required=False,
+        help_text='Members of these groups will automatically be granted permission to change members of current group.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    view_fields_groups = forms.MultipleChoiceField(label='Fields viewer groups', required=False,
+        help_text='Members of these groups will automatically be granted permission to read the fields associated to current group.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    write_fields_groups = forms.MultipleChoiceField(label='Fields writer groups', required=False,
+        help_text='Members of these groups will automatically be granted priviledge to write to fields associated to current group.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    view_news_groups = forms.MultipleChoiceField(label='News viewer groups', required=False,
+        help_text='Members of these groups will automatically be granted permisson to read news of current group.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    write_news_groups = forms.MultipleChoiceField(label='New writer groups', required=False,
+        help_text='Members of these groups will automatically be granted permission to write news in that group.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    view_files_groups = forms.MultipleChoiceField(label='File viewer groups', required=False,
+        help_text='Members of these groups will automatically be granted permission to view uploaded files in that group.',
+        widget=FilterMultipleSelectWidget('groups', False))
+    write_files_groups = forms.MultipleChoiceField(label='File uploader groups', required=False,
+        help_text='Members of these groups will automatically be granted permission to upload files.',
+        widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, for_user, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['direct_supergroups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
-        self.fields['operator_groups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
-        self.fields['viewer_groups'].choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
+        visible_groups_choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
+        self.fields['direct_supergroups'].choices = visible_groups_choices
+        for flag in 'oveEcCfFnNuU':
+            field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
+            self.fields[field_name].choices = visible_groups_choices
+
 
 
 @login_required()
@@ -1528,49 +1565,30 @@ def contactgroup_edit(request, id):
             for sgid in supergroup_removed:
                 GroupInGroup.objects.get(father_id=sgid, subgroup_id=cg.id).delete()
 
-            # Update the operator groups
-            old_operator_groups_ids = set(cg.get_visible_operator_mananger_groups_ids(request.user.id))
-            new_operator_groups_ids = set([int(ogid) for ogid in data['operator_groups']])
-            operatorgroup_added = new_operator_groups_ids - old_operator_groups_ids
-            operatorgroup_removed = old_operator_groups_ids - new_operator_groups_ids
-            print('operatorgroup_added=', operatorgroup_added)
-            print('operatorgroup_removed=', operatorgroup_removed)
-            for ogid in operatorgroup_added:
-                try:
+            # Update the administrative groups
+            for flag in 'oveEcCfFnNuU':
+                field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
+                intflag = TRANS_CIGFLAG_CODE2INT[flag]
+                old_groups_ids = set(cg.get_visible_mananger_groups_ids(request.user.id, intflag))
+                new_groups_ids = set([int(ogid) for ogid in data[field_name]])
+                groups_added = new_groups_ids - old_groups_ids
+                groups_removed = old_groups_ids - new_groups_ids
+                print('flag', flag, 'groups_added=', groups_added)
+                print('flag', flag, 'groups_removed=', groups_removed)
+                for ogid in groups_added:
+                    try:
+                        gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
+                    except GroupManageGroup.DoesNotExist:
+                        gmg = GroupManageGroup(father_id=ogid, subgroup_id=cg.id, flags=0)
+                    gmg.flags |= intflag
+                    gmg.save()
+                for ogid in groups_removed:
                     gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
-                except GroupManageGroup.DoesNotExist:
-                    gmg = GroupManageGroup(father_id=ogid, subgroup_id=cg.id, flags=0)
-                gmg.flags |= CIGFLAG_OPERATOR
-                gmg.save()
-            for ogid in operatorgroup_removed:
-                gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
-                gmg.flags &= ~ CIGFLAG_OPERATOR
-                if gmg.flags:
-                    gmg.save()
-                else:
-                    gmg.delete()
-
-            # Update the viewer groups
-            old_viewer_groups_ids = set(cg.get_visible_viewer_mananger_groups_ids(request.user.id))
-            new_viewer_groups_ids = set([int(ogid) for ogid in data['viewer_groups']])
-            viewergroup_added = new_viewer_groups_ids - old_viewer_groups_ids
-            viewergroup_removed = old_viewer_groups_ids - new_viewer_groups_ids
-            print('viewergroup_added=', viewergroup_added)
-            print('viewergroup_removed=', viewergroup_removed)
-            for vgid in viewergroup_added:
-                try:
-                    gmg = GroupManageGroup.objects.get(father_id=vgid, subgroup_id=cg.id)
-                except GroupManageGroup.DoesNotExist:
-                    gmg = GroupManageGroup(father_id=vgid, subgroup_id=cg.id, flags=0)
-                gmg.flags |= CIGFLAG_VIEWER
-                gmg.save()
-            for vgid in viewergroup_removed:
-                gmg = GroupManageGroup.objects.get(father_id=vgid, subgroup_id=cg.id)
-                gmg.flags &= ~ CIGFLAG_VIEWER
-                if gmg.flags:
-                    gmg.save()
-                else:
-                    gmg.delete()
+                    gmg.flags &= ~ intflag
+                    if gmg.flags:
+                        gmg.save()
+                    else:
+                        gmg.delete()
 
             messages.add_message(request, messages.SUCCESS, 'Group %s has been changed sucessfully!' % cg.unicode_with_date())
 
@@ -1596,9 +1614,11 @@ def contactgroup_edit(request, id):
                 'mailman_address': cg.mailman_address,
                 'has_news': cg.has_news,
                 'direct_supergroups': cg.get_visible_direct_supergroups_ids(request.user.id),
-                'operator_groups': cg.get_visible_operator_mananger_groups_ids(request.user.id),
-                'viewer_groups': cg.get_visible_viewer_mananger_groups_ids(request.user.id),
             }
+            for flag in 'ovveEcCfFnNuU':
+                field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
+                intflag = TRANS_CIGFLAG_CODE2INT[flag]
+                initialdata[field_name] = cg.get_visible_mananger_groups_ids(request.user.id, intflag)
             form = ContactGroupForm(request.user.id, initialdata)
         else: # add new one
             form = ContactGroupForm(request.user.id)

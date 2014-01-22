@@ -580,25 +580,14 @@ class ContactGroup(NgwModel):
         return self.get_self_and_subgroups().exclude(id=self.id)
 
 
-    def get_visible_operator_mananger_groups_ids(self, cid):
+    def get_visible_mananger_groups_ids(self, cid, flag):
         '''
-        Returns a list of groups ids whose members automatically gets operator
+        Returns a list of groups ids whose members automatically gets "flag"
         priviledges on self, and are visbile contact cid.
         '''
         return [gig.father_id \
             for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(where=[
-                'flags & %s <> 0' % CIGFLAG_OPERATOR,
-                'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid ])]
-
-
-    def get_visible_viewer_mananger_groups_ids(self, cid):
-        '''
-        Returns a list of groups ids whose members automatically gets viewer
-        priviledges on self, and are visbile contact cid.
-        '''
-        return [gig.father_id \
-            for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(where=[
-                'flags & %s <> 0' % CIGFLAG_VIEWER,
+                'flags & %s <> 0' % flag,
                 'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid ])]
 
     def get_manager_groups(self):
