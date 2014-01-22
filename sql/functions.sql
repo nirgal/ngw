@@ -3,6 +3,10 @@ UPDATE contact_group SET field_group=true WHERE id=52;
 UPDATE contact_field SET contact_group_id=52 WHERE id=4;
 UPDATE contact_field SET contact_group_id=52 WHERE id=5;
 
+INSERT INTO contact_field (id, name, hint, type, contact_group_id, sort_weight, system)
+    SELECT 83, 'Groupe par défaut', 'Identifiant du groupe qui obtient automatiquement les privilèges d''opérateur quand cet utilisateur crée un groupe.', 'NUMBER', 52, 500, true
+    WHERE NOT EXISTS (SELECT * FROM contact_field WHERE id=83);
+
 
 
 -- That function returns the set of subgroups of a given group
