@@ -1342,20 +1342,23 @@ def contactgroup_members(request, gid, output_format=''):
     if 'd' in display:
         cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_DECLINED)
         args['display_declined'] = 1
-    if 'o' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_OPERATOR)
-        args['display_operator'] = 1
-    if 'v' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_VIEWER)
-        args['display_viewer'] = 1
+    if 'a' in display:
+        cig_conditions_flags.append('flags & %s <> 0' % (
+            CIGFLAG_OPERATOR | CIGFLAG_VIEWER
+            | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
+            | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
+            | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
+            | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
+            | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES))
+        args['display_admins'] = 1
 
     if cig_conditions_flags:
         cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
         cig_conditions_flags = ' AND False' # display nothing
 
-    if 'g' in display and ('o' in display or 'v' in display):
-        raise ValueError("Can't display both inherited memberships and operators/viewers")
+    if 'g' in display and 'a' in display:
+        raise ValueError("Can't display both inherited memberships and admins")
     if 'g' in display:
         cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
         args['display_subgroups'] = 1
@@ -1724,17 +1727,21 @@ def contactgroup_add_contacts_to(request):
         cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_INVITED)
     if 'd' in display:
         cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_DECLINED)
-    if 'o' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_OPERATOR)
-    if 'v' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_VIEWER)
+    if 'a' in display:
+        cig_conditions_flags.append('flags & %s <> 0' % (
+            CIGFLAG_OPERATOR | CIGFLAG_VIEWER
+            | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
+            | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
+            | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
+            | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
+            | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES))
 
     if cig_conditions_flags:
         cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
     else:
         cig_conditions_flags = ' AND False' # display nothing
 
-    if 'g' in display and ('o' in display or 'v' in display):
+    if 'g' in display and 'a' in display:
         raise ValueError("Can't display both inherited memberships and operators")
     if 'g' in display:
         cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
