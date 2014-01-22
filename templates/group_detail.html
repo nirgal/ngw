@@ -34,7 +34,7 @@
     <input type=checkbox name="display_member" id="id_display_member" {% if display_member %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">Members</label>
     <input type=checkbox name="display_invited" id="id_display_invited" {% if display_invited %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">Invited people</label>
     <input type=checkbox name="display_declined" id="id_display_declined" {% if display_declined %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">Declined invitations</label>
-    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="this.form.display_operator.checked=false; submit_display(this.form);"><label for="id_display_subgroups">Include subgroups</label>
+    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="this.form.display_admins.checked=false; submit_display(this.form);"><label for="id_display_subgroups">Include subgroups</label>
     <input type=checkbox name="display_admins" id="id_display_admins" {% if display_admins %}checked {% endif %}onchange="this.form.display_subgroups.checked=false; submit_display(this.form);"><label for="id_display_admins">Admins</label>
     </form>
     <br>
