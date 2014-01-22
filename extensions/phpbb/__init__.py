@@ -18,33 +18,19 @@ if __name__ == '__main__':
     # TODO: This should be called from top level manage.py
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ngw.settings')
     sys.path.append('/usr/lib')
+from django.db import connections
 from ngw.extensions import hooks
 from ngw.core.models import ( Config, Contact, ContactGroup, ContactFieldValue,
     GROUP_USER_PHPBB, FIELD_LOGIN, FIELD_PHPBB_USERID )
+from ngw.core import contactfield # Need polymorphic upgrades
 
-DATABASE_NAME = 'phpbb3'
 DEFAULT_USER_PERMISSIONS = '00000000006xv1ssxs'
     
-__db__ = None
-def get_common_db():
-    global __db__
-    if not __db__:
-        psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-        for line in open(os.path.sep.join([os.getenv('HOME', '/var/www'), '.pgpass'])):
-            line = unicode(line, 'utf8', 'replace')
-            line = line[:-1] # remove \n
-            host, port, user, database, password = line.split(':')
-            if database == DATABASE_NAME:
-                __db__ = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-                __db__.set_client_encoding('UTF8')
-                break
-    return __db__
-
 __cursor__ = None
 def get_common_cursor():
     global __cursor__
     if not __cursor__:
-        __cursor__ = get_common_db().cursor()
+        __cursor__ = connections['phpbb3'].cursor()
     return __cursor__
 
 def get_phpbb_acl_dictionary():
@@ -120,8 +106,6 @@ def sync_user_base(u):
         set_config('newest_username', str(f_login))
         set_config('num_users', str(int(get_config('num_users'))+1))
         
-        get_common_db().commit()
-
     print("user ids are PHPBB", phpbb_user_id, "and NGW", u.id)
     phpbb_user_id = int(phpbb_user_id)
 
@@ -164,7 +148,6 @@ def sync_user_in_group(ngwuser, phpbb_user_id, php_group_id, ngw_group_id):
             print(sql)
             c.execute(sql)
             phpbb_changed = True
-    get_common_db().commit()
     return phpbb_changed
 
 def sync_user_all(u):
@@ -217,7 +200,6 @@ def login_updated(user, contact):
         return
 
     main_phpbb_changed = sync_user_all(contact)
-    get_common_db().commit()
     if main_phpbb_changed:
         print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
         user.push_message("PHPBB database updated; Cache flushed.")
@@ -235,7 +217,7 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     if len(args)!=1:
-        print("Need exactly one argument\n", fie=sys.stderr)
+        print("Need exactly one argument\n", file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)
     
@@ -260,7 +242,6 @@ if __name__ == "__main__":
 
         for u in user_set:
             main_phpbb_changed = sync_user_all(u) or main_phpbb_changed
-            get_common_db().commit()
         
         if main_phpbb_changed:
             print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
