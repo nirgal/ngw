@@ -1,4 +1,5 @@
 -- Migration script
+UPDATE contact_group SET field_group=true WHERE id=52;
 UPDATE contact_field SET contact_group_id=52 WHERE id=4;
 UPDATE contact_field SET contact_group_id=52 WHERE id=5;
 
