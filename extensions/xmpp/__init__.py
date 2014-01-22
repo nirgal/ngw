@@ -6,8 +6,6 @@
 from __future__ import print_function, unicode_literals
 import sys
 import os
-import psycopg2
-import psycopg2.extensions
 import logging
 if __name__ != '__main__':
     print('XMPP synchronisation extension for NGW loading.')
@@ -15,32 +13,17 @@ if __name__ != '__main__':
 if __name__ == '__main__':
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
+from django.db import connections
 from ngw.core.models import ( ContactFieldValue, ContactGroup,
     FIELD_LOGIN, FIELD_PASSWORD_PLAIN )
 from ngw.extensions import hooks
-
-DATABASE_NAME = 'ejabberd'
-    
-__db__ = None
-def get_common_db():
-    global __db__
-    if not __db__:
-        psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-        for line in open(os.path.sep.join([os.getenv('HOME', '/var/www'), '.pgpass'])):
-            line = unicode(line, 'utf8', 'replace')
-            line = line[:-1] # remove \n
-            host, port, user, database, password = line.split(':')
-            if database == DATABASE_NAME:
-                __db__ = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-                __db__.set_client_encoding('UTF8')
-                break
-    return __db__
 
 __cursor__ = None
 def get_common_cursor():
     global __cursor__
     if not __cursor__:
         __cursor__ = get_common_db().cursor()
+        __cursor__ = connections['jabber'].cursor()
     return __cursor__
 
 def sync_user(u):
@@ -156,7 +139,6 @@ if __name__ == "__main__":
     for u in user_set:
         login = sync_user(u)
         login_set.add(login)
-        get_common_db().commit()
     remove_unknown(login_set)
 
     for l1l2 in options.add_subs:
@@ -165,16 +147,13 @@ if __name__ == "__main__":
         login1 = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=l1)
         login2 = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=l2)
         cross_subscribe(l1, l2)
-    get_common_db().commit()
 
     if options.suball:
         subscribe_everyone(baseusername=options.suball, allusers = user_set, exclude = options.exclude)
-        get_common_db().commit()
 
     # clean up roster group
     for u in user_set:
         clean_rostergroup(u.get_fieldvalue_by_id(FIELD_LOGIN).lower())
-    get_common_db().commit()
 
 if __name__ != '__main__':
     print('XMPP synchronisation extension for NGW loaded.')

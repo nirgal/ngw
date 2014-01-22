@@ -7,8 +7,6 @@ from __future__ import print_function, unicode_literals
 import sys
 import os
 import subprocess
-import psycopg2
-import psycopg2.extensions
 from time import time as timestamp
 
 if __name__ != '__main__':

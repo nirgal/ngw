@@ -17,7 +17,7 @@ DATABASES = {
         'PASSWORD': 'XXX',                  # Not used with sqlite3.
         'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.
         'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-    }
+    },
 
     # Enable this block if you want phpbb3 extension:
     # 'phpbb3': {
@@ -25,7 +25,7 @@ DATABASES = {
     #     'NAME': 'phpbb3',
     #     'USER': 'phpbb3',
     #     'PASSWORD': 'XXX',
-    #     'HOST': '',
+    #     'HOST': 'localhost',
     #     'PORT': '',
     #     'OPTIONS': { 'autocommit': True },
     # },
@@ -36,10 +36,10 @@ DATABASES = {
     #     'NAME': 'jabber',
     #     'USER': 'jabber',
     #     'PASSWORD': 'XXX',
-    #     'HOST': '',
+    #     'HOST': 'localhost',
     #     'PORT': '',
     #     'OPTIONS': { 'autocommit': True },
-    # }
+    # },
 }
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False

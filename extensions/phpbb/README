@@ -33,6 +33,10 @@ $dbport='5432';
 $dbtype='pgsql';
 ?>
 
+In settings.py, you will need to:
+* Enable the DATABASES "phpbb3", and fill in the password
+* Enable the application in INSTALLED_APPS
+
 If you get a white page, make sure you restart apache, not just reload it.
 
 The password to the phpbb database should be set in the ~/.pgpass file.
