@@ -22,7 +22,6 @@ __cursor__ = None
 def get_common_cursor():
     global __cursor__
     if not __cursor__:
-        __cursor__ = get_common_db().cursor()
         __cursor__ = connections['jabber'].cursor()
     return __cursor__
 
