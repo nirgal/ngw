@@ -22,6 +22,21 @@ from __future__ import print_function, unicode_literals
 from django.db import connection
 
 
+def c_has_cg_permany(cid, gid, flags):
+    '''
+    Returns True if contact cid has any permission flags on contact_group gid,
+    either through contact_in_group table or because he's a member of a group
+    that has admin priviledges though group_manage_group.
+    Test is run on any flag: 128|8192 will return users that can view members
+    or files.
+    '''
+    cursor = connection.cursor()
+    cursor.execute("SELECT c_has_cg_permany(%s, %s, %s)", [cid, gid, flags])
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+    return False
+
 def c_can_see_cg(cid, gid):
     '''
     Returns True if contact cid can see existence of contact_group gid.
