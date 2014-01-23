@@ -42,6 +42,9 @@ FTYPE_MULTIPLECHOICE = 'MULTIPLECHOICE'
 FTYPE_PASSWORD = 'PASSWORD'
 
 DEBUG_MEMBERSHIPS = False
+AUTOMATIC_MEMBER_INDICATOR = '⁂'
+AUTOMATIC_ADMIN_INDICATOR = '⁑'
+
 
 #######################################################################
 #
@@ -294,6 +297,9 @@ def membership_to_text(contact_with_extra_fields, group_id):
     flags_inherited = getattr(contact_with_extra_fields, 'group_%s_inherited_flags' % group_id)
     if flags_inherited is None:
         flags_inherited = 0
+    flags_ainherited = getattr(contact_with_extra_fields, 'group_%s_inherited_aflags' % group_id)
+    if flags_ainherited is None:
+        flags_ainherited = 0
     if DEBUG_MEMBERSHIPS:
         if flags & CIGFLAG_MEMBER:
             memberships.append("Member")
@@ -318,28 +324,31 @@ def membership_to_text(contact_with_extra_fields, group_id):
         elif flags & CIGFLAG_DECLINED:
             memberships.append("Declined")
 
-    if flags & CIGFLAG_OPERATOR:
-        memberships.append("Operator")
-    if flags & CIGFLAG_VIEWER:
-        memberships.append("Viewer")
-    if flags & CIGFLAG_CHANGE_CG:
-        memberships.append("Group editor")
-    if flags & CIGFLAG_CHANGE_MEMBERS:
-        memberships.append("Change members")
-    if flags & CIGFLAG_SEE_MEMBERS:
-        memberships.append("See members")
-    if flags & CIGFLAG_WRITE_FIELDS:
-        memberships.append("Write fields")
-    if flags & CIGFLAG_VIEW_FIELDS:
-        memberships.append("Read fields")
-    if flags & CIGFLAG_WRITE_NEWS:
-        memberships.append("Write news")
-    if flags & CIGFLAG_VIEW_NEWS:
-        memberships.append("Read news")
-    if flags & CIGFLAG_WRITE_FILES:
-        memberships.append("Upload files")
-    if flags & CIGFLAG_VIEW_FILES:
-        memberships.append("Read files")
+    if DEBUG_MEMBERSHIPS:
+        for code in 'oveEcCfFnNuU':
+            if flags & TRANS_CIGFLAG_CODE2INT[code]:
+                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
+                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                memberships.append(nice_perm)
+        for code in 'oveEcCfFnNuU':
+            if flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
+                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
+                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                memberships.append(nice_perm + ' ' + AUTOMATIC_ADMIN_INDICATOR)
+    else:
+        if flags & CIGFLAG_OPERATOR:
+            memberships.append('Operator')
+        elif flags_ainherited & CIGFLAG_OPERATOR:
+            memberships.append('Operator' + ' ' + AUTOMATIC_ADMIN_INDICATOR)
+        for code in 'veEcCfFnNuU':
+            if flags & TRANS_CIGFLAG_CODE2INT[code]:
+                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
+                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                memberships.append(nice_perm)
+            elif flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
+                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
+                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                memberships.append(nice_perm + ' ' + AUTOMATIC_ADMIN_INDICATOR)
 
     if memberships:
         return ', '.join(memberships)
@@ -433,14 +442,39 @@ class ContactQuerySet(RawQuerySet):
             # We already have these fields
             return
 
-        # Add fields for direct membership / admin
+        # Add column for direct membership / admin
         self.qry_fields[group_flags_key] = 'cig_%s.flags' % group_id
         self.qry_from.append('LEFT JOIN contact_in_group AS cig_%(gid)s ON (contact.id = cig_%(gid)s.contact_id AND cig_%(gid)s.group_id=%(gid)s)' % {'gid': group_id})
 
-        # Add fields for indirect membership
-        # Use postgresql 'bit_or' aggregate function to get all inherited flags at once in a single column
+        # Add column for indirect membership
         self.qry_fields['group_%s_inherited_flags' % group_id] = 'cig_inherited_%s.flags' % group_id
-        self.qry_from.append('LEFT JOIN (SELECT contact_id, bit_or(flags) AS flags FROM contact_in_group WHERE contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s)) AND contact_in_group.group_id<>%(gid)s GROUP BY contact_id) AS cig_inherited_%(gid)s ON (contact.id = cig_inherited_%(gid)s.contact_id)' % {'gid': group_id})
+        self.qry_from.append('''
+            LEFT JOIN (
+                SELECT contact_id, bit_or(flags) AS flags
+                FROM contact_in_group
+                WHERE contact_in_group.group_id IN (SELECT self_and_subgroups(%(gid)s))
+                    AND contact_in_group.group_id<>%(gid)s
+                GROUP BY contact_id) AS cig_inherited_%(gid)s
+            ON (contact.id = cig_inherited_%(gid)s.contact_id)''' % {'gid': group_id})
+
+        # Add column for inherited admin
+        self.qry_fields['group_%s_inherited_aflags' % group_id] = 'gmg_inherited_%s.flags' % group_id
+        self.qry_from.append('''
+            LEFT JOIN (
+                SELECT contact_id, bit_or(gmg_perms.flags) AS flags
+                FROM contact_in_group
+                JOIN (
+                    SELECT self_and_subgroups(father_id) AS group_id,
+                        bit_or(flags) AS flags
+                    FROM group_manage_group
+                    WHERE subgroup_id=%(gid)s
+                    GROUP BY group_id
+                ) AS gmg_perms
+                ON contact_in_group.group_id=gmg_perms.group_id
+                    AND contact_in_group.flags & 1 <> 0
+                GROUP BY contact_id
+            ) AS gmg_inherited_%(gid)s
+            ON contact.id=gmg_inherited_%(gid)s.contact_id''' % {'gid': group_id})
 
     def add_group_withnote(self, group_id):
         '''
@@ -552,6 +586,8 @@ def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=No
         if format == 'html':
             cols.append( ('Status', None, lambda c: membership_extended_widget(c, current_cg, base_url), None) )
             #cols.append( ('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
+            #cols.append( ('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
+            #cols.append( ('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
         else:
             cols.append( ('Status', None, lambda c: membership_to_text(c, current_cg.id), None) )
             cols.append( ('Note', None, 'group_%s_note' % current_cg.id, None) )

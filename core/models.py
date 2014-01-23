@@ -43,8 +43,6 @@ FIELD_PASSWORD_PLAIN = 74
 FIELD_PASSWORD_STATUS = 75
 FIELD_DEFAULT_GROUP = 83    # GROUP_USER_NGW
 
-AUTOMATIC_MEMBER_INDICATOR = '⁂'
-
 CIGFLAG_MEMBER         =     1 # 'm'ember
 CIGFLAG_INVITED        =     2 # 'i'nvited
 CIGFLAG_DECLINED       =     4 # 'd'eclined invitation
