@@ -1042,7 +1042,7 @@ def contact_delete(request, gid=None, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_add(request, cid=None):
-    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
+    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     filter_str = request.GET['filterstr']
@@ -1061,7 +1061,7 @@ def contact_filters_add(request, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_list(request, cid=None):
-    if cid != request.user.id and not perms.c_can_view_fields_cg(request.user.id, GROUP_USER):
+    if cid != request.user.id and not perms.c_can_view_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
@@ -1086,7 +1086,7 @@ class FilterEditForm(forms.Form):
 @require_group(GROUP_USER_NGW)
 def contact_filters_edit(request, cid=None, fid=None):
     # Warning, here fid is the index in the filter list of a given user
-    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
+    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
