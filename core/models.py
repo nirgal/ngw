@@ -77,6 +77,13 @@ TRANS_CIGFLAG = (
     (CIGFLAG_WRITE_FILES, 'U', 'write_files'),
 )
 
+ADMIN_CIGFLAGS =  (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
+                 | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
+                 | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
+                 | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
+                 | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
+                 | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES)
+
 # dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
 TRANS_CIGFLAG_CODE2INT = {}
 TRANS_CIGFLAG_CODE2TXT = {}

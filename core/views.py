@@ -1368,40 +1368,38 @@ def contactgroup_members(request, gid, output_format=''):
         query_format = 'html'
     q, cols = contact_make_query_with_fields(request.user.id, fields, current_cg=cg, base_url=baseurl, format=query_format)
 
-    cig_conditions_flags = []
+    wanted_flags = 0
     if 'm' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_MEMBER)
-        args['display_member'] = 1
+        wanted_flags |= CIGFLAG_MEMBER
     if 'i' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_INVITED)
-        args['display_invited'] = 1
+        wanted_flags |= CIGFLAG_INVITED
     if 'd' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_DECLINED)
-        args['display_declined'] = 1
+        wanted_flags |= CIGFLAG_DECLINED
     if 'a' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % (
-            CIGFLAG_OPERATOR | CIGFLAG_VIEWER
-            | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
-            | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
-            | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
-            | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
-            | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES))
-        args['display_admins'] = 1
+        wanted_flags |= ADMIN_CIGFLAGS
 
-    if cig_conditions_flags:
-        cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
+    if not wanted_flags:
+        # Show nothing
+        q = q.filter('FALSE')
+    elif not 'g' in display:
+        # Not interested in inheritance:
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+            % (cg.id, wanted_flags))
     else:
-        cig_conditions_flags = ' AND False' # display nothing
+        # We want inherited people
+        or_conditions = []
+        # The local flags
+        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+            % (cg.id, wanted_flags))
+        # The inherited memberships/invited/declined
+        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
+            % (cg.id, wanted_flags & (CIGFLAG_MEMBER|CIGFLAG_INVITED|CIGFLAG_DECLINED)))
+        # The inherited admins
+        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
+            % (cg.id, wanted_flags & ADMIN_CIGFLAGS))
 
-    if 'g' in display and 'a' in display:
-        raise ValueError("Can't display both inherited memberships and admins")
-    if 'g' in display:
-        cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
-        args['display_subgroups'] = 1
-    else:
-        cig_conditions_group = 'group_id=%d' % cg.id
+        q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
 
-    q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND ' + cig_conditions_group + cig_conditions_flags + ')')
     q = filter.apply_filter_to_query(q)
 
     if output_format == 'vcards':
@@ -1490,6 +1488,11 @@ def contactgroup_members(request, gid, output_format=''):
     ####
     args['nav'] = cg.get_smart_navbar()
     args['nav'].add_component('members')
+    args['display_member'] = 'm' in display
+    args['display_invited'] = 'i' in display
+    args['display_declined'] = 'd' in display
+    args['display_subgroups'] = 'g' in display
+    args['display_admins'] = 'a' in display
 
     response = query_print_entities(request, 'group_detail.html', args)
     #from django.db import connection
@@ -1776,35 +1779,39 @@ def contactgroup_add_contacts_to(request):
     display = request.REQUEST.get('display', None)
     if display is None:
         display = cg.get_default_display()
-    cig_conditions_flags = []
+
+    wanted_flags = 0
     if 'm' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_MEMBER)
+        wanted_flags |= CIGFLAG_MEMBER
     if 'i' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_INVITED)
+        wanted_flags |= CIGFLAG_INVITED
     if 'd' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % CIGFLAG_DECLINED)
+        wanted_flags |= CIGFLAG_DECLINED
     if 'a' in display:
-        cig_conditions_flags.append('flags & %s <> 0' % (
-            CIGFLAG_OPERATOR | CIGFLAG_VIEWER
-            | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
-            | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
-            | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
-            | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
-            | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES))
+        wanted_flags |= ADMIN_CIGFLAGS
 
-    if cig_conditions_flags:
-        cig_conditions_flags = ' AND (%s)' % ' OR '.join(cig_conditions_flags)
+    if not wanted_flags:
+        # Show nothing
+        q = q.filter('FALSE')
+    elif not 'g' in display:
+        # Not interested in inheritance:
+        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+            % (cg.id, wanted_flags))
     else:
-        cig_conditions_flags = ' AND False' # display nothing
+        # We want inherited people
+        or_conditions = []
+        # The local flags
+        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+            % (cg.id, wanted_flags))
+        # The inherited memberships/invited/declined
+        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
+            % (cg.id, wanted_flags & (CIGFLAG_MEMBER|CIGFLAG_INVITED|CIGFLAG_DECLINED)))
+        # The inherited admins
+        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
+            % (cg.id, wanted_flags & ADMIN_CIGFLAGS))
 
-    if 'g' in display and 'a' in display:
-        raise ValueError("Can't display both inherited memberships and operators")
-    if 'g' in display:
-        cig_conditions_group = 'group_id IN (SELECT self_and_subgroups(%s))' % cg.id
-    else:
-        cig_conditions_group = 'group_id=%d' % cg.id
+        q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
 
-    q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND ' + cig_conditions_group+cig_conditions_flags + ')')
     q = filter.apply_filter_to_query(q)
 
     args = {}
@@ -1814,7 +1821,6 @@ def contactgroup_add_contacts_to(request):
     args['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
     args['query'] = q
     return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
-
 
 
 
