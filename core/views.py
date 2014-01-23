@@ -271,7 +271,7 @@ def logs(request):
     args['objtype'] = Log
     args['query'] = Log.objects.all()
     args['cols'] = [
-        ( 'Date GMT', None, 'small_date', 'dt'),
+        ( 'Date UTC', None, 'small_date', 'dt'),
         ( 'User', None, 'contact', 'contact__name'),
         ( 'Action', None, 'action_txt', 'action'),
         ( 'Target', None, 'target_repr', 'target_repr'),
