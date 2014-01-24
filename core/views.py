@@ -41,10 +41,6 @@ FTYPE_CHOICE = 'CHOICE'
 FTYPE_MULTIPLECHOICE = 'MULTIPLECHOICE'
 FTYPE_PASSWORD = 'PASSWORD'
 
-DEBUG_MEMBERSHIPS = False
-AUTOMATIC_MEMBER_INDICATOR = '⁂'
-AUTOMATIC_ADMIN_INDICATOR = '⁑'
-
 
 #######################################################################
 #
@@ -289,7 +285,12 @@ def logs(request):
 #
 #######################################################################
 
+
 def membership_to_text(contact_with_extra_fields, group_id):
+    debug_memberships = False
+    automatic_member_indicator = '⁂'
+    automatic_admin_indicator = '⁑'
+
     memberships = []
     flags = getattr(contact_with_extra_fields, 'group_%s_flags' % group_id)
     if flags is None:
@@ -300,55 +301,50 @@ def membership_to_text(contact_with_extra_fields, group_id):
     flags_ainherited = getattr(contact_with_extra_fields, 'group_%s_inherited_aflags' % group_id)
     if flags_ainherited is None:
         flags_ainherited = 0
-    if DEBUG_MEMBERSHIPS:
-        if flags & CIGFLAG_MEMBER:
-            memberships.append("Member")
-        if flags_inherited & CIGFLAG_MEMBER:
-            memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        if flags & CIGFLAG_INVITED:
-            memberships.append("Invited")
-        if flags_inherited & CIGFLAG_INVITED:
-            memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        if flags & CIGFLAG_DECLINED:
-            memberships.append("Declined")
 
-    else:
-        if flags & CIGFLAG_MEMBER:
-            memberships.append("Member")
-        elif flags_inherited & CIGFLAG_MEMBER:
-            memberships.append("Member" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        elif flags & CIGFLAG_INVITED:
-            memberships.append("Invited")
-        elif flags_inherited & CIGFLAG_INVITED:
-            memberships.append("Invited" + " " + AUTOMATIC_MEMBER_INDICATOR)
-        elif flags & CIGFLAG_DECLINED:
-            memberships.append("Declined")
-
-    if DEBUG_MEMBERSHIPS:
-        for code in 'oveEcCfFnNuU':
+    if debug_memberships:
+        # That version show everything, even when obvious like
+        # Inherited member + member
+        for code in 'midoveEcCfFnNuU':
             if flags & TRANS_CIGFLAG_CODE2INT[code]:
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
                 memberships.append(nice_perm)
+        for code in 'mid':
+            if flags_inherited & TRANS_CIGFLAG_CODE2INT[code]:
+                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
+                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                memberships.append(nice_perm + ' ' + automatic_member_indicator)
         for code in 'oveEcCfFnNuU':
             if flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
-                memberships.append(nice_perm + ' ' + AUTOMATIC_ADMIN_INDICATOR)
+                memberships.append(nice_perm + ' ' + automatic_admin_indicator)
     else:
-        if flags & CIGFLAG_OPERATOR:
-            memberships.append('Operator')
-        elif flags_ainherited & CIGFLAG_OPERATOR:
-            memberships.append('Operator' + ' ' + AUTOMATIC_ADMIN_INDICATOR)
-        for code in 'veEcCfFnNuU':
+        if flags & CIGFLAG_MEMBER:
+            memberships.append("Member")
+        elif flags_inherited & CIGFLAG_MEMBER:
+            memberships.append("Member" + " " + automatic_member_indicator)
+        elif flags & CIGFLAG_INVITED:
+            memberships.append("Invited")
+        elif flags_inherited & CIGFLAG_INVITED:
+            memberships.append("Invited" + " " + automatic_member_indicator)
+        elif flags & CIGFLAG_DECLINED:
+            memberships.append("Declined")
+
+        for code in 'ovEcCfFnNuUe':
             if flags & TRANS_CIGFLAG_CODE2INT[code]:
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
                 memberships.append(nice_perm)
+                if code == 'o':
+                    break # Don't show more details then
             elif flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
-                memberships.append(nice_perm + ' ' + AUTOMATIC_ADMIN_INDICATOR)
+                memberships.append(nice_perm + ' ' + automatic_admin_indicator)
+                if code == 'o':
+                    break # Don't show more details then
 
     if memberships:
         return ', '.join(memberships)
