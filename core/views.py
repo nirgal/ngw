@@ -1998,8 +1998,10 @@ def contactingroup_edit(request, gid, cid):
     args['objtype'] = ContactInGroup
 
     initial = {}
-    for intval, code, txt in TRANS_CIGFLAG:
-        initial[txt] = (cig.flags & intval) != 0
+    for code, intval in TRANS_CIGFLAG_CODE2INT.items():
+        if cig.flags & intval:
+            field_name = TRANS_CIGFLAG_CODE2TXT[code]
+            initial[field_name] = True
     initial['note'] = cig.note
 
     if request.method == 'POST':
@@ -2007,9 +2009,9 @@ def contactingroup_edit(request, gid, cid):
         if form.is_valid():
             data = form.cleaned_data
             cig.flags = 0
-            for intval, code, txt in TRANS_CIGFLAG:
-                if data[txt]:
-                    cig.flags |= intval
+            for code, field_name in TRANS_CIGFLAG_CODE2TXT.items():
+                if data[field_name]:
+                    cig.flags |= TRANS_CIGFLAG_CODE2INT[code]
             if not cig.flags:
                 return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid)))
             cig.note = data['note']

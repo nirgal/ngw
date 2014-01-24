@@ -59,22 +59,28 @@ CIGFLAG_WRITE_NEWS     =  4096 # 'N'
 CIGFLAG_VIEW_FILES     =  8192 # 'u'ploaded
 CIGFLAG_WRITE_FILES    = 16384 # 'U'
 
-TRANS_CIGFLAG = (
-    (CIGFLAG_MEMBER, 'm', 'member'),
-    (CIGFLAG_INVITED, 'i', 'invited'),
-    (CIGFLAG_DECLINED, 'd', 'declined'),
-    (CIGFLAG_OPERATOR, 'o', 'operator'),
-    (CIGFLAG_VIEWER, 'v', 'viewer'),
-    (CIGFLAG_SEE_CG, 'e', 'see_group'),
-    (CIGFLAG_CHANGE_CG, 'E', 'change_group'),
-    (CIGFLAG_SEE_MEMBERS, 'c', 'see_members'),
-    (CIGFLAG_CHANGE_MEMBERS, 'C', 'change_members'),
-    (CIGFLAG_VIEW_FIELDS, 'f', 'view_fields'),
-    (CIGFLAG_WRITE_FIELDS, 'F', 'write_fields'),
-    (CIGFLAG_VIEW_NEWS, 'n', 'view_news'),
-    (CIGFLAG_WRITE_NEWS, 'N', 'write_news'),
-    (CIGFLAG_VIEW_FILES, 'u', 'view_files'),
-    (CIGFLAG_WRITE_FILES, 'U', 'write_files'),
+# That information contains:
+# int value (see above)
+# character letter value, kinda human friendly
+# human friendly text, sometimes used in forms field names
+# dependency: 'u':'e' means viewing files implies viewing group existence
+# conflicts: 'F':'f' means can't write to fields unless can read them too
+__cig_flag_info__ = (
+    (CIGFLAG_MEMBER, 'm', 'member', '', 'id'),
+    (CIGFLAG_INVITED, 'i', 'invited', '', 'md'),
+    (CIGFLAG_DECLINED, 'd', 'declined', '', 'mi'),
+    (CIGFLAG_OPERATOR, 'o', 'operator', 'veEcCfFnNuU', ''),
+    (CIGFLAG_VIEWER, 'v', 'viewer', 'ecfnu', ''),
+    (CIGFLAG_SEE_CG, 'e', 'see_group', '', ''),
+    (CIGFLAG_CHANGE_CG, 'E', 'change_group', 'e', ''),
+    (CIGFLAG_SEE_MEMBERS, 'c', 'see_members', 'e', ''),
+    (CIGFLAG_CHANGE_MEMBERS, 'C', 'change_members', 'ec', ''),
+    (CIGFLAG_VIEW_FIELDS, 'f', 'view_fields', 'e', ''),
+    (CIGFLAG_WRITE_FIELDS, 'F', 'write_fields', 'ef', ''),
+    (CIGFLAG_VIEW_NEWS, 'n', 'view_news', 'e', ''),
+    (CIGFLAG_WRITE_NEWS, 'N', 'write_news', 'en', ''),
+    (CIGFLAG_VIEW_FILES, 'u', 'view_files', 'e', ''),
+    (CIGFLAG_WRITE_FILES, 'U', 'write_files', 'eu', ''),
 )
 
 ADMIN_CIGFLAGS =  (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
@@ -87,9 +93,37 @@ ADMIN_CIGFLAGS =  (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
 # dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
 TRANS_CIGFLAG_CODE2INT = {}
 TRANS_CIGFLAG_CODE2TXT = {}
-for intval, code, txt in TRANS_CIGFLAG:
-    TRANS_CIGFLAG_CODE2INT[code] = intval
-    TRANS_CIGFLAG_CODE2TXT[code] = txt
+
+# dict for dependencies
+# TODO: This is new, all was hardcoded and should use this:
+CIGFLAGS_CODEDEPENDS = {}
+
+# dict for cascade deletion of flags
+# TODO: This is new, all was hardcoded and should use this:
+CIGFLAGS_CODEONDELETE = {}
+
+def _initialise_cigflags_constants():
+    if TRANS_CIGFLAG_CODE2INT:
+        return # already initialized
+    for intval, code, txt, requires, conflicts in __cig_flag_info__:
+        TRANS_CIGFLAG_CODE2INT[code] = intval
+        TRANS_CIGFLAG_CODE2TXT[code] = txt
+
+    for intval, code, txt, requires, conflicts in __cig_flag_info__:
+        CIGFLAGS_CODEDEPENDS[code] = requires
+        CIGFLAGS_CODEONDELETE[code] = conflicts
+
+    for cflag, depends in CIGFLAGS_CODEDEPENDS.items():
+        for depend in depends:
+            if cflag not in CIGFLAGS_CODEONDELETE[depend]:
+                CIGFLAGS_CODEONDELETE[depend] += cflag
+
+    #for intval, code, txt, requires, conflicts in __cig_flag_info__:
+    #    print(code, '+', CIGFLAGS_CODEDEPENDS[code],
+    #                '-', CIGFLAGS_CODEONDELETE[code])
+
+# This is run on module loading:
+_initialise_cigflags_constants()
 
 # Ends with a /
 GROUP_STATIC_DIR = "/usr/lib/ngw/static/static/g/"
