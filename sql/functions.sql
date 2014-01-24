@@ -6,6 +6,7 @@ UPDATE contact_field SET contact_group_id=52 WHERE id=5;
 INSERT INTO contact_field (id, name, hint, type, contact_group_id, sort_weight, system)
     SELECT 83, 'Groupe par défaut', 'Identifiant du groupe qui obtient automatiquement les privilèges d''opérateur quand cet utilisateur crée un groupe.', 'NUMBER', 52, 500, true
     WHERE NOT EXISTS (SELECT * FROM contact_field WHERE id=83);
+DROP FUNCTION IF EXISTS perm_c_can_change_fields_cg(integer, integer);
 
 
 
@@ -214,7 +215,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|32);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|32|64|128|256|512|1024|2048|4096|8192|16384);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_cg(integer, integer) RETURNS boolean
@@ -224,17 +225,17 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_members_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|128);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|128|256);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_members_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|64);
+    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|256);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_view_fields_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|512);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|512|1024);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_write_fields_cg(integer, integer) RETURNS boolean
@@ -242,15 +243,9 @@ LANGUAGE SQL STABLE AS $$
     SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|1024);
 $$;
 
--- FIXME: like perm_c_can_change_cg
-CREATE OR REPLACE FUNCTION perm_c_can_change_fields_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT perm_c_can_change_cg($1, $2);
-$$;
-
 CREATE OR REPLACE FUNCTION perm_c_can_see_news_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|2048);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|2048|4096);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_news_cg(integer, integer) RETURNS boolean
@@ -260,7 +255,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_files_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|8192);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|8192|16384);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_files_cg(integer, integer) RETURNS boolean

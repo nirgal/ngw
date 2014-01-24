@@ -11,7 +11,6 @@ c_can_see_members_CG      C can view members of CG
 c_can_change_members_CG   C can change/delete membership in CG (+note)
 c_can_view_fields_CG      C can view C-fields of CG (existence, content for members it can see)
 c_can_write_fields_CG     C can write C-fields of CG
-c_can_change_fields_CG    C can add / change type / delete C-fields of CG
 c_can_see_news_CG N       C can view news of CG
 c_can_change_news_CG      C can change/delete news of CG
 c_can_see_files_CG        C can view files of CG
@@ -109,21 +108,6 @@ def c_can_write_fields_cg(cid, gid):
     '''
     cursor = connection.cursor()
     cursor.execute("SELECT perm_c_can_write_fields_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
-
-
-def c_can_change_fields_cg(cid, gid):
-    '''
-    Returns True if contact cid can add / change type / delete contact_fields
-    of contact_group gid.
-    Here gid is the group that owns the fields, and grants its usage to other
-    groups.
-    '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_change_fields_cg(%s, %s)", [cid, gid])
     row = cursor.fetchone()
     if row:
         return row[0]

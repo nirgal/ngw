@@ -119,8 +119,13 @@ def _initialise_cigflags_constants():
                 CIGFLAGS_CODEONDELETE[depend] += cflag
 
     #for intval, code, txt, requires, conflicts in __cig_flag_info__:
-    #    print(code, '+', CIGFLAGS_CODEDEPENDS[code],
-    #                '-', CIGFLAGS_CODEONDELETE[code])
+    #    print(code,
+    #        str(TRANS_CIGFLAG_CODE2INT[code]),
+    #        '+', CIGFLAGS_CODEDEPENDS[code],
+    #        '|'.join([str(TRANS_CIGFLAG_CODE2INT[flag]) for flag in CIGFLAGS_CODEDEPENDS[code]]),
+    #        '-', CIGFLAGS_CODEONDELETE[code],
+    #        '|'.join([str(TRANS_CIGFLAG_CODE2INT[flag]) for flag in CIGFLAGS_CODEONDELETE[code]]),
+    #    )
 
 # This is run on module loading:
 _initialise_cigflags_constants()
