@@ -1610,6 +1610,9 @@ def contactgroup_edit(request, id):
                 groups_removed = old_groups_ids - new_groups_ids
                 print('flag', flag, 'groups_added=', groups_added)
                 print('flag', flag, 'groups_removed=', groups_removed)
+                if id and (groups_added or groups_removed) and not perms.c_operatorof_cg(request.user.id, id):
+                    # Only operators can change permissions
+                    raise PermissionDenied
                 for ogid in groups_added:
                     try:
                         gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
