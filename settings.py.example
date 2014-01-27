@@ -217,3 +217,7 @@ MESSAGE_STORAGE = 'ngw.core.messages.NgwMessageStorage'
 
 # Uncomment next line to enable GPG keyring
 # GPG_HOME = '/var/lib/ngw/'
+
+# If you enable xmpp extension, you'll need to define these 2 values
+#XMPP_DOMAIN = 'myxmppdomain.net'
+#XMPP_GROUP = 284

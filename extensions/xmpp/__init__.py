@@ -13,6 +13,7 @@ if __name__ != '__main__':
 if __name__ == '__main__':
     sys.path += [ '/usr/lib/' ]
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
+from django.conf import settings
 from django.db import connections
 from ngw.core.models import ( ContactFieldValue, ContactGroup,
     FIELD_LOGIN, FIELD_PASSWORD_PLAIN )
@@ -25,22 +26,6 @@ def get_common_cursor():
         __cursor__ = connections['jabber'].cursor()
     return __cursor__
 
-def sync_user(u):
-    f_login = u.get_fieldvalue_by_id(FIELD_LOGIN)
-    logging.debug("Sync'ing %s", f_login)
-    f_login = f_login.lower()
-    f_password = ContactFieldValue.objects.get(contact_id=u.id, contact_field_id=FIELD_PASSWORD_PLAIN).value
-    sql = 'INSERT INTO users (username, password) SELECT %s, %s WHERE NOT EXISTS (SELECT * FROM users WHERE username=%s)' 
-    get_common_cursor().execute(sql, (f_login, f_password, f_login))
-
-    sql = 'UPDATE users SET password=%s WHERE username=%s'
-    get_common_cursor().execute(sql, (f_password, f_login))
-    return f_login
-
-def remove_unknown(login_set):
-    #TODO
-    pass
-
 def cross_subscribe(login1, login2):
     '''
     login1 & 2 must exists.
@@ -50,7 +35,7 @@ def cross_subscribe(login1, login2):
     login2 = login2.lower()
 
     def _subscribe1(login1, login2):
-        params = { 'username': login1, 'jid': login2+'@hp.greenpeace.fr', 'nick': login2 }
+        params = { 'username': login1, 'jid': login2+'@'+settings.XMPP_DOMAIN, 'nick': login2 }
         sql = "INSERT INTO rosterusers (username, jid, nick, subscription, ask, askmessage, server) SELECT %(username)s, %(jid)s, %(nick)s, 'B', 'N', '', 'N' WHERE NOT EXISTS (SELECT * FROM rosterusers WHERE username=%(username)s AND jid=%(jid)s)"
         get_common_cursor().execute(sql, params)
         sql = "UPDATE rosterusers SET subscription='B', ask='N', server='N', type='item' WHERE username=%(username)s AND jid=%(jid)s"
@@ -95,8 +80,6 @@ def subscribe_everyone(baseusername, allusers, exclude=None):
 ## MAIN
 #######
 
-GROUP_USER_XMPP = 284
-
 if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser()
@@ -133,13 +116,6 @@ if __name__ == "__main__":
     
     logging.info("Sync'ing databases...")
    
-    user_set = ContactGroup.objects.get(pk=GROUP_USER_XMPP).get_all_members()
-    login_set = set()
-    for u in user_set:
-        login = sync_user(u)
-        login_set.add(login)
-    remove_unknown(login_set)
-
     for l1l2 in options.add_subs:
         l1, l2 = l1l2.split(':')
         # Check the logins do exists in the database
