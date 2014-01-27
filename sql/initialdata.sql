@@ -96,7 +96,6 @@ COPY contact_field (id, name, hint, type, contact_group_id, sort_weight, choice_
 14	Ville		TEXT	1	130	\N	t	\N
 48	Pays		CHOICE	1	140	1	t	fr
 73	phpbb user id	Identifiant du forum. Ne pas toucher.	NUMBER	53	400	\N	t	\N
-74	Mot de passe nouveau		PASSWORD	52	410	\N	t	\N
 75	Status du mot de passe	Mis à jour automatiquement	CHOICE	52	420	41	t	\N
 83	Groupe par défaut	Identifiant du groupe qui obtient automatiquement les privilèges d'opérateur quand cet utilisateur crée un groupe.	NUMBER	52	430	\N	t	\N
 \.

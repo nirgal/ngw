@@ -39,7 +39,6 @@ FIELD_POSTCODE = 11
 FIELD_CITY = 14
 FIELD_COUNTRY = 48
 FIELD_PHPBB_USERID = 73
-FIELD_PASSWORD_PLAIN = 74
 FIELD_PASSWORD_STATUS = 75
 FIELD_DEFAULT_GROUP = 83    # GROUP_USER_NGW
 
@@ -501,7 +500,6 @@ class Contact(NgwModel):
         assert hash.startswith('crypt$$'), 'Hash algorithm is imcompatible with apache authentication'
         hash = hash[len('crypt$$'):]
         self.set_fieldvalue(user, FIELD_PASSWORD, hash)
-        self.set_fieldvalue(user, FIELD_PASSWORD_PLAIN, newpassword_plain)
         if new_password_status is None:
             if self.id == user.id:
                 self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, '3') # User defined

@@ -16,7 +16,7 @@ if __name__ == '__main__':
 from django.conf import settings
 from django.db import connections
 from ngw.core.models import ( ContactFieldValue, ContactGroup,
-    FIELD_LOGIN, FIELD_PASSWORD_PLAIN )
+    FIELD_LOGIN )
 from ngw.extensions import hooks
 
 __cursor__ = None

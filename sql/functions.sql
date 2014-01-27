@@ -7,6 +7,8 @@ INSERT INTO contact_field (id, name, hint, type, contact_group_id, sort_weight, 
     SELECT 83, 'Groupe par défaut', 'Identifiant du groupe qui obtient automatiquement les privilèges d''opérateur quand cet utilisateur crée un groupe.', 'NUMBER', 52, 500, true
     WHERE NOT EXISTS (SELECT * FROM contact_field WHERE id=83);
 DROP FUNCTION IF EXISTS perm_c_can_change_fields_cg(integer, integer);
+DELETE FROM contact_field WHERE id=74;
+
 
 
 
