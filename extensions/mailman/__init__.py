@@ -5,7 +5,7 @@ from __future__ import print_function, unicode_literals
 import sys
 import os
 if __name__ != '__main__':
-    print('Mailman synchronisation extension for NGW loading.')
+    print('Mailman synchronisation extension for NGW loading.', file=sys.stderr)
 
 if __name__ == '__main__':
     sys.path += [ '/usr/lib/' ]

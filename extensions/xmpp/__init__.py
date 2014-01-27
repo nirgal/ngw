@@ -8,7 +8,7 @@ import sys
 import os
 import logging
 if __name__ != '__main__':
-    print('XMPP synchronisation extension for NGW loading.')
+    print('XMPP synchronisation extension for NGW loading.', file=sys.stderr)
 
 if __name__ == '__main__':
     sys.path += [ '/usr/lib/' ]
@@ -155,4 +155,4 @@ if __name__ == "__main__":
         clean_rostergroup(u.get_fieldvalue_by_id(FIELD_LOGIN).lower())
 
 if __name__ != '__main__':
-    print('XMPP synchronisation extension for NGW loaded.')
+    print('XMPP synchronisation extension for NGW loaded.', file=sys.stderr)

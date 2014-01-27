@@ -10,7 +10,7 @@ import subprocess
 from time import time as timestamp
 
 if __name__ != '__main__':
-    print('PHPBB forum synchronisation extension for NGW loading.')
+    print('PHPBB forum synchronisation extension for NGW loading.', file=sys.stderr)
 
 if __name__ == '__main__':
     # TODO: This should be called from top level manage.py
@@ -245,5 +245,5 @@ if __name__ == "__main__":
             print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
 
 if __name__ != '__main__':
-    print('PHPBB forum synchronisation extension for NGW loaded.')
+    print('PHPBB forum synchronisation extension for NGW loaded.', file=sys.stderr)
 
