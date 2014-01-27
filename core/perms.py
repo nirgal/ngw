@@ -36,6 +36,17 @@ def c_has_cg_permany(cid, gid, flags):
         return row[0]
     return False
 
+def c_operatorof_cg(cid, gid):
+    '''
+    Returns True if contact cid is an operator of contact_group gid.
+    '''
+    cursor = connection.cursor()
+    cursor.execute("SELECT perm_c_operatorof_cg(%s, %s)", [cid, gid])
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+    return False
+
 def c_can_see_cg(cid, gid):
     '''
     Returns True if contact cid can see existence of contact_group gid.

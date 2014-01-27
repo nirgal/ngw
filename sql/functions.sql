@@ -8,6 +8,8 @@ INSERT INTO contact_field (id, name, hint, type, contact_group_id, sort_weight, 
     WHERE NOT EXISTS (SELECT * FROM contact_field WHERE id=83);
 DROP FUNCTION IF EXISTS perm_c_can_change_fields_cg(integer, integer);
 DELETE FROM contact_field WHERE id=74;
+DROP FUNCTION IF EXISTS c_operatorof_cg(integer, integer);
+DROP FUNCTION IF EXISTS c_viewerof_cg(integer, integer);
 
 
 
@@ -196,24 +198,12 @@ LANGUAGE SQL STABLE AS $$
 $$;
 
 
--- C is operator of group CG if any of this condition is true:
--- * He is a direct operator (flag8)
--- * He is a member (flag1), either directly or indirectly, of a group that has operator (flag8) priviledges
-CREATE OR REPLACE FUNCTION c_operatorof_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT c_has_cg_permany($1, $2, 8);
-$$;
-
--- C is viewer of group CG if any of this condition is true:
--- * He is a direct operator (flag8) or viewer (flag16)
--- * He is a member (flag1), either directly or indirectly, of a group that has operator or viewer (flag16) priviledges
-CREATE OR REPLACE FUNCTION c_viewerof_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT c_has_cg_permany($1, $2, 8|16);
-$$;
-
-
 -- See core/perms.py for a full description of these functions:
+
+CREATE OR REPLACE FUNCTION perm_c_operatorof_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR  c_has_cg_permany($1, $2, 8);
+$$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$

@@ -1713,36 +1713,14 @@ def contactgroup_add_contacts_to(request):
                 raise PermissionDenied
             target_group = get_object_or_404(ContactGroup, pk=target_gid)
             modes=''
-            if request.REQUEST.get('membership_member', False):
-                modes += '+m'
-            if request.REQUEST.get('membership_invited', False):
-                modes += '+i'
-            if request.REQUEST.get('membership_declined', False):
-                modes += '+d'
-            if request.REQUEST.get('membership_operator', False):
-                modes += '+o'
-            if request.REQUEST.get('membership_viewer', False):
-                modes += '+v'
-            if request.REQUEST.get('membership_see_group', False):
-                modes += '+e'
-            if request.REQUEST.get('membership_change_group', False):
-                modes += '+E'
-            if request.REQUEST.get('membership_see_members', False):
-                modes += '+c'
-            if request.REQUEST.get('membership_change_members', False):
-                modes += '+C'
-            if request.REQUEST.get('membership_view_fields', False):
-                modes += '+f'
-            if request.REQUEST.get('membership_write_fields', False):
-                modes += '+F'
-            if request.REQUEST.get('membership_view_news', False):
-                modes += '+n'
-            if request.REQUEST.get('membership_write_news', False):
-                modes += '+N'
-            if request.REQUEST.get('membership_view_files', False):
-                modes += '+u'
-            if request.REQUEST.get('membership_write_files', False):
-                modes += '+U'
+            for flag, propname in TRANS_CIGFLAG_CODE2TXT.items():
+                field_name = 'membership_' + propname
+                if request.REQUEST.get(field_name, False):
+                    modes += '+' + flag
+                    intflag = TRANS_CIGFLAG_CODE2INT[flag]
+                    if intflag & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(request.user.id, target_gid):
+                        # Only operator can grant permissions
+                        raise PermissionDenied
             if not modes:
                 raise ValueError('You must select at least one mode')
 
@@ -1751,6 +1729,7 @@ def contactgroup_add_contacts_to(request):
                 if not param.startswith('contact_'):
                     continue
                 contact_id = param[len('contact_'):]
+                #TODO: Check contact_id can be seen by user
                 contact = get_object_or_404(Contact, pk=contact_id)
                 contacts.append(contact)
             target_group.set_member_n(request.user, contacts, modes)
@@ -2004,12 +1983,17 @@ def contactingroup_edit(request, gid, cid):
         form = ContactInGroupForm(request.POST, initial=initial)
         if form.is_valid():
             data = form.cleaned_data
-            cig.flags = 0
+            newflags = 0
             for code, field_name in TRANS_CIGFLAG_CODE2TXT.items():
                 if data[field_name]:
-                    cig.flags |= TRANS_CIGFLAG_CODE2INT[code]
-            if not cig.flags:
+                    newflags |= TRANS_CIGFLAG_CODE2INT[code]
+            if not newflags:
                 return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid)))
+            if (cig.flags ^ newflags) & ADMIN_CIGFLAGS \
+                and not perms.c_operatorof_cg(request.user.id, cg.id):
+                # If you change any permission flags of that group, you must be a group operator
+                raise PermissionDenied
+            cig.flags = newflags
             cig.note = data['note']
             # TODO: use set_member_1 for logs
             messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))

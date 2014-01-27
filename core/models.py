@@ -286,17 +286,6 @@ class Contact(NgwModel):
         "returns the list of groups that contact has been invited to, directly without group inheritance"
         return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_INVITED)]).order_by('-date', 'name')
 
-#    def get_allgroups_invited(self):
-#        "returns the list of groups that contact has been invited to."
-#        q = Query(ContactInGroup).filter(ContactInGroup.contact_id == self.id ).filter(ContactInGroup.invited==True)
-#        groups = []
-#        for cig in q:
-#            g = Query(ContactGroup).get(cig.group_id)
-#            if g not in groups:
-#                groups.append(g)
-#            g._append_supergroups(groups)
-#        return groups
-
     def get_directgroups_declinedinvitation(self):
         "returns the list of groups that contact has been invited to and he declined the invitation."
         return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_DECLINED)]).order_by('-date', 'name')
@@ -497,7 +486,7 @@ class Contact(NgwModel):
     def set_password(self, user, newpassword_plain, new_password_status=None):
         # TODO check password strength
         hash = make_password(newpassword_plain)
-        assert hash.startswith('crypt$$'), 'Hash algorithm is imcompatible with apache authentication'
+        assert hash.startswith('crypt$$'), 'Hash algorithm is imcompatible with libapache2-mod-auth-pgsql'
         hash = hash[len('crypt$$'):]
         self.set_fieldvalue(user, FIELD_PASSWORD, hash)
         if new_password_status is None:
