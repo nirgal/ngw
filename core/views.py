@@ -2315,7 +2315,7 @@ class FieldEditForm(forms.Form):
         if t:
             # system fields have type disabled, this is ok
             cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
-            if cls_contact_field.has_choice and not self.cleaned_data['choicegroup']:
+            if cls_contact_field.has_choice and not self.cleaned_data.get('choicegroup'):
                 raise forms.ValidationError('You must select a choice group for that type.')
         return self.cleaned_data
 
