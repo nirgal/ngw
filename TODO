@@ -1,5 +1,3 @@
-When you try to add a member, we need to check you can add people to supergroups
-
 When you set supergroups, we need to check you have permission to current people in the supergroups
 
 Default group:
@@ -44,3 +42,7 @@ Implement slicing in ContactQuerySet
 Translation
 
 Session expire
+
+fix_htaccess should create recursively the dir hierarchy if missing
+
+Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
