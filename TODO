@@ -33,7 +33,7 @@ Check file url in group_detail.html
 Check date is not null when creating an event
 
 Enhance xmpp extensions:
-- support isuser/changepassword ?
+- support changepassword ?
 
 Change mod_python (no longer really maintained upstream) to wsgi
 

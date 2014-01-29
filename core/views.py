@@ -827,6 +827,7 @@ def contact_edit(request, gid=None, cid=None):
                 cig.flags = CIGFLAG_MEMBER
                 cig.save()
                 # TODO: Log new cig
+                # TODO: Check can add members in super groups
 
 
             # 2/ In ContactFields
