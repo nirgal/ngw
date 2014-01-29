@@ -1,0 +1,46 @@
+When you try to add a member, we need to check you can add people to supergroups
+
+When you set supergroups, we need to check you have permission to current people in the supergroups
+
+Default group:
+- Grant operator permissions when creating a new group 
+
+Default supergroup(s)
+
+Favorite groups
+
+Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
+- in javascript checkbox
+- in set_member_1
+
+Make a MultiWidget for flags, including javascript pre-checks/clears
+
+Apache view: Check can_read_file permissions for static files, and not membership
+
+Move save() from views to forms
+
+Sticky groups:
+- When you join a 'sticky' group though inheritance, group membership should be permanent.
+
+Invite groups:
+- Disable invitation buttons when a group doesn't support the feature.
+
+Use PermissionDenied exception rather than calling views.unauthorized() directly.
+
+(jpv) Warn the user about 8 bytes length truncation
+(jpv) cracklib
+
+Check file url in group_detail.html
+
+Check date is not null when creating an event
+
+Enhance xmpp extensions:
+- support isuser/changepassword ?
+
+Change mod_python (no longer really maintained upstream) to wsgi
+
+Implement slicing in ContactQuerySet
+
+Translation
+
+Session expire
