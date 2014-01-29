@@ -824,7 +824,7 @@ def contact_edit(request, gid=None, cid=None):
                 log = Log(request.user.id)
 
                 cig = ContactInGroup(contact_id=contact.id, group_id=gid)
-                cig.member = True
+                cig.flags = CIGFLAG_MEMBER
                 cig.save()
                 # TODO: Log new cig
 
