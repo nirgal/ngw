@@ -34,6 +34,7 @@ def cmd_auth(login, domain, password):
     contact = login_value.contact
     if not contact.is_member_of(settings.XMPP_GROUP):
         logging.info('User %s is not member of group XMPP')
+        return False
 
     try:
         dbpassword = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=FIELD_PASSWORD).value
@@ -48,6 +49,20 @@ def cmd_auth(login, domain, password):
     else:
         logging.info('Bad password for user %s' % login)
         return False
+
+def cmd_isuser(login, domain):
+    try:
+        login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=login)
+    except ContactFieldValue.DoesNotExist:
+        logging.info('No user with login %s' % login)
+        return False
+
+    cid = login_value.contact_id
+    contact = login_value.contact
+    if not contact.is_member_of(settings.XMPP_GROUP):
+        logging.info('User %s is not member of group XMPP')
+        return False
+    return True
 
 def main():
     logging.debug('Incoming connection. Reading command length...')
@@ -68,6 +83,8 @@ def main():
     args = args.split(':')
     if cmd == 'auth':
         send_result(cmd_auth(*args))
+    elif cmd == 'isuser':
+        send_result(cmd_isuser(*args))
     else:
         send_result(False)
     
@@ -77,9 +94,11 @@ class Command(NoArgsCommand):
     
     def handle_noargs(self, **options):
         #print(repr(options), file=sys.stderr)
-        #verbosity = options.get('verbosity', 1)
-        #logging.basicConfig(level=logging.DEBUG,
-        #    format='%(asctime)s %(levelname)s %(message)s',
-        #    filename='/tmp/jabauth.log')
+        verbosity = options.get('verbosity', '1')
+        #print('v=', repr(verbosity), file=sys.stderr)
+        if verbosity == '3':
+            logging.basicConfig(level=logging.DEBUG,
+                format='%(asctime)s %(levelname)s %(message)s',
+                filename='/tmp/jabauth.log')
         while True:
             main()
