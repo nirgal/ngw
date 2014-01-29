@@ -26,6 +26,8 @@ from ngw.core import perms
 
 from django.db.models.query import RawQuerySet, sql
 
+import crack
+
 DISP_NAME = 'name'
 DISP_FIELD_PREFIX = 'field_'
 DISP_GROUP_PREFIX = 'group_'
@@ -905,12 +907,18 @@ def contact_edit(request, gid=None, cid=None):
 
 
 class ContactPasswordForm(forms.Form):
-    new_password = forms.CharField(max_length=50, widget=forms.PasswordInput())
-    confirm_password = forms.CharField(max_length=50, widget=forms.PasswordInput())
+    new_password = forms.CharField(max_length=10, widget=forms.PasswordInput())
+    confirm_password = forms.CharField(max_length=10, widget=forms.PasswordInput())
 
     def clean(self):
         if self.cleaned_data.get('new_password', '') != self.cleaned_data.get('confirm_password', ''):
             raise forms.ValidationError('The passwords must match!')
+            
+        try:
+            crack.FascistCheck(self.cleaned_data.get('new_password', ''))
+        except ValueError as err:
+            raise forms.ValidationError(err.message)
+            
         return self.cleaned_data
 
 
