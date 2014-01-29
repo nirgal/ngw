@@ -633,22 +633,11 @@ class ContactGroup(NgwModel):
         "Name will then be clickable in the list"
         return self.get_absolute_url()
 
-    # Don't use that, we need to check permissions
-    #def supergroups_includinghtml(self):
-    #    sgs = self.get_supergroups()
-    #    if not sgs:
-    #        return ''
-    #    return ' (implies ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
-
-    # Don't use that, we need to check permissions
-    #def subgroups_includinghtml(self):
-    #    sgs = self.get_subgroups()
-    #    if not sgs:
-    #        return ''
-    #    return ' (including ' + ', '.join(['<a href="'+g.get_absolute_url()+'">'+html.escape(g.name)+'</a>' for g in sgs]) + ')'
-
     # See group_add_contacts_to.html
     def is_event(self):
+        '''
+        Is this group an event or a permanent group?
+        '''
         return self.date is not None
 
     def html_date(self):
@@ -724,9 +713,8 @@ class ContactGroup(NgwModel):
         if it starts with '+', the mode will be added (dropping incompatible ones).
         Example '+d' actually means '-mi+d'
         if it starst with '-', the mode will be deleted
-        TODO enforce that:
         m/i/d are mutually exclusive
-        returns
+        returns:
         LOG_ACTION_ADD if added
         LOG_ACTION_CHANGE if changed
         LOG_ACTION_DEL if deleted
@@ -765,7 +753,7 @@ class ContactGroup(NgwModel):
                 else: # operation == '-'
                     del_mode |= CIGFLAG_DECLINED
                     add_mode &= ~CIGFLAG_DECLINED
-            elif letter in 'iveEcCfFnNuU':
+            elif letter in 'oveEcCfFnNuU':
                 intmode = TRANS_CIGFLAG_CODE2INT[letter]
                 if operation == '+':
                     add_mode |= intmode
@@ -794,6 +782,15 @@ class ContactGroup(NgwModel):
             intflag = TRANS_CIGFLAG_CODE2INT[flag]
             if add_mode & intflag:
                 if not cig.flags & intflag:
+                    if intflag & ADMIN_CIGFLAGS:
+                        if not perms.c_operatorof_cg(logged_contact.id, self.id):
+                            # You need to be operator to be able to change permissions
+                            raise PermissionDenied
+                    else:
+                        pass # TODO
+                        # You logged_contact needs to be able to add contact
+                        # in all subgroups it's not a member yet, including
+                        # hidden ones
                     cig.flags |= intflag
                     log = Log(contact_id=logged_contact.id)
                     log.action = LOG_ACTION_CHANGE
@@ -806,6 +803,12 @@ class ContactGroup(NgwModel):
                     result = result or LOG_ACTION_CHANGE
             if del_mode & intflag:
                 if cig.flags & intflag:
+                    if intflag & ADMIN_CIGFLAGS:
+                        if not perms.c_operatorof_cg(logged_contact.id, self.id):
+                            # You need to be operator to be able to change permissions
+                            raise PermissionDenied
+                    else:
+                        pass # TODO
                     cig.flags &= ~intflag
                     log = Log(contact_id=logged_contact.id)
                     log.action = LOG_ACTION_CHANGE
