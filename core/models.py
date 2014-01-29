@@ -8,6 +8,7 @@ import os
 from functools import wraps
 from datetime import datetime, timedelta
 import subprocess
+from django.core.exceptions import PermissionDenied
 from django.db import models, connection
 from django import forms
 from django.contrib.auth.hashers import make_password
@@ -15,6 +16,7 @@ from django.http import Http404
 from django.utils import html
 import decoratedstr # Nirgal external package
 from ngw.core.nav import Navbar
+from ngw.core import perms
 from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #FIXME
 #from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
 from ngw.extensions import hooks
@@ -228,6 +230,7 @@ class Choice(NgwModel):
         return self.value
     class Meta:
         db_table = 'choice'
+
 
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
@@ -514,12 +517,28 @@ class Contact(NgwModel):
             cfv.delete()
             logged_contact.push_message("Delete login information for User %s."%(cfv.contact.name))
 
+
     def is_member_of(self, group_id):
+        '''
+        Return True if self is a member of group group_id, either directly or
+        through inheritence.
+        '''
         cin = ContactInGroup.objects.filter(contact_id=self.id).extra(where=['flags & %s <> 0' % CIGFLAG_MEMBER, 'group_id IN (SELECT self_and_subgroups(%s))' % group_id])
         return len(cin) > 0
 
+
+    def is_directmember_of(self, group_id):
+        '''
+        Return True if self is a dirrect member of group group_id. Inheritence
+        is ignored here.
+        '''
+        cin = ContactInGroup.objects.filter(contact_id=self.id).extra(where=['flags & %s <> 0' % CIGFLAG_MEMBER]).filter(group_id=group_id)
+        return len(cin) > 0
+
+
     def is_admin(self):
         return self.is_member_of(GROUP_ADMIN)
+
 
     def update_lastconnection(self):
         # see NgwAuthBackend.enable_lastconnection_updates
@@ -786,11 +805,13 @@ class ContactGroup(NgwModel):
                         if not perms.c_operatorof_cg(logged_contact.id, self.id):
                             # You need to be operator to be able to change permissions
                             raise PermissionDenied
-                    else:
-                        pass # TODO
-                        # You logged_contact needs to be able to add contact
+                    else: # m/i/d
+                        # logged_contact needs to be able to add contacts
                         # in all subgroups it's not a member yet, including
                         # hidden ones
+                        for sg in self.get_supergroups():
+                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(logged_contact.id, sg.id):
+                                raise PermissionDenied
                     cig.flags |= intflag
                     log = Log(contact_id=logged_contact.id)
                     log.action = LOG_ACTION_CHANGE
@@ -807,8 +828,11 @@ class ContactGroup(NgwModel):
                         if not perms.c_operatorof_cg(logged_contact.id, self.id):
                             # You need to be operator to be able to change permissions
                             raise PermissionDenied
-                    else:
-                        pass # TODO
+                    else: # m/i/d
+                        # See comment above
+                        for sg in self.get_supergroups():
+                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(logged_contact.id, sg.id):
+                                raise PermissionDenied
                     cig.flags &= ~intflag
                     log = Log(contact_id=logged_contact.id)
                     log.action = LOG_ACTION_CHANGE
