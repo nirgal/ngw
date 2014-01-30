@@ -913,6 +913,9 @@ class ContactPasswordForm(forms.Form):
         if self.cleaned_data.get('new_password', '') != self.cleaned_data.get('confirm_password', ''):
             raise forms.ValidationError('The passwords must match!')
             
+        if len(self.cleaned_data.get('new_password', '') ) > 8:
+            raise forms.ValidationError("Password can't have more than 8 characters")
+            
         try:
             crack.FascistCheck(self.cleaned_data.get('new_password', ''))
         except ValueError as err:
