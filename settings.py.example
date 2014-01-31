@@ -94,7 +94,7 @@ STATICFILES_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     '/usr/lib/ngw/static/',
-    #'/usr/share/pyshared/django/contrib/admin/static/',
+    ('admin', '/usr/share/pyshared/django/contrib/admin/static/admin'),
     ('javascript', '/usr/share/javascript'),
     ('mailing-generated', '/usr/lib/ngw/mailing/generated'),
 )

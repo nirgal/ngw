@@ -32,8 +32,6 @@
     #CustomLog "/dev/null" " "
     ErrorLog "/usr/lib/ngw/apache_error.log"
 
-    PythonPath "['/usr/lib'] + sys.path"
-        
     <Directory "/usr/lib/ngw/static">
         AllowOverride AuthConfig
     </Directory>
@@ -68,56 +66,59 @@
 		Options -Indexes
     </LocationMatch>
 
-    PythonHandler django.core.handlers.modpython
-    SetEnv DJANGO_SETTINGS_MODULE ngw.settings
-    PythonDebug On
-    PythonAutoReload On
+    # We want HTTP_AUTHORIZATION to go to python for now:
+    WSGIPassAuthorization On
 
+
+    WSGIScriptAliasMatch ^/logout$ /usr/lib/ngw/core/wsgi.py
     <LocationMatch "^/logout$">
-        SetHandler python-program
         # no require valid-user
     </LocationMatch>
+    WSGIScriptAliasMatch ^/logout2$ /usr/lib/ngw/core/wsgi.py
+    <LocationMatch "^/logout2$">
+        # no require valid-user
+    </LocationMatch>
+    WSGIScriptAliasMatch ^/$ /usr/lib/ngw/core/wsgi.py
     <LocationMatch "^/$">
-        SetHandler python-program
         require valid-user
     </LocationMatch>
+    WSGIScriptAlias ^/logs$ /usr/lib/ngw/core/wsgi.py/logs
     <LocationMatch "^/logs$">
-        SetHandler python-program
         require valid-user
     </LocationMatch>
-    <Location "/contacts/">
-        SetHandler python-program
+    WSGIScriptAliasMatch ^/contacts/ /usr/lib/ngw/core/wsgi.py/contacts/
+    <Location "^/contacts/">
         require valid-user
     </Location>
-    <Location "/contactgroups/">
-        SetHandler python-program
+    WSGIScriptAliasMatch ^/contactgroups/ /usr/lib/ngw/core/wsgi.py/contactgroups/
+    <Location "^/contactgroups/">
         require valid-user
     </Location>
-    <Location "/events/">
-        SetHandler python-program
+    WSGIScriptAliasMatch ^/events/ /usr/lib/ngw/core/wsgi.py/events/
+    <Location "^/events/">
         require valid-user
     </Location>
-    <Location "/contactfields/">
-        SetHandler python-program
+    WSGIScriptAliasMatch ^/contactfields/ /usr/lib/ngw/core/wsgi.py/contactfields/
+    <Location "^/contactfields/">
         require valid-user
     </Location>
-    <Location "/choicegroups/">
-        SetHandler python-program
+    WSGIScriptAliasMatch ^/choicegroups/ /usr/lib/ngw/core/wsgi.py/choicegroups/
+    <Location "^/choicegroups/">
         require valid-user
     </Location>
-    <Location "/pks/">
-        SetHandler python-program
+    WSGIScriptAliasMatch ^/pks/ /usr/lib/ngw/core/wsgi.py/pks/
+    <Location "^/pks/">
         require valid-user
     </Location>
+    WSGIScriptAliasMatch ^/test$ /usr/lib/ngw/core/wsgi.py/test
     <LocationMatch "^/test$">
-        SetHandler python-program
         require valid-user
     </LocationMatch>
+    WSGIScriptAliasMatch ^/hook_change_password$ /usr/lib/ngw/core/wsgi.py/hook_change_password
     <LocationMatch "^/hook_change_password$">
-        SetHandler python-program
         require valid-user
     </LocationMatch>
-    
+
     # We want the mime-type icons to be available without extensions
     <Location "/icons">
         Options +MultiViews
