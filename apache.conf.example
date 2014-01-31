@@ -3,6 +3,8 @@
     Redirect permanent / https://ngw
 </VirtualHost>
 
+WSGIPythonPath /usr/lib
+
 <VirtualHost *:443>
     ServerName ngw
 
