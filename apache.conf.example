@@ -72,15 +72,15 @@ WSGIPythonPath /usr/lib
     WSGIPassAuthorization On
 
 
-    WSGIScriptAliasMatch ^/logout$ /usr/lib/ngw/core/wsgi.py
+    WSGIScriptAliasMatch ^/logout$ /usr/lib/ngw/core/wsgi.py/logout
     <LocationMatch "^/logout$">
         # no require valid-user
     </LocationMatch>
-    WSGIScriptAliasMatch ^/logout2$ /usr/lib/ngw/core/wsgi.py
+    WSGIScriptAliasMatch ^/logout2$ /usr/lib/ngw/core/wsgi.py/logout2
     <LocationMatch "^/logout2$">
         # no require valid-user
     </LocationMatch>
-    WSGIScriptAliasMatch ^/$ /usr/lib/ngw/core/wsgi.py
+    WSGIScriptAliasMatch ^/$ /usr/lib/ngw/core/wsgi.py/
     <LocationMatch "^/$">
         require valid-user
     </LocationMatch>

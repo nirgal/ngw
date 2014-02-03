@@ -1,4 +1,12 @@
-Change mod_python (no longer really maintained upstream) to wsgi
+Use wsgi auth handler for non-python http ressources.
+
+
+
+
+
+Switch to python3:
+- Add the last __future__
+- Check decoratedstr
 
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
