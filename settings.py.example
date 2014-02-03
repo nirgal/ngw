@@ -13,10 +13,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
         'NAME': 'ngw',                      # Or path to database file if using sqlite3.
-        'USER': 'XXX',                      # Not used with sqlite3.
-        'PASSWORD': 'XXX',                  # Not used with sqlite3.
-        'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+        # The following settings are not used with sqlite3:
+        'USER': 'XXX',
+        'PASSWORD': 'XXX',
+        'HOST': 'localhost',             # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '',                      # Set to empty string for default.
     },
 
     # Enable this block if you want phpbb3 extension:
@@ -129,6 +130,9 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'ngw.urls'
+
+# Python dotted path to the WSGI application used by Django's runserver.
+WSGI_APPLICATION = 'ngw.core.wsgi.application'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
