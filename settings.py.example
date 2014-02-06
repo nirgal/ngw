@@ -120,10 +120,9 @@ TEMPLATE_LOADERS = (
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
-#    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
 #    'django.middleware.csrf.CsrfViewMiddleware',
-#    'django.contrib.auth.middleware.AuthenticationMiddleware', # set up request.user from session
-    'ngw.core.basicauth.AuthenticationMiddleware', # set up request.user from basic auth
+    'django.contrib.auth.middleware.AuthenticationMiddleware', # set up request.user from session
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -142,9 +141,9 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
-#    'django.contrib.auth',
-#    'django.contrib.contenttypes',
-#    'django.contrib.sessions',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
 #    'django.contrib.sites',
     'django.contrib.messages',
 #    'django.contrib.staticfiles', # Don't enable here or '/' won't work, see urls.py
@@ -174,15 +173,18 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 AUTHENTICATION_BACKENDS = (
     'ngw.core.authbackend.NgwAuthBackend',
 )
-#LOGIN_URL = '/login' # We are not using contrib.auth
-#LOGIN_REDIRECT_URL = '/' # We are not using contrib.auth
+
+AUTH_USER_MODEL = 'core.Contact'
+
+LOGIN_URL = '/login'
+LOGIN_REDIRECT_URL = '/'
 
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.CryptPasswordHasher',
 )
-# We are not using sessions
-#SESSION_COOKIE_AGE = 600
-#SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
+
+SESSION_COOKIE_AGE = 1800 # 30'
+SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -220,7 +222,7 @@ MESSAGE_STORAGE = 'ngw.core.messages.NgwMessageStorage'
 #PASSWORD_LETTER = '/usr/lib/ngw/mailing/templates/resetpassword.odt'
 
 # Uncomment next line to enable GPG keyring
-# GPG_HOME = '/var/lib/ngw/'
+#GPG_HOME = '/var/lib/ngw/'
 
 # If you enable xmpp extension, you'll need to define these 2 values
 #XMPP_DOMAIN = 'myxmppdomain.net'

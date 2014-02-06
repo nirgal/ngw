@@ -21,11 +21,37 @@ import os
 # os.environ["DJANGO_SETTINGS_MODULE"] = "ngw.settings"
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ngw.settings")
 
+from django import db
+from django.utils.encoding import force_bytes
+from django.contrib import auth
+from django.contrib.auth.handlers.modwsgi import check_password
+from ngw.core.models import ContactGroup
+
+def groups_for_user(environ, username):
+    """
+    Authorizes a user based on groups
+    """
+    UserModel = auth.get_user_model()
+    db.reset_queries()
+
+    try:
+        try:
+            user = UserModel._default_manager.get_by_natural_key(username)
+        except UserModel.DoesNotExist:
+            return []
+        if not user.is_active:
+            return []
+        groups = ContactGroup.objects.extra(where=[
+            'perm_c_can_see_files_cg(%s, contact_group.id)' % user.id])
+        return [force_bytes(group.id) for group in groups]
+    finally:
+        db.close_connection()
+
 # This application object is used by any WSGI server configured to use this
 # file. This includes Django's development server, if the WSGI_APPLICATION
 # setting points here.
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
+from django.core.handlers.wsgi import WSGIHandler
+application = WSGIHandler()
 
 # Apply WSGI middleware here.
 # from helloworld.wsgi import HelloWorldApplication

@@ -11,7 +11,7 @@ import subprocess
 from django.core.exceptions import PermissionDenied
 from django.db import models, connection
 from django import forms
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.http import Http404
 from django.utils import html
 import decoratedstr # Nirgal external package
@@ -257,9 +257,28 @@ class ChoiceGroup(NgwModel):
     get_link_name = NgwModel.get_absolute_url
 
 
+class MyContactManager(models.Manager):
+    # TODO: Maybe BaseUserManager is a better base class
+    def get_by_natural_key(self, username):
+        try:
+            login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=username)
+        except ContactFieldValue.DoesNotExist:
+            raise Contact.DoesNotExist
+        except ContactFieldValue.MultipleObjectsReturned:
+            raise Contact.MultipleObjectsReturned
+        return login_value.contact
+
+
 class Contact(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
+
+    objects = MyContactManager()
+    USERNAME_FIELD = 'name' # Needed by contrib.auth
+    REQUIRED_FIELDS = [] # Needed by contrib.auth
+
+    is_active = True # FIXME
+
     class Meta:
         db_table = 'contact'
 
@@ -269,8 +288,32 @@ class Contact(NgwModel):
     def __unicode__(self):
         return self.name
 
+    def  is_anonymous():
+        '''
+        Always returns False. Not like AnonymousUser.
+        See https://docs.djangoproject.com/en/1.5/ref/contrib/auth/#methods
+        '''
+        return False
+
     def is_authenticated(self):
+        '''
+        Always returns True. Not like AnonymousUser.
+        See https://docs.djangoproject.com/en/1.5/ref/contrib/auth/#methods
+        '''
         return True
+
+    def check_password(self, raw_password):
+        """
+        Returns a boolean of whether the raw_password was correct. Handles
+        hashing formats behind the scenes.
+        """
+        #def setter(raw_password):
+        #    self.set_password(raw_password)
+        #    self.save(update_fields=["password"])
+        dbpassword = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=FIELD_PASSWORD).value
+        if not dbpassword:
+            return None
+        return check_password(raw_password, 'crypt$$'+dbpassword) #, setter)
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):

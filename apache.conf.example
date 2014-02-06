@@ -12,22 +12,6 @@ WSGIPythonPath /usr/lib
     SSLCertificateFile /etc/ssl/certs/ngw.crt
     SSLCertificateKeyFile /etc/ssl/private/ngw.key
  
-#    DBD module does not support groups. Disabled.
-#    DBDriver pgsql
-#    DBDParams "host=localhost dbname=ngw user=XXXXXXXX password=XXXXXXXX"
-#    <Location "/">
-#        AuthType Basic
-#        # TODO: AuthType Digest require another password encryption scheme
-#        AuthName "ngw"
-#        AuthBasicProvider dbd
-#        #AuthDigestProvider dbd
-#        AuthDBDUserPWQuery "SELECT passwd FROM contact WHERE login = %s"
-#        # The following line is used for "AuthType Digest" where the real is part of the md5 hash
-#        #AuthDBDUserRealmQuery "SELECT passwd FROM contact WHERE login = %s"
-#        #AuthDigestDomain https://nike.fr.gl3 https://niketest.fr.gl3 http://nike.fr.gl3 http://niketest.fr.gl3
-#        Require valid-user
-#    </Location>
-
     DocumentRoot "/usr/lib/ngw/static"
     AddDefaultCharset UTF-8
     ServerSignature Off
@@ -42,22 +26,11 @@ WSGIPythonPath /usr/lib
     </Location>
 
     <Location "/">
-        Auth_PG_host            localhost
-        Auth_PG_port            5432
-        Auth_PG_database        ngw
-        Auth_PG_user            XXXXXXXX
-        Auth_PG_pwd             XXXXXXXX
-        Auth_PG_pwd_table       auth_users
-        Auth_PG_grp_table       auth_user_groups
-        Auth_PG_uid_field       login
-        Auth_PG_pwd_field       password
-        Auth_PG_grp_user_field  login
-        Auth_PG_grp_group_field gid
-        Auth_PG_log_table       apache_log
-        Auth_PG_log_uname_field login
-        Auth_PG_log_date_field  lastconnection
         AuthType Basic
         AuthName "ngw"
+        AuthBasicProvider wsgi
+        WSGIAuthUserScript /usr/lib/ngw/core/wsgi.py
+        WSGIAuthGroupScript /usr/lib/ngw/core/wsgi.py
     </Location>
 
     Alias /admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
@@ -72,54 +45,21 @@ WSGIPythonPath /usr/lib
     WSGIPassAuthorization On
 
 
-    WSGIScriptAliasMatch ^/logout$ /usr/lib/ngw/core/wsgi.py/logout
-    <LocationMatch "^/logout$">
-        # no require valid-user
-    </LocationMatch>
-    WSGIScriptAliasMatch ^/logout2$ /usr/lib/ngw/core/wsgi.py/logout2
-    <LocationMatch "^/logout2$">
-        # no require valid-user
-    </LocationMatch>
-    WSGIScriptAliasMatch ^/$ /usr/lib/ngw/core/wsgi.py/
-    <LocationMatch "^/$">
-        require valid-user
-    </LocationMatch>
-    WSGIScriptAlias ^/logs$ /usr/lib/ngw/core/wsgi.py/logs
-    <LocationMatch "^/logs$">
-        require valid-user
-    </LocationMatch>
-    WSGIScriptAliasMatch ^/contacts/ /usr/lib/ngw/core/wsgi.py/contacts/
-    <Location "^/contacts/">
-        require valid-user
-    </Location>
-    WSGIScriptAliasMatch ^/contactgroups/ /usr/lib/ngw/core/wsgi.py/contactgroups/
-    <Location "^/contactgroups/">
-        require valid-user
-    </Location>
-    WSGIScriptAliasMatch ^/events/ /usr/lib/ngw/core/wsgi.py/events/
-    <Location "^/events/">
-        require valid-user
-    </Location>
-    WSGIScriptAliasMatch ^/contactfields/ /usr/lib/ngw/core/wsgi.py/contactfields/
-    <Location "^/contactfields/">
-        require valid-user
-    </Location>
-    WSGIScriptAliasMatch ^/choicegroups/ /usr/lib/ngw/core/wsgi.py/choicegroups/
-    <Location "^/choicegroups/">
-        require valid-user
-    </Location>
-    WSGIScriptAliasMatch ^/pks/ /usr/lib/ngw/core/wsgi.py/pks/
-    <Location "^/pks/">
-        require valid-user
-    </Location>
-    WSGIScriptAliasMatch ^/test$ /usr/lib/ngw/core/wsgi.py/test
-    <LocationMatch "^/test$">
-        require valid-user
-    </LocationMatch>
-    WSGIScriptAliasMatch ^/hook_change_password$ /usr/lib/ngw/core/wsgi.py/hook_change_password
-    <LocationMatch "^/hook_change_password$">
-        require valid-user
-    </LocationMatch>
+    WSGIScriptAliasMatch ^(/login)$             /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/logout)$            /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/)$                  /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/logs)$              /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/contacts/.*)$       /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/contactgroups/.*)$  /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/events/.*)$         /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/contactfields/.*)$  /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/choicegroups/.*)$   /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/pks/.*)$            /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/test)$              /usr/lib/ngw/core/wsgi.py$1
+    #WSGIScriptAliasMatch ^/hook_change_password$ /usr/lib/ngw/core/wsgi.py/hook_change_password
+    #<LocationMatch "^/hook_change_password$">
+    #    require valid-user
+    #</LocationMatch>
 
     # We want the mime-type icons to be available without extensions
     <Location "/icons">

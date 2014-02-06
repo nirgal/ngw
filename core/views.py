@@ -13,9 +13,9 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-#from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
-from ngw.core.basicauth import login_required
 from ngw.core.models import *
 from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
@@ -59,9 +59,9 @@ def ngw_base_url(request):
 
 
 def logout(request):
-    #need to call auth_logout(request) when using auth contrib module
+    auth_logout(request)
     return render_to_response('message.html', {
-        'message': mark_safe('Have a nice day!<br><a href="%(url)s">Login again</a>' % { 'url': ngw_base_url(request) })
+        'message': mark_safe('Have a nice day!<br><a href="%s">Login again</a>' % settings.LOGIN_URL)
         }, RequestContext(request))
 
 

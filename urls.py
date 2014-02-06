@@ -43,7 +43,7 @@ urlpatterns = patterns('',
 
     url(r'^hook_change_password$', 'ngw.core.views.hook_change_password'),
 
-    #url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
+    url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
     url(r'^logout$', 'ngw.core.views.logout'),
 
     url(r'^logs$', 'ngw.core.views.logs'),

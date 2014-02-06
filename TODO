@@ -1,9 +1,3 @@
-Use wsgi auth handler for non-python http ressources.
-
-
-
-
-
 Switch to python3:
 - Add the last __future__
 - Check decoratedstr
@@ -22,8 +16,6 @@ Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 - in set_member_1
 
 Make a MultiWidget for flags, including javascript pre-checks/clears
-
-Apache view: Check can_read_file permissions for static files, and not membership
 
 Move save() from views to forms
 

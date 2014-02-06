@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.utils import html
 from django.template import RequestContext
 from django.shortcuts import render_to_response
-from ngw.core.basicauth import login_required
+from django.contrib.auth.decorators import login_required
 from ngw.core.models import ( 
     ContactField, ContactGroup, ChoiceGroup,
     EmptyBoundFilter, AndBoundFilter, OrBoundFilter,

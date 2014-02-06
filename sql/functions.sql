@@ -10,6 +10,8 @@ DROP FUNCTION IF EXISTS perm_c_can_change_fields_cg(integer, integer);
 DELETE FROM contact_field WHERE id=74;
 DROP FUNCTION IF EXISTS c_operatorof_cg(integer, integer);
 DROP FUNCTION IF EXISTS c_viewerof_cg(integer, integer);
+DROP VIEW IF EXISTS auth_users;
+DROP VIEW IF EXISTS apache_log;
 
 
 
@@ -82,11 +84,11 @@ $$;
 --
 
 -- That query is used by apache module auth_pgsql to authenticate users:
-CREATE OR REPLACE VIEW auth_users (login, password) AS
-    SELECT login_values.value, password_values.value
-    FROM contact_field_value AS login_values
-    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
-    WHERE login_values.contact_field_id=1;
+-- CREATE OR REPLACE VIEW auth_users (login, password) AS
+--     SELECT login_values.value, password_values.value
+--     FROM contact_field_value AS login_values
+--     JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
+--     WHERE login_values.contact_field_id=1;
 
 -- That query is used by apache module auth_pgsql to check groups:
 CREATE OR REPLACE VIEW auth_user_groups ( login, gid ) AS 
@@ -107,75 +109,34 @@ CREATE OR REPLACE VIEW auth_users_bb (login, password) AS
 -- This is a helper view for apache module auth_pgsql:
 -- Auth_PG_log_table points to this
 -- "lastconection" gets updated at each request
-CREATE OR REPLACE VIEW apache_log (login, lastconnection) AS
-    SELECT login_values.value, lastconnection_values.value
-    FROM contact_field_value AS login_values
-    JOIN contact_field_value AS lastconnection_values ON (login_values.contact_id=lastconnection_values.contact_id AND lastconnection_values.contact_field_id=3)
-    WHERE login_values.contact_field_id=1;
-
-CREATE OR REPLACE RULE apache_log_ins AS ON INSERT TO apache_log
-    DO INSTEAD
-    (
-        -- Create lastconnection value if missing
-        INSERT INTO contact_field_value
-            SELECT login_values.contact_id, 3, NULL
-                FROM contact_field_value AS login_values
-                WHERE login_values.value = NEW.login
-                AND NOT EXISTS ( 
-                    SELECT *
-                    FROM contact_field_value AS probe_login JOIN contact_field_value AS probe_lastconnection
-                    ON (probe_login.contact_id = probe_lastconnection.contact_id AND probe_login.contact_field_id=1 AND probe_lastconnection.contact_field_id=3)
-                    WHERE probe_login.value = NEW.login
-                );
-        -- Update lastconnection value
-        UPDATE contact_field_value
-            SET value = NEW.lastconnection
-            WHERE contact_field_id=3
-            AND contact_id = (
-                SELECT login_values.contact_id FROM contact_field_value AS login_values
-                WHERE login_values.value = NEW.login
-                    AND login_values.contact_field_id=1);
-    );
-
-
-
--- Create a view compatible with django.contrib.auth
---
--- CREATE OR REPLACE VIEW auth_user (id, username, first_name, last_name, email, password, is_staff, is_active, is_superuser, last_login, date_joined) AS
--- SELECT contact.id AS id,
---    login_values.value AS username,
---    contact.name AS first_name,
---    '' AS last_name,
---    email_values.value AS email,
---    'crypt$$'||password_values.value AS password,
---    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(52)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND flags & 1 <> 0 AND contact_in_group.contact_id=contact.id) AS is_staff,
---    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(2)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND flags & 1 <> 0 AND contact_in_group.contact_id=contact.id) AS is_active,
---    EXISTS(SELECT * FROM (SELECT self_and_subgroups FROM self_and_subgroups(8)) AS user_groups JOIN contact_in_group ON user_groups.self_and_subgroups = contact_in_group.group_id AND flags & 1 <> 0 AND contact_in_group.contact_id=contact.id) AS is_superuser,
---    lastconnection_values.value AS last_login,
---    '1970-01-01 00:00:00'::timestamp AS date_joined
--- FROM contact
--- JOIN contact_field_value AS login_values ON contact.id = login_values.contact_id AND login_values.contact_field_id = 1
--- LEFT JOIN contact_field_value AS email_values ON contact.id = email_values.contact_id AND email_values.contact_field_id = 7
--- JOIN contact_field_value AS password_values ON contact.id = password_values.contact_id AND password_values.contact_field_id = 2
--- LEFT JOIN contact_field_value AS lastconnection_values ON contact.id = lastconnection_values.contact_id AND lastconnection_values.contact_field_id = 3
--- ;
--- CREATE OR REPLACE RULE auth_user_upd AS ON UPDATE TO auth_user
+-- CREATE OR REPLACE VIEW apache_log (login, lastconnection) AS
+--     SELECT login_values.value, lastconnection_values.value
+--     FROM contact_field_value AS login_values
+--     JOIN contact_field_value AS lastconnection_values ON (login_values.contact_id=lastconnection_values.contact_id AND lastconnection_values.contact_field_id=3)
+--     WHERE login_values.contact_field_id=1;
+-- 
+-- CREATE OR REPLACE RULE apache_log_ins AS ON INSERT TO apache_log
 --     DO INSTEAD
 --     (
 --         -- Create lastconnection value if missing
 --         INSERT INTO contact_field_value
---             SELECT NEW.id, 3, NULL
---                 WHERE NOT EXISTS ( 
+--             SELECT login_values.contact_id, 3, NULL
+--                 FROM contact_field_value AS login_values
+--                 WHERE login_values.value = NEW.login
+--                 AND NOT EXISTS ( 
 --                     SELECT *
---                     FROM contact_field_value AS probe
---                     WHERE probe.contact_id = NEW.id
---                     AND probe.contact_field_id=3);
+--                     FROM contact_field_value AS probe_login JOIN contact_field_value AS probe_lastconnection
+--                     ON (probe_login.contact_id = probe_lastconnection.contact_id AND probe_login.contact_field_id=1 AND probe_lastconnection.contact_field_id=3)
+--                     WHERE probe_login.value = NEW.login
+--                 );
 --         -- Update lastconnection value
 --         UPDATE contact_field_value
---             SET value = NEW.last_login
+--             SET value = NEW.lastconnection
 --             WHERE contact_field_id=3
---             AND contact_id = NEW.id;
---         -- TODO: raise if other value changed
+--             AND contact_id = (
+--                 SELECT login_values.contact_id FROM contact_field_value AS login_values
+--                 WHERE login_values.value = NEW.login
+--                     AND login_values.contact_field_id=1);
 --     );
 
 

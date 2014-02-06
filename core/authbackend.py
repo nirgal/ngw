@@ -2,8 +2,13 @@
 
 from __future__ import print_function, unicode_literals
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.signals import user_logged_in
+from django.contrib.auth.models import update_last_login
 from ngw.core.models import ( Contact, ContactFieldValue,
     FIELD_LOGIN, FIELD_PASSWORD )
+
+# Ugly work around for update_last_login that is hardcoded in crontrib.auth :
+user_logged_in.disconnect(update_last_login)
 
 class NgwAuthBackend(object):
     """
@@ -14,7 +19,7 @@ class NgwAuthBackend(object):
     supports_inactive_user = False
     
     # Set to True if apache doesn't do it by itself
-    enable_lastconnection_updates = False
+    enable_lastconnection_updates = True
 
     def authenticate(self, username=None, password=None):
         if not username or not password:
