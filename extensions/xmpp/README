@@ -1,6 +1,16 @@
 This ngw extension provide ejabberd authentication against django database.
 
 /etc/ejabberd/ejabberd.cfg will need to contain something like:
-
 {auth_method, external}.
 {extauth_program, "/usr/lib/ngw/manage.py ejabberd_auth"}.
+
+
+Also, you'll need to define some constants in your settings.py:
+
+XMPP_DOMAIN should be the domain your xmpp server is offering
+
+XMPP_GROUP is an integer and must be the ContactGroup containing users who
+  are allowed to connect to the server. Adding and removing contacts from
+  that group automatically grants and revoke permissions to connect to the
+  jabber daemon.
+
