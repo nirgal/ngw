@@ -1,7 +1,3 @@
-Switch to python3:
-- Add the last __future__
-- Check decoratedstr
-
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
 Default group:
@@ -38,8 +34,11 @@ Implement slicing in ContactQuerySet
 
 Translation
 
-Session expire
-
 fix_htaccess should create recursively the dir hierarchy if missing
 
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
+
+Switch to python3:
+- Add the last __future__
+- Check decoratedstr
+

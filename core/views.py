@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-from __future__ import print_function, unicode_literals
+from __future__ import division, print_function, unicode_literals
 from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
@@ -220,7 +220,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
     args['order'] = order
     args['count'] = totalcount
     args['page'] = page
-    args['npages'] = (totalcount+NB_LINES_PER_PAGE-1)/NB_LINES_PER_PAGE
+    args['npages'] = (totalcount+NB_LINES_PER_PAGE-1)//NB_LINES_PER_PAGE
 
     if not args.has_key('baseurl'):
         args['baseurl'] = '?'
@@ -2515,7 +2515,7 @@ class ChoicesField(forms.MultiValueField):
         possibles_values = forms.MultiValueField.clean(self, value).split(',')
         #print('possibles_values=', repr(possibles_values))
         keys = []
-        for i in range(len(possibles_values)/2):
+        for i in range(len(possibles_values)//2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
                 continue # ignore lines without values
@@ -2569,7 +2569,7 @@ class ChoiceGroupForm(forms.Form):
 
         # first ignore lines with empty keys, and update auto_key
         auto_key = 0
-        for i in range(len(possibles_values)/2):
+        for i in range(len(possibles_values)//2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
                 continue # ignore lines whose value is empty
@@ -2583,7 +2583,7 @@ class ChoiceGroupForm(forms.Form):
         auto_key += 1
 
         # now generate key for empty ones
-        for i in range(len(possibles_values)/2):
+        for i in range(len(possibles_values)//2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
                 continue # ignore lines whose value is empty

@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-from __future__ import print_function, unicode_literals
+from __future__ import division, print_function, unicode_literals
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.auth.models import update_last_login

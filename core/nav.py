@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 
-from __future__ import print_function, unicode_literals
+from __future__ import division, print_function, unicode_literals
 from django.utils import html
 
 # TODO: We should realy make all the calls to Navbar from url.py
