@@ -1,17 +1,10 @@
 -- Migration script
-UPDATE contact_group SET field_group=true WHERE id=52;
-UPDATE contact_field SET contact_group_id=52 WHERE id=4;
-UPDATE contact_field SET contact_group_id=52 WHERE id=5;
-
-INSERT INTO contact_field (id, name, hint, type, contact_group_id, sort_weight, system)
-    SELECT 83, 'Groupe par défaut', 'Identifiant du groupe qui obtient automatiquement les privilèges d''opérateur quand cet utilisateur crée un groupe.', 'NUMBER', 52, 500, true
-    WHERE NOT EXISTS (SELECT * FROM contact_field WHERE id=83);
-DROP FUNCTION IF EXISTS perm_c_can_change_fields_cg(integer, integer);
-DELETE FROM contact_field WHERE id=74;
 DROP FUNCTION IF EXISTS c_operatorof_cg(integer, integer);
 DROP FUNCTION IF EXISTS c_viewerof_cg(integer, integer);
 DROP VIEW IF EXISTS auth_users;
 DROP VIEW IF EXISTS apache_log;
+DROP VIEW IF EXISTS auth_users_bb;
+-- End migration script
 
 
 
@@ -91,20 +84,20 @@ $$;
 --     WHERE login_values.contact_field_id=1;
 
 -- That query is used by apache module auth_pgsql to check groups:
-CREATE OR REPLACE VIEW auth_user_groups ( login, gid ) AS 
-    SELECT DISTINCT login_values.value, automatic_group_id
-        FROM contact_in_group 
-        JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
-        (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
-        WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.flags & 1 <> 0;
+-- CREATE OR REPLACE VIEW auth_user_groups ( login, gid ) AS 
+--     SELECT DISTINCT login_values.value, automatic_group_id
+--         FROM contact_in_group 
+--         JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
+--         (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
+--         WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.flags & 1 <> 0;
 
 -- That query is used by apache module auth_pgsql to authenticate users in the phpbb extension:
-CREATE OR REPLACE VIEW auth_users_bb (login, password) AS
-    SELECT login_values.value, password_values.value
-    FROM contact_field_value AS login_values
-    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
-    WHERE login_values.contact_field_id=1
-        AND EXISTS (SELECT * FROM auth_user_groups WHERE auth_user_groups.login=login_values.value AND auth_user_groups.gid=53);
+--CREATE OR REPLACE VIEW auth_users_bb (login, password) AS
+--    SELECT login_values.value, password_values.value
+--    FROM contact_field_value AS login_values
+--    JOIN contact_field_value AS password_values ON (login_values.contact_id=password_values.contact_id AND password_values.contact_field_id=2)
+--    WHERE login_values.contact_field_id=1
+--        AND EXISTS (SELECT * FROM auth_user_groups WHERE auth_user_groups.login=login_values.value AND auth_user_groups.gid=53);
 
 -- This is a helper view for apache module auth_pgsql:
 -- Auth_PG_log_table points to this

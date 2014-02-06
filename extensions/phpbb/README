@@ -51,6 +51,7 @@ Add to your ngw/apache.conf:
     Include "/etc/phpbb3/apache2.conf"
     <Location "/phpbb/">
         require valid-user
+	require group 53
     </Location>
 
 In the admin control panel, in general, in client communication, in authentication, change authentication method from "Db" to "Apache".
@@ -114,7 +115,7 @@ Don't forget to set up the main ngw databse in this file.
 
 
 If you setup a backup script, you'll need to create a ~/.pgpass file for the user running the backups.
-The .pgpass file syntax is available at http://www.postgresql.org/docs/8.3/interactive/libpq-pgpass.html
+The .pgpass file syntax is available at http://www.postgresql.org/docs/9.1/interactive/libpq-pgpass.html
 It might be something like:
 localhost:5432:phpbb3:phpbb3:XXXXXXXX
 Make sure the file is also protected locally:
