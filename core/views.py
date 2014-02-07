@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirec
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.shortcuts import render_to_response, get_object_or_404
-from django.template import loader, RequestContext, Template
+from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
 from django.contrib.auth.decorators import login_required
@@ -375,24 +375,9 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
     params['title'] = contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date()
     params['base_url'] = base_url
 
-
-    #FIXME: Use a .html file, don't import Template
-    return  Template('''
-<a href="javascript:show_membership_extrainfo({{cid}})">{{membership_str}}</a>
-{% if note %}<br>{{note}}{% endif %}
-<div class=membershipextra id="membership_{{cid}}">
-    <a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>
-    {{title}}<br>
-    <form action="{{cid}}/membershipinline" method=post>
-        {% csrf_token %}
-        <input type=hidden name="next_url" value="../../members/{{base_url}}">
-        <input type=radio name=membership value=invited id="contact_{{cid}}_invited" {% if invited %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_invited">Invited</label>
-        <input type=radio name=membership value=member id="contact_{{cid}}_member" {% if member %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_member">Member</label>
-        <input type=radio name=membership value=declined_invitation id="contact_{{cid}}_declined_invitation" {% if declined %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_declined_invitation"> Declined invitation</label>
-        <br>
-        <a href="{{membership_url}}">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a>
-    </form>
-</div>''').render(RequestContext(request, params))
+    return loader.render_to_string('membership_widget.html',
+            params,
+            RequestContext(request))
 
 
 def membership_extended_widget_factory(request, contact_group, base_url):

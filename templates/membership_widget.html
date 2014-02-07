@@ -1,0 +1,15 @@
+<a href="javascript:show_membership_extrainfo({{cid}})">{{membership_str}}</a>
+{% if note %}<br>{{note}}{% endif %}
+<div class=membershipextra id="membership_{{cid}}">
+    <a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>
+    {{title}}<br>
+    <form action="{{cid}}/membershipinline" method=post>
+        {% csrf_token %}
+        <input type=hidden name="next_url" value="../../members/{{base_url}}">
+        <input type=radio name=membership value=invited id="contact_{{cid}}_invited" {% if invited %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_invited">Invited</label>
+        <input type=radio name=membership value=member id="contact_{{cid}}_member" {% if member %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_member">Member</label>
+        <input type=radio name=membership value=declined_invitation id="contact_{{cid}}_declined_invitation" {% if declined %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_declined_invitation"> Declined invitation</label>
+        <br>
+        <a href="{{membership_url}}">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a>
+    </form>
+</div>
