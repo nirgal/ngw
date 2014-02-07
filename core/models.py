@@ -3,7 +3,7 @@
 # Also note: You'll have to insert the output of 'manage.py sqlall core'
 # into your database.
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from functools import wraps
 from datetime import datetime, timedelta

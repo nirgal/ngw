@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, absolute_import, print_function, unicode_literals
 import subprocess
 from django.conf import settings
 from django.http import HttpResponse

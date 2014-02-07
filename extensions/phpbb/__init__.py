@@ -3,7 +3,7 @@
 #
 # Database settings is defined in ~/.pgpass
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, absolute_import, print_function, unicode_literals
 import sys
 import os
 import subprocess

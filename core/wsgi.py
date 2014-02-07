@@ -14,7 +14,7 @@ framework.
 
 """
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 
 # We defer to a DJANGO_SETTINGS_MODULE already in the environment. This breaks

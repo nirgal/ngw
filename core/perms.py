@@ -17,7 +17,7 @@ c_can_see_files_CG        C can view files of CG
 c_can_change_files_CG     C can change/delete files of CG
 """
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, absolute_import, print_function, unicode_literals
 from django.db import connection
 
 

@@ -50,8 +50,6 @@ Translations:
 
 fix_htaccess should create recursively the dir hierarchy if missing
 
-Add "from__future__ import absolute_import" everywhere (let's get python3 ready).
-
 Remove pwgen dependency
 
 Fix ejabberd cross subscribe overrides
