@@ -363,21 +363,18 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
     if flags is None:
         flags = 0
 
-    params = {}
-    params['cid'] = contact_with_extra_fields.id
-    params['gid'] = contact_group.id
-    params['membership_str'] = membership_to_text(contact_with_extra_fields, contact_group.id)
-    params['note'] = getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id)
-    params['member'] = flags & CIGFLAG_MEMBER
-    params['invited'] = flags & CIGFLAG_INVITED
-    params['declined'] = flags & CIGFLAG_DECLINED
-    params['membership_url'] = contact_group.get_absolute_url()+'members/'+unicode(contact_with_extra_fields.id)+'/membership'
-    params['title'] = contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date()
-    params['base_url'] = base_url
-
-    return loader.render_to_string('membership_widget.html',
-            params,
-            RequestContext(request))
+    return loader.render_to_string('membership_widget.html', {
+        'cid': contact_with_extra_fields.id,
+        'gid': contact_group.id,
+        'membership_str': membership_to_text(contact_with_extra_fields, contact_group.id),
+        'note': getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id),
+        'member': flags & CIGFLAG_MEMBER,
+        'invited': flags & CIGFLAG_INVITED,
+        'declined': flags & CIGFLAG_DECLINED,
+        'membership_url': contact_group.get_absolute_url()+'members/'+unicode(contact_with_extra_fields.id)+'/membership',
+        'title': contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date(),
+        'base_url': base_url,
+        }, RequestContext(request))
 
 
 def membership_extended_widget_factory(request, contact_group, base_url):
@@ -2035,6 +2032,10 @@ def contactingroup_edit_inline(request, gid, cid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
     contact = get_object_or_404(Contact, pk=cid)
+    if request.method == 'GET':
+        # This occurs when there is a timeout (logout)
+        # Fall back to detailed membership:
+        return HttpResponseRedirect(cg.get_absolute_url()+'members/'+cid+'/membership')
     newmembership = request.POST['membership']
     if newmembership == 'invited':
         flags = '+i'
