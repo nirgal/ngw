@@ -1,6 +1,3 @@
-Enable csrf framework:
-- Fix inline membership edition
-
 Make a nicer login form
 
 Show a real message when cookies are disabled.

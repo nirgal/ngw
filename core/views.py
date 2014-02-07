@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirec
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.shortcuts import render_to_response, get_object_or_404
-from django.template import loader, RequestContext
+from django.template import loader, RequestContext, Template
 from django.core.urlresolvers import reverse
 from django import forms
 from django.contrib.auth.decorators import login_required
@@ -358,59 +358,46 @@ def membership_to_text_factory(group_id):
         membership_to_text(contact_with_extra_fields, group_id)
 
 
-def membership_extended_widget(contact_with_extra_fields, contact_group, base_url):
+def membership_extended_widget(request, contact_with_extra_fields, contact_group, base_url):
     flags = getattr(contact_with_extra_fields, 'group_%s_flags' % contact_group.id)
     if flags is None:
         flags = 0
-    member = flags & CIGFLAG_MEMBER
-    invited = flags & CIGFLAG_INVITED
-    declined = flags & CIGFLAG_DECLINED
-    note = getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id)
 
     params = {}
     params['cid'] = contact_with_extra_fields.id
     params['gid'] = contact_group.id
     params['membership_str'] = membership_to_text(contact_with_extra_fields, contact_group.id)
-    if note:
-        params['note'] = '<br>'+html.escape(note)
-    else:
-        params['note'] = ''
+    params['note'] = getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id)
+    params['member'] = flags & CIGFLAG_MEMBER
+    params['invited'] = flags & CIGFLAG_INVITED
+    params['declined'] = flags & CIGFLAG_DECLINED
     params['membership_url'] = contact_group.get_absolute_url()+'members/'+unicode(contact_with_extra_fields.id)+'/membership'
     params['title'] = contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date()
     params['base_url'] = base_url
 
-    if member:
-        params['is_member_checked'] = ' checked'
-    else:
-        params['is_member_checked'] = ''
-    if invited:
-        params['is_invited_checked'] = ' checked'
-    else:
-        params['is_invited_checked'] = ''
-    if declined:
-        params['has_declined_invitation_checked'] = ' checked'
-    else:
-        params['has_declined_invitation_checked'] = ''
 
-    return  '''
-<a href="javascript:show_membership_extrainfo(%(cid)d)">%(membership_str)s</a>%(note)s
-<div class=membershipextra id="membership_%(cid)d">
+    #FIXME: Use a .html file, don't import Template
+    return  Template('''
+<a href="javascript:show_membership_extrainfo({{cid}})">{{membership_str}}</a>
+{% if note %}<br>{{note}}{% endif %}
+<div class=membershipextra id="membership_{{cid}}">
     <a href="javascript:show_membership_extrainfo(null)"><img src="/close.png" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>
-    %(title)s<br>
-    <form action="%(cid)d/membershipinline" method=post>
-        <input type=hidden name="next_url" value="../../members/%(base_url)s">
-        <input type=radio name=membership value=invited id="contact_%(cid)d_invited" %(is_invited_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_invited">Invited</label>
-        <input type=radio name=membership value=member id="contact_%(cid)d_member" %(is_member_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_member">Member</label>
-        <input type=radio name=membership value=declined_invitation id="contact_%(cid)d_declined_invitation" %(has_declined_invitation_checked)s onclick="this.form.submit()"><label for="contact_%(cid)d_declined_invitation"> Declined invitation</label>
+    {{title}}<br>
+    <form action="{{cid}}/membershipinline" method=post>
+        {% csrf_token %}
+        <input type=hidden name="next_url" value="../../members/{{base_url}}">
+        <input type=radio name=membership value=invited id="contact_{{cid}}_invited" {% if invited %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_invited">Invited</label>
+        <input type=radio name=membership value=member id="contact_{{cid}}_member" {% if member %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_member">Member</label>
+        <input type=radio name=membership value=declined_invitation id="contact_{{cid}}_declined_invitation" {% if declined %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_declined_invitation"> Declined invitation</label>
         <br>
-        <a href="%(membership_url)s">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a>
+        <a href="{{membership_url}}">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a>
     </form>
-</div>''' % params
+</div>''').render(RequestContext(request, params))
 
 
-def membership_extended_widget_factory(contact_group, base_url):
+def membership_extended_widget_factory(request, contact_group, base_url):
     return lambda contact_with_extra_fields: \
-        membership_extended_widget(contact_with_extra_fields, contact_group, base_url)
+        membership_extended_widget(request, contact_with_extra_fields, contact_group, base_url)
 
 
 class ContactQuerySet(RawQuerySet):
@@ -533,15 +520,17 @@ class ContactQuerySet(RawQuerySet):
             yield x
 
 
-def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=None, format='html'):
+def contact_make_query_with_fields(request, fields, current_cg=None, base_url=None, format='html'):
     '''
     Creates an iterable objects with all the required fields (including groups).
     returns a tupple (query, columns)
     Permissions are checked for the fields. Forbidden field/groups are skiped.
     '''
+
     q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
     cols = []
 
+    user_id = request.user.id
     for prop in fields:
         if prop == 'name':
             if format == 'html':
@@ -559,7 +548,7 @@ def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=No
             cg = ContactGroup.objects.get(pk=groupid)
 
             cols.append( (cg.name, None, membership_to_text_factory(groupid), None) )
-            #cols.append( (cg.name, None, lambda c: membership_extended_widget(c, cg, base_url), None) )
+            #cols.append( (cg.name, None, lambda c: membership_extended_widget(request, c, cg, base_url), None) )
             #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
 
         elif prop.startswith(DISP_FIELD_PREFIX):
@@ -582,7 +571,7 @@ def contact_make_query_with_fields(user_id, fields, current_cg=None, base_url=No
         assert base_url
         q.add_group_withnote(current_cg.id)
         if format == 'html':
-            cols.append( ('Status', None, lambda c: membership_extended_widget(c, current_cg, base_url), None) )
+            cols.append( ('Status', None, lambda c: membership_extended_widget(request, c, current_cg, base_url), None) )
             #cols.append( ('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
             #cols.append( ('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
             #cols.append( ('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
@@ -638,7 +627,7 @@ def contact_list(request):
         request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
 
     #print('contact_list:', fields)
-    q, cols = contact_make_query_with_fields(request.user.id, fields, format='html')
+    q, cols = contact_make_query_with_fields(request, fields, format='html')
     q = filter.apply_filter_to_query(q)
 
     # TODO:
@@ -1374,7 +1363,7 @@ def contactgroup_members(request, gid, output_format=''):
         query_format = 'text'
     else:
         query_format = 'html'
-    q, cols = contact_make_query_with_fields(request.user.id, fields, current_cg=cg, base_url=baseurl, format=query_format)
+    q, cols = contact_make_query_with_fields(request, fields, current_cg=cg, base_url=baseurl, format=query_format)
 
     wanted_flags = 0
     if 'm' in display:
@@ -1762,7 +1751,7 @@ def contactgroup_add_contacts_to(request):
     strfilter = request.REQUEST.get('filter', '')
     filter = contactsearch.parse_filterstring(strfilter, request.user.id)
 
-    q, cols = contact_make_query_with_fields(request.user.id, [], format='html') #, current_cg=cg)
+    q, cols = contact_make_query_with_fields(request, [], format='html') #, current_cg=cg)
 
     q = q.order_by('name')
 
