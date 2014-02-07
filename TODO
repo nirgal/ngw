@@ -1,5 +1,6 @@
 Enable csrf framework:
 - Fix inline membership edition
+- Fix add_contacts_to
 
 Make a nicer login form
 
@@ -58,3 +59,5 @@ Add "from__future__ import absolute_import" everywhere (let's get python3 ready)
 Remove pwgen dependency
 
 Fix ejabberd cross subscribe overrides
+
+Fix News display: Should show all the news, not just admins ones, depending on groups memberships
