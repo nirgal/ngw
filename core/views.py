@@ -4,6 +4,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
+import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
@@ -26,8 +27,6 @@ from ngw.core import perms
 
 from django.db.models.query import RawQuerySet, sql
 
-import crack
-
 DISP_NAME = 'name'
 DISP_FIELD_PREFIX = 'field_'
 DISP_GROUP_PREFIX = 'group_'
@@ -49,14 +48,6 @@ FTYPE_PASSWORD = 'PASSWORD'
 # Login / Logout
 #
 #######################################################################
-
-def ngw_base_url(request):
-    if os.environ.has_key('HTTPS'):
-        scheme = 'https'
-    else:
-        scheme = 'http'
-    return scheme+'://'+request.META['HTTP_HOST']+'/'
-
 
 def logout(request):
     auth_logout(request)
@@ -994,7 +985,7 @@ def contact_pass_letter(request, gid=None, cid=None):
         if not filename:
             return HttpResponse('File generation failed')
 
-        url = ngw_base_url(request) + 'mailing-generated/' + filename
+        url = '/mailing-generated/' + filename
         html_message = 'File generated in <a href="%(url)s">%(url)s</a>.' % { 'url': url}
         args['message'] = mark_safe(html_message)
         return render_to_response('message.html', args, RequestContext(request))

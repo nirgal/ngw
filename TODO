@@ -1,4 +1,4 @@
-Make a nicer login form
+Make a nicer login form.
 
 Show a real message when cookies are disabled.
 
@@ -16,7 +16,7 @@ Default group:
 
 Default supergroup(s)
 
-Favorite groups
+Favorite groups.
 
 Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 - in javascript checkbox
@@ -52,6 +52,12 @@ fix_htaccess should create recursively the dir hierarchy if missing
 
 Remove pwgen dependency
 
-Fix ejabberd cross subscribe overrides
+Enable active session expiration:
+https://pypi.python.org/pypi/django-secure
+
+Fix ejabberd cross subscribe overrides:
+Use "ejabberdctl add-rosteritem ..." rather than messing with ejabberd tables
 
 Fix News display: Should show all the news, not just admins ones, depending on groups memberships
+
+Serve pdf generated files with django rather than requiring an additonal BasicAuth
