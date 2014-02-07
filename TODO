@@ -1,3 +1,17 @@
+Enable csrf framework:
+- Fix inline membership edition
+
+Make a nicer login form
+
+Show a real message when cookies are disabled.
+
+Drop custom message framework, do use sessions:
+- Drop Contact.push_message
+
+Upgrade password hash system.
+
+Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
+
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
 Default group:
@@ -32,13 +46,15 @@ Enhance xmpp extensions:
 
 Implement slicing in ContactQuerySet
 
-Translation
+Translations:
+- Add imports
+- Add _() before every string
+- Make the po/mo files
 
 fix_htaccess should create recursively the dir hierarchy if missing
 
-Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
+Add "from__future__ import absolute_import" everywhere (let's get python3 ready).
 
-Switch to python3:
-- Add the last __future__
-- Check decoratedstr
+Remove pwgen dependency
 
+Fix ejabberd cross subscribe overrides
