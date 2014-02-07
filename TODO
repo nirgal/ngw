@@ -1,6 +1,5 @@
 Enable csrf framework:
 - Fix inline membership edition
-- Fix add_contacts_to
 
 Make a nicer login form
 

@@ -4,6 +4,7 @@
 <form id="contact_list" method="post">
 <h1 class="boxheader">Selected people</h1>
 <div class=box>
+{% csrf_token %}
 {% for c in query %}
 <input type=checkbox name="contact_{{c.id}}" id="contact_{{c.id}}" checked> <label for="contact_{{c.id}}">{{c}}</label><br>
 {% endfor %}
