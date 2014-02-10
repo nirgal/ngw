@@ -399,12 +399,13 @@ class Contact(NgwModel):
             return ''
         return unicode(cfv)
 
-    def set_fieldvalue(self, user, field, newvalue):
+    def set_fieldvalue(self, request, field, newvalue):
         """
         Sets a field value and registers the change in the log table.
         Field can be either a field id or a ContactField object.
         New value must be text.
         """
+        user = request.user
         if type(field) == int:
             field_id = field
             field = ContactField.objects.get(pk=field)
@@ -426,7 +427,7 @@ class Contact(NgwModel):
                     log.change += ' to ' + unicode(cfv)
                     cfv.save()
                     log.save()
-                    hooks.contact_field_changed(user, field_id, self)
+                    hooks.contact_field_changed(request.user, field_id, self)
             else:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_DEL
@@ -437,7 +438,7 @@ class Contact(NgwModel):
                 log.change = 'old value was ' + unicode(cfv)
                 cfv.delete()
                 log.save()
-                hooks.contact_field_changed(user, field_id, self)
+                hooks.contact_field_changed(request.user, field_id, self)
         except ContactFieldValue.DoesNotExist:
             if newvalue:
                 log = Log(contact_id=user.id)
@@ -453,7 +454,7 @@ class Contact(NgwModel):
                 cfv.save()
                 log.change = 'new value is ' + unicode(cfv)
                 log.save()
-                hooks.contact_field_changed(user, field_id, self)
+                hooks.contact_field_changed(request.user, field_id, self)
 
 
     def get_login(self):
@@ -530,32 +531,32 @@ class Contact(NgwModel):
         return random_password
 
 
-    def set_password(self, user, newpassword_plain, new_password_status=None):
+    def set_password(self, newpassword_plain, new_password_status=None, request=None):
+        assert request, 'ngw version of set_password needs a request parameter'
         # TODO check password strength
         hash = make_password(newpassword_plain)
         assert hash.startswith('crypt$$'), 'Hash algorithm is imcompatible with libapache2-mod-auth-pgsql'
         hash = hash[len('crypt$$'):]
-        self.set_fieldvalue(user, FIELD_PASSWORD, hash)
+        self.set_fieldvalue(request, FIELD_PASSWORD, hash)
         if new_password_status is None:
-            if self.id == user.id:
-                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, '3') # User defined
+            if self.id == request.user.id:
+                self.set_fieldvalue(request, FIELD_PASSWORD_STATUS, '3') # User defined
             else:
-                self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, '1') # Generated
+                self.set_fieldvalue(request, FIELD_PASSWORD_STATUS, '1') # Generated
         else:
-            self.set_fieldvalue(user, FIELD_PASSWORD_STATUS, new_password_status)
+            self.set_fieldvalue(request, FIELD_PASSWORD_STATUS, new_password_status)
 
 
     @staticmethod
     def check_login_created(request):
-        logged_contact = request.user
         # Create login for all members of GROUP_USER
         cursor = connection.cursor()
         cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN})
         for uid, in cursor:
             contact = Contact.objects.get(pk=uid)
             new_login = contact.generate_login()
-            contact.set_fieldvalue(logged_contact, FIELD_LOGIN, new_login)
-            contact.set_password(logged_contact, contact.generate_password())
+            contact.set_fieldvalue(request, FIELD_LOGIN, new_login)
+            contact.set_password(contact.generate_password(), request=request)
             messages.add_message(request, messages.SUCCESS, "Login information generated for User %s." % contact.name)
 
         for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
@@ -771,7 +772,7 @@ class ContactGroup(NgwModel):
             return 'mg'
 
 
-    def set_member_1(self, logged_contact, contact, group_member_mode):
+    def set_member_1(self, request, contact, group_member_mode):
         """
         group_member_mode is a combinaison of letters 'mido'
         if it starts with '+', the mode will be added (dropping incompatible ones).
@@ -787,6 +788,7 @@ class ContactGroup(NgwModel):
         If new mode is empty, the contact will be removed from the group.
         """
 
+        user = request.user
         result = 0
 
         add_mode = 0
@@ -835,7 +837,7 @@ class ContactGroup(NgwModel):
                 return result # 0 = no change
 
             cig = ContactInGroup(contact_id=contact.id, group_id=self.id, flags=0)
-            log = Log(contact_id=logged_contact.id)
+            log = Log(contact_id=user.id)
             log.action = LOG_ACTION_ADD
             log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
             log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
@@ -847,18 +849,18 @@ class ContactGroup(NgwModel):
             if add_mode & intflag:
                 if not cig.flags & intflag:
                     if intflag & ADMIN_CIGFLAGS:
-                        if not perms.c_operatorof_cg(logged_contact.id, self.id):
+                        if not perms.c_operatorof_cg(user.id, self.id):
                             # You need to be operator to be able to change permissions
                             raise PermissionDenied
                     else: # m/i/d
-                        # logged_contact needs to be able to add contacts
+                        # user needs to be able to add contacts
                         # in all subgroups it's not a member yet, including
                         # hidden ones
                         for sg in self.get_supergroups():
-                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(logged_contact.id, sg.id):
+                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(user.id, sg.id):
                                 raise PermissionDenied
                     cig.flags |= intflag
-                    log = Log(contact_id=logged_contact.id)
+                    log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
                     log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
                     log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
@@ -870,16 +872,16 @@ class ContactGroup(NgwModel):
             if del_mode & intflag:
                 if cig.flags & intflag:
                     if intflag & ADMIN_CIGFLAGS:
-                        if not perms.c_operatorof_cg(logged_contact.id, self.id):
+                        if not perms.c_operatorof_cg(user.id, self.id):
                             # You need to be operator to be able to change permissions
                             raise PermissionDenied
                     else: # m/i/d
                         # See comment above
                         for sg in self.get_supergroups():
-                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(logged_contact.id, sg.id):
+                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(user.id, sg.id):
                                 raise PermissionDenied
                     cig.flags &= ~intflag
-                    log = Log(contact_id=logged_contact.id)
+                    log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
                     log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
                     log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
@@ -891,7 +893,7 @@ class ContactGroup(NgwModel):
 
         if not cig.flags:
             cig.delete()
-            log = Log(contact_id=logged_contact.id)
+            log = Log(contact_id=user.id)
             log.action = LOG_ACTION_DEL
             log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
             log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
@@ -900,7 +902,7 @@ class ContactGroup(NgwModel):
             cig.save()
 
         if result:
-            hooks.membership_changed(logged_contact, contact, self)
+            hooks.membership_changed(request.user, contact, self)
         return result
 
 
@@ -908,11 +910,10 @@ class ContactGroup(NgwModel):
         """
         Like set_member_1 but for several contacts
         """
-        logged_contact = request.user
         added_contacts = []
         changed_contacts = []
         for contact in contacts:
-            res = self.set_member_1(logged_contact, contact, group_member_mode)
+            res = self.set_member_1(request, contact, group_member_mode)
             if res == LOG_ACTION_ADD:
                 added_contacts.append(contact)
             elif res == LOG_ACTION_CHANGE:

@@ -603,7 +603,7 @@ def contact_list(request):
         strfields = ','.join(fields)
 
     if (request.REQUEST.get('savecolumns')):
-        request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
+        request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
 
     #print('contact_list:', fields)
     q, cols = contact_make_query_with_fields(request, fields, format='html')
@@ -809,7 +809,7 @@ def contact_edit(request, gid=None, cid=None):
                 newvalue = data[unicode(cfid)]
                 if newvalue != None:
                     newvalue = cf.formfield_value_to_db_value(newvalue)
-                contact.set_fieldvalue(request.user, cf, newvalue)
+                contact.set_fieldvalue(request, cf, newvalue)
 
             messages.add_message(request, messages.SUCCESS, 'Contact %s has been saved sucessfully!' % contact.name)
 
@@ -910,7 +910,7 @@ def contact_pass(request, gid=None, cid=None):
         if form.is_valid():
             # record the value
             password = form.clean()['new_password']
-            contact.set_password(request.user, password)
+            contact.set_password(password, request=request)
             messages.add_message(request, messages.SUCCESS, 'Password has been changed sucessfully!')
             if gid:
                 cg = get_object_or_404(ContactGroup, pk=gid)
@@ -943,7 +943,7 @@ def hook_change_password(request):
     if not newpassword_plain:
         return HttpResponse('Missing password POST parameter')
     #TODO: check strength
-    request.user.set_password(request.user, newpassword_plain)
+    request.user.set_password(newpassword_plain, request=request)
     return HttpResponse('OK')
 
 
@@ -972,7 +972,7 @@ def contact_pass_letter(request, gid=None, cid=None):
         new_password = Contact.generate_password()
 
         # record the value
-        contact.set_password(request.user, new_password, '2') # Generated and mailed
+        contact.set_password(new_password, '2', request=request) # Generated and mailed
         messages.add_message(request, messages.SUCCESS, 'Password has been changed sucessfully!')
 
         fields = {}
@@ -1029,7 +1029,7 @@ def contact_filters_add(request, cid=None):
         filter_list = []
     filter_list.append(('No name', filter_str))
     filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
-    contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
+    contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
     messages.add_message(request, messages.SUCCESS, 'Filter has been added sucessfully!')
     return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid, len(filter_list)-1)))
 
@@ -1084,7 +1084,7 @@ def contact_filters_edit(request, cid=None, fid=None):
             #print(repr(filter_list))
             filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
             #print(repr(filter_list_str))
-            contact.set_fieldvalue(request.user, FIELD_FILTERS, filter_list_str)
+            contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
             messages.add_message(request, messages.SUCCESS, 'Filter has been renamed sucessfully!')
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else:
@@ -1129,7 +1129,7 @@ def contact_filters_edit(request, cid=None, fid=None):
 #        return HttpResponse('File move failed')
 #    for row in q:
 #        contact = row[0]
-#        contact.set_fieldvalue(request.user, FIELD_PASSWORD_STATUS, '2')
+#        contact.set_fieldvalue(request, FIELD_PASSWORD_STATUS, '2')
 #
 #    return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')
 
@@ -1327,7 +1327,7 @@ def contactgroup_members(request, gid, output_format=''):
         # They'll still be default next time
 
     if request.REQUEST.get('savecolumns'):
-        request.user.set_fieldvalue(request.user, FIELD_COLUMNS, strfields)
+        request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
 
     cg = get_object_or_404(ContactGroup, pk=gid)
 
@@ -2042,7 +2042,7 @@ def contactingroup_edit_inline(request, gid, cid):
         flags = '+d'
     else:
         raise Exception('invalid membership '+request.POST['membership'])
-    cg.set_member_1(request.user, contact, flags)
+    cg.set_member_1(request, contact, flags)
     hooks.membership_changed(request.user, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
 
