@@ -4,6 +4,7 @@ DROP FUNCTION IF EXISTS c_viewerof_cg(integer, integer);
 DROP VIEW IF EXISTS auth_users;
 DROP VIEW IF EXISTS apache_log;
 DROP VIEW IF EXISTS auth_users_bb;
+DROP TABLE IF EXISTS contact_sysmsg;
 -- End migration script
 
 

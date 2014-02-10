@@ -19,36 +19,34 @@ from ngw.core.models import ( ContactFieldValue, ContactGroup,
     FIELD_LOGIN )
 from ngw.extensions import hooks
 
-__cursor__ = None
-def get_common_cursor():
-    global __cursor__
-    if not __cursor__:
-        __cursor__ = connections['jabber'].cursor()
-    return __cursor__
+def get_cursor():
+    return connections['jabber'].cursor()
 
 def cross_subscribe(login1, login2):
     '''
     login1 & 2 must exists.
     Check before calling.
     '''
+    cursor = get_cursor()
     login1 = login1.lower()
     login2 = login2.lower()
 
     def _subscribe1(login1, login2):
         params = { 'username': login1, 'jid': login2+'@'+settings.XMPP_DOMAIN, 'nick': login2 }
         sql = "INSERT INTO rosterusers (username, jid, nick, subscription, ask, askmessage, server) SELECT %(username)s, %(jid)s, %(nick)s, 'B', 'N', '', 'N' WHERE NOT EXISTS (SELECT * FROM rosterusers WHERE username=%(username)s AND jid=%(jid)s)"
-        get_common_cursor().execute(sql, params)
+        cursor.execute(sql, params)
         sql = "UPDATE rosterusers SET subscription='B', ask='N', server='N', type='item' WHERE username=%(username)s AND jid=%(jid)s"
-        get_common_cursor().execute(sql, params)
+        cursor.execute(sql, params)
     _subscribe1(login1, login2)
     _subscribe1(login2, login1)
 
 
 def clean_rostergroup(login):
+    cursor = get_cursor()
     params = { 'username': login }
     sql = 'SELECT min(grp) FROM rostergroups WHERE username=%(username)s'
-    get_common_cursor().execute(sql, params)
-    row = get_common_cursor().fetchone()
+    cursor.execute(sql, params)
+    row = cursor.fetchone()
     if row and row[0]:
         grp = row[0]
     else:
@@ -57,7 +55,7 @@ def clean_rostergroup(login):
 
     params['grp'] = grp
     sql = 'INSERT INTO "rostergroups" (username, jid, grp) SELECT username, jid, %(grp)s FROM rosterusers WHERE username=%(username)s AND NOT EXISTS (SELECT * FROM rostergroups WHERE rostergroups.username=rosterusers.username AND rostergroups.jid=rosterusers.jid)'
-    get_common_cursor().execute(sql, params)
+    cursor.execute(sql, params)
     
 
 def subscribe_everyone(baseusername, allusers, exclude=None):

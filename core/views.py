@@ -1982,7 +1982,7 @@ def contactingroup_edit(request, gid, cid):
             messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
             Contact.check_login_created(request)
             cig.save()
-            hooks.membership_changed(request.user, contact, cg)
+            hooks.membership_changed(request, contact, cg)
             return HttpResponseRedirect(cg.get_absolute_url())
     else:
         form = ContactInGroupForm(initial=initial)
@@ -2043,7 +2043,7 @@ def contactingroup_edit_inline(request, gid, cid):
     else:
         raise Exception('invalid membership '+request.POST['membership'])
     cg.set_member_1(request, contact, flags)
-    hooks.membership_changed(request.user, contact, cg)
+    hooks.membership_changed(request, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
 
 

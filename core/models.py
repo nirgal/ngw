@@ -427,7 +427,7 @@ class Contact(NgwModel):
                     log.change += ' to ' + unicode(cfv)
                     cfv.save()
                     log.save()
-                    hooks.contact_field_changed(request.user, field_id, self)
+                    hooks.contact_field_changed(request, field_id, self)
             else:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_DEL
@@ -438,7 +438,7 @@ class Contact(NgwModel):
                 log.change = 'old value was ' + unicode(cfv)
                 cfv.delete()
                 log.save()
-                hooks.contact_field_changed(request.user, field_id, self)
+                hooks.contact_field_changed(request, field_id, self)
         except ContactFieldValue.DoesNotExist:
             if newvalue:
                 log = Log(contact_id=user.id)
@@ -454,7 +454,7 @@ class Contact(NgwModel):
                 cfv.save()
                 log.change = 'new value is ' + unicode(cfv)
                 log.save()
-                hooks.contact_field_changed(request.user, field_id, self)
+                hooks.contact_field_changed(request, field_id, self)
 
 
     def get_login(self):
@@ -497,10 +497,6 @@ class Contact(NgwModel):
     def get_addr_semicol(self):
         "Returns address in a form compatible with googlemap query"
         return self.get_fieldvalue_by_id(FIELD_STREET) + ';' + self.get_fieldvalue_by_id(FIELD_POSTCODE) + ';' + self.get_fieldvalue_by_id(FIELD_CITY) + ';' + self.get_fieldvalue_by_id(FIELD_COUNTRY)
-
-    # TODO: migrate to new django.contrib.messages framework
-    def push_message(self, message):
-        ContactSysMsg(contact_id=self.id, message=message).save()
 
     def generate_login(self):
         words = self.name.split(" ")
@@ -902,7 +898,7 @@ class ContactGroup(NgwModel):
             cig.save()
 
         if result:
-            hooks.membership_changed(request.user, contact, self)
+            hooks.membership_changed(request, contact, self)
         return result
 
 

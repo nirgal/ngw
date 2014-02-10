@@ -8,6 +8,7 @@ import sys
 import os
 import subprocess
 from time import time as timestamp
+from django.contrib import messages
 
 if __name__ != '__main__':
     print('PHPBB forum synchronisation extension for NGW loading.', file=sys.stderr)
@@ -24,12 +25,8 @@ from ngw.core import contactfield # Need polymorphic upgrades
 
 DEFAULT_USER_PERMISSIONS = '00000000006xv1ssxs'
     
-__cursor__ = None
-def get_common_cursor():
-    global __cursor__
-    if not __cursor__:
-        __cursor__ = connections['phpbb3'].cursor()
-    return __cursor__
+def get_cursor():
+    return connections['phpbb3'].cursor()
 
 def get_phpbb_acl_dictionary():
     """
@@ -46,17 +43,17 @@ def get_phpbb_acl_dictionary():
 
 
 def get_config(key):
-    c = get_common_cursor()
+    cursor = get_cursor()
     sql = "SELECT config_value FROM phpbb_config WHERE config_name='%s'" % key
-    c.execute(sql)
-    row = c.fetchone()
+    cursor.execute(sql)
+    row = cursor.fetchone()
     return row[0]
 
 def set_config(key, value):
-    c = get_common_cursor()
+    cursor = get_cursor()
     sql = "UPDATE phpbb_config SET config_value='%s' WHERE config_name='%s'" % (value, key)
     #print(sql, file=sys.stderr)
-    c.execute(sql)
+    cursor.execute(sql)
 
 def print_and_call(*args):
     print("Subprocess call:", args, file=sys.stderr)
@@ -69,7 +66,7 @@ def sync_user_base(u):
         Check the PHPBB login matches and modify it if necessary.
         Returns (int phpbb_user_id, bool phpbb_changed)
     """
-    c = get_common_cursor()
+    cursor = get_cursor()
     phpbb_changed = False
 
     f_login = u.get_fieldvalue_by_id(FIELD_LOGIN)
@@ -80,8 +77,8 @@ def sync_user_base(u):
         print("Creating PHPBB user", f_login, file=sys.stderr)
 
         sql = "SELECT * from nextval('phpbb_users_seq')"
-        c.execute(sql)
-        phpbb_user_id, = c.fetchone()
+        cursor.execute(sql)
+        phpbb_user_id, = cursor.fetchone()
         #print("new user id = ", phpbb_user_id, file=sys.stderr)
 
         cfv = ContactFieldValue()
@@ -92,12 +89,12 @@ def sync_user_base(u):
 
         sql = "INSERT INTO phpbb_users (user_id, group_id, user_permissions, user_regdate, username, username_clean, user_email, user_lang, user_timezone, user_dst, user_dateformat) VALUES(%(phpbb_user_id)d, 2, '%(user_permissions)s', %(regtime)d, '%(f_login)s', '%(f_login)s', 'noemail', '%(lang)s', %(timezone)s, %(dst)s, '%(dateformat)s')" % {'phpbb_user_id': phpbb_user_id, 'user_permissions': DEFAULT_USER_PERMISSIONS, 'f_login': f_login, 'regtime': int(timestamp()), 'lang': get_config('default_lang'), 'timezone': get_config('board_timezone'), 'dst': get_config('board_dst'), 'dateformat': get_config('default_dateformat')}
         #print(sql, file=sys.stderr)
-        c.execute(sql)
+        cursor.execute(sql)
         phpbb_changed = True
         
         sql = "INSERT INTO phpbb_user_group (user_id, group_id, user_pending) VALUES(%(phpbb_user_id)d, 2, 0)" % {'phpbb_user_id': phpbb_user_id}
         #print(sql, file=sys.stderr)
-        c.execute(sql)
+        cursor.execute(sql)
         phpbb_changed = True
 
         set_config('newest_user_id', str(phpbb_user_id))
@@ -110,41 +107,41 @@ def sync_user_base(u):
     
     # fix logins
     sql = "SELECT username FROM phpbb_users WHERE user_id='%d'" % phpbb_user_id
-    c.execute(sql)
-    phpbb_username = c.fetchone()[0] # might crash if databases sync was lost
+    cursor.execute(sql)
+    phpbb_username = cursor.fetchone()[0] # might crash if databases sync was lost
     if phpbb_username != f_login:
         print("Changing PHPBB user name from", phpbb_username, "to", f_login, file=sys.stderr)
         sql = "UPDATE phpbb_users SET (username, username_clean) = ( '%(sql_login)s', '%(sql_login)s' ) WHERE user_id=%(user_id)d" % { 'user_id': phpbb_user_id, 'sql_login': f_login.replace("'", "''") }
         print(sql, file=sys.stderr)
-        c.execute(sql)
+        cursor.execute(sql)
         phpbb_changed = True
 
     return phpbb_user_id, phpbb_changed
 
 
 def sync_user_in_group(ngwuser, phpbb_user_id, php_group_id, ngw_group_id):
-    c = get_common_cursor()
+    cursor = get_cursor()
     phpbb_changed = False
 
     # Test whether phpbb allready is ok
     sql = "SELECT * FROM phpbb_user_group WHERE user_id=%s AND group_id=%d" % (phpbb_user_id, php_group_id)
     #print(sql, file=sys.stderr)
-    c.execute(sql)
-    was_member = c.fetchone() is not None
+    cursor.execute(sql)
+    was_member = cursor.fetchone() is not None
 
     if ngwuser.is_member_of(ngw_group_id):
         if not was_member:
             print("user PHPBB", phpbb_user_id, "( NGW", ngwuser.id, ") was not found in group PHPBB", php_group_id, "( NGW", ngw_group_id, "). Adding.", file=sys.stderr)
             sql = "INSERT INTO phpbb_user_group (user_id, group_id, user_pending) VALUES(%(phpbb_user_id)d, %(group_id)d, 0)" % {'phpbb_user_id': phpbb_user_id, 'group_id': php_group_id}
             print(sql, file=sys.stderr)
-            c.execute(sql)
+            cursor.execute(sql)
             phpbb_changed = True
     else:
         if was_member:
             print("user PHPBB", phpbb_user_id, "( NGW", ngwuser.id, ") was found in group PHPBB", php_group_id, "( NGW", ngw_group_id, "). Removing.", file=sys.stderr)
             sql = "DELETE FROM phpbb_user_group WHERE user_id=%(phpbb_user_id)d AND group_id=%(group_id)d" % {'phpbb_user_id': phpbb_user_id, 'group_id': php_group_id}
             print(sql, file=sys.stderr)
-            c.execute(sql)
+            cursor.execute(sql)
             phpbb_changed = True
     return phpbb_changed
 
@@ -157,7 +154,7 @@ def sync_user_all(u):
 ##########
 # Hooks
 
-def phpbb_hook_membership_changed(user, contact, ngw_group):
+def phpbb_hook_membership_changed(request, contact, ngw_group):
     print("phpbb extension is receiving notification membership_changed:", contact, ngw_group, file=sys.stderr)
 
     if not contact.is_member_of(GROUP_USER_PHPBB) and not contact.get_fieldvalue_by_id(FIELD_PHPBB_USERID):
@@ -166,7 +163,7 @@ def phpbb_hook_membership_changed(user, contact, ngw_group):
     
     if not contact.get_fieldvalue_by_id(FIELD_LOGIN):
         print("Error: Can't synchronise user with empty login", file=sys.stderr) # FIXME
-        user.push_message("ERROR: Can't synchronise PHPBB user " + contact.name + " with empty login.")
+        messages.add_message(request, messages.ERROR, "Can't synchronise PHPBB user %s with empty login." % contact.name)
         return
         
     phpbb_user_id, phpbb_changed = sync_user_base(contact)
@@ -179,7 +176,7 @@ def phpbb_hook_membership_changed(user, contact, ngw_group):
      
     if phpbb_changed:
         print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
-        user.push_message("PHPBB database updated; Cache flushed.")
+        messages.add_message(request, messages.INFO, "PHPBB database updated; Cache flushed.")
     # TODO commit ?
 
 
@@ -190,17 +187,17 @@ hooks.add_hook_membership_changed(GROUP_USER_PHPBB, phpbb_hook_membership_change
 
 
 @hooks.on_contact_field_changed(FIELD_LOGIN)
-def login_updated(user, contact):
+def login_updated(request, contact):
     login = contact.get_fieldvalue_by_id(FIELD_LOGIN)
     if not login:
         print("Error: Can't synchronise user with empty login", file=sys.stderr) # FIXME
-        user.push_message("ERROR: Can't synchronise PHPBB user with empty login.")
+        messages.add_message(request, messages.ERROR, "Can't synchronise PHPBB user %s with empty login." % contact.name)
         return
 
     main_phpbb_changed = sync_user_all(contact)
     if main_phpbb_changed:
         print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
-        user.push_message("PHPBB database updated; Cache flushed.")
+        messages.add_message(request, messages.INFO, "PHPBB database updated; Cache flushed.")
 
 #######
 ## MAIN

@@ -136,19 +136,6 @@ CREATE TABLE contact_group_news (
 
 
 --
--- Name: contact_sysmsg; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE contact_sysmsg (
-    id serial NOT NULL PRIMARY KEY,
-    contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
-    message text NOT NULL
-);
-
-CREATE INDEX contact_sysmsg_contact_id_idx ON contact_sysmsg (contact_id);
-
-
---
 -- Name: group_in_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 

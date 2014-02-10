@@ -220,7 +220,7 @@ LOGGING = {
 }
 
 APPEND_SLASH = False
-MESSAGE_STORAGE = 'ngw.core.messages.NgwMessageStorage'
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 # Uncomment next line to enable password reset though libreoffice mailings:
 #PASSWORD_LETTER = '/usr/lib/ngw/mailing/templates/resetpassword.odt'

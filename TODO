@@ -6,9 +6,6 @@ Show a real message when cookies are disabled:
 
 Fix News display: Should show all the news, not just admins ones, depending on groups memberships
 
-Drop custom message framework, do use sessions:
-- Drop Contact.push_message
-
 Upgrade password hash system.
 
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
