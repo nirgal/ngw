@@ -4,9 +4,13 @@ It is recommanded to use Debian 6 (Squeeze) or above
 
 aptitude install python-django python-psycopg2 postgresql libapache2-mod-wsgi libjs-jquery pwgen python-uno python-cracklib oomailing python-decoratedstr
 
-oomailing and python-decoratedstr packages can be downloaded at http://www.nirgal.com/debian/
+oomailing and python-decoratedstr packages can be downloaded at:
+http://www.nirgal.com/debian/
 
-Base directory should be /usr/lib/ngw
+You need python-django version 1.5, available in Debian stable-backports at:
+http://packages.qa.debian.org/python-django
+
+Base directory must be /usr/lib/ngw (make a symlink)
 
 You need to edit your settings.py:
 - Put your database user/password there
@@ -52,20 +56,12 @@ Add a new line "Listen 443" to /etc/apache2/ports.conf" if it's now there allrea
 Enable virtual hosts on https:
 Add a new line "NameVirtualHost *:443" before "Listen 443"
 
-Add "Listen 11371" at the end of the file
 
 Static files and thumbnails
 ===========================
 aptitude install php5 php5-gd
 
 user or group www-data should have write access to /var/lib/ngw/static/static/g so that thumbnails are generated only once.
-
-GPG
-===
-mkdir /var/lib/ngw
-chown www-data /var/lib/ngw
-
-Right now, keys needs to be imported by hand: gpg --homedir /var/lib/ngw/ --import akey.key
 
 
 Optionnal extensions
@@ -80,10 +76,22 @@ See extentions/phpbb3/README
 * ejabberd synchronisation
 
 You can have one group automatically grant access to a local ejabberd.
-See extentions/xmpp
+See extentions/xmpp/README
 
 * mailman synchronisation
 
 There is a small helper to list people to suscribe/unsusbribe to a mailman
 server.
 Code is currently mostly in core/
+
+* gpg support
+
+mkdir /var/lib/ngw
+chown www-data /var/lib/ngw
+
+Right now, keys needs to be imported by hand: gpg --homedir /var/lib/ngw/ --import akey.key
+
+Add "Listen 11371" at the end of the /etc/apache2/ports.conf
+to have an hkp:// compatible server (Download only)
+
+Uncomment gpg keyring directory in settings.py (GPG_HOME)
