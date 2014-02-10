@@ -3,13 +3,13 @@
 {% block body %}
 
 <script>
-shown_membership_extrainfo_id=null;
-function show_membership_extrainfo(cid) {
-    if (shown_membership_extrainfo_id)
-        document.getElementById('membership_'+shown_membership_extrainfo_id).style.display='none';
-    if (cid)
-        document.getElementById('membership_'+cid).style.display='block';
-    shown_membership_extrainfo_id = cid;
+shown_membership_extrainfo_gcid=null;
+function show_membership_extrainfo(gcid) {
+    if (shown_membership_extrainfo_gcid)
+        document.getElementById('membership_'+shown_membership_extrainfo_gcid).style.display='none';
+    if (gcid)
+        document.getElementById('membership_'+gcid).style.display='block';
+    shown_membership_extrainfo_gcid = gcid;
 }
 </script>
 

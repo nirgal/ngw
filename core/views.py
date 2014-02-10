@@ -349,7 +349,7 @@ def membership_to_text_factory(group_id):
         membership_to_text(contact_with_extra_fields, group_id)
 
 
-def membership_extended_widget(request, contact_with_extra_fields, contact_group, base_url):
+def membership_extended_widget(request, contact_with_extra_fields, contact_group):
     flags = getattr(contact_with_extra_fields, 'group_%s_flags' % contact_group.id)
     if flags is None:
         flags = 0
@@ -362,15 +362,15 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'member': flags & CIGFLAG_MEMBER,
         'invited': flags & CIGFLAG_INVITED,
         'declined': flags & CIGFLAG_DECLINED,
-        'membership_url': contact_group.get_absolute_url()+'members/'+unicode(contact_with_extra_fields.id)+'/membership',
+        'cig_url': contact_group.get_absolute_url()+'members/'+unicode(contact_with_extra_fields.id),
         'title': contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date(),
-        'base_url': base_url,
+        'next_url': request.get_full_path(),
         }, RequestContext(request))
 
 
-def membership_extended_widget_factory(request, contact_group, base_url):
+def membership_extended_widget_factory(request, contact_group):
     return lambda contact_with_extra_fields: \
-        membership_extended_widget(request, contact_with_extra_fields, contact_group, base_url)
+        membership_extended_widget(request, contact_with_extra_fields, contact_group)
 
 
 class ContactQuerySet(RawQuerySet):
@@ -498,6 +498,12 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
     Creates an iterable objects with all the required fields (including groups).
     returns a tupple (query, columns)
     Permissions are checked for the fields. Forbidden field/groups are skiped.
+
+    base_url is almost the "calling" url, but with only these parameters:
+     . filter
+     . fields
+     . display
+    It does *not* contain pagination parameters nor format.
     '''
 
     q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
@@ -516,12 +522,12 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
             if not perms.c_can_see_members_cg(user_id, groupid):
                 continue # just ignore groups that aren't allowed to be seen
 
-            q.add_group(groupid)
+            q.add_group_withnote(groupid)
 
             cg = ContactGroup.objects.get(pk=groupid)
 
-            cols.append( (cg.name, None, membership_to_text_factory(groupid), None) )
-            #cols.append( (cg.name, None, lambda c: membership_extended_widget(request, c, cg, base_url), None) )
+            #cols.append( (cg.name, None, membership_to_text_factory(groupid), None) )
+            cols.append( (cg.name, None, membership_extended_widget_factory(request, cg), None) )
             #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
 
         elif prop.startswith(DISP_FIELD_PREFIX):
@@ -544,7 +550,7 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
         assert base_url
         q.add_group_withnote(current_cg.id)
         if format == 'html':
-            cols.append( ('Status', None, lambda c: membership_extended_widget(request, c, current_cg, base_url), None) )
+            cols.append( ('Status', None, membership_extended_widget_factory(request, current_cg), None) )
             #cols.append( ('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
             #cols.append( ('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
             #cols.append( ('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
