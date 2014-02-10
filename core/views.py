@@ -1611,7 +1611,7 @@ def contactgroup_edit(request, id):
             messages.add_message(request, messages.SUCCESS, 'Group %s has been changed sucessfully!' % cg.unicode_with_date())
 
             cg.check_static_folder_created()
-            Contact.check_login_created(request.user) # subgroups change
+            Contact.check_login_created(request) # subgroups change
 
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(cg.get_absolute_url() + 'edit')
@@ -1715,7 +1715,7 @@ def contactgroup_add_contacts_to(request):
                 #TODO: Check contact_id can be seen by user
                 contact = get_object_or_404(Contact, pk=contact_id)
                 contacts.append(contact)
-            target_group.set_member_n(request.user, contacts, modes)
+            target_group.set_member_n(request, contacts, modes)
 
             return HttpResponseRedirect(target_group.get_absolute_url())
         else:
@@ -1980,7 +1980,7 @@ def contactingroup_edit(request, gid, cid):
             cig.note = data['note']
             # TODO: use set_member_1 for logs
             messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
-            Contact.check_login_created(request.user)
+            Contact.check_login_created(request)
             cig.save()
             hooks.membership_changed(request.user, contact, cg)
             return HttpResponseRedirect(cg.get_absolute_url())

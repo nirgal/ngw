@@ -11,9 +11,10 @@ import subprocess
 from django.core.exceptions import PermissionDenied
 from django.db import models, connection
 from django import forms
-from django.contrib.auth.hashers import check_password, make_password
 from django.http import Http404
 from django.utils import html
+from django.contrib.auth.hashers import check_password, make_password
+from django.contrib import messages
 import decoratedstr # Nirgal external package
 from ngw.core.nav import Navbar
 from ngw.core import perms
@@ -545,7 +546,8 @@ class Contact(NgwModel):
 
 
     @staticmethod
-    def check_login_created(logged_contact):
+    def check_login_created(request):
+        logged_contact = request.user
         # Create login for all members of GROUP_USER
         cursor = connection.cursor()
         cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN})
@@ -554,11 +556,11 @@ class Contact(NgwModel):
             new_login = contact.generate_login()
             contact.set_fieldvalue(logged_contact, FIELD_LOGIN, new_login)
             contact.set_password(logged_contact, contact.generate_password())
-            logged_contact.push_message("Login information generated for User %s."%(contact.name))
+            messages.add_message(request, messages.SUCCESS, "Login information generated for User %s." % contact.name)
 
         for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
             cfv.delete()
-            logged_contact.push_message("Delete login information for User %s."%(cfv.contact.name))
+            messages.add_message(request, messages.SUCCESS, "Login information deleted for User %s." % cfv.contact.name)
 
 
     def is_member_of(self, group_id):
@@ -902,10 +904,11 @@ class ContactGroup(NgwModel):
         return result
 
 
-    def set_member_n(self, logged_contact, contacts, group_member_mode):
+    def set_member_n(self, request, contacts, group_member_mode):
         """
         Like set_member_1 but for several contacts
         """
+        logged_contact = request.user
         added_contacts = []
         changed_contacts = []
         for contact in contacts:
@@ -921,14 +924,16 @@ class ContactGroup(NgwModel):
                 msg = 'Contact %s has been added in %s with status %s.'
             else:
                 msg = 'Contacts %s have been added in %s with status %s.'
-            logged_contact.push_message(msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
+            messages.add_message(request, messages.SUCCESS,
+                msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
             if len(changed_contacts)==1:
                 msg = 'Contact %s allready was in %s. Status has been changed to %s.'
             else:
                 msg = 'Contacts %s allready were in %s. Status have been changed to %s.'
-            logged_contact.push_message(msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
+            messages.add_message(request, messages.SUCCESS,
+                msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
 
 
 
