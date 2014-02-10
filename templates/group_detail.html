@@ -2,15 +2,6 @@
 {% load ngwtags %}
 
 {% block body %}
-<style>
-.membershipextra {
-    position:absolute;
-    display:none;
-    background-color: #ffffff;
-    border:1px solid black;
-    padding: 1ex;
-}
-</style>
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
     {% if cg.date %}Date: <b>{{ cg.date|ngw_date_format }}</b><br>{% endif %}
     {% if cg.budget_code %}Budget code: <b>{{ cg.budget_code }}</b><br>{% endif %}

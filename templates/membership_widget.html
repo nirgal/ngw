@@ -1,3 +1,4 @@
+<div style="position:relative">{% comment %}See https://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-elements{%endcomment%}
 <a href="javascript:show_membership_extrainfo('{{gid}}_{{cid}}')">{{membership_str}}</a>
 {% if note %}<br>{{note}}{% endif %}
 <div class=membershipextra id="membership_{{gid}}_{{cid}}">
@@ -12,4 +13,5 @@
         <br>
         <a href="{{cig_url}}/membership">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a>
     </form>
+</div>
 </div>

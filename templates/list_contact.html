@@ -2,6 +2,18 @@
 
 {% block body %}
 
+<style>
+.membershipextra {
+    position:absolute;
+    display:none;
+    background-color: white;
+    border:1px solid black;
+    padding: 1ex;
+    right:0px;
+    z-index: 2;
+}
+</style>
+
 <script>
 shown_membership_extrainfo_gcid=null;
 function show_membership_extrainfo(gcid) {
