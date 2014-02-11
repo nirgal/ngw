@@ -5,6 +5,7 @@ DROP VIEW IF EXISTS auth_users;
 DROP VIEW IF EXISTS apache_log;
 DROP VIEW IF EXISTS auth_users_bb;
 DROP TABLE IF EXISTS contact_sysmsg;
+UPDATE contact_field_value SET value='crypt$$'||value WHERE contact_field_id=2 AND value NOT LIKE '%$%';
 -- End migration script
 
 

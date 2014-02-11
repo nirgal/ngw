@@ -40,7 +40,7 @@ def cmd_auth(login, domain, password):
         return False
 
     logging.debug('Checking passord for user %s', login)
-    if check_password(password, 'crypt$$'+dbpassword):
+    if check_password(password, dbpassword):
         logging.info('User %s auth successful', login)
         return True
     else:

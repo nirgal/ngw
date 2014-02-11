@@ -108,7 +108,7 @@ SELECT pg_catalog.setval('contact_field_id_seq', 100, true);
 
 COPY contact_field_value (contact_id, contact_field_id, value) FROM stdin;
 1	1	admin
-1	2	/BHLc/u80sjCs
+1	2	crypt$$/BHLc/u80sjCs
 1	3	2013-10-23 10:19:15
 1	4	name,field_7,field_92,field_100
 1	7	test@exemple.net

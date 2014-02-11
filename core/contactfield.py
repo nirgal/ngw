@@ -264,7 +264,7 @@ class PasswordContactField(ContactField):
         raise NotImplementedError('Cannot reverse hash of a password')
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
-        return len(value)==13 # We are locked with crypt algorithm, right now
+        return True # No check
 register_contact_field_type(PasswordContactField, 'PASSWORD', 'Password', has_choice=False)
 
 

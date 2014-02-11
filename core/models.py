@@ -308,13 +308,14 @@ class Contact(NgwModel):
         Returns a boolean of whether the raw_password was correct. Handles
         hashing formats behind the scenes.
         """
+        #TODO: Auto-upgrade hash algorithm:
         #def setter(raw_password):
         #    self.set_password(raw_password)
         #    self.save(update_fields=["password"])
-        dbpassword = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=FIELD_PASSWORD).value
+        dbpassword = self.get_fieldvalue_by_id(FIELD_PASSWORD)
         if not dbpassword:
             return None
-        return check_password(raw_password, 'crypt$$'+dbpassword) #, setter)
+        return check_password(raw_password, dbpassword) #, setter)
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
@@ -531,8 +532,6 @@ class Contact(NgwModel):
         assert request, 'ngw version of set_password needs a request parameter'
         # TODO check password strength
         hash = make_password(newpassword_plain)
-        assert hash.startswith('crypt$$'), 'Hash algorithm is imcompatible with libapache2-mod-auth-pgsql'
-        hash = hash[len('crypt$$'):]
         self.set_fieldvalue(request, FIELD_PASSWORD, hash)
         if new_password_status is None:
             if self.id == request.user.id:
@@ -583,7 +582,7 @@ class Contact(NgwModel):
 
 
     def update_lastconnection(self):
-        # see NgwAuthBackend.enable_lastconnection_updates
+        # see NgwAuthBackend.authenticate
         cfv, created = ContactFieldValue.objects.get_or_create(contact_id=self.id, contact_field_id=FIELD_LASTCONNECTION)
         cfv.value = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         cfv.save()
