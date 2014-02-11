@@ -875,15 +875,12 @@ def contact_edit(request, gid=None, cid=None):
 
 
 class ContactPasswordForm(forms.Form):
-    new_password = forms.CharField(max_length=10, widget=forms.PasswordInput())
-    confirm_password = forms.CharField(max_length=10, widget=forms.PasswordInput())
+    new_password = forms.CharField(widget=forms.PasswordInput())
+    confirm_password = forms.CharField(widget=forms.PasswordInput())
 
     def clean(self):
         if self.cleaned_data.get('new_password', '') != self.cleaned_data.get('confirm_password', ''):
             raise forms.ValidationError('The passwords must match!')
-            
-        if len(self.cleaned_data.get('new_password', '') ) > 8:
-            raise forms.ValidationError("Password can't have more than 8 characters")
             
         try:
             crack.FascistCheck(self.cleaned_data.get('new_password', ''))
