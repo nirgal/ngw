@@ -395,7 +395,7 @@ def parse_filter_list_str(txt):
         assert(list[idx][-1] == '"')
         list[idx] = list[idx][1:-1]
     assert(len(list)%2 == 0)
-    return [ (list[2*i], list[2*i+1]) for i in range(len(list)/2) ]
+    return [ (list[2*i], list[2*i+1]) for i in range(len(list)//2) ]
     
 
 @login_required()
