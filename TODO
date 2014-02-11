@@ -7,7 +7,6 @@ Show a real message when cookies are disabled:
 Fix News display: Should show all the news, not just admins ones, depending on groups memberships
 
 Upgrade password hash system:
-- Change settings
 - Upgrade algorithm with setter in check_password
 
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?

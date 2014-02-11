@@ -179,10 +179,6 @@ AUTH_USER_MODEL = 'core.Contact'
 LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
 
-PASSWORD_HASHERS = (
-    'django.contrib.auth.hashers.CryptPasswordHasher',
-)
-
 SESSION_COOKIE_AGE = 1800 # 30'
 SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
 SESSION_COOKIE_SECURE = True # We are not using http, only https
