@@ -312,7 +312,13 @@ class Contact(NgwModel):
         #def setter(raw_password):
         #    self.set_password(raw_password)
         #    self.save(update_fields=["password"])
-        dbpassword = self.get_fieldvalue_by_id(FIELD_PASSWORD)
+
+        try:
+            cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=FIELD_PASSWORD)
+        except ContactFieldValue.DoesNotExist:
+            return None
+
+        dbpassword = cfv.value
         if not dbpassword:
             return None
         return check_password(raw_password, dbpassword) #, setter)
