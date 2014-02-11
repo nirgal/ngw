@@ -2,7 +2,8 @@
 {% load ngwtags %}
 
 {% block body %}
-<form method=post>{% csrf_token %}
+<form method=post>
+{% csrf_token %}
 <input type=hidden name=id value="{{id}}">
 <input type=hidden name=name value="{{name}}">
 <input type=hidden name=hint value="{{hint}}">
