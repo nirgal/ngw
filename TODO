@@ -4,10 +4,7 @@ Show a real message when cookies are disabled:
 - If test_cookie is not set at /login, redirect to /login?test_cookie
 - If test_cookie is still not set, show a warning
 
-Fix News display: Should show all the news, not just admins ones, depending on groups memberships
-
-Upgrade password hash system:
-- Upgrade algorithm with setter in check_password
+Fix News display: Should show all the news, not just admins ones, depending on groups memberships.
 
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
 

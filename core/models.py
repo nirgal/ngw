@@ -308,20 +308,20 @@ class Contact(NgwModel):
         Returns a boolean of whether the raw_password was correct. Handles
         hashing formats behind the scenes.
         """
-        #TODO: Auto-upgrade hash algorithm:
-        #def setter(raw_password):
-        #    self.set_password(raw_password)
-        #    self.save(update_fields=["password"])
 
         try:
             cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=FIELD_PASSWORD)
         except ContactFieldValue.DoesNotExist:
             return None
 
+        def setter(raw_password):
+            cfv.value = make_password(raw_password)
+            cfv.save()
+
         dbpassword = cfv.value
         if not dbpassword:
             return None
-        return check_password(raw_password, dbpassword) #, setter)
+        return check_password(raw_password, dbpassword, setter)
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
