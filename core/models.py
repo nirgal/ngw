@@ -1302,11 +1302,11 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterChoiceEQ.internal_name = 'ceq'
 FieldFilterChoiceEQ.human_name = '='
@@ -1316,11 +1316,11 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def to_html(self, value):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterChoiceNEQ.internal_name = 'cneq'
 FieldFilterChoiceNEQ.human_name = '≠'
@@ -1330,11 +1330,11 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterMultiChoiceHAS.internal_name = 'mchas'
 FieldFilterMultiChoiceHAS.human_name = 'contains'
@@ -1344,11 +1344,11 @@ class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
     def to_html(self, value):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
         return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
     def get_param_types(self):
-        field = ContactField.objects.get(self.field_id)
+        field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterMultiChoiceHASNOT.internal_name = 'mchasnot'
 FieldFilterMultiChoiceHASNOT.human_name = "doesn't contain"
