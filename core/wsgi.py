@@ -15,7 +15,10 @@ framework.
 """
 
 from __future__ import division, absolute_import, print_function, unicode_literals
+import sys
 import os
+
+sys.path.append('/usr/lib')
 
 # We defer to a DJANGO_SETTINGS_MODULE already in the environment. This breaks
 # if running multiple sites in the same mod_wsgi process. To fix this, use
