@@ -97,7 +97,6 @@ STATICFILES_DIRS = (
     '/usr/lib/ngw/static/',
     ('admin', '/usr/share/pyshared/django/contrib/admin/static/admin'),
     ('javascript', '/usr/share/javascript'),
-    ('mailing-generated', '/usr/lib/ngw/mailing/generated'),
 )
 
 # List of finder classes that know how to find static files in

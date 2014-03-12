@@ -35,12 +35,6 @@ WSGIPythonPath /usr/lib
 
     Alias /admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
 
-    Alias /mailing-generated/ /usr/lib/ngw/mailing/generated/
-    <LocationMatch "^/mailing-generated/">
-        require valid-user
-		Options -Indexes
-    </LocationMatch>
-
     # We want HTTP_AUTHORIZATION to go to python for now:
     WSGIPassAuthorization On
 

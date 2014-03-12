@@ -7,7 +7,8 @@ from copy import copy
 import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import (CompatibleStreamingHttpResponse, HttpResponse,
+    HttpResponseForbidden, HttpResponseRedirect)
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.shortcuts import render_to_response, get_object_or_404
@@ -988,10 +989,10 @@ def contact_pass_letter(request, gid=None, cid=None):
         if not filename:
             return HttpResponse('File generation failed')
 
-        url = '/mailing-generated/' + filename
-        html_message = 'File generated in <a href="%(url)s">%(url)s</a>.' % { 'url': url}
-        args['message'] = mark_safe(html_message)
-        return render_to_response('message.html', args, RequestContext(request))
+        fullpath = os.path.join('/usr/lib/ngw/mailing/generated/', filename)
+        response = CompatibleStreamingHttpResponse(open(fullpath, 'rb'), content_type='application/pdf')
+        os.unlink(fullpath)
+        return response
     return render_to_response('password_letter.html', args, RequestContext(request))
 
 

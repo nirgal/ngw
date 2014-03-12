@@ -57,4 +57,4 @@ https://pypi.python.org/pypi/django-secure
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing with ejabberd tables
 
-Serve pdf generated files with django rather than requiring an additonal BasicAuth
+Support Image fields
