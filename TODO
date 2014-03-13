@@ -1,4 +1,4 @@
-Make a nicer login form (css)
+(jpv) Make a nicer login form (css)
 
 Show a real message when cookies are disabled:
 - If test_cookie is not set at /login, redirect to /login?test_cookie
@@ -49,9 +49,9 @@ Translations:
 
 fix_htaccess should create recursively the dir hierarchy if missing
 
-Remove pwgen dependency
+(jpv) Remove pwgen dependency
 
-Enable active session expiration:
+(jpv) Enable active session expiration:
 https://pypi.python.org/pypi/django-secure
 
 Fix ejabberd cross subscribe overrides:
