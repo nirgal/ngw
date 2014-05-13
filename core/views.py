@@ -1404,6 +1404,11 @@ def contactgroup_members(request, gid, output_format=''):
         args['nav'] = cg.get_smart_navbar()
         args['nav'].add_component('members')
         args['nav'].add_component('emails')
+        args['display_member'] = 'm' in display
+        args['display_invited'] = 'i' in display
+        args['display_declined'] = 'd' in display
+        args['display_subgroups'] = 'g' in display
+        args['display_admins'] = 'a' in display
         return render_to_response('emails.html', args, RequestContext(request))
     elif output_format == 'csv':
         result = ''
