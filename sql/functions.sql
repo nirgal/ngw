@@ -1,11 +1,15 @@
 -- Migration script
-DROP FUNCTION IF EXISTS c_operatorof_cg(integer, integer);
-DROP FUNCTION IF EXISTS c_viewerof_cg(integer, integer);
-DROP VIEW IF EXISTS auth_users;
-DROP VIEW IF EXISTS apache_log;
-DROP VIEW IF EXISTS auth_users_bb;
-DROP TABLE IF EXISTS contact_sysmsg;
-UPDATE contact_field_value SET value='crypt$$'||value WHERE contact_field_id=2 AND value NOT LIKE '%$%';
+-- DROP FUNCTION IF EXISTS c_operatorof_cg(integer, integer);
+-- DROP FUNCTION IF EXISTS c_viewerof_cg(integer, integer);
+-- DROP VIEW IF EXISTS auth_users;
+-- DROP VIEW IF EXISTS apache_log;
+-- DROP VIEW IF EXISTS auth_users_bb;
+-- DROP TABLE IF EXISTS contact_sysmsg;
+-- UPDATE contact_field_value SET value='crypt$$'||value WHERE contact_field_id=2 AND value NOT LIKE '%$%';
+
+ALTER TABLE contact_in_group DROP CONSTRAINT contact_in_group_pkey;
+ALTER TABLE contact_in_group ADD COLUMN id SERIAL NOT NULL PRIMARY KEY;
+ALTER TABLE contact_in_group SET WITHOUT OIDS;
 -- End migration script
 
 

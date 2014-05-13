@@ -1604,7 +1604,7 @@ class GroupManageGroup(NgwModel):
 
 
 class ContactInGroup(NgwModel):
-    oid = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact)
     group = models.ForeignKey(ContactGroup)
     flags = models.IntegerField()

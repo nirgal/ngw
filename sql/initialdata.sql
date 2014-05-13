@@ -123,10 +123,11 @@ COPY contact_field_value (contact_id, contact_field_id, value) FROM stdin;
 -- Data for Name: contact_in_group; Type: TABLE DATA; Schema: public; Owner: ngw
 --
 
-COPY contact_in_group (contact_id, group_id, flags, note) FROM stdin;
-1	8	9	\N
+COPY contact_in_group (id, contact_id, group_id, flags, note) FROM stdin;
+1	1	8	9	\N
 \.
 
+SELECT pg_catalog.setval('contact_in_group_id_seq', 2, true);
 
 --
 -- Data for Name: group_in_group; Type: TABLE DATA; Schema: public; Owner: ngw

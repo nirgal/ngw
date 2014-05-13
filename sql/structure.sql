@@ -111,12 +111,13 @@ CREATE INDEX contact_field_value_contact_field_id_index ON contact_field_value (
 --
 
 CREATE TABLE contact_in_group (
+    id serial NOT NULL PRIMARY KEY,
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     flags integer NOT NULL,
     note text,
     PRIMARY KEY (contact_id, group_id)
-) WITH OIDS;
+);
 
 CREATE INDEX contact_in_group_contact_id_index ON contact_in_group (contact_id);
 CREATE INDEX contact_in_group_group_id_index ON contact_in_group (group_id);
