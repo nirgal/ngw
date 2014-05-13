@@ -22,7 +22,7 @@
     {{ email|get:0 }} &lt;{{ email|get:1 }}&gt;<br>
     {% endfor %}
     {% if noemails %}
-        <p>Warning, the following people does not have any email adress:<br>
+        <p>Warning, the following people does not have any email address:<br>
         {% for contact in noemails %}
         <a href="{{ contact.get_absolute_url }}">{{ contact.name }}</a><br>
         {% endfor %}
