@@ -226,3 +226,9 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 # If you enable xmpp extension, you'll need to define these 2 values
 #XMPP_DOMAIN = 'myxmppdomain.net'
 #XMPP_GROUP = 284
+
+#EMAIL_HOST = 'localhost'
+EMAIL_PORT = 465
+#EMAIL_HOST_USER = 'smtpuser'
+#EMAIL_HOST_PASSWORD = 'password'
+EMAIL_FROM = 'ngw@nirgal.com'
