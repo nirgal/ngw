@@ -231,4 +231,4 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 EMAIL_PORT = 465
 #EMAIL_HOST_USER = 'smtpuser'
 #EMAIL_HOST_PASSWORD = 'password'
-EMAIL_FROM = 'ngw@nirgal.com'
+#DEFAULT_FROM_EMAIL = 'webmaster@localhost'

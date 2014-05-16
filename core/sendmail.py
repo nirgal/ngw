@@ -4,9 +4,13 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 
 import socket
-import socks # You need package python-socksipy
 import smtplib
 import ssl
+import httplib
+import urllib
+import json
+import logging
+import socks # You need package python-socksipy
 from email.mime.text import MIMEText
 from django.conf import settings
 
@@ -68,24 +72,50 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
 
 def send_mail(addresses, message):
     assert settings.EMAIL_PORT==465, 'Sorry we only support smtps connections right now'
-    CHARSET = 'utf-8'
-    try:
-        from_ = settings.EMAIL_FROM
-    except AttributeError:
-        raise exceptions.ImproperlyConfigured("You must define EMAIL_FROM in your settings.")
 
-    msg = MIMEText(message.encode(CHARSET), _charset=CHARSET)
+    charset = settings.DEFAULT_CHARSET
+    msg = MIMEText(message.encode(charset), _charset=charset)
     msg['Subject'] = 'You have a message'
-    msg['From'] = from_
+    msg['From'] = settings.DEFAULT_FROM_EMAIL
     msg['To'] = 'undisclosed-recipients:;'
 
     if b'.onion' in settings.EMAIL_HOST:
         s = SMTP_SSL_TOR(settings.EMAIL_HOST, settings.EMAIL_PORT, local_hostname='[::1]')
     else:
-        raise 'Noooooo'
         s = smtplib.SMTP_SSL(settings.EMAIL_HOST, settings.EMAIL_PORT)
     s.set_debuglevel(1)
     if settings.EMAIL_HOST_USER:
         s.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-    s.sendmail(from_, addresses, msg.as_string())
+    s.sendmail(settings.DEFAULT_FROM_EMAIL, addresses, msg.as_string())
     s.quit()
+
+def send_mail2(addresses, message):
+    conn = httplib.HTTPSConnection('onetime.info')
+    for address in addresses:
+        conn.request('POST', '/', urllib.urlencode({
+            'message': message.encode(settings.DEFAULT_CHARSET),
+            'once': True,
+            'expiration': '7',
+        }), {
+            'Content-type': 'application/x-www-form-urlencoded',
+            'X_REQUESTED_WITH': 'XMLHttpRequest',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+        })
+        response = conn.getresponse()
+        if response.status != 200:
+            logging.error("Temporary storage server error: %s %s" % (response.status, response.reason))
+            logging.error("%s", response.read())
+        jresponse = json.load(response)
+
+        send_mail([address], '''Hello
+
+You can read your message at https://onetime.info%s
+
+Warning, that message will be displayed exactly once, and then be deleted. Have
+a pen ready before clicking the link. :)''' % jresponse['url'])
+
+
+if __name__ == '__main__':
+    send_mail2(['user@localhost'], '''Hello
+
+This is yet another test.''')

@@ -25,7 +25,7 @@ from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core import contactsearch
 from ngw.core import perms
-from ngw.core.sendmail import send_mail
+from ngw.core.sendmail import send_mail, send_mail2
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -1497,7 +1497,7 @@ def contactgroup_emails(request, gid):
             if c_mails:
                 emails.append(c_mails[0])
         message = request.POST.get('message', '')
-        send_mail(emails, message)
+        send_mail2(emails, message)
         messages.add_message(request, messages.INFO, 'Message sent to '+', '.join(emails))
 
     return contactgroup_members(request, gid, output_format='emails')
