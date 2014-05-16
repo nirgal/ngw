@@ -25,6 +25,7 @@ from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core import contactsearch
 from ngw.core import perms
+from ngw.core.sendmail import send_mail
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -1388,11 +1389,11 @@ def contactgroup_members(request, gid, output_format=''):
         for contact in q:
             c_emails = contact.get_fieldvalues_by_type('EMAIL')
             if c_emails:
-                emails.append((contact, c_emails[0])) # only the first email
+                emails.append((contact.id, contact, c_emails[0])) # only the first email
             else:
                 noemails.append(contact)
         def email_sort(a, b):
-            return cmp(remove_decoration(a[0].name.lower()), remove_decoration(b[0].name.lower()))
+            return cmp(remove_decoration(a[1].name.lower()), remove_decoration(b[1].name.lower()))
         emails.sort(email_sort)
 
         args['title'] = 'Emails for ' + cg.name
@@ -1478,6 +1479,28 @@ def contactgroup_members(request, gid, output_format=''):
     #import pprint
     #pprint.PrettyPrinter(indent=4).pprint(connection.queries)
     return response
+
+
+@login_required()
+@require_group(GROUP_USER_NGW)
+def contactgroup_emails(request, gid):
+    if request.method == 'POST':
+        if not perms.c_can_see_members_cg(request.user.id, gid):
+            raise PermissionDenied
+        emails = []
+        for param in request.POST:
+            if not param.startswith('contact_'):
+                continue
+            contact_id = param[len('contact_'):]
+            contact = get_object_or_404(Contact, pk=contact_id)
+            c_mails = contact.get_fieldvalues_by_type('EMAIL')
+            if c_mails:
+                emails.append(c_mails[0])
+        message = request.POST.get('message', '')
+        send_mail(emails, message)
+        messages.add_message(request, messages.INFO, 'Message sent to '+', '.join(emails))
+
+    return contactgroup_members(request, gid, output_format='emails')
 
 
 class ContactGroupForm(forms.Form):
