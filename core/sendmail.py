@@ -15,21 +15,37 @@ from email.mime.text import MIMEText
 from django.conf import settings
 
 
+def _validate_wildcard_name(valid_for, expected):
+    '''
+    Returns True if hostname valid_for that may start with wildcard matches
+    expected.
+    For exemple, expected='smtp.example.com' will match 'smtp.example.com',
+    '*.example.com', but not 'www.example.com'.
+    '''
+    #print('_validate_wildcard_name:', valid_for, expected)
+    if not valid_for:
+        return False
+    if valid_for[0] == '*':
+        wanted_tail = valid_for[1:]
+        return wanted_tail == expected[-len(wanted_tail):]
+    else:
+        return valid_for == expected
+
+
 def validate_ssl_hostname(cert, expected_sslhostname):
     '''
     Tests whether certificate provides expected_sslhostname
     Returns a boolean
-    TODO: Does not support wildcards.
     '''
     for line in cert['subject']:
         key, value = line[0]
         if key == 'commonName':
-            if value == expected_sslhostname:
+            if _validate_wildcard_name(value, expected_sslhostname):
                 return True
     for line in cert.get('subjectAltName', ()):
         key, value = line
         if key == 'DNS':
-            if value == expected_sslhostname:
+            if _validate_wildcard_name(value, expected_sslhostname):
                 return True
     return False
 
