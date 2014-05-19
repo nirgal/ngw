@@ -11,16 +11,19 @@ from django.conf import settings
 from django.core.mail import send_mass_mail
 
 
+SUBJECT = 'You have a message'
+NOTIFICATION_TEXT = '''Hello
 
-def send_mail1(addresses, text):
-    subject = 'You have a message'
-    send_mass_mail([(subject, text, None, [recipient])
-        for recipient in addresses])
+You can read your message at https://onetime.info%s
+
+Warning, that message will be displayed exactly once, and then be deleted. Have
+a pen ready before clicking the link. :)'''
 
 
-def send_mail2(addresses, message):
+def send_mail2(recipients, message):
+    masssmail_args = []
     conn = httplib.HTTPSConnection('onetime.info')
-    for address in addresses:
+    for recipient in recipients:
         conn.request('POST', '/', urllib.urlencode({
             'message': message.encode(settings.DEFAULT_CHARSET),
             'once': True,
@@ -36,15 +39,9 @@ def send_mail2(addresses, message):
             logging.error("%s", response.read())
         jresponse = json.load(response)
 
-        send_mail1([address], '''Hello
-
-You can read your message at https://onetime.info%s
-
-Warning, that message will be displayed exactly once, and then be deleted. Have
-a pen ready before clicking the link. :)''' % jresponse['url'])
+        masssmail_args.append((SUBJECT, NOTIFICATION_TEXT % jresponse['url'], None, [recipient]))
+    send_mass_mail(masssmail_args)
 
 
 if __name__ == '__main__':
-    send_mail2([settings.DEFAULT_FROM_EMAIL], '''Hello
-
-This is yet another test.''')
+    send_mass_mail('Test', "Hello\r\n\r\nThis is a test.", None, [settings.DEFAULT_FROM_EMAIL])
