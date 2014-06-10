@@ -179,6 +179,20 @@ CREATE TABLE log (
     change text
 );
 
+--
+-- Name: contact_message; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE contact_message (
+    id serial NOT NULL PRIMARY KEY,
+    cig_id integer NOT NULL REFERENCES contact_in_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
+    send_date timestamp without time zone NOT NULL,
+    read_date timestamp without time zone,
+    is_answer boolean DEFAULT false NOT NULL,
+    text text,
+    sync_info text
+);
+-- TODO: postgresql 9.2 supports json type for syncinfo
 
 --
 -- PostgreSQL database dump complete

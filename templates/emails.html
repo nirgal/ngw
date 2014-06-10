@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% load ngwtags %}
 
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
 {% block body %}
 <script>
 function selectAll(target_checked) {

@@ -6,10 +6,18 @@
 -- DROP VIEW IF EXISTS auth_users_bb;
 -- DROP TABLE IF EXISTS contact_sysmsg;
 -- UPDATE contact_field_value SET value='crypt$$'||value WHERE contact_field_id=2 AND value NOT LIKE '%$%';
-
-ALTER TABLE contact_in_group DROP CONSTRAINT contact_in_group_pkey;
-ALTER TABLE contact_in_group ADD COLUMN id SERIAL NOT NULL PRIMARY KEY;
-ALTER TABLE contact_in_group SET WITHOUT OIDS;
+-- ALTER TABLE contact_in_group DROP CONSTRAINT contact_in_group_pkey;
+-- ALTER TABLE contact_in_group ADD COLUMN id SERIAL NOT NULL PRIMARY KEY;
+-- ALTER TABLE contact_in_group SET WITHOUT OIDS;
+CREATE TABLE IF NOT contact_message (
+    id serial NOT NULL PRIMARY KEY,
+    cig_id integer NOT NULL REFERENCES contact_in_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
+    send_date timestamp without time zone NOT NULL,
+    read_date timestamp without time zone,
+    is_answer boolean DEFAULT false NOT NULL,
+    text text,
+    sync_info text
+);
 -- End migration script
 
 

@@ -18,6 +18,9 @@ You need to edit your settings.py:
   from django.utils.crypto import get_random_string
   get_random_string(50, 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
 
+You need to set up a cron tab:
+*/5 * * * * /usr/lib/ngw/manage.py msgsync -v 2
+
 Postgres setup
 ==============
 

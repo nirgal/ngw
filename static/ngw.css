@@ -242,3 +242,22 @@ br.clearall {
 .selector h2 {
     margin-bottom: 0px;
 }
+
+#submenucontainer {
+    display: block;
+    width: auto;
+    text-align: center;
+}
+
+.submenuitem {
+    display: inline-block;
+    padding-left: 3ex;
+    padding-right: 3ex;
+    background: #f0f0f0;
+}
+
+.submenuitem:hover, .activesubmenuitem {
+    font-weight: bold;
+    border:1px solid black;
+    background: white;
+}

@@ -7,11 +7,12 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 import sys
 import os
 import subprocess
+import logging
 from time import time as timestamp
 from django.contrib import messages
 
 if __name__ != '__main__':
-    print('PHPBB forum synchronisation extension for NGW loading.', file=sys.stderr)
+    logging.debug('PHPBB forum synchronisation extension for NGW loading.')
 
 if __name__ == '__main__':
     # TODO: This should be called from top level manage.py
@@ -242,5 +243,5 @@ if __name__ == "__main__":
             print_and_call("sudo", "-u", "www-data", "/usr/lib/ngw/extensions/phpbb/clearcache.php")
 
 if __name__ != '__main__':
-    print('PHPBB forum synchronisation extension for NGW loaded.', file=sys.stderr)
+    logging.debug('PHPBB forum synchronisation extension for NGW loaded.')
 

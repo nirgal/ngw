@@ -4,6 +4,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
+import json
 import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -25,7 +26,6 @@ from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core import contactsearch
 from ngw.core import perms
-from ngw.core.sendmail import send_mail2
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -1410,6 +1410,7 @@ def contactgroup_members(request, gid, output_format=''):
         args['display_declined'] = 'd' in display
         args['display_subgroups'] = 'g' in display
         args['display_admins'] = 'a' in display
+        args['active_submenu'] = 'members'
         return render_to_response('emails.html', args, RequestContext(request))
     elif output_format == 'csv':
         result = ''
@@ -1473,6 +1474,7 @@ def contactgroup_members(request, gid, output_format=''):
     args['display_declined'] = 'd' in display
     args['display_subgroups'] = 'g' in display
     args['display_admins'] = 'a' in display
+    args['active_submenu'] = 'members'
 
     response = query_print_entities(request, 'group_detail.html', args)
     #from django.db import connection
@@ -1487,21 +1489,40 @@ def contactgroup_emails(request, gid):
     if request.method == 'POST':
         if not perms.c_can_see_members_cg(request.user.id, gid):
             raise PermissionDenied
-        emails = []
+        message = request.POST.get('message', '')
         for param in request.POST:
             if not param.startswith('contact_'):
                 continue
             contact_id = param[len('contact_'):]
             contact = get_object_or_404(Contact, pk=contact_id)
-            c_mails = contact.get_fieldvalues_by_type('EMAIL')
-            if c_mails:
-                emails.append(c_mails[0])
-        message = request.POST.get('message', '')
-        send_mail2(emails, message)
-        messages.add_message(request, messages.INFO, 'Message sent to '+', '.join(emails))
+            cig = ContactInGroup.objects.get(contact=contact_id, group_id=gid)
+            contact_msg = ContactMsg(cig=cig)
+            contact_msg.send_date = datetime.utcnow()
+            contact_msg.text = message
+            #contact_msg.sync_info = json.dumps({'sync':0})
+            contact_msg.save()
+            messages.add_message(request, messages.INFO, 'Messages stored.')
 
     return contactgroup_members(request, gid, output_format='emails')
 
+
+@login_required()
+@require_group(GROUP_USER_NGW)
+def contactgroup_messages(request, gid):
+    if not perms.c_operatorof_cg(request.user.id, gid):
+        raise PermissionDenied
+
+    cg = get_object_or_404(ContactGroup, pk=gid)
+    messages = ContactMsg.objects.filter(cig__group_id=gid)
+    args = {}
+    args['title'] = "Messages for " + cg.unicode_with_date()
+    args['o'] = cg
+    args['nav'] = cg.get_smart_navbar()
+    args['nav'].add_component('messages')
+    args['contact_messages'] = messages
+    args['active_submenu'] = 'messages'
+
+    return render_to_response('group_messages.html', args, RequestContext(request))
 
 class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
@@ -1804,6 +1825,7 @@ def contactgroup_add_contacts_to(request):
     args['nav'].add_component(('add_contacts_to', 'add contacts to'))
     args['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
     args['query'] = q
+    args['active_submenu'] = 'members'
     return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
 
 
@@ -2109,6 +2131,7 @@ def contactgroup_news(request, gid):
     args['objtype'] = ContactGroupNews
     args['nav'] = cg.get_smart_navbar()
     args['nav'].add_component('news')
+    args['active_submenu'] = 'news'
     return render_to_response('news.html', args, RequestContext(request))
 
 

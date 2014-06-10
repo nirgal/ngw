@@ -1,6 +1,10 @@
 {% extends "list_contact.html" %}
 {% load ngwtags %}
 
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
 {% block body %}
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
     {% if cg.date %}Date: <b>{{ cg.date|ngw_date_format }}</b><br>{% endif %}

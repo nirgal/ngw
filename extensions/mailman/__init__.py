@@ -4,8 +4,9 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 import sys
 import os
+import logging
 if __name__ != '__main__':
-    print('Mailman synchronisation extension for NGW loading.', file=sys.stderr)
+    logging.debug('Mailman synchronisation extension for NGW loading.')
 
 if __name__ == '__main__':
     sys.path += [ '/usr/lib/' ]
@@ -155,4 +156,4 @@ if __name__ == '__main__':
         print('unknow action', action, file=sys.stderr)
 
 if __name__ != '__main__':
-    print('mailman synchronisation extension for NGW loaded.', file=sys.stderr)
+    logging.debug('mailman synchronisation extension for NGW loaded.')

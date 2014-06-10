@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% load ngwtags %}
 
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
 {% block body %}
     {% for n in news %}
     <h1 class="boxheader"><a href="{{n.get_absolute_url}}">{{ n.title }}</a></h1>

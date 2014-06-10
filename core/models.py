@@ -1658,3 +1658,16 @@ class ContactGroupNews(NgwModel):
         return self.contact_group.get_absolute_url() + 'news/' + str(self.id) + '/'
 
 
+class ContactMsg(NgwModel):
+    id = models.AutoField(primary_key=True)
+    cig = models.ForeignKey(ContactInGroup)
+    send_date = models.DateTimeField()
+    read_date = models.DateTimeField(null=True, blank=True)
+    is_answer = models.BooleanField(default=False)
+    #subject
+    text = models.TextField()
+    sync_info = models.TextField(blank=True) # json data for external storage
+
+    class Meta:
+        db_table = 'contact_message'
+        verbose_name = 'message'

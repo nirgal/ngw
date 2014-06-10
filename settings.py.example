@@ -233,3 +233,5 @@ EMAIL_PORT = 465
 #EMAIL_HOST_USER = 'smtpuser'
 #EMAIL_HOST_PASSWORD = 'password'
 #DEFAULT_FROM_EMAIL = 'webmaster@localhost'
+
+EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
