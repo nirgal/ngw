@@ -21,7 +21,7 @@
 <b>{{ article.date|ngw_date_format }}</b> • <b>{{article.title}}</b><br>
 {{ article.text|linebreaksbr }}<br><br>
 {% endfor %}
-<a href="{{ GroupAdmin.get_absolute_url }}news/">Toutes les news...</a>
+<a href="{{ GroupUserNgw.get_absolute_url }}news/">Toutes les news...</a>
 </div>
 {% endif %}
 

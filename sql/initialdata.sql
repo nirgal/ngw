@@ -72,7 +72,7 @@ COPY contact_group (id, name, description, field_group, date, budget_code, syste
 2	Utilisateurs	Ensemble des personnes qui ont un identifiant et un mot de passe.\r\nVoir aussi "Utilisateurs NGW" et "Utilisateurs Forum".	t	\N		t	\N	f	f
 8	Admins	Ils peuvent ajouter des contacts dans n'importe quel groupe, et tout voir.	f	\N		t		f	f
 9	Observateurs	Ils peuvent tout voir, mais n'ont pas accès en écriture sur les groupes.	f	\N		t		f	f
-52	NGW Users	People in that group can connect to NGW interface.	t	\N		t	\N	f	f
+52	NGW Users	People in that group can connect to NGW interface.	t	\N		t	\N	t	f
 53	Utilisateurs Forum	Les personnes de ce groupe peuvent se connecter au forum (non disponible).	t	\N		t	\N	f	f
 \.
 

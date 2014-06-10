@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS contact_message (
     text text,
     sync_info text
 );
+UPDATE contact_group SET has_news='t' WHERE id=52;
 -- End migration script
 
 

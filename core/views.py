@@ -140,8 +140,8 @@ def home(request):
         'title': 'Home page',
         'nav': Navbar(),
         'operator_groups': operator_groups,
-        'news': ContactGroupNews.objects.filter(contact_group_id=GROUP_ADMIN)[:5],
-        'GroupAdmin': ContactGroup.objects.get(id=GROUP_ADMIN),
+        'news': ContactGroupNews.objects.filter(contact_group_id=GROUP_USER_NGW)[:5],
+        'GroupUserNgw': ContactGroup.objects.get(id=GROUP_USER_NGW),
     }, RequestContext(request))
 
 
