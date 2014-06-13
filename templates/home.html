@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% load ngwtags %}
 
 {% block body %}
 
@@ -19,7 +18,7 @@
 <h1 class="boxheader">{% trans "Lastest updates" %}</h1>
 <div class=box>
 {% for article in news %}
-<b>{{ article.date|ngw_date_format }}</b> • <b>{{article.title}}</b><br>
+<b>{{ article.date|date:"DATE_FORMAT" }}</b> • <b>{{article.title}}</b><br>
 {{ article.text|linebreaksbr }}<br><br>
 {% endfor %}
 <a href="{{ GroupUserNgw.get_absolute_url }}news/">{% trans "All news..." %}</a>

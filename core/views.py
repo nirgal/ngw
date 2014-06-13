@@ -224,7 +224,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
 
 # Helper function that is never call directly, hence the lack of authentification check
 def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
-    title = 'Please confirm deletetion'
+    title = _('Please confirm deletetion')
 
     confirm = request.GET.get('confirm', '')
     if confirm:
@@ -262,17 +262,17 @@ def logs(request):
         raise PermissionDenied
 
     args = {}
-    args['title'] = 'Global log'
+    args['title'] = _('Global log')
     args['nav'] = Navbar(Log.get_class_navcomponent())
     args['objtype'] = Log
     args['query'] = Log.objects.all()
     args['cols'] = [
-        ( 'Date UTC', None, 'small_date', 'dt'),
-        ( 'User', None, 'contact', 'contact__name'),
-        ( 'Action', None, 'action_txt', 'action'),
-        ( 'Target', None, 'target_repr', 'target_repr'),
-        ( 'Property', None, 'property_repr', 'property_repr'),
-        ( 'Change', None, 'change', 'change'),
+        ( _('Date UTC'), None, 'small_date', 'dt'),
+        ( _('User'), None, 'contact', 'contact__name'),
+        ( _('Action'), None, 'action_txt', 'action'),
+        ( _('Target'), None, 'target_repr', 'target_repr'),
+        ( _('Property'), None, 'property_repr', 'property_repr'),
+        ( _('Change'), None, 'change', 'change'),
     ]
     return query_print_entities(request, 'list_log.html', args)
 
@@ -517,9 +517,9 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
     for prop in fields:
         if prop == 'name':
             if format == 'html':
-                cols.append( ('Name', None, 'name_with_relative_link', 'name') )
+                cols.append( (_('Name'), None, 'name_with_relative_link', 'name') )
             else:
-                cols.append( ('Name', None, '__unicode__', 'name') )
+                cols.append( (_('Name'), None, '__unicode__', 'name') )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
@@ -554,13 +554,13 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
         assert base_url
         q.add_group_withnote(current_cg.id)
         if format == 'html':
-            cols.append( ('Status', None, membership_extended_widget_factory(request, current_cg), None) )
+            cols.append( (_('Status'), None, membership_extended_widget_factory(request, current_cg), None) )
             #cols.append( ('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
             #cols.append( ('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
             #cols.append( ('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
         else:
-            cols.append( ('Status', None, lambda c: membership_to_text(c, current_cg.id), None) )
-            cols.append( ('Note', None, 'group_%s_note' % current_cg.id, None) )
+            cols.append( (_('Status'), None, lambda c: membership_to_text(c, current_cg.id), None) )
+            cols.append( (_('Note'), None, 'group_%s_note' % current_cg.id, None) )
     return q, cols
 
 
@@ -619,7 +619,7 @@ def contact_list(request):
     #q.qry_where.append('')
 
     args = {}
-    args['title'] = 'Contact list'
+    args['title'] = _('Contact list')
     args['baseurl'] = baseurl
     args['objtype'] = Contact
     args['nav'] = Navbar(args['objtype'].get_class_absolute_url().split('/')[1])
@@ -904,7 +904,7 @@ def contact_pass(request, gid=None, cid=None):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     args = {}
-    args['title'] = 'Change password'
+    args['title'] = _('Change password')
     args['contact'] = contact
     if request.method == 'POST':
         form = ContactPasswordForm(request.POST)
@@ -958,7 +958,7 @@ def contact_pass_letter(request, gid=None, cid=None):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     args = {}
-    args['title'] = 'Generate a new password and print a letter'
+    args['title'] = _('Generate a new password and print a letter')
     args['contact'] = contact
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
@@ -1047,7 +1047,7 @@ def contact_filters_list(request, cid=None):
         filter_list = contactsearch.parse_filter_list_str(filter_list_str)
         filters = [ filtername for filtername, filter_str in filter_list ]
     args = {}
-    args['title'] = 'User custom filters'
+    args['title'] = _('User custom filters')
     args['contact'] = contact
     args['filters'] = filters
     args['nav'] = Navbar(Contact.get_class_navcomponent())
@@ -1091,7 +1091,7 @@ def contact_filters_edit(request, cid=None, fid=None):
     else:
         form = FilterEditForm(initial={ 'name': filtername })
     args = {}
-    args['title'] = 'User custom filter renaming'
+    args['title'] = _('User custom filter renaming')
     args['contact'] = contact
     args['form'] = form
     args['filtername'] = filtername
@@ -1169,27 +1169,25 @@ def contactgroup_list(request):
 
     q = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     cols = [
-        #( 'Date', None, 'html_date', ContactGroup.date ),
-        ( 'Name', None, 'name', 'name' ),
-        ( 'Description', None, lambda cg: _trucate_description(cg), None ),
-        #( 'Description', None, 'description', lambda cg: len(cg.description)<100 and cg.description + '!!' or cg.description[:100] + '…', None ),
-        #( 'Contact fields', None, print_fields, 'field_group' ),
-        ( 'Super\u00a0groups', None, lambda cg: ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])[:LIST_PREVIEW_LEN+1]])), None ),
-        ( 'Sub\u00a0groups', None, lambda cg: ', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])][:LIST_PREVIEW_LEN+1])), None ),
-        #( 'Budget\u00a0code', None, 'budget_code', 'budget_code' ),
-        #( 'Members', None, lambda cg: str(len(cg.get_members())), None ),
-        #( 'System\u00a0locked', None, 'system', 'system' ),
+        #( _('Date'), None, 'html_date', ContactGroup.date ),
+        ( _('Name'), None, 'name', 'name' ),
+        ( _('Description'), None, lambda cg: _trucate_description(cg), None ),
+        #( _('Description'), None, 'description', lambda cg: len(cg.description)<100 and cg.description + '!!' or cg.description[:100] + '…', None ),
+        #( _('Contact fields'), None, print_fields, 'field_group' ),
+        ( _('Super\u00a0groups'), None, lambda cg: ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])[:LIST_PREVIEW_LEN+1]])), None ),
+        ( _('Sub\u00a0groups'), None, lambda cg: ', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])][:LIST_PREVIEW_LEN+1])), None ),
+        #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
+        #( _('Members'), None, lambda cg: str(len(cg.get_members())), None ),
+        #( _('System\u00a0locked'), None, 'system', 'system' ),
     ]
     args = {}
-    args['title'] = 'Select a contact group'
+    args['title'] = _('Select a contact group')
     args['query'] = q
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = Navbar(ContactGroup.get_class_navcomponent())
     return query_print_entities(request, 'list.html', args)
 
-
-MONTHES = 'January,February,March,April,May,June,July,August,Septembre,October,November,December'.split(',')
 
 class WeekDate:
     def __init__(self, date, events):
@@ -1207,9 +1205,6 @@ class YearMonthCal:
         self.year = year
         self.month = month
         self.events = events
-
-    def title(self):
-        return '%s %s' % (MONTHES[self.month-1], self.year)
 
     def prev_month(self):
         year, month = self.year, self.month
@@ -1253,6 +1248,9 @@ class YearMonthCal:
             yield WeekDate(dt, self.events)
             dt += timedelta(days=7)
 
+    def first_day(self):
+        return datetime(self.year, self.month, 1)
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -1284,9 +1282,9 @@ def event_list(request):
     q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
 
     cols = [
-        ( 'Date', None, 'html_date', 'date' ),
-        ( 'Name', None, 'name', 'name' ),
-        ( 'Description', None, 'description', 'description' ),
+        ( _('Date'), None, 'html_date', 'date' ),
+        ( _('Name'), None, 'name', 'name' ),
+        ( _('Description'), None, 'description', 'description' ),
     ]
 
     month_events = {}
@@ -1296,7 +1294,7 @@ def event_list(request):
         month_events[cg.date].append(cg)
 
     args = {}
-    args['title'] = 'Events'
+    args['title'] = _('Events')
     args['query'] = q
     args['cols'] = cols
     args['objtype'] = ContactGroup
@@ -2261,11 +2259,11 @@ def field_list(request):
     args = {}
     args['query'] = fields
     args['cols'] = [
-        ( 'Name', None, 'name', 'name'),
-        ( 'Type', None, 'type_as_html', 'type'),
-        ( 'Only for', None, 'contact_group', 'contact_group_id'),
-        ( 'System locked', None, 'system', 'system'),
-        #( 'Move', None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
+        ( _('Name'), None, 'name', 'name'),
+        ( _('Type'), None, 'type_as_html', 'type'),
+        ( _('Only for'), None, 'contact_group', 'contact_group_id'),
+        ( _('System locked'), None, 'system', 'system'),
+        #( _('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     args['title'] = 'Select an optionnal field'
     args['objtype'] = ContactField
@@ -2490,8 +2488,8 @@ def choicegroup_list(request):
     args = {}
     args['query'] = ChoiceGroup.objects
     args['cols'] = [
-        ( 'Name', None, 'name', 'name'),
-        ( 'Choices', None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
+        ( _('Name'), None, 'name', 'name'),
+        ( _('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
     args['title'] = 'Select a choice group'
     args['objtype'] = ChoiceGroup

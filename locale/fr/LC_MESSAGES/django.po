@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-13 15:03+0200\n"
+"POT-Creation-Date: 2014-06-13 15:27+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: core/models.py:276
+#: core/models.py:276 core/views.py:520 core/views.py:522 core/views.py:1173
+#: core/views.py:1288 core/views.py:2264 core/views.py:2493
 msgid "Name"
 msgstr "Nom"
 
@@ -38,6 +39,103 @@ msgstr "Accueil"
 #: core/views.py:142
 msgid "Home page"
 msgstr "Page d'accueil"
+
+#: core/views.py:227
+msgid "Please confirm deletetion"
+msgstr "Confirmer l'effacement svp"
+
+#: core/views.py:265
+msgid "Global log"
+msgstr "Historique global"
+
+#: core/views.py:270
+msgid "Date UTC"
+msgstr "Date UTC"
+
+#: core/views.py:271
+msgid "User"
+msgstr "Utilisateur"
+
+#: core/views.py:272
+msgid "Action"
+msgstr "Ajouter"
+
+#: core/views.py:273
+msgid "Target"
+msgstr "Cible"
+
+#: core/views.py:274
+msgid "Property"
+msgstr "Propriété"
+
+#: core/views.py:275
+msgid "Change"
+msgstr "Modifier"
+
+#: core/views.py:557 core/views.py:562
+msgid "Status"
+msgstr "Statut"
+
+#: core/views.py:563
+msgid "Note"
+msgstr "Note"
+
+#: core/views.py:622 templates/contact_detail.html:55
+msgid "Contact list"
+msgstr "Liste des contacts"
+
+#: core/views.py:907 templates/contact_detail.html:64
+msgid "Change password"
+msgstr "Changer le mot de passe"
+
+#: core/views.py:961
+msgid "Generate a new password and print a letter"
+msgstr "Générer un nouveau mot de passe et imprimer une lettre"
+
+#: core/views.py:1050
+msgid "User custom filters"
+msgstr "Filtres personalisé de l'utilisateur."
+
+#: core/views.py:1094
+msgid "User custom filter renaming"
+msgstr "Renommage du filtre utilisateur personalisé"
+
+#: core/views.py:1174 core/views.py:1289
+msgid "Description"
+msgstr "Description"
+
+#: core/views.py:1177
+msgid "Super\\u00a0groups"
+msgstr "Super-groupes"
+
+#: core/views.py:1178
+msgid "Sub\\u00a0groups"
+msgstr "Sous-groupes"
+
+#: core/views.py:1184
+msgid "Select a contact group"
+msgstr "Sélectionner un groupe de contacts"
+
+#: core/views.py:1287 templates/group_detail.html:11
+#: templates/group_messages.html:14
+msgid "Date"
+msgstr "Date"
+
+#: core/views.py:2265
+msgid "Type"
+msgstr "Type"
+
+#: core/views.py:2266
+msgid "Only for"
+msgstr "Seulement pour"
+
+#: core/views.py:2267
+msgid "System locked"
+msgstr "Vérouillé par le système"
+
+#: core/views.py:2494
+msgid "Choices"
+msgstr "Choix"
 
 #: extensions/externalmessages/onetime.py:18
 msgid "You have a message"
@@ -129,10 +227,6 @@ msgstr "Opérateur des groupes"
 msgid "Viewer of groups"
 msgstr "Observateur des groupes"
 
-#: templates/contact_detail.html:55
-msgid "Contact list"
-msgstr "Liste des contacts"
-
 #: templates/contact_detail.html:57 templates/group_detail.html:99
 msgid "Edit"
 msgstr "Modifier"
@@ -140,10 +234,6 @@ msgstr "Modifier"
 #: templates/contact_detail.html:59
 msgid "VCard"
 msgstr "Carte de visite"
-
-#: templates/contact_detail.html:64
-msgid "Change password"
-msgstr "Changer le mot de passe"
 
 #: templates/contact_detail.html:66
 msgid "Filters"
@@ -374,10 +464,6 @@ msgstr "Peut envoyer des fichiers"
 #: templates/group_add_contacts_to.html:183
 msgid "Add to group"
 msgstr "Ajouter au groupe"
-
-#: templates/group_detail.html:11 templates/group_messages.html:14
-msgid "Date"
-msgstr "Date"
 
 #: templates/group_detail.html:12
 msgid "Budget code"

@@ -8,7 +8,7 @@
 
 {% block body %}
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
-    {% if cg.date %}{% trans "Date" %}: <b>{{ cg.date|ngw_date_format }}</b><br>{% endif %}
+    {% if cg.date %}{% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b><br>{% endif %}
     {% if cg.budget_code %}{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b><br>{% endif %}
     {% if cg.mailman_address %}{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b><br>{% endif %}
 

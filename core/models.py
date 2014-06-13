@@ -14,12 +14,12 @@ from django.db import models, connection
 from django import forms
 from django.http import Http404
 from django.utils import html
+from django.utils import formats
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib import messages
 import decoratedstr # Nirgal external package
 from ngw.core.nav import Navbar
 from ngw.core import perms
-from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #FIXME
 #from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
 from ngw.extensions import hooks
 
@@ -709,7 +709,7 @@ class ContactGroup(NgwModel):
 
     def html_date(self):
         if self.date:
-            return ngw_date_format(self.date)
+            return formats.date_format(self.date, "DATE_FORMAT")
         else:
             return ''
 
@@ -717,7 +717,7 @@ class ContactGroup(NgwModel):
         """ Returns the name of the group, and the date if there's one"""
         result = self.name
         if self.date:
-            result += ' ‧ '+ngw_date_format(self.date)
+            result += ' ‧ ' + formats.date_format(self.date, "DATE_FORMAT")
         return result
 
     def mailman_request_address(self):

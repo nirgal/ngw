@@ -23,15 +23,6 @@ def escape_amp_query(txt):
     return txt.replace('&', '%26')
 
 @register.filter
-def ngw_date_format(dt):
-    #TODO i18n process(LANG=fr_FR.UTF-8 date -d '2009-01-02' +'%a %d %b %Y')
-    return dt.strftime('%a %d %b %Y')
-
-@register.filter
-def ngw_datetime_format(dt):
-    return dt.strftime('%a %d %b %Y %H:%M:%S')
-
-@register.filter
 def pagenumber_iterator(page, npages):
     _VISIBLE_PAGES_AROUND = 5
     return range(max(1, page-_VISIBLE_PAGES_AROUND), min(npages, page+_VISIBLE_PAGES_AROUND)+1)

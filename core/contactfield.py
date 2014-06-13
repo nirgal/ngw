@@ -5,6 +5,7 @@ from datetime import datetime
 from django import forms
 from django.utils import http
 from django.utils import html
+from django.utils import formats
 from django.conf import settings
 from ngw.core.models import ( ContactField, ChoiceGroup, Choice,
     register_contact_field_type )
@@ -20,7 +21,6 @@ from ngw.core.models import (NameFilterStartsWith, FieldFilterStartsWith,
     #, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
 from ngw.core import gpg
 from ngw.core.widgets import NgwCalendarWidget, NgwCheckboxSelectMultiple
-from ngw.core.templatetags.ngwtags import ngw_date_format, ngw_datetime_format #FIXME
 
 
 
@@ -105,7 +105,7 @@ class DateContactField(ContactField):
 
     def format_value_html(self, value):
         value = datetime.strptime(value, '%Y-%m-%d')
-        return ngw_date_format(value)
+        return formats.date_format(value, "DATE_FORMAT")
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -124,7 +124,7 @@ class DateTimeContactField(ContactField):
         return forms.DateTimeField(label=self.name, required=False, help_text='Use YYYY-MM-DD HH:MM:SS format.' + ' ' + self.hint)
     def format_value_html(self, value):
         value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        return ngw_datetime_format(value)
+        return formats.date_format(value, "DATETIME_FORMAT")
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
