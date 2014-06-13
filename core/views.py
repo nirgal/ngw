@@ -125,7 +125,7 @@ def get_display_fields(user):
 def unauthorized(request):
     return HttpResponseForbidden(
         loader.render_to_string('message.html',{
-            'message': 'Sorry. You are not authorized to browse that page.'},
+            'message': _('Sorry. You are not authorized to browse that page.')},
             RequestContext(request)))
 
 #######################################################################
@@ -239,7 +239,7 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
         log.target_repr = o.get_class_verbose_name()+' '+name
         o.delete()
         log.save()
-        messages.add_message(request, messages.SUCCESS, '%s has been deleted sucessfully!' % name)
+        messages.add_message(request, messages.SUCCESS, _('%s has been deleted sucessfully!') % name)
         return HttpResponseRedirect(next_url)
     else:
         nav = base_nav or Navbar(o.get_class_navcomponent())
@@ -319,15 +319,15 @@ def membership_to_text(contact_with_extra_fields, group_id):
                 memberships.append(nice_perm + ' ' + automatic_admin_indicator)
     else:
         if flags & CIGFLAG_MEMBER:
-            memberships.append("Member")
+            memberships.append(_("Member"))
         elif flags_inherited & CIGFLAG_MEMBER:
-            memberships.append("Member" + " " + automatic_member_indicator)
+            memberships.append(_("Member") + " " + automatic_member_indicator)
         elif flags & CIGFLAG_INVITED:
-            memberships.append("Invited")
+            memberships.append(_("Invited"))
         elif flags_inherited & CIGFLAG_INVITED:
-            memberships.append("Invited" + " " + automatic_member_indicator)
+            memberships.append(_("Invited") + " " + automatic_member_indicator)
         elif flags & CIGFLAG_DECLINED:
-            memberships.append("Declined")
+            memberships.append(_("Declined"))
 
         for code in 'ovEcCfFnNuUe':
             if flags & TRANS_CIGFLAG_CODE2INT[code]:
@@ -344,9 +344,14 @@ def membership_to_text(contact_with_extra_fields, group_id):
                     break # Don't show more details then
 
     if memberships:
-        return ', '.join(memberships)
+        result = ''
+        for membership in memberships:
+            if result:
+                result = translation.string_concat(result, ', ')
+            result = translation.string_concat(result, membership)
+        return result
     else:
-        return 'No'
+        return _('No')
 
 def membership_to_text_factory(group_id):
     return lambda contact_with_extra_fields: \
@@ -1528,48 +1533,48 @@ def contactgroup_messages(request, gid):
 class ContactGroupForm(forms.Form):
     name = forms.CharField(max_length=255)
     description = forms.CharField(required=False, widget=forms.Textarea)
-    date = forms.DateField(required=False, help_text='Use YYYY-MM-DD format. Leave empty for permanent groups.', widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
+    date = forms.DateField(required=False, help_text=_('Use YYYY-MM-DD format. Leave empty for permanent groups.'), widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
     budget_code = forms.CharField(required=False, max_length=10)
-    sticky = forms.BooleanField(required=False, help_text='If set, automatic membership because of subgroups becomes permanent. Use with caution.')
-    field_group = forms.BooleanField(required=False, help_text='Does that group yield specific fields to its members?')
-    mailman_address = forms.CharField(required=False, max_length=255, help_text='Mailing list address, if the group is linked to a mailing list.')
-    has_news = forms.BooleanField(required=False, help_text='Does that group supports internal news system?')
-    direct_supergroups = forms.MultipleChoiceField(required=False, help_text='Members will automatically be granted membership in these groups.', widget=FilterMultipleSelectWidget('groups', False))
+    sticky = forms.BooleanField(required=False, help_text=_('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
+    field_group = forms.BooleanField(required=False, help_text=_('Does that group yield specific fields to its members?'))
+    mailman_address = forms.CharField(required=False, max_length=255, help_text=_('Mailing list address, if the group is linked to a mailing list.'))
+    has_news = forms.BooleanField(required=False, help_text=_('Does that group supports internal news system?'))
+    direct_supergroups = forms.MultipleChoiceField(required=False, help_text=_('Members will automatically be granted membership in these groups.'), widget=FilterMultipleSelectWidget('groups', False))
     operator_groups = forms.MultipleChoiceField(required=False,
-        help_text='Members of these groups will automatically be granted administrative priviledges.',
+        help_text=_('Members of these groups will automatically be granted administrative priviledges.'),
         widget=FilterMultipleSelectWidget('groups', False))
     viewer_groups = forms.MultipleChoiceField(required=False,
-        help_text="Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things.",
+        help_text=_("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."),
             widget=FilterMultipleSelectWidget('groups', False))
     see_group_groups = forms.MultipleChoiceField(label='Existence seer groups', required=False,
-        help_text='Members of these groups will automatically be granted priviledge to know that current group exists.',
+        help_text=_('Members of these groups will automatically be granted priviledge to know that current group exists.'),
         widget=FilterMultipleSelectWidget('groups', False))
     change_group_groups = forms.MultipleChoiceField(label='Editor groups', required=False, 
-        help_text='Members of these groups will automatically be granted priviledge to change/delete the current group.',
+        help_text=_('Members of these groups will automatically be granted priviledge to change/delete the current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     see_members_groups = forms.MultipleChoiceField(label='Members seer groups', required=False,
-        help_text='Members of these groups will automatically be granted priviledge to see the list of members.',
+        help_text=_('Members of these groups will automatically be granted priviledge to see the list of members.'),
         widget=FilterMultipleSelectWidget('groups', False))
     change_members_groups = forms.MultipleChoiceField(label='Members changing groups', required=False,
-        help_text='Members of these groups will automatically be granted permission to change members of current group.',
+        help_text=_('Members of these groups will automatically be granted permission to change members of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     view_fields_groups = forms.MultipleChoiceField(label='Fields viewer groups', required=False,
-        help_text='Members of these groups will automatically be granted permission to read the fields associated to current group.',
+        help_text=_('Members of these groups will automatically be granted permission to read the fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     write_fields_groups = forms.MultipleChoiceField(label='Fields writer groups', required=False,
-        help_text='Members of these groups will automatically be granted priviledge to write to fields associated to current group.',
+        help_text=_('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     view_news_groups = forms.MultipleChoiceField(label='News viewer groups', required=False,
-        help_text='Members of these groups will automatically be granted permisson to read news of current group.',
+        help_text=_('Members of these groups will automatically be granted permisson to read news of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     write_news_groups = forms.MultipleChoiceField(label='New writer groups', required=False,
-        help_text='Members of these groups will automatically be granted permission to write news in that group.',
+        help_text=_('Members of these groups will automatically be granted permission to write news in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     view_files_groups = forms.MultipleChoiceField(label='File viewer groups', required=False,
-        help_text='Members of these groups will automatically be granted permission to view uploaded files in that group.',
+        help_text=_('Members of these groups will automatically be granted permission to view uploaded files in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     write_files_groups = forms.MultipleChoiceField(label='File uploader groups', required=False,
-        help_text='Members of these groups will automatically be granted permission to upload files.',
+        help_text=_('Members of these groups will automatically be granted permission to upload files.'),
         widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, for_user, *args, **kargs):
@@ -2265,7 +2270,7 @@ def field_list(request):
         ( _('System locked'), None, 'system', 'system'),
         #( _('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
-    args['title'] = 'Select an optionnal field'
+    args['title'] = _('Select an optionnal field')
     args['objtype'] = ContactField
     args['nav'] = Navbar(ContactField.get_class_navcomponent())
     def extrasort(query):
@@ -2491,7 +2496,7 @@ def choicegroup_list(request):
         ( _('Name'), None, 'name', 'name'),
         ( _('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
-    args['title'] = 'Select a choice group'
+    args['title'] = _('Select a choice group')
     args['objtype'] = ChoiceGroup
     args['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
     return query_print_entities(request, 'list.html', args)
@@ -2642,10 +2647,10 @@ def choicegroup_edit(request, id=None):
     objtype = ChoiceGroup
     if id:
         cg = get_object_or_404(ChoiceGroup, pk=id)
-        title = 'Editing '+unicode(cg)
+        title = _('Editing %s') % unicode(cg)
     else:
         cg = None
-        title = 'Adding a new '+objtype.get_class_verbose_name()
+        title = _('Adding a new') + ' ' + objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ChoiceGroupForm(cg, request.POST)

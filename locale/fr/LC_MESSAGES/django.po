@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-13 17:34+0200\n"
+"POT-Creation-Date: 2014-06-13 17:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -36,6 +36,10 @@ msgstr "Groupes de contacts"
 msgid "Home"
 msgstr "Accueil"
 
+#: core/views.py:128 templates/403.html:6
+msgid "Sorry. You are not authorized to browse that page."
+msgstr "Désolé. Vous n'êtes pas autorisé à parcourir cette page."
+
 #: core/views.py:142
 msgid "Home page"
 msgstr "Page d'accueil"
@@ -43,6 +47,11 @@ msgstr "Page d'accueil"
 #: core/views.py:227
 msgid "Please confirm deletetion"
 msgstr "Confirmer l'effacement svp"
+
+#: core/views.py:242
+#, python-format
+msgid "%s has been deleted sucessfully!"
+msgstr ""
 
 #: core/views.py:265
 msgid "Global log"
@@ -121,6 +130,104 @@ msgstr "Sélectionner un groupe de contacts"
 msgid "Date"
 msgstr "Date"
 
+#: core/views.py:1531
+msgid "Use YYYY-MM-DD format. Leave empty for permanent groups."
+msgstr ""
+
+#: core/views.py:1533
+msgid ""
+"If set, automatic membership because of subgroups becomes permanent. Use "
+"with caution."
+msgstr ""
+
+#: core/views.py:1534
+msgid "Does that group yield specific fields to its members?"
+msgstr ""
+
+#: core/views.py:1535
+msgid "Mailing list address, if the group is linked to a mailing list."
+msgstr ""
+
+#: core/views.py:1536
+msgid "Does that group supports internal news system?"
+msgstr ""
+
+#: core/views.py:1537
+msgid "Members will automatically be granted membership in these groups."
+msgstr ""
+
+#: core/views.py:1539
+msgid ""
+"Members of these groups will automatically be granted administrative "
+"priviledges."
+msgstr ""
+
+#: core/views.py:1542
+msgid ""
+"Members of these groups will automatically be granted viewer priviledges: "
+"They can see everything but can't change things."
+msgstr ""
+
+#: core/views.py:1545
+msgid ""
+"Members of these groups will automatically be granted priviledge to know "
+"that current group exists."
+msgstr ""
+
+#: core/views.py:1548
+msgid ""
+"Members of these groups will automatically be granted priviledge to change/"
+"delete the current group."
+msgstr ""
+
+#: core/views.py:1551
+msgid ""
+"Members of these groups will automatically be granted priviledge to see the "
+"list of members."
+msgstr ""
+
+#: core/views.py:1554
+msgid ""
+"Members of these groups will automatically be granted permission to change "
+"members of current group."
+msgstr ""
+
+#: core/views.py:1557
+msgid ""
+"Members of these groups will automatically be granted permission to read the "
+"fields associated to current group."
+msgstr ""
+
+#: core/views.py:1560
+msgid ""
+"Members of these groups will automatically be granted priviledge to write to "
+"fields associated to current group."
+msgstr ""
+
+#: core/views.py:1563
+msgid ""
+"Members of these groups will automatically be granted permisson to read news "
+"of current group."
+msgstr ""
+
+#: core/views.py:1566
+msgid ""
+"Members of these groups will automatically be granted permission to write "
+"news in that group."
+msgstr ""
+
+#: core/views.py:1569
+msgid ""
+"Members of these groups will automatically be granted permission to view "
+"uploaded files in that group."
+msgstr ""
+
+#: core/views.py:1572
+msgid ""
+"Members of these groups will automatically be granted permission to upload "
+"files."
+msgstr ""
+
 #: core/views.py:2263
 msgid "Type"
 msgstr "Type"
@@ -133,9 +240,27 @@ msgstr "Seulement pour"
 msgid "System locked"
 msgstr "Vérouillé par le système"
 
+#: core/views.py:2268
+msgid "Select an optionnal field"
+msgstr ""
+
 #: core/views.py:2492
 msgid "Choices"
 msgstr "Choix"
+
+#: core/views.py:2494
+#, fuzzy
+msgid "Select a choice group"
+msgstr "Sélectionner un groupe de contacts"
+
+#: core/views.py:2645
+#, python-format
+msgid "Editing %s"
+msgstr ""
+
+#: core/views.py:2648
+msgid "Adding a new"
+msgstr ""
 
 #: extensions/externalmessages/onetime.py:18
 msgid "You have a message"
@@ -158,10 +283,6 @@ msgstr ""
 "\n"
 "Attention, ce message ne sera affiché qu'une seule fois, puis effacé. Ayez\n"
 "un stylo à porté de main avant de cliquer sur le lien. :)"
-
-#: templates/403.html:6
-msgid "Sorry. You are not authorized to browse that page."
-msgstr "Désolé. Vous n'êtes pas autorisé à parcourir cette page."
 
 #: templates/500.html:6
 msgid "Sorry. A server error occured."
