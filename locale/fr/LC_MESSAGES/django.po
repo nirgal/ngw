@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-13 15:27+0200\n"
+"POT-Creation-Date: 2014-06-13 17:34+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,12 +19,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: core/models.py:276 core/views.py:520 core/views.py:522 core/views.py:1173
-#: core/views.py:1288 core/views.py:2264 core/views.py:2493
+#: core/views.py:1286 core/views.py:2262 core/views.py:2491
 msgid "Name"
 msgstr "Nom"
 
-#: core/models.py:624 core/views.py:1304 templates/filter.html:26
-#: templates/group_add_contacts_to.html:32
+#: core/models.py:624 core/views.py:1297 core/views.py:1302
+#: templates/filter.html:26 templates/group_add_contacts_to.html:32
 msgid "Events"
 msgstr "Événements"
 
@@ -100,40 +100,40 @@ msgstr "Filtres personalisé de l'utilisateur."
 msgid "User custom filter renaming"
 msgstr "Renommage du filtre utilisateur personalisé"
 
-#: core/views.py:1174 core/views.py:1289
+#: core/views.py:1174 core/views.py:1287
 msgid "Description"
 msgstr "Description"
 
 #: core/views.py:1177
-msgid "Super\\u00a0groups"
+msgid "Super groups"
 msgstr "Super-groupes"
 
-#: core/views.py:1178
-msgid "Sub\\u00a0groups"
+#: core/views.py:1178 templates/group_detail.html:43
+msgid "Sub groups"
 msgstr "Sous-groupes"
 
 #: core/views.py:1184
 msgid "Select a contact group"
 msgstr "Sélectionner un groupe de contacts"
 
-#: core/views.py:1287 templates/group_detail.html:11
+#: core/views.py:1285 templates/group_detail.html:11
 #: templates/group_messages.html:14
 msgid "Date"
 msgstr "Date"
 
-#: core/views.py:2265
+#: core/views.py:2263
 msgid "Type"
 msgstr "Type"
 
-#: core/views.py:2266
+#: core/views.py:2264
 msgid "Only for"
 msgstr "Seulement pour"
 
-#: core/views.py:2267
+#: core/views.py:2265
 msgid "System locked"
 msgstr "Vérouillé par le système"
 
-#: core/views.py:2494
+#: core/views.py:2492
 msgid "Choices"
 msgstr "Choix"
 
@@ -493,10 +493,6 @@ msgstr "Invitation déclinnées"
 msgid "Admins"
 msgstr "Admins"
 
-#: templates/group_detail.html:43
-msgid "Sub groups"
-msgstr "Sous-groupes"
-
 #: templates/group_detail.html:45
 msgid "People in sub-groups automatically are members / invited."
 msgstr "Les personnes des sous-groupes sont automatiquement membres / invités."
@@ -596,15 +592,15 @@ msgstr "Il n'y a pas de message."
 msgid "Messages"
 msgstr "Messages"
 
-#: templates/home.html:19
+#: templates/home.html:18
 msgid "Lastest updates"
 msgstr "Derniers développements"
 
-#: templates/home.html:25
+#: templates/home.html:24
 msgid "All news..."
 msgstr "Toutes les nouvellles..."
 
-#: templates/list.html:14 templates/news.html:20
+#: templates/list.html:14 templates/news.html:19
 msgid "Add"
 msgstr "Ajouter"
 
@@ -706,7 +702,7 @@ msgstr "Plus..."
 msgid "Close"
 msgstr "Fermer"
 
-#: templates/news.html:13
+#: templates/news.html:12
 msgid "by"
 msgstr "par"
 
