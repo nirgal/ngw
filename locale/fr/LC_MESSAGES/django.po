@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-13 12:46+0200\n"
+"POT-Creation-Date: 2014-06-13 15:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,6 +38,28 @@ msgstr "Accueil"
 #: core/views.py:142
 msgid "Home page"
 msgstr "Page d'accueil"
+
+#: extensions/externalmessages/onetime.py:18
+msgid "You have a message"
+msgstr "Vous avez un message"
+
+#: extensions/externalmessages/onetime.py:19
+#, python-format
+msgid ""
+"Hello\n"
+"\n"
+"You can read your message at https://onetime.info/%s\n"
+"\n"
+"Warning, that message will be displayed exactly once, and then be deleted. "
+"Have\n"
+"a pen ready before clicking the link. :)"
+msgstr ""
+"Salut\n"
+"\n"
+"Vous pouvez lire votre message sur https://onetime.info/%s\n"
+"\n"
+"Attention, ce message ne sera affiché qu'une seule fois, puis effacé. Ayez\n"
+"un stylo à porté de main avant de cliquer sur le lien. :)"
 
 #: templates/403.html:6
 msgid "Sorry. You are not authorized to browse that page."

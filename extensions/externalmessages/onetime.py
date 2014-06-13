@@ -9,16 +9,19 @@ import urllib
 import json
 import logging
 from django.conf import settings
+from django.utils.translation import ugettext, activate as language_activate
 from django.core.mail import send_mass_mail
 from ngw.core.models import ContactMsg
 
-NOTIFICATION_SUBJECT = 'You have a message'
-NOTIFICATION_TEXT = '''Hello
+_ = lambda x: x
+
+NOTIFICATION_SUBJECT = _('You have a message')
+NOTIFICATION_TEXT = _('''Hello
 
 You can read your message at https://onetime.info/%s
 
 Warning, that message will be displayed exactly once, and then be deleted. Have
-a pen ready before clicking the link. :)'''
+a pen ready before clicking the link. :)''')
 
 logger = logging.getLogger('msgsync')
 
@@ -44,7 +47,7 @@ def do_sync():
         except ValueError:
             sync_info = {}
         
-        logger.debug("%s %s", msg.id, sync_info)
+        #logger.debug("%s %s", msg.id, sync_info)
 
         if 'otid' not in sync_info:
             if not ot_conn:
@@ -79,10 +82,13 @@ def do_sync():
     for msg in messages:
         sync_info = json.loads(msg.sync_info)
         if 'email_sent' not in sync_info:
+            if 'language' in sync_info:
+                logging.warning('Switch to language: %s' % sync_info['language'])
+                language_activate(sync_info['language'])
             c_mails = msg.cig.contact.get_fieldvalues_by_type('EMAIL')
             if c_mails:
                 logger.info('Sending email notification to %s.', c_mails[0])
-                masssmail_args.append((NOTIFICATION_SUBJECT, NOTIFICATION_TEXT % sync_info['otid'], None, (c_mails[0],)))
+                masssmail_args.append((ugettext(NOTIFICATION_SUBJECT), ugettext(NOTIFICATION_TEXT) % sync_info['otid'], None, (c_mails[0],)))
     #logger.debug(masssmail_args)
     if masssmail_args and send_mass_mail(masssmail_args):
         for msg in messages:

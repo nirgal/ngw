@@ -12,6 +12,7 @@ from django.http import (CompatibleStreamingHttpResponse, HttpResponse,
     HttpResponseForbidden, HttpResponseRedirect)
 from django.utils.safestring import mark_safe
 from django.utils import html
+from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
@@ -132,7 +133,6 @@ def unauthorized(request):
 # Home
 #
 #######################################################################
-from django.utils import translation
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -1492,6 +1492,7 @@ def contactgroup_emails(request, gid):
         if not perms.c_can_see_members_cg(request.user.id, gid):
             raise PermissionDenied
         message = request.POST.get('message', '')
+        language = translation.get_language()
         for param in request.POST:
             if not param.startswith('contact_'):
                 continue
@@ -1501,7 +1502,7 @@ def contactgroup_emails(request, gid):
             contact_msg = ContactMsg(cig=cig)
             contact_msg.send_date = datetime.utcnow()
             contact_msg.text = message
-            #contact_msg.sync_info = json.dumps({'sync':0})
+            contact_msg.sync_info = json.dumps({'language': language})
             contact_msg.save()
             messages.add_message(request, messages.INFO, 'Messages stored.')
 
