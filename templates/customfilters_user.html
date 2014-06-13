@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block body %}
@@ -10,7 +11,7 @@
         {% endfor %}
         </div>
     {% else %}
-        That user has no custom filter.
+        {% trans "That user has no custom filter." %}
     {% endif %}
 
     {% block submitbar %}

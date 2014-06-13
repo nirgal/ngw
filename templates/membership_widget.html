@@ -1,3 +1,4 @@
+{% load i18n %}
 <div style="position:relative">{% comment %}See https://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-elements{%endcomment%}
 <a href="javascript:show_membership_extrainfo('{{gid}}_{{cid}}')">{{membership_str}}</a>
 {% if note %}<br>{{note}}{% endif %}
@@ -8,12 +9,12 @@
         {% csrf_token %}
         <input type=hidden name="next_url" value="{{next_url}}">
         <span style="white-space: nowrap">
-        <input type=radio name=membership value=invited id="contact_{{cid}}_invited" {% if invited %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_invited">Invited</label>
-        <input type=radio name=membership value=member id="contact_{{cid}}_member" {% if member %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_member">Member</label>
-        <input type=radio name=membership value=declined_invitation id="contact_{{cid}}_declined_invitation" {% if declined %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_declined_invitation"> Declined invitation</label>
+        <input type=radio name=membership value=invited id="contact_{{cid}}_invited" {% if invited %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_invited">{% trans "Invited" %}</label>
+        <input type=radio name=membership value=member id="contact_{{cid}}_member" {% if member %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_member">{% trans "Member" %}</label>
+        <input type=radio name=membership value=declined_invitation id="contact_{{cid}}_declined_invitation" {% if declined %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_declined_invitation"> {% trans "Declined invitation" %}</label>
         </span>
         <br>
-        <a href="{{cig_url}}/membership">More...</a> | <a href="javascript:show_membership_extrainfo(null)">Close</a>
+        <a href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:show_membership_extrainfo(null)">{% trans "Close" %}</a>
     </form>
 </div>
 </div>

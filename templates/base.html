@@ -1,5 +1,6 @@
-{% load ngwtags %}<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+{% load i18n %}
+{% load ngwtags %}
 <title>{{ title|safe }}</title>
 <script src='{{STATIC_URL}}javascript/jquery/jquery.js' type='text/javascript'></script>
 <script src='{{STATIC_URL}}ngw.js' type='text/javascript'></script>
@@ -8,23 +9,23 @@
 
 <div id=banner>
 	<span id=sitetitle>{{ banner|safe }}</span>
-	{% if user.is_authenticated %}<span id=userinfo>Welcome <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="/logout">Logout</a></span>{% endif %}
+	{% if user.is_authenticated %}<span id=userinfo>{% trans "Welcome" %} <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="/logout">{% trans "Logout" %}</a></span>{% endif %}
 	<br class=clearall>
 	{% if nav %}
     {% if user.is_admin %}
     <div id=header_search style="float:right;">
         <form id=header_realform action="/contactgroups/1/members/"><input type=hidden name=filter value=""></form>
-        <form id=header_displayedform action="#" onclick="document.forms['header_displayedform']['filter'].value='';" onsubmit="javascript:v=escape_quote(document.forms['header_displayedform']['filter'].value); document.forms['header_realform']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; document.forms['header_realform'].submit(); return false;"><input name=filter value="Quick contact search"></form>
+        <form id=header_displayedform action="#" onclick="document.forms['header_displayedform']['filter'].value='';" onsubmit="javascript:v=escape_quote(document.forms['header_displayedform']['filter'].value); document.forms['header_realform']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; document.forms['header_realform'].submit(); return false;"><input name=filter value="{% trans "Quick contact search" %}"></form>
     </div>
     {% endif %}
 	<div id=tabs>
-		<a href="/" {{ nav|nav_is_active:""}}>news</a>
-		<a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>groups</a>
-		<a href="/events/" {{ nav|nav_is_active:"events"}}>events</a>
+		<a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
+		<a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
+		<a href="/events/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
 		{% if user.is_admin %}
-		<a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>fields</a>
-		<a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>choices</a>
-		<a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>logs</a>
+		<a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>{% trans "fields" %}</a>
+		<a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>{% trans "choices" %}</a>
+		<a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>{% trans "logs" %}</a>
 		{% endif %}
 	</div>
 	{% endif %}
@@ -33,7 +34,17 @@
 <div id=main>
 <div id=nav>
 {% if user.is_authenticated %}
-{{ nav|safe }}
+{% for urlfragment, navname in nav.components %}
+    {% if forloop.counter0 %} › {% endif %}
+    {% if not forloop.last %}
+        <a href="/{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{% if forloop.counter0 > 1 %}/{% endif %}{{urlfragment_sub}}{% endif%}{% endfor %}">
+    {% endif %}
+    {{ navname }}
+    {% if not forloop.last %}
+        </a>
+    {% endif %}
+
+{% endfor %}
 {% endif %}
 </div>
 
@@ -58,5 +69,3 @@
 {% if contactcount %} {{ contactcount }} contact{{contactcount|pluralize}} • {% endif %}
 Powered by <a href='http://www.debian.org/' target=_blank noreferrer>Debian/GNU Linux</a>
 </div>
-
-</html>

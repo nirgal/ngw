@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block submenu %}
@@ -9,14 +10,14 @@
     {% for n in news %}
     <h1 class="boxheader"><a href="{{n.get_absolute_url}}">{{ n.title }}</a></h1>
     <div class=box>
-    <b>{{ n.date|ngw_date_format}}</b> - by <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
+    <b>{{ n.date|ngw_date_format}}</b> - {% trans "by" %} <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
     {{ n.text|linebreaksbr }}<br>
     </div>
     {% endfor %}
 
     {% block submitbar %}
     <div id=submitbar>
-    <a href="add"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> Add {{ objtype.get_class_verbose_name }}</a>
+    <a href="add"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> {% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
     </div>
     {% endblock %}
 {% endblock %}

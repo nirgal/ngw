@@ -1,3 +1,5 @@
+{% load i18n %}
+
 <style>
 .activeSelectionItem {
     font-size:140%;
@@ -5,24 +7,24 @@
 }
 </style>
 
-<h1 class="boxheader">Current filter</h1>
+<h1 class="boxheader">{% trans "Current filter" %}</h1>
 <div id="curent_filter" style="text-align:left;" class=box>
 {{filter_html}}
 </div>
 <div class=submitbar>
-<a href="javascript:document.forms['mainform'].submit();" id=default>Apply filter</a>
-<a href="javascript:set_filter('');select_grouptype(null);">Reset filter</a>
-<a href="javascript:document.location='{{user.get_absolute_url}}'+'filters/add?filterstr='+document.getElementById('filter').value;">Save filter</a>
+<a href="javascript:document.forms['mainform'].submit();" id=default>{% trans "Apply filter" %}</a>
+<a href="javascript:set_filter('');select_grouptype(null);">{% trans "Reset filter" %}</a>
+<a href="javascript:document.location='{{user.get_absolute_url}}'+'filters/add?filterstr='+document.getElementById('filter').value;">{% trans "Save filter" %}</a>
 </div>
 
 
-<h1 class="boxheader">Add condition</h1>
+<h1 class="boxheader">{% trans "Add condition" %}</h1>
 <div class=box>
-Type of filter:
-<a href="javascript:select_grouptype('field')" id="filter_group_field">Fields</a> |
-<a href="javascript:select_grouptype('group')" id="filter_group_group">Groups</a> |
-<a href="javascript:select_grouptype('event')" id="filter_group_event">Events</a> |
-<a href="javascript:select_grouptype('custom')" id="filter_group_custom">Custom</a>
+{% trans "Type of filter" %}:
+<a href="javascript:select_grouptype('field')" id="filter_group_field">{% trans "Fields" %}</a> |
+<a href="javascript:select_grouptype('group')" id="filter_group_group">{% trans "Groups" %}</a> |
+<a href="javascript:select_grouptype('event')" id="filter_group_event">{% trans "Events" %}</a> |
+<a href="javascript:select_grouptype('custom')" id="filter_group_custom">{% trans "Custom" %}</a>
 </div>
 
 <div id="list_field" class=box>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
     
 {% block body %}
 
@@ -31,12 +32,12 @@
 </style>
 
 <div id=submitbar>
-    <a href="?dt={{year_month.prev_year}}" title="Go back one year" style="margin-left:2ex;">↞</a>
-    <a href="?dt={{year_month.prev_month}}" title="Go back one month" style="margin-left:.5ex;">←</a>
-    <a href="." style="margin-left:.5ex;" title="Go to current month">Today</a>
-    <a href="?dt={{year_month.next_month}}" title="Go forward one month" style="margin-left:.5ex;">→</a>
-    <a href="?dt={{year_month.next_year}}" title="Go forward one year" style="margin-left:.5ex;">↠</a>
-    <a href=add style="float:right;"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> Add event</a>
+    <a href="?dt={{year_month.prev_year}}" title="{% trans "Go back one year" %}" style="margin-left:2ex;">↞</a>
+    <a href="?dt={{year_month.prev_month}}" title="{% trans "Go back one month" %}" style="margin-left:.5ex;">←</a>
+    <a href="." style="margin-left:.5ex;" title="{% trans "Go to current month" %}">{% trans "Today" %}</a>
+    <a href="?dt={{year_month.next_month}}" title="{% trans "Go forward one month" %}" style="margin-left:.5ex;">→</a>
+    <a href="?dt={{year_month.next_year}}" title="{% trans "Go forward one year" %}" style="margin-left:.5ex;">↠</a>
+    <a href=add style="float:right;"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> {% trans "Add event" %}</a>
     <div class=pseudotitle style="float:none; text-align:center; border:none; background:none; font-size:140%; padding-top:0;"><b>{{ year_month.title }}</b></div>
 </div>
 <br>
@@ -51,17 +52,17 @@
 <col width='14.285%'>
 </colgroup>
 <tr>
-<th>Monday
-<th>Tuesday
-<th>Wenesday
-<th>Thrusday
-<th>Friday
-<th>Saturday
-<th>Sunday
+<th>{% trans "Monday" %}
+<th>{% trans "Tuesday" %}
+<th>{% trans "Wenesday" %}
+<th>{% trans "Thrusday" %}
+<th>{% trans "Friday" %}
+<th>{% trans "Saturday" %}
+<th>{% trans "Sunday" %}
 {% for week in year_month.weeks %}
 <tr>
 {% for d, events in week.days %}
-<td><div class="calday{% ifequal d today %} today{% endifequal %}">
+<td><div class="calday{% ifequal d today %} {% trans "today" %}{% endifequal %}">
 
 {{ d.day }}
 </div>

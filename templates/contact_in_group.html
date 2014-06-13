@@ -1,4 +1,5 @@
 {% extends "edit.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block body %}
@@ -8,7 +9,7 @@
 
 {% block submitbar %}
 <div id=submitbar>
-    <input type=submit value="Save" id="default">
-    <a href="{{o.get_absolute_url}}remove"><img src="{{STATIC_URL}}admin/img/icon_deletelink.gif" border=0 valign=middle> Remove from group</a>
+    <input type=submit value="{% trans "Save" %}" id="default">
+    <a href="{{o.get_absolute_url}}remove"><img src="{{STATIC_URL}}admin/img/icon_deletelink.gif" border=0 valign=middle> {% trans "Remove from group" %}</a>
 </div>
 {% endblock %}

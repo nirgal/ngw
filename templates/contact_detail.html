@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block body %}
@@ -9,39 +10,39 @@
         {{ row|get:0 }}: <b>{{ row|get:1 }}</b><br>
     {% endfor %}
     {% for g in contact.get_directgroups_member|group_visible_by:request.user.id %}
-        {% if forloop.first %}Member of groups:<br>{% endif %}
+        {% if forloop.first %}{% trans "Member of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
-        {% if forloop.first %}( implies {%else%}, {% endif %}
+        {% if forloop.first %}( {% trans "implies" %} {%else%}, {% endif %}
         {{ sg|group_with_link }}
         {% if forloop.last %}){% endif %}
         {% endfor %}
         <br>
     {% endfor %}
     {% for g in contact.get_directgroups_invited|group_visible_by:request.user.id %}
-        {% if forloop.first %}Invited in groups:<br>{% endif %}
+        {% if forloop.first %}{% trans "Invited in groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
-        {% if forloop.first %}( implies {%else%}, {% endif %}
+        {% if forloop.first %}( {% trans "implies" %} {%else%}, {% endif %}
         {{ sg|group_with_link }}
         {% if forloop.last %}){% endif %}
         {% endfor %}
         <br>
     {% endfor %}
     {% for g in contact.get_directgroups_declinedinvitation|group_visible_by:request.user.id %}
-        {% if forloop.first %}Declined invitation in groups:<br>{% endif %}
+        {% if forloop.first %}{% trans "Declined invitation in groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
     {% endfor %}
 
     {% for g in contact.get_directgroups_operator|group_visible_by:request.user.id %}
-        {% if forloop.first %}Operator of groups:<br>{% endif %}
+        {% if forloop.first %}{% trans "Operator of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
     {% endfor %}
 
     {% for g in contact.get_directgroups_viewer|group_visible_by:request.user.id %}
-        {% if forloop.first %}Viewer of groups:<br>{% endif %}
+        {% if forloop.first %}{% trans "Viewer of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
     {% endfor %}
@@ -51,17 +52,17 @@
     {% block submitbar %}
     <div id=submitbar>
       {% if user.is_admin %}
-      <a id=default href="..">Contact list</a>
+      <a id=default href="..">{% trans "Contact list" %}</a>
       {% endif %}
-      <a href="edit">Edit</a>
+      <a href="edit">{% trans "Edit" %}</a>
       {% if user.is_admin %}
-      <a href="vcard">VCard</a>
+      <a href="vcard">{% trans "VCard" %}</a>
       {%comment%}<a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a>{%endcomment%}
       {% endif %}
       {% if contact.get_login %}
-      <a href="pass">Change password</a>
+      <a href="pass">{% trans "Change password" %}</a>
       {% if user.is_admin %}
-      <a href="{{contact.get_absolute_url}}filters/">Filters</a>
+      <a href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
       {% endif %}
       {% endif %}
     </div>

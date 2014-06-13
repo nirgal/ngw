@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block submenu %}
@@ -9,13 +10,13 @@
 
 {% for msg in contact_messages %}
 <div class=box>
-{% if msg.is_answer %}From{%else%}To{%endif%}: {{msg.cig.contact.name}}<br>
-Date: {{msg.send_date}}<br>
+{% if msg.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{msg.cig.contact.name}}<br>
+{% trans "Date" %}: {{msg.send_date}}<br>
 <br>
 {{ msg.text|linebreaksbr }}
 </div>
 {% empty %}
-There are no messages.
+{% trans "There are no messages." %}
 {% endfor %}
 
 {% endblock %}

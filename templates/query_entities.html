@@ -1,3 +1,4 @@
+{% load i18n %}
 {% comment %}
 That file must be included in a full template.
 Parameters:
@@ -20,7 +21,7 @@ Optionnal parameters:
         <tr class=rowodd id=objsummary>
             <td colspan={{ cols|length }}>
             {% ifnotequal npages 1 %}
-                {{ npages }} pages
+                {% blocktrans count npages=npages %}{{ npages }} page{% plural %}{{ npages }} pages{% endblocktrans %}
                 {% for i in page|pagenumber_iterator:npages %}
                     {% ifnotequal page i %}
                     <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
@@ -36,7 +37,7 @@ Optionnal parameters:
                 {% endfor %}
                 -
             {% endifnotequal %}
-            {{ count }} result{{ count|pluralize }}
+            {% blocktrans count count=count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
         <tr>
         {% for col in cols %}
             <th>
@@ -55,7 +56,7 @@ Optionnal parameters:
 <tr class=row{% cycle oddity %} id=objsummary>
     <td colspan={{ cols|length }}>
     {% ifnotequal npages 1 %}
-        {{ npages }} pages
+        {% blocktrans count npages=npages %}{{ npages }} page{% plural %}{{ npages }} pages{% endblocktrans %}
         {% for i in page|pagenumber_iterator:npages %}
             {% ifnotequal page i %}
             <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
@@ -71,5 +72,5 @@ Optionnal parameters:
         {% endfor %}
         -
     {% endifnotequal %}
-    {{ count }} result{{ count|pluralize }}
+    {% blocktrans count count=count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
 </table>

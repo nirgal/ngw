@@ -1,4 +1,5 @@
 {% extends "message.html" %}
+{% load i18n %}
 
 {% block body %}
 <script type='text/javascript'>
@@ -18,12 +19,12 @@ function nm_check(id, checked) {
 <input type=checkbox name=mn_{{ forloop.counter }} onchange="nm_check('{{ forloop.counter }}', this.checked)">{{ res.0 }}<br>
 {% endfor %}
 <hr>
-People to unsubscribe:<br>
+{% trans "People to unsubscribe" %}:<br>
 {% for res in sync_res %}
 {% if res.1 %}<span id=umm_{{ forloop.counter }} style="display:none;">{{ res.1 }}<br></span>{% endif %}
 {% endfor %}
 <hr>
-People to subscribe:<br>
+{% trans "People to subscribe" %}:<br>
 {% for res in sync_res %}
 {% if res.2 %}<span id=smm_{{ forloop.counter }} style="display:none;">{{ res.2 }}<br></span>{% endif %}
 {% endfor %}

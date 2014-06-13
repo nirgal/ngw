@@ -1,4 +1,5 @@
 {% extends "list.html" %}
+{% load i18n %}
 
 {% block body %}
 
@@ -83,7 +84,7 @@ function set_filter(newfilter) {
 
 
 <form id="mainform">
-    <div style="text-align:left; display:none;">Internal representation of filter:</div>
+    <div style="text-align:left; display:none;">{% trans "Internal representation of the filter" %}:</div>
     <input type=hidden id=filter name=filter value="{{filter}}">
     <input type=hidden id=fields name=fields value="{{fields}}">
     <input type=hidden id=display name=display value="{{display}}">
@@ -100,7 +101,7 @@ function set_filter(newfilter) {
     <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['mainform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['mainform'].submit(); return false;">
         <img src="{{STATIC_URL}}admin/img/icon_searchbox.png" alt="Search">
         <input name=filter id=defaultfocus style="width:auto;">
-        &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:ajax_load_innerhtml('filterbox', '/contacts/filter');">Advanced search</a>
+        &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:ajax_load_innerhtml('filterbox', '/contacts/filter');">{% trans "Advanced search" %}</a>
     </form>
 
     <script>document.forms['quickfilter_displayedform'].filter.focus();</script>
@@ -132,7 +133,7 @@ function show_field_selection() {
     document.getElementById('objlist').style.display='none';
 }
 </script>
-<h1 id="select_fields_title" style="display:none;">Displayed columns</h1>
+<h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>
 <div id="select_fields" class=box style="display:none;">
     {{ field_form.media|safe }}
     <form id=field_selection_widget action="#" onsubmit="submit_fields(); return false;"> {% comment %}Form id is needed by SelectFilter widget{% endcomment %}
@@ -140,8 +141,8 @@ function show_field_selection() {
         {{fields_form.as_table}}
     </table>
     <div class=submitbar style="text-align:left;">
-        <input type=checkbox name=savecolumns id="field_selection_widget_save_default"><label for="field_selection_widget_save_default">Save column selection as my default</label><br>
-        <input type=submit value="Set columns">
+        <input type=checkbox name=savecolumns id="field_selection_widget_save_default"><label for="field_selection_widget_save_default">{% trans "Save column selection as my default" %}</label><br>
+        <input type=submit value="{% trans "Set columns" %}">
     </div>
     </form>
 </div>
@@ -150,6 +151,6 @@ function show_field_selection() {
 
 {% block submitbar %}
 <div id=submitbar>
-  <a href="javascript:show_field_selection();" id=default> Select displayed columns</a>
+  <a href="javascript:show_field_selection();" id=default>{% trans "Select displayed columns" %}</a>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block body %}
@@ -11,15 +12,15 @@
 <input type=hidden name=type value="{{type}}">
 <input type=hidden name=choicegroup value="{{choicegroup}}">
 <input type=hidden name=move_after value="{{move_after}}">
-You are about to change the {{ cf.get_class_verbose_name }} {{ cf.name }}. However, some existing data is not compatible with the new type you selected. The only choice is to delete these records.
-<p>The following data will be deleted:
+{% blocktrans with fieldtype=cf.get_class_verbose_name fieldname=cf.name %}You are about to change the {{ fieldtype }} {{ fieldname }}. However, some existing data is not compatible with the new type you selected. The only choice is to delete these records.{% endblocktrans %}
+<p>{% trans "The following data will be deleted" %}:
 <p>{% for deletion_detail in deletion_details %}
     {{ deletion_detail|get:0 }}: {{ deletion_detail|get:1 }}<br>
 {% endfor %}
     {% block submitbar %}
     <div id=submitbar>
-    <a id=default href="javascript:history.back()">Back</a>
-    <input type=submit name=confirm value="Delete incompatible data">
+    <a id=default href="javascript:history.back()">{% trans "Back" %}</a>
+    <input type=submit name=confirm value="{% trans "Delete incompatible data" %}">
     </div>
     {% endblock %}
 </form>

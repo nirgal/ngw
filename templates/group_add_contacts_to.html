@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block body %}
 <form id="contact_list" method="post">
-<h1 class="boxheader">Selected people</h1>
+<h1 class="boxheader">{% trans "Selected people" %}</h1>
 <div class=box>
 {% csrf_token %}
 {% for c in query %}
@@ -18,19 +19,19 @@ function selectAll(target_checked) {
     }
 }
 </script>
-<a href="javascript:selectAll(true)">Select all</a> - <a href="javascript:selectAll(false)">Unselect all</a>
+<a href="javascript:selectAll(true)">{% trans "Select all" %}</a> - <a href="javascript:selectAll(false)">{% trans "Unselect all" %}</a>
 </div>
 
-<h1 class="boxheader">Select a group</h1>
+<h1 class="boxheader">{% trans "Select a group" %}</h1>
 <div class=box>
 <select name=group>
-<option value=''>Choose a group
+<option value=''>{% trans "Choose a group" %}
 {% for g in groups %}
 {% ifchanged g.is_event %}
 {% if g.is_event %}
-    <optgroup label="Events">
+    <optgroup label="{% trans "Events" %}">
 {% else %}
-    <optgroup label="Permanent groups">
+    <optgroup label="{% trans "Permanent groups" %}">
 {% endif %}
 {% endifchanged %}
 <option value={{g.id}}>{{g.unicode_with_date}}
@@ -38,26 +39,26 @@ function selectAll(target_checked) {
 </select>
 </div>
 
-<h1 class=boxheader>Select membership mode</h1>
+<h1 class=boxheader>{% trans "Select membership mode" %}</h1>
 <div class=box>
 <input type=checkbox id=membership_member name=membership_member checked onchange="
     if (this.checked) {
         this.form.membership_invited.checked=false;
         this.form.membership_declined.checked=false;
     }
-"><label for=membership_member>Member</label>
+"><label for=membership_member>{% trans "Member" %}</label>
 <input type=checkbox id=membership_invited name=membership_invited onchange="
     if (this.checked) {
         this.form.membership_member.checked=false;
         this.form.membership_declined.checked=false;
     }
-"><label for=membership_invited>Invited</label>
+"><label for=membership_invited>{% trans "Invited" %}</label>
 <input type=checkbox id=membership_declined name=membership_declined onchange="
     if (this.checked) {
         this.form.membership_member.checked=false;
         this.form.membership_invited.checked=false;
     }
-"><label for=membership_declined>Declined invitation</label>
+"><label for=membership_declined>{% trans "Declined invitation" %}</label>
 <br>
 <input type=checkbox id=membership_operator name=membership_operator onchange="
     if (this.checked) {
@@ -73,7 +74,7 @@ function selectAll(target_checked) {
         this.form.membership_view_files.checked=true;
         this.form.membership_write_files.checked=true;
     }
-"><label for=membership_operator>Operator</label>
+"><label for=membership_operator>{% trans "Operator" %}</label>
 <input type=checkbox id=membership_viewer name=membership_viewer onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -84,7 +85,7 @@ function selectAll(target_checked) {
     } else {
         this.form.membership_operator.checked=false;
     }
-"><label for=membership_viewer>Viewer</label>
+"><label for=membership_viewer>{% trans "Viewer" %}</label>
 <input type=checkbox id=membership_see_group name=membership_see_group onchange="
     if (!this.checked) {
         this.form.membership_operator.checked=false;
@@ -99,14 +100,14 @@ function selectAll(target_checked) {
         this.form.membership_view_files.checked=false;
         this.form.membership_write_files.checked=false;
     }
-"><label for=membership_see_group>Can see group</label>
+"><label for=membership_see_group>{% trans "Can see group" %}</label>
 <input type=checkbox id=membership_change_group name=membership_change_group onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
     } else {
         this.form.membership_operator.checked=false;
     }
-"><label for=membership_change_group>Group editor</label>
+"><label for=membership_change_group>{% trans "Group editor" %}</label>
 <input type=checkbox id=membership_see_members name=membership_see_members onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -115,7 +116,7 @@ function selectAll(target_checked) {
         this.form.membership_viewer.checked=false;
         this.form.membership_change_members.checked=false;
     }
-"><label for=membership_see_members>Can see members</label>
+"><label for=membership_see_members>{% trans "Can see members" %}</label>
 <input type=checkbox id=membership_change_members name=membership_change_members onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -123,7 +124,7 @@ function selectAll(target_checked) {
     } else {
         this.form.membership_operator.checked=false;
     }
-"><label for=membership_change_members>Can change members</label>
+"><label for=membership_change_members>{% trans "Can change members" %}</label>
 <input type=checkbox id=membership_view_fields name=membership_view_fields onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -132,7 +133,7 @@ function selectAll(target_checked) {
         this.form.membership_viewer.checked=false;
         this.form.membership_write_fields.checked=false;
     }
-"><label for=membership_view_fields>Can view fields</label>
+"><label for=membership_view_fields>{% trans "Can view fields" %}</label>
 <input type=checkbox id=membership_write_fields name=membership_write_fields onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -140,7 +141,7 @@ function selectAll(target_checked) {
     } else {
         this.form.membership_operator.checked=false;
     }
-"><label for=membership_write_fields>Can write fields</label>
+"><label for=membership_write_fields>{% trans "Can write fields" %}</label>
 <input type=checkbox id=membership_view_news name=membership_view_news onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -149,7 +150,7 @@ function selectAll(target_checked) {
         this.form.membership_viewer.checked=false;
         this.form.membership_write_news.checked=false;
     }
-"><label for=membership_view_news>Can view news</label>
+"><label for=membership_view_news>{% trans "Can view news" %}</label>
 <input type=checkbox id=membership_write_news name=membership_write_news onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -157,7 +158,7 @@ function selectAll(target_checked) {
     } else {
         this.form.membership_operator.checked=false;
     }
-"><label for=membership_write_news>Can write news</label>
+"><label for=membership_write_news>{% trans "Can write news" %}</label>
 <input type=checkbox id=membership_view_files name=membership_view_files onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -166,7 +167,7 @@ function selectAll(target_checked) {
         this.form.membership_viewer.checked=false;
         this.form.membership_write_files.checked=false;
     }
-"><label for=membership_view_files>Can view files</label>
+"><label for=membership_view_files>{% trans "Can view files" %}</label>
 <input type=checkbox id=membership_write_files name=membership_write_files onchange="
     if (this.checked) {
         this.form.membership_see_group.checked=true;
@@ -174,12 +175,12 @@ function selectAll(target_checked) {
     } else {
         this.form.membership_operator.checked=false;
     }
-"><label for=membership_write_files>Can upload files</label>
+"><label for=membership_write_files>{% trans "Can upload files" %}</label>
 </div>
 
 {% block submitbar %}
 <div id=submitbar>
-    <input type=submit name="type" value="Add to group" id="default">
+    <input type=submit name="type" value="{% trans "Add to group" %}" id="default">
 </div>
 {% endblock %}
 </form>

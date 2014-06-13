@@ -1,0 +1,665 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-06-13 12:46+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: core/models.py:276
+msgid "Name"
+msgstr "Nom"
+
+#: core/models.py:624 core/views.py:1304 templates/filter.html:26
+#: templates/group_add_contacts_to.html:32
+msgid "Events"
+msgstr "Événements"
+
+#: core/models.py:626
+msgid "Contact Groups"
+msgstr "Groupes de contacts"
+
+#: core/nav.py:15
+msgid "Home"
+msgstr "Accueil"
+
+#: core/views.py:142
+msgid "Home page"
+msgstr "Page d'accueil"
+
+#: templates/403.html:6
+msgid "Sorry. You are not authorized to browse that page."
+msgstr "Désolé. Vous n'êtes pas autorisé à parcourir cette page."
+
+#: templates/500.html:6
+msgid "Sorry. A server error occured."
+msgstr "Désolé. Une erreur est survenue sur le serveur."
+
+#: templates/base.html:12
+msgid "Welcome"
+msgstr "Bienvenue"
+
+#: templates/base.html:12
+msgid "Logout"
+msgstr "Déconnexion"
+
+#: templates/base.html:18
+msgid "Quick contact search"
+msgstr "Recherche rapide de contacts"
+
+#: templates/base.html:22
+msgid "news"
+msgstr "nouvelles"
+
+#: templates/base.html:23
+msgid "groups"
+msgstr "groupes"
+
+#: templates/base.html:24
+msgid "events"
+msgstr "événements"
+
+#: templates/base.html:26
+msgid "fields"
+msgstr "champs"
+
+#: templates/base.html:27
+msgid "choices"
+msgstr "choix"
+
+#: templates/base.html:28
+msgid "logs"
+msgstr "historique"
+
+#: templates/contact_detail.html:13
+msgid "Member of groups"
+msgstr "Membre des groupes"
+
+#: templates/contact_detail.html:16 templates/contact_detail.html.py:26
+msgid "implies"
+msgstr "implique"
+
+#: templates/contact_detail.html:23
+msgid "Invited in groups"
+msgstr "Invité dans les groupes"
+
+#: templates/contact_detail.html:33
+msgid "Declined invitation in groups"
+msgstr "A décliné l'invitation dans les groupes"
+
+#: templates/contact_detail.html:39
+msgid "Operator of groups"
+msgstr "Opérateur des groupes"
+
+#: templates/contact_detail.html:45
+msgid "Viewer of groups"
+msgstr "Observateur des groupes"
+
+#: templates/contact_detail.html:55
+msgid "Contact list"
+msgstr "Liste des contacts"
+
+#: templates/contact_detail.html:57 templates/group_detail.html:99
+msgid "Edit"
+msgstr "Modifier"
+
+#: templates/contact_detail.html:59
+msgid "VCard"
+msgstr "Carte de visite"
+
+#: templates/contact_detail.html:64
+msgid "Change password"
+msgstr "Changer le mot de passe"
+
+#: templates/contact_detail.html:66
+msgid "Filters"
+msgstr "Filtres"
+
+#: templates/contact_in_group.html:12 templates/customfilter_user.html:18
+#: templates/edit.html:17
+msgid "Save"
+msgstr "Enregistrer"
+
+#: templates/contact_in_group.html:13
+msgid "Remove from group"
+msgstr "Retirer du groupe"
+
+#: templates/customfilter_user.html:12 templates/emails.html:62
+msgid "Filter"
+msgstr "Filtre"
+
+#: templates/customfilters_user.html:15
+msgid "That user has no custom filter."
+msgstr "Cet utilisateur n'a aucun filtre personalisé."
+
+#: templates/delete.html:5
+#, python-format
+msgid "You are about to delete %(objecttype)s %(o)s. Are you sure ?"
+msgstr "Vous êtes sur le point d'effacer %(objecttype)s %(o)s. Êtes-vous sûr?"
+
+#: templates/delete.html:8
+msgid "Yes I'm Sure"
+msgstr "Oui je suis sûr"
+
+#: templates/delete.html:9
+msgid "Cancel"
+msgstr "Annuler"
+
+#: templates/edit.html:18
+msgid "Save and add another"
+msgstr "Enregistrer et ajouter un autre"
+
+#: templates/edit.html:19
+msgid "Save and continue editing"
+msgstr "Enregistrer et continuer à modifier"
+
+#: templates/edit.html:21
+msgid "Delete"
+msgstr "Supprimer"
+
+#: templates/emails.html:43 templates/emails.html.py:87
+msgid "Enter your message here."
+msgstr "Entrez votre message ici."
+
+#: templates/emails.html:49
+msgid "Memberships"
+msgstr "Appartenances"
+
+#: templates/emails.html:51
+msgid "Include members"
+msgstr "Inclure les membres"
+
+#: templates/emails.html:51 templates/emails.html.py:53
+#: templates/emails.html:55 templates/emails.html.py:57
+#: templates/emails.html:59
+msgid "Yes"
+msgstr "Oui"
+
+#: templates/emails.html:51 templates/emails.html.py:53
+#: templates/emails.html:55 templates/emails.html.py:57
+#: templates/emails.html:59
+msgid "No"
+msgstr "Non"
+
+#: templates/emails.html:53
+msgid "Include invited"
+msgstr "Include les invités"
+
+#: templates/emails.html:55
+msgid "Include declined invitations"
+msgstr "Include les invitation déclinées"
+
+#: templates/emails.html:57 templates/group_detail.html:32
+msgid "Include subgroups"
+msgstr "Inclure les sous-groupes"
+
+#: templates/emails.html:59
+msgid "Include admins"
+msgstr "Inclure les admins"
+
+#: templates/emails.html:68
+msgid "Don't forget to <b>use Bcc</b> whenever you can!"
+msgstr "N'oubliez pas d'<b>utiliser Cci</b> quand c'est possible"
+
+#: templates/emails.html:74 templates/group_add_contacts_to.html:22
+msgid "Select all"
+msgstr "Tout sélectionner"
+
+#: templates/emails.html:74 templates/group_add_contacts_to.html:22
+msgid "Unselect all"
+msgstr "Tout désélectionner"
+
+#: templates/emails.html:80
+msgid "Warning, the following people does not have any email address"
+msgstr "Attention, les personnes suivantes n'ont pas d'adresse de courriel"
+
+#: templates/emails.html:91
+msgid "Use my program"
+msgstr "Utiliser mon programme"
+
+#: templates/emails.html:92
+msgid "Send from server"
+msgstr "Envoyer depuis le serveur"
+
+#: templates/filter.html:10
+msgid "Current filter"
+msgstr "Filtre courrant"
+
+#: templates/filter.html:15
+msgid "Apply filter"
+msgstr "Appliquer le filtre"
+
+#: templates/filter.html:16
+msgid "Reset filter"
+msgstr "Réinitialiser le filtre"
+
+#: templates/filter.html:17
+msgid "Save filter"
+msgstr "Enregistrer le filtre"
+
+#: templates/filter.html:21
+msgid "Add condition"
+msgstr "Ajouter une condition"
+
+#: templates/filter.html:23
+msgid "Type of filter"
+msgstr "Type de filtre"
+
+#: templates/filter.html:24
+msgid "Fields"
+msgstr "Champs"
+
+#: templates/filter.html:25
+msgid "Groups"
+msgstr "Groupes"
+
+#: templates/filter.html:27
+msgid "Custom"
+msgstr "Personalisé"
+
+#: templates/group_add_contacts_to.html:6
+msgid "Selected people"
+msgstr "Personnes sélectionnées"
+
+#: templates/group_add_contacts_to.html:25
+msgid "Select a group"
+msgstr "Sélectionner un groupe"
+
+#: templates/group_add_contacts_to.html:28
+msgid "Choose a group"
+msgstr "Choisir un groupe"
+
+#: templates/group_add_contacts_to.html:34
+msgid "Permanent groups"
+msgstr "Groupes permanents"
+
+#: templates/group_add_contacts_to.html:42
+msgid "Select membership mode"
+msgstr "Sélectionnez le mode d'appartenance"
+
+#: templates/group_add_contacts_to.html:49 templates/membership_widget.html:14
+msgid "Member"
+msgstr "Membre"
+
+#: templates/group_add_contacts_to.html:55 templates/membership_widget.html:13
+msgid "Invited"
+msgstr "Invité"
+
+#: templates/group_add_contacts_to.html:61 templates/membership_widget.html:15
+msgid "Declined invitation"
+msgstr "Invitation déclinnée"
+
+#: templates/group_add_contacts_to.html:77
+msgid "Operator"
+msgstr "Opérateur"
+
+#: templates/group_add_contacts_to.html:88
+msgid "Viewer"
+msgstr "Observateur"
+
+#: templates/group_add_contacts_to.html:103
+msgid "Can see group"
+msgstr "Peux voir le groupe"
+
+#: templates/group_add_contacts_to.html:110
+msgid "Group editor"
+msgstr "Peux modifier le groupe"
+
+#: templates/group_add_contacts_to.html:119
+msgid "Can see members"
+msgstr "Peux voir les membres"
+
+#: templates/group_add_contacts_to.html:127
+msgid "Can change members"
+msgstr "Peux modifier les membres"
+
+#: templates/group_add_contacts_to.html:136
+msgid "Can view fields"
+msgstr "Peut voir les champs"
+
+#: templates/group_add_contacts_to.html:144
+msgid "Can write fields"
+msgstr "Peut changer les champs"
+
+#: templates/group_add_contacts_to.html:153
+msgid "Can view news"
+msgstr "Peut voir les nouvelles"
+
+#: templates/group_add_contacts_to.html:161
+msgid "Can write news"
+msgstr "Peut écrire des nouvelles"
+
+#: templates/group_add_contacts_to.html:170
+msgid "Can view files"
+msgstr "Peut voir les fichiers"
+
+#: templates/group_add_contacts_to.html:178
+msgid "Can upload files"
+msgstr "Peut envoyer des fichiers"
+
+#: templates/group_add_contacts_to.html:183
+msgid "Add to group"
+msgstr "Ajouter au groupe"
+
+#: templates/group_detail.html:11 templates/group_messages.html:14
+msgid "Date"
+msgstr "Date"
+
+#: templates/group_detail.html:12
+msgid "Budget code"
+msgstr "Code budget"
+
+#: templates/group_detail.html:13
+msgid "Mailing list"
+msgstr "Liste de diffusion"
+
+#: templates/group_detail.html:28
+msgid "Show"
+msgstr "Afficher"
+
+#: templates/group_detail.html:29 templates/group_submenu.html:3
+msgid "Members"
+msgstr "Membres"
+
+#: templates/group_detail.html:30
+msgid "Invited people"
+msgstr "Invités"
+
+#: templates/group_detail.html:31
+msgid "Declined invitations"
+msgstr "Invitation déclinnées"
+
+#: templates/group_detail.html:33
+msgid "Admins"
+msgstr "Admins"
+
+#: templates/group_detail.html:43
+msgid "Sub groups"
+msgstr "Sous-groupes"
+
+#: templates/group_detail.html:45
+msgid "People in sub-groups automatically are members / invited."
+msgstr "Les personnes des sous-groupes sont automatiquement membres / invités."
+
+#: templates/group_detail.html:50
+msgid "including"
+msgstr "y compris"
+
+#: templates/group_detail.html:63
+msgid "Groups that have some access to"
+msgstr "Groups qui ont un accès à"
+
+#: templates/group_detail.html:74
+msgid "Files"
+msgstr "Fichiers"
+
+#: templates/group_detail.html:85
+msgid "Happy birthday to"
+msgstr "Joyeux anniversaire à"
+
+#: templates/group_detail.html:98 templates/list_contact.html:155
+msgid "Select displayed columns"
+msgstr "Sélectionner les colonnes affichées"
+
+#: templates/group_detail.html:100
+msgid "Emails"
+msgstr "Courriels"
+
+#: templates/group_detail.html:101
+msgid "Vcards"
+msgstr "Cartes de visite"
+
+#: templates/group_detail.html:102
+msgid "CSV export"
+msgstr "Exportation CSV"
+
+#: templates/group_detail.html:105
+msgid "Create a new contact in that group"
+msgstr "Créer un nouveau contact dans ce groupe"
+
+#: templates/group_detail.html:107
+msgid "Add to another group"
+msgstr "Ajouter à un autre groupe"
+
+#: templates/group_detail.html:109 templates/group_submenu.html:4
+msgid "News"
+msgstr "Nouvelles"
+
+#: templates/group_detail.html:112
+msgid "Mailman"
+msgstr "Mailman"
+
+#: templates/group_mailman.html:6
+#, python-format
+msgid ""
+"\n"
+"Send <tt>who listpassword</tt> to <a href=\"mailto:%(requestaddress)s\">"
+"%(requestaddress)s</a> and copy paste the answer bellow. Replace the "
+"example.\n"
+"<p>Be careful not to forget <b>-request</b> in the email address, since you "
+"probably don't want every suscriber to receive the password in their "
+"mailbox!\n"
+msgstr ""
+"\n"
+"Envoyez <tt>who listpassword</tt> à <a href=\"mailto:%(requestaddress)s\">"
+"%(requestaddress)s</a> et copiez/collez la réponse ci-dessous. Remplacez "
+"l'exemple.\n"
+"<p>Faites attention à ne pas oublier <b>-request</b> dans l'adresse de "
+"courriler, car vousne voulez probablement que les abonnés recoivent le mot "
+"de passe dans leur boite à lettre!\n"
+
+#: templates/group_mailman.html:14
+msgid "Send"
+msgstr "Envoyer"
+
+#: templates/group_mailman_result.html:22
+msgid "People to unsubscribe"
+msgstr "Personnes à désinscrire"
+
+#: templates/group_mailman_result.html:27
+msgid "People to subscribe"
+msgstr "Personne à inscrire"
+
+#: templates/group_messages.html:13
+msgid "From"
+msgstr "De"
+
+#: templates/group_messages.html:13
+msgid "To"
+msgstr "À"
+
+#: templates/group_messages.html:19
+msgid "There are no messages."
+msgstr "Il n'y a pas de message."
+
+#: templates/group_submenu.html:5
+msgid "Messages"
+msgstr "Messages"
+
+#: templates/home.html:19
+msgid "Lastest updates"
+msgstr "Derniers développements"
+
+#: templates/home.html:25
+msgid "All news..."
+msgstr "Toutes les nouvellles..."
+
+#: templates/list.html:14 templates/news.html:20
+msgid "Add"
+msgstr "Ajouter"
+
+#: templates/list_contact.html:87
+msgid "Internal representation of the filter"
+msgstr "Représentation interne du filter"
+
+#: templates/list_contact.html:104
+msgid "Advanced search"
+msgstr "Recherche avancée"
+
+#: templates/list_contact.html:136
+msgid "Displayed columns"
+msgstr "Colonnes affichées"
+
+#: templates/list_contact.html:145
+msgid "Save column selection as my default"
+msgstr "Enregistrer la sélection de colonne comme défaut"
+
+#: templates/list_contact.html:146
+msgid "Set columns"
+msgstr "Définir les colonnes"
+
+#: templates/list_events.html:35
+msgid "Go back one year"
+msgstr "Reculer d'une année"
+
+#: templates/list_events.html:36
+msgid "Go back one month"
+msgstr "Reculer d'un mois"
+
+#: templates/list_events.html:37
+msgid "Go to current month"
+msgstr "Aller au mois courrant"
+
+#: templates/list_events.html:37
+msgid "Today"
+msgstr "Aujourd'hui"
+
+#: templates/list_events.html:38
+msgid "Go forward one month"
+msgstr "Avancer d'un mois"
+
+#: templates/list_events.html:39
+msgid "Go forward one year"
+msgstr "Avancer d'un an"
+
+#: templates/list_events.html:40
+msgid "Add event"
+msgstr "Ajouter un événement"
+
+#: templates/list_events.html:55
+msgid "Monday"
+msgstr "Lundi"
+
+#: templates/list_events.html:56
+msgid "Tuesday"
+msgstr "Mardi"
+
+#: templates/list_events.html:57
+msgid "Wenesday"
+msgstr "Mercredi"
+
+#: templates/list_events.html:58
+msgid "Thrusday"
+msgstr "Jeudi"
+
+#: templates/list_events.html:59
+msgid "Friday"
+msgstr "Vendredi"
+
+#: templates/list_events.html:60
+msgid "Saturday"
+msgstr "Samedi"
+
+#: templates/list_events.html:61
+msgid "Sunday"
+msgstr "Dimanche"
+
+#: templates/list_events.html:65
+msgid "today"
+msgstr "aujourd'hui"
+
+#: templates/login.html:8
+msgid "Your username and password didn't match. Please try again."
+msgstr ""
+"Votre nom d'utilisateur et votre mot de passe ne correspondent pas. Essayez "
+"encore."
+
+#: templates/login.html:24
+msgid "Login"
+msgstr "Connection"
+
+#: templates/membership_widget.html:18
+msgid "More..."
+msgstr "Plus..."
+
+#: templates/membership_widget.html:18
+msgid "Close"
+msgstr "Fermer"
+
+#: templates/news.html:13
+msgid "by"
+msgstr "par"
+
+#: templates/password.html:14
+msgid "Set new password"
+msgstr "Définir un nouveau mot de passe"
+
+#: templates/password.html:17
+msgid "Reset password by mail letter"
+msgstr "Réinitialiser le mot de passe par courrier papier"
+
+#: templates/password_letter.html:9
+#, python-format
+msgid ""
+"\n"
+"<p>You are about to generate a new password for user %(name)s.\n"
+"<p>That user will no longer be able to log in until he knows the new value.\n"
+msgstr ""
+"\n"
+"<p>Vous êtes sur le point de générer un nouveau mot de passe pour "
+"l'utilisateur %(name)s.\n"
+"<p>Cet utilisateur ne poura plus ce connecter jusqu'à ce qu'il connaisse la "
+"nouvelle valeur.\n"
+
+#: templates/password_letter.html:17
+msgid "Reset password and make letter"
+msgstr "Réinitialiser le mot de passe et faire une lettre"
+
+#: templates/query_entities.html:24 templates/query_entities.html.py:59
+#, python-format
+msgid "%(npages)s page"
+msgid_plural "%(npages)s pages"
+msgstr[0] "%(npages)s pages"
+msgstr[1] "%(npages)s pages"
+
+#: templates/query_entities.html:40 templates/query_entities.html.py:75
+#, python-format
+msgid "%(count)s result"
+msgid_plural "%(count)s results"
+msgstr[0] "%(count)s résultat"
+msgstr[1] "%(count)s résultats"
+
+#: templates/type_change.html:15
+#, python-format
+msgid ""
+"You are about to change the %(fieldtype)s %(fieldname)s. However, some "
+"existing data is not compatible with the new type you selected. The only "
+"choice is to delete these records."
+msgstr ""
+"Vous êtes sur le point de changer %(fieldtype)s %(fieldname)s. Néanmoins, "
+"certaines données existanes ne sont pas compatible avec le type que vous "
+"avez sélectionné. Le seul xhois est d'effacer ces enregistrements."
+
+#: templates/type_change.html:16
+msgid "The following data will be deleted"
+msgstr "Les données suivantes vont être effacée"
+
+#: templates/type_change.html:22
+msgid "Back"
+msgstr "Retour"
+
+#: templates/type_change.html:23
+msgid "Delete incompatible data"
+msgstr "Effacer les données incompatibles"

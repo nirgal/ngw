@@ -1,4 +1,5 @@
 {% extends "list_contact.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block submenu %}
@@ -7,9 +8,9 @@
 
 {% block body %}
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
-    {% if cg.date %}Date: <b>{{ cg.date|ngw_date_format }}</b><br>{% endif %}
-    {% if cg.budget_code %}Budget code: <b>{{ cg.budget_code }}</b><br>{% endif %}
-    {% if cg.mailman_address %}Mailing list: <b>{{ cg.mailman_address }}</b><br>{% endif %}
+    {% if cg.date %}{% trans "Date" %}: <b>{{ cg.date|ngw_date_format }}</b><br>{% endif %}
+    {% if cg.budget_code %}{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b><br>{% endif %}
+    {% if cg.mailman_address %}{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b><br>{% endif %}
 
     <p>
     <script>
@@ -24,12 +25,12 @@
         document.forms['mainform'].submit();
     }
     </script>
-    <form>Show:
-    <input type=checkbox name="display_member" id="id_display_member" {% if display_member %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">Members</label>
-    <input type=checkbox name="display_invited" id="id_display_invited" {% if display_invited %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">Invited people</label>
-    <input type=checkbox name="display_declined" id="id_display_declined" {% if display_declined %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">Declined invitations</label>
-    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">Include subgroups</label>
-    <input type=checkbox name="display_admins" id="id_display_admins" {% if display_admins %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_admins">Admins</label>
+    <form>{% trans "Show" %}:
+    <input type=checkbox name="display_member" id="id_display_member" {% if display_member %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">{% trans "Members" %}</label>
+    <input type=checkbox name="display_invited" id="id_display_invited" {% if display_invited %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">{% trans "Invited people" %}</label>
+    <input type=checkbox name="display_declined" id="id_display_declined" {% if display_declined %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">{% trans "Declined invitations" %}</label>
+    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">{% trans "Include subgroups" %}</label>
+    <input type=checkbox name="display_admins" id="id_display_admins" {% if display_admins %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_admins">{% trans "Admins" %}</label>
     </form>
     <br>
     {{ block.super }}
@@ -39,14 +40,14 @@
     {% ifnotequal cg.id 1 %}
         {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
             {% if forloop.first %}
-                <h1 class=boxheader>Sub groups</h1>
+                <h1 class=boxheader>{% trans "Sub groups" %}</h1>
                 <div class=box>
-                    People in sub-groups automatically are members / invited.
+                    {% trans "People in sub-groups automatically are members / invited." %}
                     <br>
             {% endif %}
                     ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a>
                     {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
-                    {% if forloop.first %}( including {%else%}, {% endif %}
+                    {% if forloop.first %}( {% trans "including" %} {%else%}, {% endif %}
                     {{ ssg|group_with_link }}
                     {% if forloop.last %}){% endif %}
                     {% endfor %}
@@ -59,7 +60,7 @@
     
     {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
         {% if forloop.first %}
-            <h1 class=boxheader>Groups that have some access to {{ cg.unicode_with_date }}</h1>
+            <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg.unicode_with_date }}</h1>
             <div class=box>
         {% endif %}
                 ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a><br>
@@ -70,7 +71,7 @@
 
     {% for f in files %}
         {% if forloop.first %}
-            <h1 class=boxheader>Files</h1>
+            <h1 class=boxheader>{% trans "Files" %}</h1>
             <div class=box>
         {% endif %}
         ‣ <a href="/static/g/{{cg.id}}/{{f}}">{{f}}</a><br>
@@ -81,7 +82,7 @@
     
     {% for p in cg.get_birthday_members %}
         {% if forloop.first %}
-            <h1 class=boxheader>Happy birthday to</h1>
+            <h1 class=boxheader>{% trans "Happy birthday to" %}</h1>
             <div class=box>
         {% endif %}
         ‣ {{ p }}<br>
@@ -94,20 +95,20 @@
     
 {% block submitbar %}
 <div id=submitbar>
-    <a href="javascript:show_field_selection();" id=default> Select displayed columns</a>
-    <a href="{{cg.get_absolute_url}}edit">Edit</a>
-    <a href="emails{{baseurl}}">Emails</a>
-    <a href="vcards{{baseurl}}">Vcards</a> 
-    <a href="csv{{baseurl}}">CSV export</a> 
+    <a href="javascript:show_field_selection();" id=default> {% trans "Select displayed columns" %}</a>
+    <a href="{{cg.get_absolute_url}}edit">{% trans "Edit" %}</a>
+    <a href="emails{{baseurl}}">{% trans "Emails" %}</a>
+    <a href="vcards{{baseurl}}">{% trans "Vcards" %}</a> 
+    <a href="csv{{baseurl}}">{% trans "CSV export" %}</a> 
     {% if cg.date %}
     {% else %}
-    <a href="add"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> Create a new contact in that group</a>
+    <a href="add"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> {% trans "Create a new contact in that group" %}</a>
     {% endif %}
-    <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> Add to another group</a>
+    <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> {% trans "Add to another group" %}</a>
     {% if cg.has_news %}
-    <a href="../news/">News</a> 
+    <a href="../news/">{% trans "News" %}</a> 
     {% endif %}
     {% if cg.mailman_address %}
-    <a href="../mailman">Mailman</a>
+    <a href="../mailman">{% trans "Mailman" %}</a>
     {% endif %}
 </div>{% endblock %}

@@ -1,4 +1,4 @@
-# -*- encoding: utf8 -*-
+# -*- encoding: utf-8 -*-
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from datetime import *
@@ -12,6 +12,7 @@ from django.http import (CompatibleStreamingHttpResponse, HttpResponse,
     HttpResponseForbidden, HttpResponseRedirect)
 from django.utils.safestring import mark_safe
 from django.utils import html
+from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -131,13 +132,14 @@ def unauthorized(request):
 # Home
 #
 #######################################################################
+from django.utils import translation
 
 @login_required()
 @require_group(GROUP_USER_NGW)
 def home(request):
     operator_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.group_id = contact_group.id AND contact_in_group.contact_id=%s AND contact_in_group.flags & %s <> 0)' % (request.user.id, CIGFLAG_OPERATOR)])
     return render_to_response('home.html', {
-        'title': 'Home page',
+        'title': _('Home page'),
         'nav': Navbar(),
         'operator_groups': operator_groups,
         'news': ContactGroupNews.objects.filter(contact_group_id=GROUP_USER_NGW)[:5],
@@ -1299,7 +1301,7 @@ def event_list(request):
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = Navbar()
-    args['nav'].add_component(('events', 'Events'))
+    args['nav'].add_component(('events', _('Events')))
     args['year_month'] = YearMonthCal(year, month, month_events)
     args['today'] = date.today()
     return query_print_entities(request, 'list_events.html', args)

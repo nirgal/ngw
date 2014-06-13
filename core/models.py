@@ -9,6 +9,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 import subprocess
 from django.core.exceptions import PermissionDenied
+from django.utils.translation import ugettext_lazy as _
 from django.db import models, connection
 from django import forms
 from django.http import Http404
@@ -272,7 +273,7 @@ class MyContactManager(models.Manager):
 
 class Contact(NgwModel):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(verbose_name=_('Name'), max_length=255, unique=True)
 
     objects = MyContactManager()
     USERNAME_FIELD = 'name' # Needed by contrib.auth
@@ -620,9 +621,9 @@ class ContactGroup(NgwModel):
     def get_smart_navbar(self):
         nav = Navbar()
         if self.date:
-            nav.add_component(("events", "Events"))
+            nav.add_component(("events", _("Events")))
         else:
-            nav.add_component(("contactgroups", "Contact Groups"))
+            nav.add_component(("contactgroups", _("Contact Groups")))
         nav.add_component((str(self.id), self.name))
         return nav
 

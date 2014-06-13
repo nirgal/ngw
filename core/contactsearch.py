@@ -3,9 +3,10 @@
 from __future__ import division, print_function, unicode_literals
 import urllib2
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from django.utils import html
+from django.http import HttpResponse
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required

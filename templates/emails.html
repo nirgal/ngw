@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load ngwtags %}
 
 {% block submenu %}
@@ -39,56 +40,56 @@ function refreshSendTo() {
 function onFocusTextArea() {
     /* That function erases the textarea on enter if it still contains the original text. */
     elmt = document.getElementById("messagetxt");
-    if (elmt.value == 'Enter your message here.')
+    if (elmt.value == '{% trans "Enter your message here." %}')
         elmt.value = '';
 }
 
 </script>
 
-    <h1 class=boxheader>Memberships</h1>
+    <h1 class=boxheader>{% trans "Memberships" %}</h1>
     <div class=box>
-    Include members: {% if display_member %}Yes{% else %}No{% endif %}
+    {% trans "Include members" %}: {% if display_member %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    Include invited: {% if display_invited %}Yes{% else %}No{% endif %}
+    {% trans "Include invited" %}: {% if display_invited %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    Include declined invitations: {% if display_declined %}Yes{% else %}No{% endif %}
+    {% trans "Include declined invitations" %}: {% if display_declined %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    Include subgroups: {% if display_subgroups %}Yes{% else %}No{% endif %}
+    {% trans "Include subgroups" %}: {% if display_subgroups %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    Include admins: {% if display_admins %}Yes{% else %}No{% endif %}
+    {% trans "Include admins" %}: {% if display_admins %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     </div>
     {% if strfilter %}
-    <h1 class=boxheader>Filter</h1>
+    <h1 class=boxheader>{% trans "Filter" %}</h1>
     <div class=box>
     {{filter.to_html|safe}}<br>
     </div>
     {% endif %}
 
-    <p>Don't forget to <b>use Bcc</b> whenever you can!
+    <p>{% trans "Don't forget to <b>use Bcc</b> whenever you can!" %}
 
     <form id="contact_list" method="post">
     {% csrf_token %}
 
     <p>
-    <a href="javascript:selectAll(true)">Select all</a> - <a href="javascript:selectAll(false)">Unselect all</a><br>
+    <a href="javascript:selectAll(true)">{% trans "Select all" %}</a> - <a href="javascript:selectAll(false)">{% trans "Unselect all" %}</a><br>
     {% for email in emails %}
     <input type=checkbox name="contact_{{email|get:0}}" id="contact_{{email|get:0}}" value="{{ email|get:2 }}" checked onchange='refreshSendTo()'> <label for="contact_{{email|get:0}}">{{email|get:1}} &lt;{{ email|get:2 }}&gt;</label><br>
     {% endfor %}
 
     {% if noemails %}
-        <p>Warning, the following people does not have any email address:<br>
+        <p>{% trans "Warning, the following people does not have any email address" %}:<br>
         {% for contact in noemails %}
         <a href="{{ contact.get_absolute_url }}">{{ contact.name }}</a><br>
         {% endfor %}
     {% endif %}
 
     <p>
-    <textarea name=message id=messagetxt rows=20 onfocus='onFocusTextArea()'>Enter your message here.</textarea>
+    <textarea name=message id=messagetxt rows=20 onfocus='onFocusTextArea()'>{% trans "Enter your message here." %}</textarea>
 
     {% block submitbar %}
     <div id=submitbar>
-      <a href="mailto:?bcc={% for email in emails %}{% if forloop.counter0 %},{% endif %}{{ email|get:2 }}{% endfor %}" id=default>Use my program</a>
-      <input type=submit value="Send from server">
+      <a href="mailto:?bcc={% for email in emails %}{% if forloop.counter0 %},{% endif %}{{ email|get:2 }}{% endfor %}" id=default>{% trans "Use my program" %}</a>
+      <input type=submit value="{% trans "Send from server" %}">
     </div>
     {% endblock %}
 

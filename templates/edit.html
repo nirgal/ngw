@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block body %}
 {{form.media|safe}}
@@ -12,11 +13,11 @@
 
     {% block submitbar %}
     <div id=submitbar>
-    <input type=submit value="Save" id="default">
-    {% if not id %}<input type=submit value="Save and add another" name="_addanother">{% endif %}
-    <input type=submit value="Save and continue editing" name="_continue">
+    <input type=submit value="{% trans "Save" %}" id="default">
+    {% if not id %}<input type=submit value="{% trans "Save and add another" %}" name="_addanother">{% endif %}
+    <input type=submit value="{% trans "Save and continue editing" %}" name="_continue">
     {% if id %}
-    <a href="delete"><img src="{{STATIC_URL}}admin/img/icon_deletelink.gif" border=0 valign=middle> Delete</a>
+    <a href="delete"><img src="{{STATIC_URL}}admin/img/icon_deletelink.gif" border=0 valign=middle> {% trans "Delete" %}</a>
     {% endif %}
     </div>
     {% endblock %}
