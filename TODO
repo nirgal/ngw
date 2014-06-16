@@ -33,8 +33,6 @@ Invite groups:
 
 Use PermissionDenied exception rather than calling views.unauthorized() directly.
 
-Check file url in group_detail.html
-
 Check date is not null when creating an event
 
 Enhance xmpp extensions:
