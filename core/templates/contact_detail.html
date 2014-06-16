@@ -5,8 +5,8 @@
     <table class=objlist>
     <tr><td>
     
-    {% for row in rows %}
-        {{ row|get:0 }}: <b>{{ row|get:1 }}</b><br>
+    {% for key,value in rows %}
+        {{ key }}: <b>{{ value }}</b><br>
     {% endfor %}
     {% for g in contact.get_directgroups_member|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Member of groups" %}:<br>{% endif %}

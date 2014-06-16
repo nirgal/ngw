@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n ngwtags %}
+{% load i18n %}
 
 {% block submenu %}
 {% include "group_submenu.html" %}
@@ -71,8 +71,8 @@ function onFocusTextArea() {
 
     <p>
     <a href="javascript:selectAll(true)">{% trans "Select all" %}</a> - <a href="javascript:selectAll(false)">{% trans "Unselect all" %}</a><br>
-    {% for email in emails %}
-    <input type=checkbox name="contact_{{email|get:0}}" id="contact_{{email|get:0}}" value="{{ email|get:2 }}" checked onchange='refreshSendTo()'> <label for="contact_{{email|get:0}}">{{email|get:1}} &lt;{{ email|get:2 }}&gt;</label><br>
+    {% for cid,contact,email in emails %}
+    <input type=checkbox name="contact_{{cid}}" id="contact_{{cid}}" value="{{ email }}" checked onchange='refreshSendTo()'> <label for="contact_{{cid}}">{{contact}} &lt;{{ email }}&gt;</label><br>
     {% endfor %}
 
     {% if noemails %}
@@ -87,7 +87,7 @@ function onFocusTextArea() {
 
     {% block submitbar %}
     <div id=submitbar>
-      <a href="mailto:?bcc={% for email in emails %}{% if forloop.counter0 %},{% endif %}{{ email|get:2 }}{% endfor %}" id=default>{% trans "Use my program" %}</a>
+      <a href="mailto:?bcc={% for cid,contact,email in emails %}{% if forloop.counter0 %},{% endif %}{{ email }}{% endfor %}" id=default>{% trans "Use my program" %}</a>
       <input type=submit value="{% trans "Send from server" %}">
     </div>
     {% endblock %}
