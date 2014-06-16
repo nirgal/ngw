@@ -1,5 +1,5 @@
 {% load i18n %}
-<div style="position:relative">{% comment %}See https://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-elements{%endcomment%}
+<div style="position:relative">{# See https://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-element #}
 <a href="javascript:show_membership_extrainfo('{{gid}}_{{cid}}')">{{membership_str}}</a>
 {% if note %}<br>{{note}}{% endif %}
 <div class=membershipextra id="membership_{{gid}}_{{cid}}">

@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n ngwtags %}
 {% comment %}
 That file must be included in a full template.
 Parameters:
@@ -11,8 +11,6 @@ Optionnal parameters:
     sr: 1 for reversed sort
     page: number of the page actually printed
 {% endcomment %}
-
-{% load ngwtags %}
 
 <table id=objlist class=objlist>
 {% for row in query %}

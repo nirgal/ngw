@@ -1,13 +1,12 @@
 {% extends "base.html" %}
-{% load i18n %}
-{% load ngwtags %}
+{% load i18n ngwtags %}
 
 {% block body %}
     <div class=box>
     {% if filters %}
         {% for f in filters %}
         ‣ <a href="./{{forloop.counter0}}">{{f}}</a><br>
-        {%comment%}{{f|get:1|safe}}<br>{%endcomment%}
+        {# {{f|get:1|safe}}<br> #}
         {% endfor %}
         </div>
     {% else %}
@@ -15,10 +14,10 @@
     {% endif %}
 
     {% block submitbar %}
-    {%comment%}
+    {% comment %}
     <div id=submitbar>
     <a href="{{ contact.get_absolute_url}}" id=default>Contact details</a>
     </div>
-    {%endcomment%}
+    {% endcomment %}
     {% endblock %}
 {% endblock %}

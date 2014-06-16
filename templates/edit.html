@@ -3,7 +3,7 @@
 
 {% block body %}
 {{form.media|safe}}
-{% comment %}{{ form.errors }}{% endcomment %}
+{# {{ form.errors } #}
 {% block preform %}{% endblock %}
 <form name=objchange method=post>
 {% csrf_token %}

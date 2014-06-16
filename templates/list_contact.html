@@ -27,9 +27,7 @@ function show_membership_extrainfo(gcid) {
 </script>
 
 <script>
-{%comment%}
-For some obscure reason, that block of functions cannot be loaded via rpc
-{%endcomment%}
+{# For some obscure reason, that block of functions cannot be loaded via rpc #}
 var cur_grouptype=null;
 var cur_field=null;
 var cur_filtername=null;
@@ -136,7 +134,7 @@ function show_field_selection() {
 <h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>
 <div id="select_fields" class=box style="display:none;">
     {{ field_form.media|safe }}
-    <form id=field_selection_widget action="#" onsubmit="submit_fields(); return false;"> {% comment %}Form id is needed by SelectFilter widget{% endcomment %}
+    <form id=field_selection_widget action="#" onsubmit="submit_fields(); return false;"> {# Form id is needed by SelectFilter widget #}
     <table class=objchange>
         {{fields_form.as_table}}
     </table>
