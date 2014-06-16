@@ -2591,7 +2591,7 @@ class ChoiceGroupForm(forms.Form):
         cg.sort_by_key = self.clean()['sort_by_key']
         cg.save()
 
-        possibles_values = self['possible_values']._data()
+        possibles_values = self.cleaned_data['possible_values']
         choices = {}
 
         # first ignore lines with empty keys, and update auto_key
