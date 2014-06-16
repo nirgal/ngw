@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-13 17:49+0200\n"
+"POT-Creation-Date: 2014-06-16 11:54+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,12 +18,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: core/models.py:276 core/views.py:520 core/views.py:522 core/views.py:1173
-#: core/views.py:1286 core/views.py:2262 core/views.py:2491
+#: core/models.py:276 core/views.py:525 core/views.py:527 core/views.py:1178
+#: core/views.py:1291 core/views.py:2267 core/views.py:2496
 msgid "Name"
 msgstr "Nom"
 
-#: core/models.py:624 core/views.py:1297 core/views.py:1302
+#: core/models.py:624 core/views.py:1302 core/views.py:1307
 #: templates/filter.html:26 templates/group_add_contacts_to.html:32
 msgid "Events"
 msgstr "Événements"
@@ -81,184 +81,232 @@ msgstr "Propriété"
 msgid "Change"
 msgstr "Modifier"
 
-#: core/views.py:557 core/views.py:562
+#: core/views.py:322 core/views.py:324 templates/group_add_contacts_to.html:49
+#: templates/membership_widget.html:14
+msgid "Member"
+msgstr "Membre"
+
+#: core/views.py:326 core/views.py:328 templates/group_add_contacts_to.html:55
+#: templates/membership_widget.html:13
+msgid "Invited"
+msgstr "Invité"
+
+#: core/views.py:330
+msgid "Declined"
+msgstr ""
+
+#: core/views.py:354 templates/emails.html:51 templates/emails.html.py:53
+#: templates/emails.html:55 templates/emails.html.py:57
+#: templates/emails.html:59
+msgid "No"
+msgstr "Non"
+
+#: core/views.py:562 core/views.py:567
 msgid "Status"
 msgstr "Statut"
 
-#: core/views.py:563
+#: core/views.py:568
 msgid "Note"
 msgstr "Note"
 
-#: core/views.py:622 templates/contact_detail.html:55
+#: core/views.py:627 templates/contact_detail.html:55
 msgid "Contact list"
 msgstr "Liste des contacts"
 
-#: core/views.py:907 templates/contact_detail.html:64
+#: core/views.py:912 templates/contact_detail.html:64
 msgid "Change password"
 msgstr "Changer le mot de passe"
 
-#: core/views.py:961
+#: core/views.py:966
 msgid "Generate a new password and print a letter"
 msgstr "Générer un nouveau mot de passe et imprimer une lettre"
 
-#: core/views.py:1050
+#: core/views.py:1055
 msgid "User custom filters"
 msgstr "Filtres personalisé de l'utilisateur."
 
-#: core/views.py:1094
+#: core/views.py:1099
 msgid "User custom filter renaming"
 msgstr "Renommage du filtre utilisateur personalisé"
 
-#: core/views.py:1174 core/views.py:1287
+#: core/views.py:1179 core/views.py:1292
 msgid "Description"
 msgstr "Description"
 
-#: core/views.py:1177
+#: core/views.py:1182
 msgid "Super groups"
 msgstr "Super-groupes"
 
-#: core/views.py:1178 templates/group_detail.html:43
+#: core/views.py:1183 templates/group_detail.html:43
 msgid "Sub groups"
 msgstr "Sous-groupes"
 
-#: core/views.py:1184
+#: core/views.py:1189
 msgid "Select a contact group"
 msgstr "Sélectionner un groupe de contacts"
 
-#: core/views.py:1285 templates/group_detail.html:11
+#: core/views.py:1290 templates/group_detail.html:11
 #: templates/group_messages.html:14
 msgid "Date"
 msgstr "Date"
 
-#: core/views.py:1531
+#: core/views.py:1536
 msgid "Use YYYY-MM-DD format. Leave empty for permanent groups."
 msgstr ""
+"Utilisez le format AAAA-MM-JJ. Laissez vide pour les groupes permanents"
 
-#: core/views.py:1533
+#: core/views.py:1538
 msgid ""
 "If set, automatic membership because of subgroups becomes permanent. Use "
 "with caution."
 msgstr ""
-
-#: core/views.py:1534
-msgid "Does that group yield specific fields to its members?"
-msgstr ""
-
-#: core/views.py:1535
-msgid "Mailing list address, if the group is linked to a mailing list."
-msgstr ""
-
-#: core/views.py:1536
-msgid "Does that group supports internal news system?"
-msgstr ""
-
-#: core/views.py:1537
-msgid "Members will automatically be granted membership in these groups."
-msgstr ""
+"Lorsque cette case est cochée, l'ajout au sous-groupes devient permanent. "
+"Utilisez avec précaution."
 
 #: core/views.py:1539
+msgid "Does that group yield specific fields to its members?"
+msgstr "Est ce que ce groupe fourni des champs spécifiques à ses membres"
+
+#: core/views.py:1540
+msgid "Mailing list address, if the group is linked to a mailing list."
+msgstr ""
+"Adresse de liste de diffusion, si le groupe est liée à une liste de "
+"diffusion."
+
+#: core/views.py:1541
+msgid "Does that group supports internal news system?"
+msgstr "Est ce que groupe supporte le système interne de nouvelles?"
+
+#: core/views.py:1542
+msgid "Members will automatically be granted membership in these groups."
+msgstr "Les membres vont automatiquement obtenir l'appartenance à ces groupes."
+
+#: core/views.py:1544
 msgid ""
 "Members of these groups will automatically be granted administrative "
 "priviledges."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir les privilèges "
+"d'administrateur."
 
-#: core/views.py:1542
+#: core/views.py:1547
 msgid ""
 "Members of these groups will automatically be granted viewer priviledges: "
 "They can see everything but can't change things."
 msgstr ""
+"Les membres de ces groupes automatiquement obtenir les privilèges "
+"d'observateur: Il peuvent tout voir mais ne peuvent rien modifier."
 
-#: core/views.py:1545
+#: core/views.py:1550
 msgid ""
 "Members of these groups will automatically be granted priviledge to know "
 "that current group exists."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège de voir "
+"que ce groupe existe."
 
-#: core/views.py:1548
+#: core/views.py:1553
 msgid ""
 "Members of these groups will automatically be granted priviledge to change/"
 "delete the current group."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège de "
+"modifier/effacer le groupe courrant."
 
-#: core/views.py:1551
+#: core/views.py:1556
 msgid ""
 "Members of these groups will automatically be granted priviledge to see the "
 "list of members."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège de voir "
+"la liste des membres."
 
-#: core/views.py:1554
+#: core/views.py:1559
 msgid ""
 "Members of these groups will automatically be granted permission to change "
 "members of current group."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège de "
+"modifier les membres du groupe courrant."
 
-#: core/views.py:1557
+#: core/views.py:1562
 msgid ""
 "Members of these groups will automatically be granted permission to read the "
 "fields associated to current group."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège de lire "
+"les champs associés au groupe courrant."
 
-#: core/views.py:1560
+#: core/views.py:1565
 msgid ""
 "Members of these groups will automatically be granted priviledge to write to "
 "fields associated to current group."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège "
+"d'écrire dans les champs associés au groupe courrant."
 
-#: core/views.py:1563
+#: core/views.py:1568
 msgid ""
 "Members of these groups will automatically be granted permisson to read news "
 "of current group."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège le lire "
+"les nouvelles du groupe courrant."
 
-#: core/views.py:1566
+#: core/views.py:1571
 msgid ""
 "Members of these groups will automatically be granted permission to write "
 "news in that group."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège "
+"d'écrire des nouvelles dans ce groupe."
 
-#: core/views.py:1569
+#: core/views.py:1574
 msgid ""
 "Members of these groups will automatically be granted permission to view "
 "uploaded files in that group."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège de lire "
+"les fichiers téléchargés dans ce groupe."
 
-#: core/views.py:1572
+#: core/views.py:1577
 msgid ""
 "Members of these groups will automatically be granted permission to upload "
 "files."
 msgstr ""
+"Les membres de ces groupes vont automatiquement obtenir le privilège de "
+"télécharger des fichiers dans ce groupe."
 
-#: core/views.py:2263
+#: core/views.py:2268
 msgid "Type"
 msgstr "Type"
 
-#: core/views.py:2264
+#: core/views.py:2269
 msgid "Only for"
 msgstr "Seulement pour"
 
-#: core/views.py:2265
+#: core/views.py:2270
 msgid "System locked"
 msgstr "Vérouillé par le système"
 
-#: core/views.py:2268
+#: core/views.py:2273
 msgid "Select an optionnal field"
 msgstr ""
 
-#: core/views.py:2492
+#: core/views.py:2497
 msgid "Choices"
 msgstr "Choix"
 
-#: core/views.py:2494
-#, fuzzy
+#: core/views.py:2499
 msgid "Select a choice group"
-msgstr "Sélectionner un groupe de contacts"
+msgstr "Sélectionner un groupe de choix"
 
-#: core/views.py:2645
+#: core/views.py:2650
 #, python-format
 msgid "Editing %s"
 msgstr ""
 
-#: core/views.py:2648
+#: core/views.py:2653
 msgid "Adding a new"
 msgstr ""
 
@@ -420,12 +468,6 @@ msgstr "Inclure les membres"
 msgid "Yes"
 msgstr "Oui"
 
-#: templates/emails.html:51 templates/emails.html.py:53
-#: templates/emails.html:55 templates/emails.html.py:57
-#: templates/emails.html:59
-msgid "No"
-msgstr "Non"
-
 #: templates/emails.html:53
 msgid "Include invited"
 msgstr "Include les invités"
@@ -521,14 +563,6 @@ msgstr "Groupes permanents"
 #: templates/group_add_contacts_to.html:42
 msgid "Select membership mode"
 msgstr "Sélectionnez le mode d'appartenance"
-
-#: templates/group_add_contacts_to.html:49 templates/membership_widget.html:14
-msgid "Member"
-msgstr "Membre"
-
-#: templates/group_add_contacts_to.html:55 templates/membership_widget.html:13
-msgid "Invited"
-msgstr "Invité"
 
 #: templates/group_add_contacts_to.html:61 templates/membership_widget.html:15
 msgid "Declined invitation"
