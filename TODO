@@ -42,11 +42,6 @@ Enhance xmpp extensions:
 
 Implement slicing in ContactQuerySet
 
-Translations:
-- Add imports
-- Add _() before every string
-- Make the po/mo files
-
 fix_htaccess should create recursively the dir hierarchy if missing
 
 (jpv) Remove pwgen dependency
