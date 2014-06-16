@@ -21,6 +21,10 @@ You need to edit your settings.py:
 You need to set up a cron tab:
 */5 * * * * /usr/lib/ngw/manage.py msgsync -v 2
 
+You also need to compile translation files:
+cd core/;../manage.py compilemessages;cd -
+cd extensions/externalmessages/;../../manage.py compilemessages;cd -
+
 Postgres setup
 ==============
 

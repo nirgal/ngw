@@ -42,6 +42,7 @@ WSGIPythonPath /usr/lib
     WSGIScriptAliasMatch ^(/login)$             /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/logout)$            /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/)$                  /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/jsi18n/.*)$         /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/logs)$              /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/contacts/.*)$       /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/contactgroups/.*)$  /usr/lib/ngw/core/wsgi.py$1

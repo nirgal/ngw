@@ -40,10 +40,18 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<id>\d+)/mailman$', 'ngw.core.views.contactgroup_mailman'),
 )
 
+
+js_info_dict = {
+    'packages': ('ngw.core',),
+    }
+
 urlpatterns = patterns('',
     url(r'^$', 'ngw.core.views.home'),
     
-    url(r'^test$', 'ngw.core.views.test'),
+    #url(r'^test$', 'ngw.core.views.test'),
+
+    url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
+    url(r'^jsi18n/(?P<packages>\S+?)/$', 'django.views.i18n.javascript_catalog'),
 
     url(r'^hook_change_password$', 'ngw.core.views.hook_change_password'),
 
