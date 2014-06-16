@@ -10,6 +10,7 @@ import json
 import logging
 from django.conf import settings
 from django.utils.translation import ugettext, activate as language_activate
+from django.utils.timezone import now
 from django.core.mail import send_mass_mail
 from ngw.core.models import ContactMsg
 
@@ -54,10 +55,16 @@ def do_sync():
                 ot_conn = httplib.HTTPSConnection('onetime.info')
 
             logger.info('Storing message for %s.', msg.cig.contact)
+
+            dt = msg.cig.group.date
+            if dt:
+                days = (dt - now()).days
+            else:
+                days = 21
             ot_conn.request('POST', '/', urllib.urlencode({
                 'message': msg.text.encode(settings.DEFAULT_CHARSET),
                 'once': True,
-                'expiration': '1',
+                'expiration': days,
                 'allow_answers': 1
             }), {
                 'Content-type': 'application/x-www-form-urlencoded',
