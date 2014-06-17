@@ -2,7 +2,7 @@ Installation
 ============
 It is recommanded to use Debian 6 (Squeeze) or above
 
-aptitude install python-django python-psycopg2 postgresql libapache2-mod-wsgi libjs-jquery pwgen python-uno python-cracklib tor python-socksipy oomailing python-decoratedstr
+aptitude install python-django python-psycopg2 postgresql libapache2-mod-wsgi libjs-jquery gettext pwgen python-uno python-cracklib tor python-socksipy oomailing python-decoratedstr
 
 oomailing and python-decoratedstr packages can be downloaded at:
 http://www.nirgal.com/debian/
