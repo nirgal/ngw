@@ -237,7 +237,7 @@ class Choice(NgwModel):
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, blank=True)
-    sort_by_key = models.BooleanField()
+    sort_by_key = models.BooleanField(default=False)
     class Meta:
         db_table = 'choice_group'
         verbose_name = 'choices list'
@@ -600,13 +600,13 @@ class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    field_group = models.BooleanField()
+    field_group = models.BooleanField(default=False)
     date = models.DateField(null=True, blank=True)
     budget_code = models.CharField(max_length=10)
-    system = models.BooleanField()
+    system = models.BooleanField(default=False)
     mailman_address = models.CharField(max_length=255, blank=True)
-    has_news = models.BooleanField()
-    sticky = models.BooleanField()
+    has_news = models.BooleanField(default=False)
+    sticky = models.BooleanField(default=False)
     #direct_supergroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none1+')
     #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')
     class Meta:
@@ -965,7 +965,7 @@ class ContactField(NgwModel):
     contact_group = models.ForeignKey(ContactGroup)
     sort_weight = models.IntegerField()
     choice_group = models.ForeignKey(ChoiceGroup, null=True, blank=True)
-    system = models.BooleanField()
+    system = models.BooleanField(default=False)
     default = models.TextField(blank=True)
     class Meta:
         db_table = 'contact_field'
