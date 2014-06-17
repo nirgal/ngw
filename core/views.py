@@ -1537,8 +1537,8 @@ class ContactGroupForm(forms.Form):
         required=False, widget=forms.Textarea)
     date = forms.DateField(label=_('Date'),
         required=False,
-        help_text=_('Use YYYY-MM-DD format. Leave empty for permanent groups.'), widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
-    budget_code = forms.CharField(label=('Budget code'),
+        help_text=_('Leave empty for permanent groups.'), widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
+    budget_code = forms.CharField(label=_('Budget code'),
         required=False, max_length=10)
     sticky = forms.BooleanField(label=_('Sticky'),
         required=False,
@@ -1560,43 +1560,43 @@ class ContactGroupForm(forms.Form):
         required=False,
         help_text=_("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."),
         widget=FilterMultipleSelectWidget('groups', False))
-    see_group_groups = forms.MultipleChoiceField(label='Existence seer groups',
+    see_group_groups = forms.MultipleChoiceField(label=_('Existence seer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to know that current group exists.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    change_group_groups = forms.MultipleChoiceField(label='Editor groups',
+    change_group_groups = forms.MultipleChoiceField(label=_('Editor groups'),
         required=False, 
         help_text=_('Members of these groups will automatically be granted priviledge to change/delete the current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    see_members_groups = forms.MultipleChoiceField(label='Members seer groups',
+    see_members_groups = forms.MultipleChoiceField(label=_('Members seer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to see the list of members.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    change_members_groups = forms.MultipleChoiceField(label='Members changing groups',
+    change_members_groups = forms.MultipleChoiceField(label=_('Members changing groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to change members of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_fields_groups = forms.MultipleChoiceField(label='Fields viewer groups',
+    view_fields_groups = forms.MultipleChoiceField(label=_('Fields viewer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to read the fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_fields_groups = forms.MultipleChoiceField(label='Fields writer groups',
+    write_fields_groups = forms.MultipleChoiceField(label=_('Fields writer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_news_groups = forms.MultipleChoiceField(label='News viewer groups',
+    view_news_groups = forms.MultipleChoiceField(label=_('News viewer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permisson to read news of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_news_groups = forms.MultipleChoiceField(label='New writer groups',
+    write_news_groups = forms.MultipleChoiceField(label=_('News writer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to write news in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_files_groups = forms.MultipleChoiceField(label='File viewer groups',
+    view_files_groups = forms.MultipleChoiceField(label=_('File viewer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to view uploaded files in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_files_groups = forms.MultipleChoiceField(label='File uploader groups',
+    write_files_groups = forms.MultipleChoiceField(label=_('File uploader groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to upload files.'),
         widget=FilterMultipleSelectWidget('groups', False))

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-17 16:46+0200\n"
+"POT-Creation-Date: 2014-06-17 17:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -249,7 +249,7 @@ msgstr "courriels"
 #: views.py:1463
 #, python-format
 msgid "Contacts of group %s"
-msgstr "Contacts du groupes %s"
+msgstr "Contacts du groupe %s"
 
 #: views.py:1510
 msgid "Messages stored."
@@ -265,9 +265,12 @@ msgid "messages"
 msgstr "messages"
 
 #: views.py:1540
-msgid "Use YYYY-MM-DD format. Leave empty for permanent groups."
-msgstr ""
-"Utilisez le format AAAA-MM-JJ. Laissez vide pour les groupes permanents"
+msgid "Leave empty for permanent groups."
+msgstr "Laissez vide pour les groupes permanents"
+
+#: views.py:1541 templates/group_detail.html:11
+msgid "Budget code"
+msgstr "Code budget"
 
 #: views.py:1543
 msgid "Sticky"
@@ -331,6 +334,10 @@ msgstr ""
 "Les membres de ces groupes automatiquement obtenir les privilèges "
 "d'observateur: Il peuvent tout voir mais ne peuvent rien modifier."
 
+#: views.py:1563
+msgid "Existence seer groups"
+msgstr "Groupes voyant l'existance"
+
 #: views.py:1565
 msgid ""
 "Members of these groups will automatically be granted priviledge to know "
@@ -338,6 +345,10 @@ msgid ""
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de voir "
 "que ce groupe existe."
+
+#: views.py:1567
+msgid "Editor groups"
+msgstr "Groupes modificateurs"
 
 #: views.py:1569
 msgid ""
@@ -347,6 +358,10 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
 "modifier/effacer le groupe courrant."
 
+#: views.py:1571
+msgid "Members seer groups"
+msgstr "Groupes observateurs"
+
 #: views.py:1573
 msgid ""
 "Members of these groups will automatically be granted priviledge to see the "
@@ -354,6 +369,10 @@ msgid ""
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de voir "
 "la liste des membres."
+
+#: views.py:1575
+msgid "Members changing groups"
+msgstr "Groupes changeants les membres"
 
 #: views.py:1577
 msgid ""
@@ -363,6 +382,10 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
 "modifier les membres du groupe courrant."
 
+#: views.py:1579
+msgid "Fields viewer groups"
+msgstr "Groupes voyant les champs"
+
 #: views.py:1581
 msgid ""
 "Members of these groups will automatically be granted permission to read the "
@@ -370,6 +393,10 @@ msgid ""
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de lire "
 "les champs associés au groupe courrant."
+
+#: views.py:1583
+msgid "Fields writer groups"
+msgstr "Groupes changeant les champs"
 
 #: views.py:1585
 msgid ""
@@ -379,6 +406,10 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège "
 "d'écrire dans les champs associés au groupe courrant."
 
+#: views.py:1587
+msgid "News viewer groups"
+msgstr "Groupes voyant les nouvelles"
+
 #: views.py:1589
 msgid ""
 "Members of these groups will automatically be granted permisson to read news "
@@ -386,6 +417,10 @@ msgid ""
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège le lire "
 "les nouvelles du groupe courrant."
+
+#: views.py:1591
+msgid "News writer groups"
+msgstr "Groupes écrivant les nouvelles"
 
 #: views.py:1593
 msgid ""
@@ -395,6 +430,10 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège "
 "d'écrire des nouvelles dans ce groupe."
 
+#: views.py:1595
+msgid "File viewer groups"
+msgstr "Groupes voyant les fichiers"
+
 #: views.py:1597
 msgid ""
 "Members of these groups will automatically be granted permission to view "
@@ -402,6 +441,10 @@ msgid ""
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de lire "
 "les fichiers téléchargés dans ce groupe."
+
+#: views.py:1599
+msgid "File uploader groups"
+msgstr "Groupes modifiant les fichiers"
 
 #: views.py:1601
 msgid ""
@@ -894,10 +937,6 @@ msgstr "Peut voir les fichiers"
 #: templates/group_add_contacts_to.html:183
 msgid "Add to group"
 msgstr "Ajouter au groupe"
-
-#: templates/group_detail.html:11
-msgid "Budget code"
-msgstr "Code budget"
 
 #: templates/group_detail.html:12
 msgid "Mailing list"
