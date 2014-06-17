@@ -40,8 +40,6 @@ Enhance xmpp extensions:
 
 Implement slicing in ContactQuerySet
 
-fix_htaccess should create recursively the dir hierarchy if missing
-
 (jpv) Remove pwgen dependency
 
 (jpv) Enable active session expiration:

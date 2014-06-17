@@ -738,7 +738,7 @@ class ContactGroup(NgwModel):
         dirname = self.static_folder()
         if not os.path.isdir(dirname):
             print("Creating missing directory for group %i" % self.id)
-            os.mkdir(dirname)
+            os.makedirs(dirname)
         htaccess_path = os.path.join(dirname, ".htaccess")
         if not os.path.isfile(htaccess_path):
             print("Creating missing .htaccess file for group %i" % self.id)
