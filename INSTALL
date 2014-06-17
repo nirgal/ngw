@@ -21,7 +21,18 @@ You need to edit your settings.py:
 You need to set up a cron tab:
 */5 * * * * /usr/lib/ngw/manage.py msgsync -v 2
 
-You also need to compile translation files:
+You also need to compile translation files. It is suggested you create a .git/hooks/post-merge file 755 file:
+---8<---------------------------
+#!/bin/bash
+echo "Running $0" >&2
+cd /usr/lib/ngw/core/
+/usr/lib/ngw/manage.py compilemessages
+cd $OLDPWD
+cd /usr/lib/ngw/extensions/externalmessages/
+/usr/lib/ngw/manage.py compilemessages
+cd $OLDPWD
+---8<---------------------------
+
 cd core/;../manage.py compilemessages;cd -
 cd extensions/externalmessages/;../../manage.py compilemessages;cd -
 
