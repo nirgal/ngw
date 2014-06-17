@@ -142,7 +142,7 @@ def home(request):
         'title': _('Home page'),
         'nav': Navbar(),
         'operator_groups': operator_groups,
-        'news': ContactGroupNews.objects.filter(contact_group_id=GROUP_USER_NGW)[:5],
+        'news': ContactGroupNews.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_group_news.contact_group_id)' % request.user.id])[:5],
         'GroupUserNgw': ContactGroup.objects.get(id=GROUP_USER_NGW),
     }, RequestContext(request))
 
@@ -244,7 +244,7 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
     else:
         nav = base_nav or Navbar(o.get_class_navcomponent())
         nav.add_component(o.get_navcomponent())
-        nav.add_component('delete')
+        nav.add_component(('delete', _('delete')))
         return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
 
 
@@ -660,12 +660,12 @@ def contact_detail(request, gid=None, cid=None):
             pass # ignore blank values
 
     args = {}
-    args['title'] = 'Details for '+unicode(c)
+    args['title'] = _('Details for %s') % unicode(c)
     if gid:
         #args['title'] += ' in group '+cg.unicode_with_date()
         args['contact_group'] = cg
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component('members')
+        args['nav'].add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(c.get_navcomponent())
@@ -751,9 +751,9 @@ def contact_edit(request, gid=None, cid=None):
     objtype = Contact
     if cid:
         contact = get_object_or_404(Contact, pk=cid)
-        title = 'Editing '+unicode(contact)
+        title = _('Editing %s') % unicode(contact)
     else:
-        title = 'Adding a new '+objtype.get_class_verbose_name()
+        title = _('Adding a new %s') % objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ContactEditForm(request.user.id, cid=cid, data=request.POST, contactgroup=cg)
@@ -820,7 +820,7 @@ def contact_edit(request, gid=None, cid=None):
                     newvalue = cf.formfield_value_to_db_value(newvalue)
                 contact.set_fieldvalue(request, cf, newvalue)
 
-            messages.add_message(request, messages.SUCCESS, 'Contact %s has been saved sucessfully!' % contact.name)
+            messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved sucessfully!') % contact.name)
 
             if cg:
                 base_url = cg.get_absolute_url() + 'members/' + unicode(contact.id) + '/'
@@ -869,14 +869,14 @@ def contact_edit(request, gid=None, cid=None):
     args['objtype'] = objtype
     if gid:
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component('members')
+        args['nav'].add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     if cid:
         args['nav'].add_component(contact.get_navcomponent())
-        args['nav'].add_component('edit')
+        args['nav'].add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component('add')
+        args['nav'].add_component(('add', _('add')))
     if cid:
         args['o'] = contact
 
@@ -929,11 +929,11 @@ def contact_pass(request, gid=None, cid=None):
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component('members')
+        args['nav'].add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component('password')
+    args['nav'].add_component(('password', _('password')))
     try:
         args['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
         # So here the 'reset by letter' button will be enabled
@@ -968,18 +968,18 @@ def contact_pass_letter(request, gid=None, cid=None):
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component('members')
+        args['nav'].add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component('password letter')
+    args['nav'].add_component(('password letter', _('password letter')))
 
     if request.method == 'POST':
         new_password = Contact.generate_password()
 
         # record the value
         contact.set_password(new_password, '2', request=request) # Generated and mailed
-        messages.add_message(request, messages.SUCCESS, 'Password has been changed sucessfully!')
+        messages.add_message(request, messages.SUCCESS, _('Password has been changed sucessfully!'))
 
         fields = {}
         for cf in contact.get_all_visible_fields(request.user.id):
@@ -995,7 +995,7 @@ def contact_pass_letter(request, gid=None, cid=None):
 
         filename = ngw_mailmerge(settings.PASSWORD_LETTER, fields, '/usr/lib/ngw/mailing/generated/')
         if not filename:
-            return HttpResponse('File generation failed')
+            return HttpResponse(_('File generation failed'))
 
         fullpath = os.path.join('/usr/lib/ngw/mailing/generated/', filename)
         response = CompatibleStreamingHttpResponse(open(fullpath, 'rb'), content_type='application/pdf')
@@ -1013,7 +1013,7 @@ def contact_delete(request, gid=None, cid=None):
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         base_nav = cg.get_smart_navbar()
-        base_nav.add_component('members')
+        base_nav.add_component(('members', _('members')))
         next_url = cg.get_absolute_url() + 'members/'
     else:
         next_url = reverse('ngw.core.views.contact_list')
@@ -1033,10 +1033,10 @@ def contact_filters_add(request, cid=None):
         filter_list = contactsearch.parse_filter_list_str(filter_list_str)
     else:
         filter_list = []
-    filter_list.append(('No name', filter_str))
+    filter_list.append((_('No name'), filter_str))
     filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
     contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-    messages.add_message(request, messages.SUCCESS, 'Filter has been added sucessfully!')
+    messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
     return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid, len(filter_list)-1)))
 
 
@@ -1057,7 +1057,7 @@ def contact_filters_list(request, cid=None):
     args['filters'] = filters
     args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(('filters', 'custom filters'))
+    args['nav'].add_component(('filters', _('custom filters')))
     return render_to_response('customfilters_user.html', args, RequestContext(request))
 
 
@@ -1073,13 +1073,13 @@ def contact_filters_edit(request, cid=None, fid=None):
     contact = get_object_or_404(Contact, pk=cid)
     filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
     if not filter_list_str:
-        return HttpResponse('ERROR: no custom filter for that user')
+        return HttpResponse(_('ERROR: no custom filter for that user'))
     else:
         filter_list = contactsearch.parse_filter_list_str(filter_list_str)
     try:
         filtername, filterstr = filter_list[int(fid)]
     except (IndexError, ValueError):
-        return HttpResponse("ERROR: Can't find filter #"+fid)
+        return HttpResponse(_("ERROR: Can't find filter #%s") % fid)
 
     if request.method == 'POST':
         form = FilterEditForm(request.POST)
@@ -1091,7 +1091,7 @@ def contact_filters_edit(request, cid=None, fid=None):
             filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
             #print(repr(filter_list_str))
             contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-            messages.add_message(request, messages.SUCCESS, 'Filter has been renamed sucessfully!')
+            messages.add_message(request, messages.SUCCESS, _('Filter has been renamed sucessfully!'))
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else:
         form = FilterEditForm(initial={ 'name': filtername })
@@ -1103,11 +1103,11 @@ def contact_filters_edit(request, cid=None, fid=None):
     try:
         filter_html = contactsearch.parse_filterstring(filterstr, request.user.id).to_html()
     except PermissionDenied:
-        filter_html = "[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s" % filterstr
+        filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
     args['filter_html'] = filter_html
     args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(('filters', 'custom filters'))
+    args['nav'].add_component(('filters', _('custom filters')))
     args['nav'].add_component((unicode(fid), filtername))
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
@@ -1401,15 +1401,15 @@ def contactgroup_members(request, gid, output_format=''):
             return cmp(remove_decoration(a[1].name.lower()), remove_decoration(b[1].name.lower()))
         emails.sort(email_sort)
 
-        args['title'] = 'Emails for ' + cg.name
+        args['title'] = _('Emails for %s') % cg.name
         args['strfilter'] = strfilter
         args['filter'] = filter
         args['cg'] = cg
         args['emails'] = emails
         args['noemails'] = noemails
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component('members')
-        args['nav'].add_component('emails')
+        args['nav'].add_component(('members', _('members')))
+        args['nav'].add_component(('emails', _('emails')))
         args['display_member'] = 'm' in display
         args['display_invited'] = 'i' in display
         args['display_declined'] = 'd' in display
@@ -1460,7 +1460,7 @@ def contactgroup_members(request, gid, output_format=''):
     else:
         files = None
 
-    args['title'] = 'Contacts of group ' + cg.unicode_with_date()
+    args['title'] = _('Contacts of group %s') % cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
     args['display'] = display
     args['query'] = q
@@ -1473,7 +1473,7 @@ def contactgroup_members(request, gid, output_format=''):
     args['fields'] = strfields
     ####
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component('members')
+    args['nav'].add_component(('members', _('members')))
     args['display_member'] = 'm' in display
     args['display_invited'] = 'i' in display
     args['display_declined'] = 'd' in display
@@ -1507,7 +1507,7 @@ def contactgroup_emails(request, gid):
             contact_msg.text = message
             contact_msg.sync_info = json.dumps({'language': language})
             contact_msg.save()
-            messages.add_message(request, messages.INFO, 'Messages stored.')
+            messages.add_message(request, messages.INFO, _('Messages stored.'))
 
     return contactgroup_members(request, gid, output_format='emails')
 
@@ -1521,59 +1521,86 @@ def contactgroup_messages(request, gid):
     cg = get_object_or_404(ContactGroup, pk=gid)
     messages = ContactMsg.objects.filter(cig__group_id=gid)
     args = {}
-    args['title'] = "Messages for " + cg.unicode_with_date()
+    args['title'] = _('Messages for %s') % cg.unicode_with_date()
     args['o'] = cg
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component('messages')
+    args['nav'].add_component(('messages', _('messages')))
     args['contact_messages'] = messages
     args['active_submenu'] = 'messages'
 
     return render_to_response('group_messages.html', args, RequestContext(request))
 
 class ContactGroupForm(forms.Form):
-    name = forms.CharField(max_length=255)
-    description = forms.CharField(required=False, widget=forms.Textarea)
-    date = forms.DateField(required=False, help_text=_('Use YYYY-MM-DD format. Leave empty for permanent groups.'), widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
-    budget_code = forms.CharField(required=False, max_length=10)
-    sticky = forms.BooleanField(required=False, help_text=_('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
-    field_group = forms.BooleanField(required=False, help_text=_('Does that group yield specific fields to its members?'))
-    mailman_address = forms.CharField(required=False, max_length=255, help_text=_('Mailing list address, if the group is linked to a mailing list.'))
-    has_news = forms.BooleanField(required=False, help_text=_('Does that group supports internal news system?'))
-    direct_supergroups = forms.MultipleChoiceField(required=False, help_text=_('Members will automatically be granted membership in these groups.'), widget=FilterMultipleSelectWidget('groups', False))
-    operator_groups = forms.MultipleChoiceField(required=False,
+    name = forms.CharField(label=_('Name'),
+        max_length=255)
+    description = forms.CharField(label=_('Description'),
+        required=False, widget=forms.Textarea)
+    date = forms.DateField(label=_('Date'),
+        required=False,
+        help_text=_('Use YYYY-MM-DD format. Leave empty for permanent groups.'), widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
+    budget_code = forms.CharField(label=('Budget code'),
+        required=False, max_length=10)
+    sticky = forms.BooleanField(label=_('Sticky'),
+        required=False,
+        help_text=_('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
+    field_group = forms.BooleanField(label=_('Field group'),
+        required=False,
+        help_text=_('Does that group yield specific fields to its members?'))
+    mailman_address = forms.CharField(label=_('Mailman address'),
+        required=False, max_length=255,
+        help_text=_('Mailing list address, if the group is linked to a mailing list.'))
+    has_news = forms.BooleanField(label=_('Has news'),
+        required=False,
+        help_text=_('Does that group supports internal news system?'))
+    direct_supergroups = forms.MultipleChoiceField(label=_('Direct supergroups'),
+        required=False,
+        help_text=_('Members will automatically be granted membership in these groups.'), widget=FilterMultipleSelectWidget('groups', False))
+    operator_groups = forms.MultipleChoiceField(label=_('Operator groups'),
+        required=False,
         help_text=_('Members of these groups will automatically be granted administrative priviledges.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    viewer_groups = forms.MultipleChoiceField(required=False,
+    viewer_groups = forms.MultipleChoiceField(label=_('Viewer groups'),
+        required=False,
         help_text=_("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."),
-            widget=FilterMultipleSelectWidget('groups', False))
-    see_group_groups = forms.MultipleChoiceField(label='Existence seer groups', required=False,
+        widget=FilterMultipleSelectWidget('groups', False))
+    see_group_groups = forms.MultipleChoiceField(label='Existence seer groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to know that current group exists.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    change_group_groups = forms.MultipleChoiceField(label='Editor groups', required=False, 
+    change_group_groups = forms.MultipleChoiceField(label='Editor groups',
+        required=False, 
         help_text=_('Members of these groups will automatically be granted priviledge to change/delete the current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    see_members_groups = forms.MultipleChoiceField(label='Members seer groups', required=False,
+    see_members_groups = forms.MultipleChoiceField(label='Members seer groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to see the list of members.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    change_members_groups = forms.MultipleChoiceField(label='Members changing groups', required=False,
+    change_members_groups = forms.MultipleChoiceField(label='Members changing groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted permission to change members of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_fields_groups = forms.MultipleChoiceField(label='Fields viewer groups', required=False,
+    view_fields_groups = forms.MultipleChoiceField(label='Fields viewer groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted permission to read the fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_fields_groups = forms.MultipleChoiceField(label='Fields writer groups', required=False,
+    write_fields_groups = forms.MultipleChoiceField(label='Fields writer groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_news_groups = forms.MultipleChoiceField(label='News viewer groups', required=False,
+    view_news_groups = forms.MultipleChoiceField(label='News viewer groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted permisson to read news of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_news_groups = forms.MultipleChoiceField(label='New writer groups', required=False,
+    write_news_groups = forms.MultipleChoiceField(label='New writer groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted permission to write news in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_files_groups = forms.MultipleChoiceField(label='File viewer groups', required=False,
+    view_files_groups = forms.MultipleChoiceField(label='File viewer groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted permission to view uploaded files in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_files_groups = forms.MultipleChoiceField(label='File uploader groups', required=False,
+    write_files_groups = forms.MultipleChoiceField(label='File uploader groups',
+        required=False,
         help_text=_('Members of these groups will automatically be granted permission to upload files.'),
         widget=FilterMultipleSelectWidget('groups', False))
 
@@ -1595,9 +1622,9 @@ def contactgroup_edit(request, id):
         cg = get_object_or_404(ContactGroup, pk=id)
         if not perms.c_can_change_cg(request.user.id, id):
             raise PermissionDenied
-        title = 'Editing ' + cg.unicode_with_date()
+        title = _('Editing %s') % cg.unicode_with_date()
     else:
-        title = 'Adding a new '+objtype.get_class_verbose_name()
+        title = _('Adding a new %s') % objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ContactGroupForm(request.user.id, request.POST)
@@ -1661,7 +1688,7 @@ def contactgroup_edit(request, id):
                     else:
                         gmg.delete()
 
-            messages.add_message(request, messages.SUCCESS, 'Group %s has been changed sucessfully!' % cg.unicode_with_date())
+            messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.unicode_with_date())
 
             cg.check_static_folder_created()
             Contact.check_login_created(request) # subgroups change
@@ -1701,10 +1728,10 @@ def contactgroup_edit(request, id):
     if id:
         args['o'] = cg
         args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component('edit')
+        args['nav'].add_component(('edit', _('Edit')))
     else:
         args['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-        args['nav'].add_component('add')
+        args['nav'].add_component(('add', _('Add')))
 
     return render_to_response('edit.html', args, RequestContext(request))
 
@@ -1734,7 +1761,7 @@ def contactgroup_delete(request, id):
     o = get_object_or_404(ContactGroup, pk=id)
     next_url = reverse('ngw.core.views.contactgroup_list')
     if o.system:
-        messages.add_message(request, messages.ERROR, 'Group %s is locked and CANNOT be deleted.' % o.name)
+        messages.add_message(request, messages.ERROR, _('Group %s is locked and CANNOT be deleted.') % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
@@ -1758,7 +1785,7 @@ def contactgroup_add_contacts_to(request):
                         # Only operator can grant permissions
                         raise PermissionDenied
             if not modes:
-                raise ValueError('You must select at least one mode')
+                raise ValueError(_('You must select at least one mode'))
 
             contacts = []
             for param in request.POST:
@@ -1772,7 +1799,7 @@ def contactgroup_add_contacts_to(request):
 
             return HttpResponseRedirect(target_group.get_absolute_url())
         else:
-            messages.add_message(request, messages.ERROR, 'You must select a target group')
+            messages.add_message(request, messages.ERROR, _('You must select a target group'))
 
     gid = request.REQUEST.get('gid', '')
     assert gid
@@ -1826,9 +1853,9 @@ def contactgroup_add_contacts_to(request):
     q = filter.apply_filter_to_query(q)
 
     args = {}
-    args['title'] = 'Add contacts to a group'
+    args['title'] = _('Add contacts to a group')
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('add_contacts_to', 'add contacts to'))
+    args['nav'].add_component(('add_contacts_to', _('Add contacts to')))
     args['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
     args['query'] = q
     args['active_submenu'] = 'members'
@@ -1844,21 +1871,27 @@ def contactgroup_add_contacts_to(request):
 
 
 class ContactInGroupForm(forms.Form):
-    invited = forms.BooleanField(required=False)
-    declined = forms.BooleanField(required=False)
-    member = forms.BooleanField(required=False)
-    operator = forms.BooleanField(required=False, help_text='Full administrator of that group.')
-    viewer = forms.BooleanField(required=False, help_text='Can see everything, but read only access.')
-    see_group = forms.BooleanField(label='Can see group exists',required=False)
-    change_group = forms.BooleanField(label='Can change group', required=False, help_text='Can change the group itself, delete it.')
-    see_members = forms.BooleanField(label='Can see members', required=False)
-    change_members = forms.BooleanField(label='Can change members', required=False)
-    view_fields = forms.BooleanField(label='Can view fields', required=False, help_text='Can view the fields (like "address" or "email") associated with that group. Few groups support that.')
-    write_fields = forms.BooleanField(label='Can wrte fields', required=False)
-    view_news = forms.BooleanField(label='Can view news', required=False, help_text='View the news of that group. Few groups support that.')
-    write_news = forms.BooleanField(label='Can write news', required=False)
-    view_files = forms.BooleanField(label='Can view uploaded files', required=False, help_text='View the uploaded files. Few group supports that.')
-    write_files = forms.BooleanField(label='Can upload files', required=False)
+    invited = forms.BooleanField(label=_('Invited'), required=False)
+    declined = forms.BooleanField(label=_('Declined'), required=False)
+    member = forms.BooleanField(label=_('Member'), required=False)
+    operator = forms.BooleanField(label=_('Operator'), required=False,
+        help_text=_('Full administrator of that group.'))
+    viewer = forms.BooleanField(label=_('Viewer'), required=False,
+        help_text=_('Can see everything, but read only access.'))
+    see_group = forms.BooleanField(label=_('Can see group exists'), required=False)
+    change_group = forms.BooleanField(label=_('Can change group'), required=False,
+        help_text=_('Can change the group itself, delete it.'))
+    see_members = forms.BooleanField(label=_('Can see members'), required=False)
+    change_members = forms.BooleanField(label=_('Can change members'), required=False)
+    view_fields = forms.BooleanField(label=_('Can view fields'), required=False,
+        help_text=_('Can view the fields (like "address" or "email") associated with that group. Few groups support that.'))
+    write_fields = forms.BooleanField(label=_('Can write fields'), required=False)
+    view_news = forms.BooleanField(label=_('Can view news'), required=False,
+        help_text=_('View the news of that group.'))
+    write_news = forms.BooleanField(label=_('Can write news'), required=False)
+    view_files = forms.BooleanField(label=_('Can view uploaded files'), required=False,
+        help_text=_('View the uploaded files. Few group supports that.'))
+    write_files = forms.BooleanField(label=_('Can upload files'), required=False)
     note = forms.CharField(required=False)
 
     def __init__(self, *args, **kargs):
@@ -2004,7 +2037,9 @@ def contactingroup_edit(request, gid, cid):
     cg = ContactGroup.objects.get(pk=gid)
     contact = Contact.objects.get(pk=cid)
     args = {}
-    args['title'] = 'Contact ' + unicode(contact) + ' in group ' + cg.unicode_with_date()
+    args['title'] = _('Contact %(contact)s in group %(group)s') % {
+        'contact': unicode(contact),
+        'group': cg.unicode_with_date() }
     args['cg'] = cg
     args['contact'] = contact
     args['objtype'] = ContactInGroup
@@ -2050,7 +2085,7 @@ def contactingroup_edit(request, gid, cid):
     invisible_automember_groups = automember_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     #print(automember_groups.query)
     if automember_groups:
-        inherited_info += 'Automatically member because member of subgroup(s):<br>'
+        inherited_info += 'Automatically member because member of subgroup(s):' + '<br>'
         for sub_cg in visible_automember_groups:
             inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
         if invisible_automember_groups:
@@ -2070,9 +2105,9 @@ def contactingroup_edit(request, gid, cid):
     args['inherited_info'] = mark_safe(inherited_info)
 
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component('members')
+    args['nav'].add_component(('members', _('Members')))
     args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component('membership')
+    args['nav'].add_component(('membership', _('Membership')))
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
 
@@ -2110,10 +2145,10 @@ def contactingroup_delete(request, gid, cid):
     try:
         o = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
     except ContactInGroup.DoesNotExist:
-        return HttpResponse('Error, that contact is not a direct member. Please check subgroups')
+        return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
     #messages.add_message(request, messages.SUCCESS, '%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
     base_nav = cg.get_smart_navbar()
-    base_nav.add_component('members')
+    base_nav.add_component(('members', _('Members')))
     return generic_delete(request, o, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
     # TODO: realnav bar is 'remove', not 'delete'
 
@@ -2131,12 +2166,12 @@ def contactgroup_news(request, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
     args = {}
-    args['title'] = 'News for group ' + cg.name
+    args['title'] = _('News for group %s') % cg.name
     args['news'] = ContactGroupNews.objects.filter(contact_group=gid)
     args['cg'] = cg
     args['objtype'] = ContactGroupNews
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component('news')
+    args['nav'].add_component(('news', _('News')))
     args['active_submenu'] = 'news'
     return render_to_response('news.html', args, RequestContext(request))
 
@@ -2155,7 +2190,7 @@ def contactgroup_news_edit(request, gid, nid):
     if nid:
         news = get_object_or_404(ContactGroupNews, pk=nid)
         if str(news.contact_group_id) != gid:
-            return HttpResponse('ERROR: Group mismatch')
+            return HttpResponse(_('ERROR: Group mismatch'))
 
     if request.method == 'POST':
         form = NewsEditForm(request.POST)
@@ -2169,7 +2204,7 @@ def contactgroup_news_edit(request, gid, nid):
             news.title = data['title']
             news.text = data['text']
             news.save()
-            messages.add_message(request, messages.SUCCESS, 'News %s has been changed sucessfully!' % news)
+            messages.add_message(request, messages.SUCCESS, _('News %s has been changed sucessfully!') % news)
 
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(news.get_absolute_url())
@@ -2184,19 +2219,19 @@ def contactgroup_news_edit(request, gid, nid):
             initial['text'] = news.text
         form = NewsEditForm(initial=initial)
     args = {}
-    args['title'] = 'News edition'
+    args['title'] = _('News edition')
     args['cg'] = cg
     args['form'] = form
     if nid:
         args['o'] = news
         args['id'] = nid
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component('news')
+    args['nav'].add_component(('news', ('News')))
     if nid:
         args['nav'].add_component(news.get_navcomponent())
-        args['nav'].add_component('edit')
+        args['nav'].add_component(('edit', _('Edit')))
     else:
-        args['nav'].add_component('add')
+        args['nav'].add_component(('add', _('Add')))
 
     return render_to_response('edit.html', args, RequestContext(request))
 
@@ -2233,9 +2268,9 @@ Ci-joint votre message original.
     cg = get_object_or_404(ContactGroup, pk=id)
 
     args = {}
-    args['title'] = 'Mailman synchronisation'
+    args['title'] = _('Mailman synchronisation')
     args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component('mailman')
+    args['nav'].add_component(('mailman', _('mailman')))
     args['cg'] = cg
 
     if request.method == 'POST':
@@ -2303,13 +2338,15 @@ def field_move_down(request, id):
 
 
 class FieldEditForm(forms.Form):
-    name = forms.CharField()
-    hint = forms.CharField(required=False, widget=forms.Textarea)
-    contact_group = forms.CharField(label='Only for', required=False, widget=forms.Select)
-    type = forms.CharField(widget=forms.Select)
-    choicegroup = forms.CharField(required=False, widget=forms.Select)
-    default_value = forms.CharField(required=False)
-    move_after = forms.IntegerField(widget=forms.Select())
+    name = forms.CharField(label=_('Name'))
+    hint = forms.CharField(label=_('Hint'),
+        required=False, widget=forms.Textarea)
+    contact_group = forms.CharField(label=_('Only for'), required=False, widget=forms.Select)
+    type = forms.CharField(label=_('Type'),
+        widget=forms.Select)
+    choicegroup = forms.CharField(label=_('Choice group'), required=False, widget=forms.Select)
+    default_value = forms.CharField(label=_('Default value'), required=False)
+    move_after = forms.IntegerField(label=_('Move after'), widget=forms.Select())
 
     def __init__(self, cf, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
@@ -2341,7 +2378,7 @@ class FieldEditForm(forms.Form):
 
         self.fields['default_value'].widget.attrs['disabled'] = 1
 
-        self.fields['move_after'].widget.choices = [ (5, 'Name') ] + [ (field.sort_weight + 5, field.name) for field in ContactField.objects.order_by('sort_weight') ]
+        self.fields['move_after'].widget.choices = [ (5, _('Name')) ] + [ (field.sort_weight + 5, field.name) for field in ContactField.objects.order_by('sort_weight') ]
 
         if cf and cf.system:
             self.fields['contact_group'].widget.attrs['disabled'] = 1
@@ -2368,7 +2405,7 @@ def field_edit(request, id):
     initial = {}
     if id:
         cf = get_object_or_404(ContactField, pk=id)
-        title = 'Editing '+unicode(cf)
+        title = _('Editing %s') % unicode(cf)
         initial['name'] = cf.name
         initial['hint'] = cf.hint
         initial['contact_group'] = cf.contact_group_id
@@ -2378,7 +2415,7 @@ def field_edit(request, id):
         initial['move_after'] = cf.sort_weight-5
     else:
         cf = None
-        title = 'Adding a new '+objtype.get_class_verbose_name()
+        title = _('Adding a new %s') % objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = FieldEditForm(cf, request.POST, initial=initial)
@@ -2410,13 +2447,13 @@ def field_edit(request, id):
                                 cfv.delete()
                         else:
                             args = {}
-                            args['title'] = 'Type incompatible with existing data'
+                            args['title'] = _('Type incompatible with existing data')
                             args['id'] = id
                             args['cf'] = cf
                             args['deletion_details'] = deletion_details
                             for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
                                 args[k] = data[k]
-                            args['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', 'delete imcompatible data'))
+                            args['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
                             return render_to_response('type_change.html', args, RequestContext(request))
 
                     cf.type = data['type']
@@ -2436,7 +2473,7 @@ def field_edit(request, id):
                 cf.save()
 
             ContactField.renumber()
-            messages.add_message(request, messages.SUCCESS, 'Field %s has been changed sucessfully.' % cf.name)
+            messages.add_message(request, messages.SUCCESS, _('Field %s has been changed sucessfully.') % cf.name)
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(cf.get_absolute_url()+'edit')
             elif request.POST.get('_addanother', None):
@@ -2461,9 +2498,9 @@ def field_edit(request, id):
     args['nav'] = Navbar(ContactField.get_class_navcomponent())
     if id:
         args['nav'].add_component(cf.get_navcomponent())
-        args['nav'].add_component('edit')
+        args['nav'].add_component(('edit', _('Edit')))
     else:
-        args['nav'].add_component('add')
+        args['nav'].add_component(('add', _('Add')))
     return render_to_response('edit.html', args, RequestContext(request))
 
 
@@ -2475,7 +2512,7 @@ def field_delete(request, id):
     o = get_object_or_404(ContactField, pk=id)
     next_url = reverse('ngw.core.views.field_list')
     if o.system:
-        messages.add_message(request, messages.ERROR, 'Field %s is locked and CANNOT be deleted.' % o.name)
+        messages.add_message(request, messages.ERROR, _('Field %s is locked and CANNOT be deleted.') % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url)
 
@@ -2549,7 +2586,7 @@ class ChoicesField(forms.MultiValueField):
             if not k:
                 continue # empty keys are ok
             if k in keys:
-                raise forms.ValidationError('You cannot have two keys with the same value. Leave empty for automatic generation.')
+                raise forms.ValidationError(_('You cannot have two keys with the same value. Leave empty for automatic generation.'))
             keys.append(k)
         return possibles_values
 
@@ -2635,7 +2672,7 @@ class ChoiceGroupForm(forms.Form):
             #print('ADDING', k)
             cg.choices.create(key=k, value=v)
 
-        messages.add_message(request, messages.SUCCESS, 'Choice %s has been saved sucessfully.' % cg.name)
+        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved sucessfully.') % cg.name)
         return cg
 
 
@@ -2675,9 +2712,9 @@ def choicegroup_edit(request, id=None):
     args['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
     if id:
         args['nav'].add_component(cg.get_navcomponent())
-        args['nav'].add_component('edit')
+        args['nav'].add_component(('edit', _('Edit')))
     else:
-        args['nav'].add_component('add')
+        args['nav'].add_component(('add', _('Add')))
     return render_to_response('edit.html', args, RequestContext(request))
 
 
