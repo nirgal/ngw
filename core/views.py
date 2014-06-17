@@ -1549,9 +1549,6 @@ class ContactGroupForm(forms.Form):
     mailman_address = forms.CharField(label=_('Mailman address'),
         required=False, max_length=255,
         help_text=_('Mailing list address, if the group is linked to a mailing list.'))
-    has_news = forms.BooleanField(label=_('Has news'),
-        required=False,
-        help_text=_('Does that group supports internal news system?'))
     direct_supergroups = forms.MultipleChoiceField(label=_('Direct supergroups'),
         required=False,
         help_text=_('Members will automatically be granted membership in these groups.'), widget=FilterMultipleSelectWidget('groups', False))
@@ -1641,7 +1638,6 @@ def contactgroup_edit(request, id):
             cg.date = data['date']
             cg.budget_code = data['budget_code']
             cg.mailman_address = data['mailman_address']
-            cg.has_news = data['has_news']
             cg.save()
 
             # Update the super groups
@@ -1710,7 +1706,6 @@ def contactgroup_edit(request, id):
                 'date': cg.date,
                 'budget_code': cg.budget_code,
                 'mailman_address': cg.mailman_address,
-                'has_news': cg.has_news,
                 'direct_supergroups': cg.get_visible_direct_supergroups_ids(request.user.id),
             }
             for flag in 'ovveEcCfFnNuU':

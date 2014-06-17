@@ -605,7 +605,6 @@ class ContactGroup(NgwModel):
     budget_code = models.CharField(max_length=10)
     system = models.BooleanField(default=False)
     mailman_address = models.CharField(max_length=255, blank=True)
-    has_news = models.BooleanField(default=False)
     sticky = models.BooleanField(default=False)
     #direct_supergroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none1+')
     #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')

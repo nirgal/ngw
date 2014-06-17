@@ -44,7 +44,6 @@ CREATE TABLE contact_group (
     budget_code character varying(10) DEFAULT ''::character varying NOT NULL,
     system boolean DEFAULT false NOT NULL,
     mailman_address character varying(255),
-    has_news boolean DEFAULT false NOT NULL,
     sticky boolean DEFAULT false NOT NULL
 );
 
