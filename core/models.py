@@ -331,7 +331,7 @@ class Contact(NgwModel):
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is a direct member of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)]).order_by('-date', 'name')
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
@@ -339,19 +339,19 @@ class Contact(NgwModel):
 
     def get_directgroups_invited(self):
         "returns the list of groups that contact has been invited to, directly without group inheritance"
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_INVITED)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_INVITED)]).order_by('-date', 'name')
 
     def get_directgroups_declinedinvitation(self):
         "returns the list of groups that contact has been invited to and he declined the invitation."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_DECLINED)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_DECLINED)]).order_by('-date', 'name')
 
     def get_directgroups_operator(self):
         "returns the list of groups that contact is an operator of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_OPERATOR)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_OPERATOR)]).order_by('-date', 'name')
 
     def get_directgroups_viewer(self):
         "returns the list of groups that contact is a viewer of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=id AND flags & %s <> 0)' % (self.id, CIGFLAG_VIEWER)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_VIEWER)]).order_by('-date', 'name')
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
