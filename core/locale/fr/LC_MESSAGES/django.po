@@ -140,7 +140,7 @@ msgstr "Ajout d'un(e) nouvel(le) %s"
 #: views.py:823
 #, python-format
 msgid "Contact %s has been saved sucessfully!"
-msgstr "%s a été effacé avec succès!"
+msgstr "Le contact %s a été enregistré avec succès!"
 
 #: views.py:877
 msgid "edit"
