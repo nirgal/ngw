@@ -2228,7 +2228,7 @@ Ci-joint votre message original.
 - Fait.
     '''
     from ngw.extensions.mailman import synchronise_group
-    if not perms.c_can_see_members_cg(id):
+    if not perms.c_can_see_members_cg(request.user.id, id):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=id)
 
