@@ -877,7 +877,7 @@ msgstr "Sélectionnez le mode d'appartenance"
 
 #: templates/group_add_contacts_to.html:61 templates/membership_widget.html:14
 msgid "Declined invitation"
-msgstr "Invitation déclinnée"
+msgstr "Invitation déclinée"
 
 #: templates/group_add_contacts_to.html:103
 msgid "Can see group"
@@ -913,7 +913,7 @@ msgstr "Invités"
 
 #: templates/group_detail.html:30
 msgid "Declined invitations"
-msgstr "Invitation déclinnées"
+msgstr "Invitation déclinées"
 
 #: templates/group_detail.html:32
 msgid "Admins"
@@ -929,7 +929,7 @@ msgstr "y compris"
 
 #: templates/group_detail.html:62
 msgid "Groups that have some access to"
-msgstr "Groups qui ont un accès à"
+msgstr "Groupes qui ont un accès à"
 
 #: templates/group_detail.html:73
 msgid "Files"
