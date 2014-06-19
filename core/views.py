@@ -56,7 +56,7 @@ FTYPE_PASSWORD = 'PASSWORD'
 def logout(request):
     auth_logout(request)
     return render_to_response('message.html', {
-        'message': mark_safe('Have a nice day!<br><a href="%s">Login again</a>' % settings.LOGIN_URL)
+        'message': mark_safe(_('Have a nice day!<br><a href="%s">Login again</a>.') % settings.LOGIN_URL)
         }, RequestContext(request))
 
 

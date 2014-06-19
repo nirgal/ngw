@@ -559,11 +559,11 @@ class Contact(NgwModel):
             new_login = contact.generate_login()
             contact.set_fieldvalue(request, FIELD_LOGIN, new_login)
             contact.set_password(contact.generate_password(), request=request)
-            messages.add_message(request, messages.SUCCESS, "Login information generated for User %s." % contact.name)
+            messages.add_message(request, messages.SUCCESS, _("Login information generated for User %s.") % contact.name)
 
         for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
             cfv.delete()
-            messages.add_message(request, messages.SUCCESS, "Login information deleted for User %s." % cfv.contact.name)
+            messages.add_message(request, messages.SUCCESS, _("Login information deleted for User %s.") % cfv.contact.name)
 
 
     def is_member_of(self, group_id):
@@ -1616,7 +1616,7 @@ class ContactInGroup(NgwModel):
         return b'ContactInGroup<%s,%s>' % (self.contact_id, self.group_id)
 
     def __unicode__(self):
-        return 'contact %(contactname)s in group %(groupname)s' % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
+        return _('contact %(contactname)s in group %(groupname)s') % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
 
     @classmethod
     def get_class_navcomponent(cls):

@@ -1,16 +1,16 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# This is the French translation file for ngw project.
+# Copyright (C) ngw Jean-Michel Nirgal Vourgère
+# This file is distributed under the same license as the ngw package.
+# Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>, 2014.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: Git Snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-17 17:28+0200\n"
+"POT-Creation-Date: 2014-06-19 12:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
@@ -23,6 +23,16 @@ msgstr ""
 msgid "Name"
 msgstr "Nom"
 
+#: models.py:562
+#, python-format
+msgid "Login information generated for User %s."
+msgstr ""
+
+#: models.py:566
+#, python-format
+msgid "Login information deleted for User %s."
+msgstr ""
+
 #: models.py:623 views.py:1302 views.py:1307 templates/filter.html:26
 #: templates/group_add_contacts_to.html:32
 msgid "Events"
@@ -32,9 +42,19 @@ msgstr "Événements"
 msgid "Contact Groups"
 msgstr "Groupes de contacts"
 
+#: models.py:1619
+#, python-format
+msgid "contact %(contactname)s in group %(groupname)s"
+msgstr "contact %(contactname)s dans le groupe %(groupname)s"
+
 #: nav.py:15
 msgid "Home"
 msgstr "Accueil"
+
+#: views.py:59
+#, python-format
+msgid "Have a nice day!<br><a href=\"%s\">Login again</a>."
+msgstr "Bonne journée!<br><a href=\"%s\">Se connecter à nouveau</a>."
 
 #: views.py:128 templates/403.html:6
 msgid "Sorry. You are not authorized to browse that page."
