@@ -1,22 +1,21 @@
 # This is the French translation file for ngw project.
 # Copyright (C) ngw Jean-Michel Nirgal Vourgère
 # This file is distributed under the same license as the ngw package.
-# Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>, 2014.
 #
-#, fuzzy
+# Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>, 2014.
 msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-06-19 17:18+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2014-06-19 18:50+0200\n"
+"Last-Translator: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Lokalize 1.5\n"
 
 #: contactsearch.py:362
 msgid "Add a field"
@@ -34,12 +33,12 @@ msgstr "Ajouter un événement"
 
 #: contactsearch.py:378
 msgid "Add a custom filter"
-msgstr "Ajouter un filtre personalisé"
+msgstr "Ajouter un filtre personnalisé"
 
 #: contactsearch.py:379
 #, python-format
 msgid "Custom filters for %s"
-msgstr "filtres personalisés de %s"
+msgstr "filtres personnalisés de %s"
 
 #: contactsearch.py:413
 msgid "Add a filter for name"
@@ -60,11 +59,11 @@ msgstr "Ajouter un filtre pour tous les événements"
 
 #: contactsearch.py:435
 msgid "No custom filter available"
-msgstr "Aucun filtre personalisé n'est disponible"
+msgstr "Aucun filtre personnalisé n'est disponible"
 
 #: contactsearch.py:438
 msgid "Select a custom filter"
-msgstr "Sélectionner un filtre personalisé"
+msgstr "Sélectionner un filtre personnalisé"
 
 #: contactsearch.py:441
 #, python-format
@@ -351,15 +350,15 @@ msgstr "Le filtre a été ajouté avec succès!"
 
 #: views.py:1055
 msgid "User custom filters"
-msgstr "Filtres personalisés de l'utilisateur."
+msgstr "Filtres personnalisés de l'utilisateur."
 
 #: views.py:1060 views.py:1110
 msgid "custom filters"
-msgstr "filtres personalisés"
+msgstr "filtres personnalisés"
 
 #: views.py:1076
 msgid "ERROR: no custom filter for that user"
-msgstr "ERREUR: pas de filtre personalisé pour cet utilisateur"
+msgstr "ERREUR: pas de filtre personnalisé pour cet utilisateur"
 
 #: views.py:1082
 #, python-format
@@ -368,11 +367,11 @@ msgstr "ERREUR: filter #%s introuvable"
 
 #: views.py:1094
 msgid "Filter has been renamed sucessfully!"
-msgstr "Le filter a été renommé avec succès!"
+msgstr "Le filtre a été renommé avec succès!"
 
 #: views.py:1099
 msgid "User custom filter renaming"
-msgstr "Renommage du filtre utilisateur personalisé"
+msgstr "Changement de nom du filtre utilisateur personnalisé"
 
 #: views.py:1106
 #, python-format
@@ -476,7 +475,7 @@ msgstr ""
 
 #: views.py:1551
 msgid "Direct supergroups"
-msgstr "Super-groupes dirrects"
+msgstr "Super-groupes directs"
 
 #: views.py:1553
 msgid "Members will automatically be granted membership in these groups."
@@ -508,7 +507,7 @@ msgstr ""
 
 #: views.py:1562
 msgid "Existence seer groups"
-msgstr "Groupes voyant l'existance"
+msgstr "Groupes voyant l'existence"
 
 #: views.py:1564
 msgid ""
@@ -528,7 +527,7 @@ msgid ""
 "delete the current group."
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
-"modifier/effacer le groupe courrant."
+"modifier/effacer le groupe courant."
 
 #: views.py:1570
 msgid "Members seer groups"
@@ -552,7 +551,7 @@ msgid ""
 "members of current group."
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
-"modifier les membres du groupe courrant."
+"modifier les membres du groupe courant."
 
 #: views.py:1578
 msgid "Fields viewer groups"
@@ -564,7 +563,7 @@ msgid ""
 "fields associated to current group."
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de lire "
-"les champs associés au groupe courrant."
+"les champs associés au groupe courant."
 
 #: views.py:1582
 msgid "Fields writer groups"
@@ -576,7 +575,7 @@ msgid ""
 "fields associated to current group."
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège "
-"d'écrire dans les champs associés au groupe courrant."
+"d'écrire dans les champs associés au groupe courant."
 
 #: views.py:1586
 msgid "News viewer groups"
@@ -588,7 +587,7 @@ msgid ""
 "of current group."
 msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège le lire "
-"les nouvelles du groupe courrant."
+"les nouvelles du groupe courant."
 
 #: views.py:1590
 msgid "News writer groups"
@@ -634,7 +633,7 @@ msgstr "Le groupe %s a été modifié avec succès!"
 #: views.py:1758
 #, python-format
 msgid "Group %s is locked and CANNOT be deleted."
-msgstr "Le groupe %s est vérouillé et ne peut PAS être effacé."
+msgstr "Le groupe %s est verrouillé et ne peut PAS être effacé."
 
 #: views.py:1782
 msgid "You must select at least one mode"
@@ -650,7 +649,7 @@ msgstr "Ajouter des contacts à un groupe"
 
 #: views.py:1852
 msgid "add contacts to"
-msgstr "ajouter des conatcts à"
+msgstr "ajouter des contacts à"
 
 #: views.py:1871 templates/group_add_contacts_to.html:77
 msgid "Operator"
@@ -740,7 +739,7 @@ msgstr "appartenance"
 #: views.py:2142
 msgid "Error, that contact is not a direct member. Please check subgroups"
 msgstr ""
-"Erreur, le contact n'est pas un membre dirrect. Vérifiez les sous-groupes"
+"Erreur, le contact n'est pas un membre direct. Vérifiez les sous-groupes"
 
 #: views.py:2163
 #, python-format
@@ -782,7 +781,7 @@ msgstr "Seulement pour"
 
 #: views.py:2299
 msgid "System locked"
-msgstr "Vérouillé par le système"
+msgstr "Verrouillé par le système"
 
 #: views.py:2302
 msgid "Select an optionnal field"
@@ -820,7 +819,7 @@ msgstr "Le champs %s a été effacé avec succès!"
 #: views.py:2509
 #, python-format
 msgid "Field %s is locked and CANNOT be deleted."
-msgstr "Le champs %s est vérouillé et ne peux PAS être effacé."
+msgstr "Le champs %s est verrouillé et ne peux PAS être effacé."
 
 #: views.py:2528
 msgid "Choices"
@@ -926,7 +925,7 @@ msgstr "Filtre"
 
 #: templates/customfilters_user.html:13
 msgid "That user has no custom filter."
-msgstr "Cet utilisateur n'a aucun filtre personalisé."
+msgstr "Cet utilisateur n'a aucun filtre personnalisé."
 
 #: templates/delete.html:5
 #, python-format
@@ -1013,7 +1012,7 @@ msgstr "Envoyer depuis le serveur"
 
 #: templates/filter.html:10
 msgid "Current filter"
-msgstr "Filtre courrant"
+msgstr "Filtre courant"
 
 #: templates/filter.html:16
 msgid "Reset filter"
@@ -1041,7 +1040,7 @@ msgstr "Groupes"
 
 #: templates/filter.html:27
 msgid "Custom"
-msgstr "Personalisé"
+msgstr "Personnalisé"
 
 #: templates/group_add_contacts_to.html:6
 msgid "Selected people"
@@ -1171,7 +1170,7 @@ msgstr ""
 "%(requestaddress)s</a> et copiez/collez la réponse ci-dessous. Remplacez "
 "l'exemple.\n"
 "<p>Faites attention à ne pas oublier <b>-request</b> dans l'adresse de "
-"courriler, car vousne voulez probablement que les abonnés recoivent le mot "
+"courriel, car vous ne voulez probablement que les abonnés reçoivent le mot "
 "de passe dans leur boite à lettre!\n"
 
 #: templates/group_mailman.html:14
@@ -1216,7 +1215,7 @@ msgstr "Derniers développements"
 
 #: templates/home.html:24
 msgid "All news..."
-msgstr "Toutes les nouvellles..."
+msgstr "Toutes les nouvelles..."
 
 #: templates/list.html:14 templates/news.html:19
 msgid "Add"
@@ -1252,7 +1251,7 @@ msgstr "Reculer d'un mois"
 
 #: templates/list_events.html:37
 msgid "Go to current month"
-msgstr "Aller au mois courrant"
+msgstr "Aller au mois courant"
 
 #: templates/list_events.html:37
 msgid "Today"
@@ -1342,7 +1341,7 @@ msgstr ""
 "\n"
 "<p>Vous êtes sur le point de générer un nouveau mot de passe pour "
 "l'utilisateur %(name)s.\n"
-"<p>Cet utilisateur ne poura plus ce connecter jusqu'à ce qu'il connaisse la "
+"<p>Cet utilisateur ne pourra plus ce connecter jusqu'à ce qu'il connaisse la "
 "nouvelle valeur.\n"
 
 #: templates/password_letter.html:16
@@ -1371,8 +1370,8 @@ msgid ""
 "choice is to delete these records."
 msgstr ""
 "Vous êtes sur le point de changer %(fieldtype)s %(fieldname)s. Néanmoins, "
-"certaines données existanes ne sont pas compatible avec le type que vous "
-"avez sélectionné. Le seul xhois est d'effacer ces enregistrements."
+"certaines données existantes ne sont pas compatible avec le type que vous "
+"avez sélectionné. Le seul choix est d'effacer ces enregistrements."
 
 #: templates/type_change.html:15
 msgid "The following data will be deleted"
