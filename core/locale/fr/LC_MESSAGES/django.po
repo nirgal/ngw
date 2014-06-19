@@ -238,7 +238,7 @@ msgstr "Utilisateur"
 
 #: views.py:272
 msgid "Action"
-msgstr "Ajouter"
+msgstr "Action"
 
 #: views.py:273
 msgid "Target"
