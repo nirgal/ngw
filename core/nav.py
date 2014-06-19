@@ -12,7 +12,7 @@ class Navbar(object):
     This is a breadcrumb builder, to build a navigation bar.
     '''
     def __init__(self, *args):
-        self.components = [ ('', _('Home')) ]
+        self.components = [ ('', _('home')) ]
         for arg in args:
             self.add_component(arg)
 
@@ -22,3 +22,4 @@ class Navbar(object):
         else:
             assert isinstance(arg, unicode)
             self.components.append((arg, arg))
+        return self

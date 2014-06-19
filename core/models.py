@@ -620,9 +620,9 @@ class ContactGroup(NgwModel):
     def get_smart_navbar(self):
         nav = Navbar()
         if self.date:
-            nav.add_component(("events", _("Events")))
+            nav.add_component(('events', _('events')))
         else:
-            nav.add_component(("contactgroups", _("Contact Groups")))
+            nav.add_component(('contactgroups', _('contact groups')))
         nav.add_component((str(self.id), self.name))
         return nav
 

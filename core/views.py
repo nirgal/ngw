@@ -243,8 +243,8 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
         return HttpResponseRedirect(next_url)
     else:
         nav = base_nav or Navbar(o.get_class_navcomponent())
-        nav.add_component(o.get_navcomponent())
-        nav.add_component(('delete', _('delete')))
+        nav.add_component(o.get_navcomponent()) \
+           .add_component(('delete', _('delete')))
         return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
 
 
@@ -627,7 +627,7 @@ def contact_list(request):
     args['title'] = _('Contact list')
     args['baseurl'] = baseurl
     args['objtype'] = Contact
-    args['nav'] = Navbar(args['objtype'].get_class_absolute_url().split('/')[1])
+    args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['query'] = q
     args['cols'] = cols
     args['filter'] = strfilter
@@ -664,8 +664,8 @@ def contact_detail(request, gid=None, cid=None):
     if gid:
         #args['title'] += ' in group '+cg.unicode_with_date()
         args['contact_group'] = cg
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(('members', _('members')))
+        args['nav'] = cg.get_smart_navbar() \
+                      .add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(c.get_navcomponent())
@@ -868,13 +868,13 @@ def contact_edit(request, gid=None, cid=None):
     args['id'] = cid
     args['objtype'] = objtype
     if gid:
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(('members', _('members')))
+        args['nav'] = cg.get_smart_navbar() \
+                      .add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     if cid:
-        args['nav'].add_component(contact.get_navcomponent())
-        args['nav'].add_component(('edit', _('edit')))
+        args['nav'].add_component(contact.get_navcomponent()) \
+                   .add_component(('edit', _('edit')))
     else:
         args['nav'].add_component(('add', _('add')))
     if cid:
@@ -928,12 +928,12 @@ def contact_pass(request, gid=None, cid=None):
     args['form'] = form
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(('members', _('members')))
+        args['nav'] = cg.get_smart_navbar() \
+                      .add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(('password', _('password')))
+    args['nav'].add_component(contact.get_navcomponent()) \
+               .add_component(('password', _('password')))
     try:
         args['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
         # So here the 'reset by letter' button will be enabled
@@ -967,12 +967,12 @@ def contact_pass_letter(request, gid=None, cid=None):
     args['contact'] = contact
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(('members', _('members')))
+        args['nav'] = cg.get_smart_navbar() \
+                      .add_component(('members', _('members')))
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(('password letter', _('password letter')))
+    args['nav'].add_component(contact.get_navcomponent()) \
+               .add_component(('password letter', _('password letter')))
 
     if request.method == 'POST':
         new_password = Contact.generate_password()
@@ -1012,8 +1012,8 @@ def contact_delete(request, gid=None, cid=None):
     o = get_object_or_404(Contact, pk=cid)
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
-        base_nav = cg.get_smart_navbar()
-        base_nav.add_component(('members', _('members')))
+        base_nav = cg.get_smart_navbar() \
+                   .add_component(('members', _('members')))
         next_url = cg.get_absolute_url() + 'members/'
     else:
         next_url = reverse('ngw.core.views.contact_list')
@@ -1055,9 +1055,9 @@ def contact_filters_list(request, cid=None):
     args['title'] = _('User custom filters')
     args['contact'] = contact
     args['filters'] = filters
-    args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(('filters', _('custom filters')))
+    args['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                  .add_component(contact.get_navcomponent()) \
+                  .add_component(('filters', _('custom filters')))
     return render_to_response('customfilters_user.html', args, RequestContext(request))
 
 
@@ -1105,10 +1105,10 @@ def contact_filters_edit(request, cid=None, fid=None):
     except PermissionDenied:
         filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
     args['filter_html'] = filter_html
-    args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(('filters', _('custom filters')))
-    args['nav'].add_component((unicode(fid), filtername))
+    args['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                  .add_component(contact.get_navcomponent()) \
+                  .add_component(('filters', _('custom filters'))) \
+                  .add_component((unicode(fid), filtername))
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
 
@@ -1303,8 +1303,7 @@ def event_list(request):
     args['query'] = q
     args['cols'] = cols
     args['objtype'] = ContactGroup
-    args['nav'] = Navbar()
-    args['nav'].add_component(('events', _('Events')))
+    args['nav'] = Navbar().add_component(('events', _('events')))
     args['year_month'] = YearMonthCal(year, month, month_events)
     args['today'] = date.today()
     return query_print_entities(request, 'list_events.html', args)
@@ -1407,9 +1406,9 @@ def contactgroup_members(request, gid, output_format=''):
         args['cg'] = cg
         args['emails'] = emails
         args['noemails'] = noemails
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(('members', _('members')))
-        args['nav'].add_component(('emails', _('emails')))
+        args['nav'] = cg.get_smart_navbar() \
+                      .add_component(('members', _('members'))) \
+                      .add_component(('emails', _('emails')))
         args['display_member'] = 'm' in display
         args['display_invited'] = 'i' in display
         args['display_declined'] = 'd' in display
@@ -1472,8 +1471,8 @@ def contactgroup_members(request, gid, output_format=''):
     args['filter'] = strfilter
     args['fields'] = strfields
     ####
-    args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('members', _('members')))
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('members', _('members')))
     args['display_member'] = 'm' in display
     args['display_invited'] = 'i' in display
     args['display_declined'] = 'd' in display
@@ -1523,8 +1522,8 @@ def contactgroup_messages(request, gid):
     args = {}
     args['title'] = _('Messages for %s') % cg.unicode_with_date()
     args['o'] = cg
-    args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('messages', _('messages')))
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('messages', _('messages')))
     args['contact_messages'] = messages
     args['active_submenu'] = 'messages'
 
@@ -1722,11 +1721,11 @@ def contactgroup_edit(request, id):
     args['form'] = form
     if id:
         args['o'] = cg
-        args['nav'] = cg.get_smart_navbar()
-        args['nav'].add_component(('edit', _('Edit')))
+        args['nav'] = cg.get_smart_navbar() \
+                      .add_component(('edit', _('edit')))
     else:
-        args['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-        args['nav'].add_component(('add', _('Add')))
+        args['nav'] = Navbar(ContactGroup.get_class_navcomponent()) \
+                      .add_component(('add', _('add')))
 
     return render_to_response('edit.html', args, RequestContext(request))
 
@@ -1849,8 +1848,8 @@ def contactgroup_add_contacts_to(request):
 
     args = {}
     args['title'] = _('Add contacts to a group')
-    args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('add_contacts_to', _('Add contacts to')))
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('add_contacts_to', _('add contacts to')))
     args['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
     args['query'] = q
     args['active_submenu'] = 'members'
@@ -2099,10 +2098,10 @@ def contactingroup_edit(request, gid, cid):
 
     args['inherited_info'] = mark_safe(inherited_info)
 
-    args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('members', _('Members')))
-    args['nav'].add_component(contact.get_navcomponent())
-    args['nav'].add_component(('membership', _('Membership')))
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('members', _('members'))) \
+                  .add_component(contact.get_navcomponent()) \
+                  .add_component(('membership', _('membership')))
     return render_to_response('contact_in_group.html', args, RequestContext(request))
 
 
@@ -2142,8 +2141,8 @@ def contactingroup_delete(request, gid, cid):
     except ContactInGroup.DoesNotExist:
         return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
     #messages.add_message(request, messages.SUCCESS, '%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
-    base_nav = cg.get_smart_navbar()
-    base_nav.add_component(('members', _('Members')))
+    base_nav = cg.get_smart_navbar() \
+               .add_component(('members', _('members')))
     return generic_delete(request, o, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
     # TODO: realnav bar is 'remove', not 'delete'
 
@@ -2165,8 +2164,8 @@ def contactgroup_news(request, gid):
     args['news'] = ContactGroupNews.objects.filter(contact_group=gid)
     args['cg'] = cg
     args['objtype'] = ContactGroupNews
-    args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('news', _('News')))
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('news', _('news')))
     args['active_submenu'] = 'news'
     return render_to_response('news.html', args, RequestContext(request))
 
@@ -2220,13 +2219,13 @@ def contactgroup_news_edit(request, gid, nid):
     if nid:
         args['o'] = news
         args['id'] = nid
-    args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('news', ('News')))
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('news', ('news')))
     if nid:
-        args['nav'].add_component(news.get_navcomponent())
-        args['nav'].add_component(('edit', _('Edit')))
+        args['nav'].add_component(news.get_navcomponent()) \
+                   .add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component(('add', _('Add')))
+        args['nav'].add_component(('add', _('add')))
 
     return render_to_response('edit.html', args, RequestContext(request))
 
@@ -2264,8 +2263,8 @@ Ci-joint votre message original.
 
     args = {}
     args['title'] = _('Mailman synchronisation')
-    args['nav'] = cg.get_smart_navbar()
-    args['nav'].add_component(('mailman', _('mailman')))
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('mailman', _('mailman')))
     args['cg'] = cg
 
     if request.method == 'POST':
@@ -2492,10 +2491,10 @@ def field_edit(request, id):
         args['o'] = cf
     args['nav'] = Navbar(ContactField.get_class_navcomponent())
     if id:
-        args['nav'].add_component(cf.get_navcomponent())
-        args['nav'].add_component(('edit', _('Edit')))
+        args['nav'].add_component(cf.get_navcomponent()) \
+                   .add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component(('add', _('Add')))
+        args['nav'].add_component(('add', _('add')))
     return render_to_response('edit.html', args, RequestContext(request))
 
 
@@ -2682,7 +2681,7 @@ def choicegroup_edit(request, id=None):
         title = _('Editing %s') % unicode(cg)
     else:
         cg = None
-        title = _('Adding a new') + ' ' + objtype.get_class_verbose_name()
+        title = _('Adding a new %s') % objtype.get_class_verbose_name()
 
     if request.method == 'POST':
         form = ChoiceGroupForm(cg, request.POST)
@@ -2706,10 +2705,10 @@ def choicegroup_edit(request, id=None):
         args['o'] = cg
     args['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
     if id:
-        args['nav'].add_component(cg.get_navcomponent())
-        args['nav'].add_component(('edit', _('Edit')))
+        args['nav'].add_component(cg.get_navcomponent()) \
+                   .add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component(('add', _('Add')))
+        args['nav'].add_component(('add', _('add')))
     return render_to_response('edit.html', args, RequestContext(request))
 
 
