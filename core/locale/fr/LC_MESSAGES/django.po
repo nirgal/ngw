@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Git Snapshot\n"
+"Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-19 12:18+0200\n"
+"POT-Creation-Date: 2014-06-19 14:01+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,7 +42,11 @@ msgstr "Événements"
 msgid "Contact Groups"
 msgstr "Groupes de contacts"
 
-#: models.py:1619
+#: models.py:979
+msgid "Contact fields"
+msgstr "Champs des contacts"
+
+#: models.py:1623
 #, python-format
 msgid "contact %(contactname)s in group %(groupname)s"
 msgstr "contact %(contactname)s dans le groupe %(groupname)s"

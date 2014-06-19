@@ -43,7 +43,7 @@
 {% for urlfragment, navname in nav.components %}
     {% if forloop.counter0 %} › {% endif %}
     {% if not forloop.last %}
-        <a href="/{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{% if forloop.counter0 > 1 %}/{% endif %}{{urlfragment_sub}}{% endif%}{% endfor %}">
+        <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
     {% endif %}
     {{ navname }}
     {% if not forloop.last %}

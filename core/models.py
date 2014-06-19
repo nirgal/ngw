@@ -971,8 +971,12 @@ class ContactField(NgwModel):
         ordering = 'sort_weight',
 
     @classmethod
-    def get_class_absolute_url(cls):
-        return '/contactfields/'
+    def get_class_urlfragment(cls):
+        return 'contactfields'
+
+    @classmethod
+    def get_class_verbose_name_plural(cls):
+        return _('Contact fields')
 
     def __repr__(self):
         return b'ContactField <' + str(self.id) + b',' + self.name.encode('utf8') + b',' + self.type.encode('utf8') + b'>'

@@ -22,6 +22,3 @@ class Navbar(object):
         else:
             assert isinstance(arg, unicode)
             self.components.append((arg, arg))
-        
-#    def geturl(self, idx):
-#        return ''.join(self.components[i][0] + '/' for i in range(idx+1))
