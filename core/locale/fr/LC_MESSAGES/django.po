@@ -102,12 +102,12 @@ msgstr "Définir le filtre et ajouter un autre condition"
 #: models.py:562
 #, python-format
 msgid "Login information generated for User %s."
-msgstr "Identifiants de connection générés pour l'Utilisateur %s"
+msgstr "Identifiants de connexion générés pour l'Utilisateur %s"
 
 #: models.py:566
 #, python-format
 msgid "Login information deleted for User %s."
-msgstr "Identifiants de connection effacés pour l'Utilisateur %s"
+msgstr "Identifiants de connexion effacés pour l'Utilisateur %s"
 
 #: models.py:623 views.py:1306 templates/base.html:30
 msgid "events"
@@ -1310,7 +1310,7 @@ msgstr ""
 
 #: templates/login.html:24
 msgid "Login"
-msgstr "Connection"
+msgstr "Connexion"
 
 #: templates/membership_widget.html:17
 msgid "More..."
