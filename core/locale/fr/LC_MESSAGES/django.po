@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-19 15:03+0200\n"
+"POT-Creation-Date: 2014-06-19 17:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,10 +18,86 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: models.py:276 views.py:525 views.py:527 views.py:1178 views.py:1291
-#: views.py:1533 views.py:2296 views.py:2335 views.py:2375 views.py:2527
+#: contactsearch.py:362
+msgid "Add a field"
+msgstr "Ajouter un champs"
+
+#: contactsearch.py:365 models.py:276 views.py:525 views.py:527 views.py:1178
+#: views.py:1291 views.py:1533 views.py:2296 views.py:2335 views.py:2375
+#: views.py:2527
 msgid "Name"
 msgstr "Nom"
+
+#: contactsearch.py:372
+msgid "Add an event"
+msgstr "Ajouter un événement"
+
+#: contactsearch.py:378
+msgid "Add a custom filter"
+msgstr "Ajouter un filtre personalisé"
+
+#: contactsearch.py:379
+#, python-format
+msgid "Custom filters for %s"
+msgstr "filtres personalisés de %s"
+
+#: contactsearch.py:413
+msgid "Add a filter for name"
+msgstr "Ajouter un filtre sur le nom"
+
+#: contactsearch.py:419
+#, python-format
+msgid "Add a filter for field of type %s"
+msgstr "Ajouter un filtre pour le champ de type %s"
+
+#: contactsearch.py:425
+msgid "Add a filter for group/event"
+msgstr "Ajouter un filter pour le groupe/événement"
+
+#: contactsearch.py:429
+msgid "Add a filter for all events"
+msgstr "Ajouter un filtre pour tous les événements"
+
+#: contactsearch.py:435
+msgid "No custom filter available"
+msgstr "Aucun filtre personalisé n'est disponible"
+
+#: contactsearch.py:438
+msgid "Select a custom filter"
+msgstr "Sélectionner un filtre personalisé"
+
+#: contactsearch.py:441
+#, python-format
+msgid "ERROR in get_filters: field==%s"
+msgstr "ERREUR dans get_filters: champs==%s"
+
+#: contactsearch.py:531
+msgid "Filter combinaison type"
+msgstr "Type de combinaison de filtre"
+
+#: contactsearch.py:531 models.py:1549
+msgid "AND"
+msgstr "ET"
+
+#: contactsearch.py:531 models.py:1562
+msgid "OR"
+msgstr "OU"
+
+#: contactsearch.py:532
+msgid "Add and apply filter"
+msgstr "Ajouter et appliquer le filtre"
+
+#: contactsearch.py:533
+msgid "Continue adding conditions"
+msgstr "Continuer d'ajouter des conditions"
+
+#: contactsearch.py:548 templates/filter.html:15
+msgid "Apply filter"
+msgstr "Appliquer le filtre"
+
+#: contactsearch.py:549
+msgid "Set filter and add another condition"
+msgstr "Définir le filtre et ajouter un autre condition"
 
 #: models.py:562
 #, python-format
@@ -44,6 +120,74 @@ msgstr "groupes de contacts"
 #: models.py:979
 msgid "Contact fields"
 msgstr "Champs des contacts"
+
+#: models.py:1117 models.py:1149
+msgid "has a word starting with"
+msgstr "a un mot commençant par"
+
+#: models.py:1212
+msgid "is undefined"
+msgstr "est indéfini"
+
+#: models.py:1221
+msgid "is defined"
+msgstr "est défini"
+
+#: models.py:1284
+msgid "Age (years) ≥"
+msgstr "Age (années) ≥"
+
+#: models.py:1293
+msgid "date until event ≥"
+msgstr "date jusqu'à l'événement ≥"
+
+#: models.py:1302
+msgid "In the future"
+msgstr "Dans le futur"
+
+#: models.py:1344
+msgid "contains"
+msgstr "contient"
+
+#: models.py:1358
+msgid "doesn't contain"
+msgstr "ne contient pas"
+
+#: models.py:1376
+msgid "is member of group"
+msgstr "est membre du groupe"
+
+#: models.py:1393
+msgid "is not member of group"
+msgstr "n'est pas membre du groupe"
+
+#: models.py:1410
+msgid "has been invited in group"
+msgstr "a été invité dans le groupe"
+
+#: models.py:1427
+msgid "has not been invited in group"
+msgstr "n'a pas été invité dans le groupe"
+
+#: models.py:1444
+msgid "has declined invitation in group"
+msgstr "a décliné l'invitation dans le groupe"
+
+#: models.py:1461
+msgid "has not declined invitation in group"
+msgstr "n'a pas décliné l'invitation dans le groupe"
+
+#: models.py:1473
+msgid "has not reacted to any invitation since"
+msgstr "n'a pas réagit à une invitation depuis le"
+
+#: models.py:1483
+msgid "1 year invitation reaction percentage less than"
+msgstr "Pourcentage de réaction aux invitations sur 1 an inférieur à"
+
+#: models.py:1493
+msgid "1 year invitation reaction percentage more than"
+msgstr "Pourcentage réaction aux invitations sur 1 an supérieur à"
 
 #: models.py:1623
 #, python-format
@@ -155,7 +299,7 @@ msgstr "membres"
 msgid "Editing %s"
 msgstr "Modification de %s"
 
-#: views.py:756 views.py:1623 views.py:2412
+#: views.py:756 views.py:1623 views.py:2412 views.py:2684
 #, python-format
 msgid "Adding a new %s"
 msgstr "Ajout d'un(e) nouvel(le) %s"
@@ -211,11 +355,11 @@ msgstr "Filtres personalisés de l'utilisateur."
 
 #: views.py:1060 views.py:1110
 msgid "custom filters"
-msgstr "Filtres personalisé."
+msgstr "filtres personalisés"
 
 #: views.py:1076
 msgid "ERROR: no custom filter for that user"
-msgstr "ERREUR: pas de filter personalisé pour cet utilisateur"
+msgstr "ERREUR: pas de filtre personalisé pour cet utilisateur"
 
 #: views.py:1082
 #, python-format
@@ -699,10 +843,6 @@ msgstr ""
 msgid "Choice %s has been saved sucessfully."
 msgstr "Le choix %s a été enregistré avec succès!"
 
-#: views.py:2684
-msgid "Adding a new"
-msgstr "Ajout d'un(e) nouvel(le)"
-
 #: templates/500.html:6
 msgid "Sorry. A server error occured."
 msgstr "Désolé. Une erreur est survenue sur le serveur."
@@ -874,10 +1014,6 @@ msgstr "Envoyer depuis le serveur"
 #: templates/filter.html:10
 msgid "Current filter"
 msgstr "Filtre courrant"
-
-#: templates/filter.html:15
-msgid "Apply filter"
-msgstr "Appliquer le filtre"
 
 #: templates/filter.html:16
 msgid "Reset filter"
@@ -1249,3 +1385,6 @@ msgstr "Retour"
 #: templates/type_change.html:22
 msgid "Delete incompatible data"
 msgstr "Effacer les données incompatibles"
+
+#~ msgid "Adding a new"
+#~ msgstr "Ajout d'un(e) nouvel(le)"

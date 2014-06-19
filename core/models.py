@@ -9,7 +9,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 import subprocess
 from django.core.exceptions import PermissionDenied
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection
 from django import forms
 from django.http import Http404
@@ -1109,12 +1109,12 @@ class NameFilterStartsWith(Filter):
         value = decoratedstr.decorated_match(value)
         return '(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', { 'value_name1': '^' + value, 'value_name2': ' '+value }
     def to_html(self, value):
-        return '<b>Name</b> ' + self.__class__.human_name + ' "' + unicode(value) + '"'
+        return string_concat('<b>Name</b> ', self.__class__.human_name, ' "', unicode(value), '"')
 
     def get_param_types(self):
         return (unicode,)
 NameFilterStartsWith.internal_name = 'startswith'
-NameFilterStartsWith.human_name = 'has a word starting with'
+NameFilterStartsWith.human_name = _('has a word starting with')
 
 class FieldFilter(Filter):
     """ Helper abstract class for field filters """
@@ -1125,18 +1125,18 @@ class FieldFilterOp0(FieldFilter):
     """ Helper abstract class for field filters that takes no parameter """
     def to_html(self):
         field = ContactField.objects.get(pk=self.field_id)
-        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name
+        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name)
 
 class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
-        result = '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' '
+        result = string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' ')
         if isinstance(value, unicode):
-            value = '"' + value + '"'
+            value = string_concat('"', value, '"')
         else:
             value = unicode(value)
-        return result+value
+        return string_concat(result, value)
 
 
 class FieldFilterStartsWith(FieldFilterOp1):
@@ -1146,7 +1146,7 @@ class FieldFilterStartsWith(FieldFilterOp1):
     def get_param_types(self):
         return (unicode,)
 FieldFilterStartsWith.internal_name = 'startswith'
-FieldFilterStartsWith.human_name = 'has a word starting with'
+FieldFilterStartsWith.human_name = _('has a word starting with')
 
 
 class FieldFilterEQ(FieldFilterOp1):
@@ -1209,7 +1209,7 @@ class FieldFilterNull(FieldFilterOp0):
     def get_param_types(self):
         return ()
 FieldFilterNull.internal_name = 'null'
-FieldFilterNull.human_name = 'is undefined'
+FieldFilterNull.human_name = _('is undefined')
 
 
 class FieldFilterNotNull(FieldFilterOp0):
@@ -1218,7 +1218,7 @@ class FieldFilterNotNull(FieldFilterOp0):
     def get_param_types(self):
         return ()
 FieldFilterNotNull.internal_name = 'notnull'
-FieldFilterNotNull.human_name = 'is defined'
+FieldFilterNotNull.human_name = _('is defined')
 
 
 class FieldFilterIEQ(FieldFilterOp1):
@@ -1281,7 +1281,7 @@ class FieldFilterAGE_GE(FieldFilterOp1):
     def get_param_types(self):
         return (int,)
 FieldFilterAGE_GE.internal_name = 'agege'
-FieldFilterAGE_GE.human_name = 'Age (years) ≥'
+FieldFilterAGE_GE.human_name = _('Age (years) ≥')
 
 
 class FieldFilterVALID_GT(FieldFilterOp1):
@@ -1290,7 +1290,7 @@ class FieldFilterVALID_GT(FieldFilterOp1):
     def get_param_types(self):
         return (int,)
 FieldFilterVALID_GT.internal_name = 'validitygt'
-FieldFilterVALID_GT.human_name = 'date until event ≥'
+FieldFilterVALID_GT.human_name = _('date until event ≥')
 
 
 class FieldFilterFUTURE(FieldFilterOp0):
@@ -1299,7 +1299,7 @@ class FieldFilterFUTURE(FieldFilterOp0):
     def get_param_types(self):
         return ()
 FieldFilterFUTURE.internal_name = 'future'
-FieldFilterFUTURE.human_name = 'In the future'
+FieldFilterFUTURE.human_name = _('In the future')
 
 
 class FieldFilterChoiceEQ(FieldFilterOp1):
@@ -1308,7 +1308,7 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
+        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
@@ -1322,7 +1322,7 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
+        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
@@ -1336,12 +1336,12 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
+        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterMultiChoiceHAS.internal_name = 'mchas'
-FieldFilterMultiChoiceHAS.human_name = 'contains'
+FieldFilterMultiChoiceHAS.human_name = _('contains')
 
 
 class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
@@ -1350,12 +1350,12 @@ class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return '<b>' + html.escape(field.name) + '</b> ' + self.__class__.human_name + ' "' + html.escape(cfv.value) + '"'
+        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterMultiChoiceHASNOT.internal_name = 'mchasnot'
-FieldFilterMultiChoiceHASNOT.human_name = "doesn't contain"
+FieldFilterMultiChoiceHASNOT.human_name = _("doesn't contain")
 
 
 
@@ -1369,11 +1369,11 @@ class GroupFilterIsMember(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
+        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name = 'memberof'
-GroupFilterIsMember.human_name = 'is member of group'
+GroupFilterIsMember.human_name = _('is member of group')
 
 
 class GroupFilterIsNotMember(Filter):
@@ -1386,11 +1386,11 @@ class GroupFilterIsNotMember(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
+        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsNotMember.internal_name = 'notmemberof'
-GroupFilterIsNotMember.human_name = 'is not member of group'
+GroupFilterIsNotMember.human_name = _('is not member of group')
 
 
 class GroupFilterIsInvited(Filter):
@@ -1403,11 +1403,11 @@ class GroupFilterIsInvited(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
+        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name = 'ginvited'
-GroupFilterIsInvited.human_name = 'has been invited in group'
+GroupFilterIsInvited.human_name = _('has been invited in group')
 
 
 class GroupFilterIsNotInvited(Filter):
@@ -1420,11 +1420,11 @@ class GroupFilterIsNotInvited(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
+        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsNotInvited.internal_name = 'gnotinvited'
-GroupFilterIsNotInvited.human_name = 'has not been invited in group'
+GroupFilterIsNotInvited.human_name = _('has not been invited in group')
 
 
 class GroupFilterDeclinedInvitation(Filter):
@@ -1437,11 +1437,11 @@ class GroupFilterDeclinedInvitation(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
+        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterDeclinedInvitation.internal_name = "gdeclined"
-GroupFilterDeclinedInvitation.human_name = 'has declined invitation in group'
+GroupFilterDeclinedInvitation.human_name = _('has declined invitation in group')
 
 
 class GroupFilterNotDeclinedInvitation(Filter):
@@ -1454,11 +1454,11 @@ class GroupFilterNotDeclinedInvitation(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return self.__class__.human_name + ' <b>' + group.unicode_with_date() + '</b>'
+        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterNotDeclinedInvitation.internal_name = 'gnotdeclined'
-GroupFilterNotDeclinedInvitation.human_name = 'has not declined invitation in group'
+GroupFilterNotDeclinedInvitation.human_name = _('has not declined invitation in group')
 
 
 class AllEventsNotReactedSince(Filter):
@@ -1466,31 +1466,31 @@ class AllEventsNotReactedSince(Filter):
         value = decoratedstr.decorated_match(value)
         return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (CIGFLAG_MEMBER | CIGFLAG_DECLINED), { 'date':value }
     def to_html(self, value):
-        return self.__class__.human_name + ' "' + unicode(value) + '"'
+        return string_concat(self.__class__.human_name, ' "', unicode(value), '"')
     def get_param_types(self):
         return (unicode,) # TODO: Accept date parameters
 AllEventsNotReactedSince.internal_name = 'notreactedsince'
-AllEventsNotReactedSince.human_name = 'has not reacted to any invitation since'
+AllEventsNotReactedSince.human_name = _('has not reacted to any invitation since')
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
         return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': unicode((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
     def to_html(self, value):
-        return self.__class__.human_name + ' "' + unicode(value) + '"'
+        return string_concat(self.__class__.human_name, ' "', unicode(value), '"')
     def get_param_types(self):
         return (int,)
 AllEventsReactionYearRatioLess.internal_name = 'yearreactionratioless'
-AllEventsReactionYearRatioLess.human_name = '1 year invitation reaction % less than'
+AllEventsReactionYearRatioLess.human_name = _('1 year invitation reaction percentage less than')
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
         return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': unicode((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
     def to_html(self, value):
-        return self.__class__.human_name + ' "' + unicode(value) + '"'
+        return string_concat(self.__class__.human_name, ' "', unicode(value), '"')
     def get_param_types(self):
         return (int,)
 AllEventsReactionYearRatioMore.internal_name = 'yearreactionratiomore'
-AllEventsReactionYearRatioMore.human_name = '1 year invitation reaction % more than'
+AllEventsReactionYearRatioMore.human_name = _('1 year invitation reaction percentage more than')
 
 
 
@@ -1526,7 +1526,7 @@ class BoundFilter(BaseBoundFilter):
         return self.filter.get_sql_where_params(*self.args)
 
     def to_html(self, indent_level=0):
-        return self.indent(indent_level)+self.filter.to_html(*self.args)
+        return string_concat(self.indent(indent_level), self.filter.to_html(*self.args))
 
 
 class EmptyBoundFilter(BaseBoundFilter):
@@ -1546,7 +1546,7 @@ class AndBoundFilter(BaseBoundFilter):
         query, where2 = self.f2.get_sql_query_where(query)
         return query, '((' + where1 + ') AND (' + where2 + '))'
     def to_html(self, indent_level=0):
-        return self.f1.to_html(indent_level+1) + '<br>' + self.indent(indent_level) + 'AND<br>' + self.f2.to_html(indent_level+1)
+        return string_concat(self.f1.to_html(indent_level+1), '<br>', self.indent(indent_level), _('AND'), '<br>', self.f2.to_html(indent_level+1))
 
 
 class OrBoundFilter(BaseBoundFilter):
@@ -1559,7 +1559,7 @@ class OrBoundFilter(BaseBoundFilter):
         query, where2 = self.f2.get_sql_query_where(query)
         return query, '((' + where1 + ') OR (' + where2 + '))'
     def to_html(self, indent_level=0):
-        return self.f1.to_html(indent_level+1) + '<br>' + self.indent(indent_level) + 'OR<br>' + self.f2.to_html(indent_level+1)
+        return string_concat(self.f1.to_html(indent_level+1), '<br>', self.indent(indent_level), _('OR'), '<br>', self.f2.to_html(indent_level+1))
 
 
 class ContactFieldValue(NgwModel):

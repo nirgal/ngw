@@ -3,7 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 import urllib2
 from django.core.exceptions import PermissionDenied
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, string_concat
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.http import HttpResponse
@@ -359,22 +359,24 @@ def contactsearch_get_fields(request, kind):
     '''
     body = ""
     if kind == 'field':
-        body += "Add a field: "
+        body = string_concat(body, _('Add a field'), ': ')
         fields = ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id]).order_by('sort_weight')
-        body += format_link_list([("javascript:select_field('name')", "Name", "field_name")]+[ ("javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), "field_field_"+unicode(cf.id)) for cf in fields])
+        body = string_concat(body,
+            format_link_list([("javascript:select_field('name')", _("Name"), "field_name")]+[ ("javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), "field_field_"+unicode(cf.id)) for cf in fields]))
     elif kind == 'group':
-        body += "Add a group: "
+        body = string_concat(body, u('Add a group'), ': ')
         groups = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('name')
-        body += format_link_list([ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups])
+        body = string_concat(body,
+            format_link_list([ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups]))
     elif kind == 'event':
-        body += "Add an event: "
+        body = string_concat(body, _('Add an event'), ': ')
         groups = ContactGroup.objects.exclude(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
-        body += format_link_list(
+        body = string_concat(body, format_link_list(
             [ ("javascript:select_field('allevents')", no_br('All events'), "field_allevents") ] +
-            [ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups])
+            [ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups]))
     elif kind == 'custom':
-        body += "Add a custom filter: "
-        body += format_link_list([ ("javascript:select_field('custom_user')", "Custom filters for "+request.user.name, 'field_custom_user')])
+        body = string_concat(body, _('Add a custom filter'), ': ')
+        body = string_concat(body, format_link_list([ ("javascript:select_field('custom_user')", _("Custom filters for %s") % request.user.name, 'field_custom_user')]))
     else:
         body += "ERROR in get_fields: kind=="+kind
     return HttpResponse(body)
@@ -408,35 +410,35 @@ def contactsearch_get_filters(request, field):
     '''
     body = ""
     if field == 'name':
-        body += "Add a filter for name : "
-        body += format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in ContactNameMetaField.get_filters() ])
+        body = string_concat(body, _('Add a filter for name'), ': ')
+        body = string_concat(body, format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in ContactNameMetaField.get_filters() ]))
 
     elif field.startswith('field_'):
         field_id = int(field[len('field_'):])
         field = ContactField.objects.get(pk=field_id)
-        body += "Add a filter for field of type " + field.human_type_id + " : "
-        body += format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in field.get_filters() ])
+        body = string_concat(body, _('Add a filter for field of type %s') % field.human_type_id, ': ')
+        body = string_concat(body, format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in field.get_filters() ]))
 
     elif field.startswith('group_'):
         group_id = int(field[len('group_'):])
         group = ContactGroup.objects.get(pk=group_id)
-        body += "Add a filter for group/event : "
-        body += format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in group.get_filters() ])
+        body = string_concat(body, _('Add a filter for group/event'), ': ')
+        body = string_concat(body, format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in group.get_filters() ]))
 
     elif field.startswith('allevents'):
-        body += "Add a filter for all events : "
-        body += format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in AllEventsMetaField.get_filters() ])
+        body = string_concat(body, _('Add a filter for all events'), ': ')
+        body = string_concat(body, format_link_list([ ("javascript:select_filtername('"+filter.internal_name+"')", no_br(filter.human_name), "filter_"+filter.internal_name) for filter in AllEventsMetaField.get_filters() ]))
 
     elif field.startswith('custom'):
         filter_list_str = request.user.get_fieldvalue_by_id(FIELD_FILTERS)
         if not filter_list_str:
-            body += "No custom filter available"
+            body = string_concat(body, _('No custom filter available'))
         else:
             filter_list = parse_filter_list_str(filter_list_str)
-            body += "Select a custom filter : "
-            body += format_link_list([ ("javascript:select_filtername('"+unicode(i)+"')", no_br(filter[0]), "usercustom_"+unicode(i)) for i, filter in enumerate(filter_list) ])
+            body = string_concat(body, _('Select a custom filter'), ': ')
+            body = string_concat(body, format_link_list([ ("javascript:select_filtername('"+unicode(i)+"')", no_br(filter[0]), "usercustom_"+unicode(i)) for i, filter in enumerate(filter_list) ]))
     else:
-        body += "ERROR in get_filters: field==" + field
+        body = string_concat(body, _('ERROR in get_filters: field==%s') % field)
     
     return HttpResponse(body)
 
@@ -515,38 +517,38 @@ def contactsearch_get_params(request, field, filtername):
         js += ")'"
 
     if previous_filter: # CLEAN ME
-        body += "<form id='filter_param_form' onsubmit=\"newfilter=" + js + "; combine='and'; for (i=0; i<document.forms['filter_param_form']['filter_combine'].length; ++i) if (document.forms['filter_param_form']['filter_combine'][i].checked) combine=document.forms['filter_param_form']['filter_combine'][i].value; newfilter=combine+'('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
+        body = string_concat(body, "<form id='filter_param_form' onsubmit=\"newfilter=", js, "; combine='and'; for (i=0; i<document.forms['filter_param_form']['filter_combine'].length; ++i) if (document.forms['filter_param_form']['filter_combine'][i].checked) combine=document.forms['filter_param_form']['filter_combine'][i].value; newfilter=combine+'('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n")
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
-                body += "<input type=text id=\"filter_param_" + unicode(i) + "\"><br>\n"
+                body = string_concat(body, "<input type=text id=\"filter_param_" + unicode(i) + "\"><br>\n")
             elif isinstance(param_type, ChoiceGroup):
-                body += "<select id=\"filter_param_" + unicode(i) + "\">\n"
+                body = string_concat(body, "<select id=\"filter_param_", unicode(i), "\">\n")
                 for choice_key, choice_value in param_type.ordered_choices:
-                    body += "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)}
-                body += "</select>\n"
+                    body = string_concat(body, "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)})
+                body = string_concat(body, "</select>\n")
             else:
                 raise Exception("Unsupported filter parameter of type "+unicode(param_type))
-        body += "Filter combinaison type: <input type=radio name='filter_combine' value=and checked>AND <input type=radio name='filter_combine' value=or>OR\n"
-        body += "<input type=submit value=\"Add and apply filter\" onclick=\"add_another_filter=false;\">\n"
-        body += "<input type=submit value=\"Continue adding conditions\" onclick=\"add_another_filter=true;\">\n"
-        body += "</form>\n"
-        body += "<br clear=all>\n"
+        body = string_concat(body, _('Filter combinaison type'), ": <input type=radio name='filter_combine' value=and checked>", _('AND'), " <input type=radio name='filter_combine' value=or>", _('OR'), "\n")
+        body = string_concat(body, "<input type=submit value=\"", _('Add and apply filter'), "\" onclick=\"add_another_filter=false;\">\n")
+        body = string_concat(body, "<input type=submit value=\"", _('Continue adding conditions'), "\" onclick=\"add_another_filter=true;\">\n")
+        body = string_concat(body, "</form>\n")
+        body = string_concat(body, "<br clear=all>\n")
     else:
-        body += "<form id='filter_param_form' onsubmit=\"newfilter=" + js + "; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n"
+        body = string_concat(body, "<form id='filter_param_form' onsubmit=\"newfilter=", js, "; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n")
         for i, param_type in enumerate(parameter_types):
             if param_type in (unicode, int):
-                body += "<input type=text id=\"filter_param_" + unicode(i) + "\"><br>\n"
+                body = string_concat(body, "<input type=text id=\"filter_param_", unicode(i), "\"><br>\n")
             elif isinstance(param_type, ChoiceGroup):
-                body += "<select id=\"filter_param_" + unicode(i) + "\">\n"
+                body = string_concat(body, "<select id=\"filter_param_" + unicode(i) + "\">\n")
                 for choice_key, choice_value in param_type.ordered_choices:
-                    body += "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)}
-                body += "</select><br>\n"
+                    body = string_concat(body, "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)})
+                body = string_concat(body, "</select><br>\n")
             else:
                 raise Exception("Unsupported filter parameter of type " + unicode(param_type))
-        body += "<input type=submit value=\"Apply filter\" onclick=\"add_another_filter=false;\">\n"
-        body += "<input type=submit value=\"Set filter and add another condition\" onclick=\"add_another_filter=true;\">\n"
-        body += "</form>\n"
-        body += "<br clear=all>\n"
+        body = string_concat(body, "<input type=submit value=\"", _('Apply filter'), "\" onclick=\"add_another_filter=false;\">\n")
+        body = string_concat(body, "<input type=submit value=\"", _('Set filter and add another condition'), "\" onclick=\"add_another_filter=true;\">\n")
+        body = string_concat(body, "</form>\n")
+        body = string_concat(body, "<br clear=all>\n")
     return HttpResponse(body)
 
 
