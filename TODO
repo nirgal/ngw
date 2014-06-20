@@ -9,7 +9,7 @@ Global search widget (top right) should send to /contacts/ ? But what about add_
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
 Default group:
-- Grant operator permissions when creating a new group 
+- Grant operator permissions when creating a new group
 
 Default supergroup(s)
 
@@ -20,6 +20,8 @@ Make a MultiWidget for flags, including javascript pre-checks/clears
 Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 - in javascript checkbox
 - in set_member_1
+
+Migrate to class based views
 
 Move save() from views to forms
 

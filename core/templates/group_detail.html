@@ -68,17 +68,6 @@
         {% endif %}
     {% endfor %}
 
-    {% for f in files %}
-        {% if forloop.first %}
-            <h1 class=boxheader>{% trans "Files" %}</h1>
-            <div class=box>
-        {% endif %}
-        ‣ <a href="/static/g/{{cg.id}}/{{f}}">{{f}}</a><br>
-        {% if forloop.last %}
-            </div>
-        {% endif %}
-    {% endfor %}
-    
     {% for p in cg.get_birthday_members %}
         {% if forloop.first %}
             <h1 class=boxheader>{% trans "Happy birthday to" %}</h1>

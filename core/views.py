@@ -1436,36 +1436,12 @@ def contactgroup_members(request, gid, output_format=''):
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
 
-    if perms.c_can_see_files_cg(request.user.id, gid):
-        folder = cg.static_folder()
-        try:
-            files = os.listdir(folder)
-        except OSError as (errno, errmsg):
-            messages.add_message(request, messages.ERROR, 'Error while reading shared files list in %s: %s' % (folder, errmsg))
-            files = []
-
-        # listdir() returns some data in utf-8, we want everything in unicode:
-        unicode_files = []
-        for file in files:
-            if isinstance(file, unicode):
-                unicode_files.append(file)
-            else:
-                unicode_files.append(unicode(file, 'utf8', 'replace'))
-        files = unicode_files
-
-        if '.htaccess' in files:
-            files.remove('.htaccess')
-        files.sort()
-    else:
-        files = None
-
     args['title'] = _('Contacts of group %s') % cg.unicode_with_date()
     args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
     args['display'] = display
     args['query'] = q
     args['cols'] = cols
     args['cg'] = cg
-    args['files'] = files
     ####
     args['objtype'] = ContactGroup
     args['filter'] = strfilter
@@ -2239,6 +2215,52 @@ def contactgroup_news_delete(request, gid, nid):
     return generic_delete(request, o, cg.get_absolute_url() + 'news/')
 
 
+
+@login_required()
+@require_group(GROUP_USER_NGW)
+def contactgroup_files(request, gid):
+    if not perms.c_can_see_files_cg(request.user.id, gid):
+        raise PermissionDenied
+
+    cg = get_object_or_404(ContactGroup, pk=gid)
+
+    folder = cg.static_folder()
+    try:
+        files = os.listdir(folder)
+    except OSError as (errno, errmsg):
+        messages.add_message(request, messages.ERROR, _('Error while reading shared files list in %(folder)s: %(errmsg)s') % {
+            'folder': folder,
+            'errmsg': errmsg})
+        files = []
+
+    # listdir() returns some data in utf-8, we want everything in unicode:
+    unicode_files = []
+    for file in files:
+        if isinstance(file, unicode):
+            unicode_files.append(file)
+        else:
+            unicode_files.append(unicode(file, 'utf8', 'replace'))
+    files = unicode_files
+
+    if '.htaccess' in files:
+        files.remove('.htaccess')
+    files.sort()
+
+
+    args = {}
+    args['title'] = _('Files for group %s') % cg.name
+    args['cg'] = cg
+    args['objtype'] = ContactGroupNews
+    args['nav'] = cg.get_smart_navbar() \
+                  .add_component(('files', _('files')))
+    args['active_submenu'] = 'files'
+    args['files'] = files
+    return render_to_response('group_files.html', args, RequestContext(request))
+
+
+
+
+
 class MailmanSyncForm(forms.Form):
     mail = forms.CharField(widget=forms.Textarea)
 
@@ -2509,6 +2531,7 @@ def field_delete(request, id):
         messages.add_message(request, messages.ERROR, _('Field %s is locked and CANNOT be deleted.') % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url)
+
 
 #######################################################################
 #

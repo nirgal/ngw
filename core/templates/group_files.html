@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
+{% block body %}
+    <div class=box>
+    {% for f in files %}
+        {% if forloop.first %}
+        {% endif %}
+        ‣ <a href="/static/g/{{cg.id}}/{{f}}">{{f}}</a><br>
+    {% empty %}
+        {% trans "There are no files in that group." %}
+    {% endfor %}
+    </div>
+    
+{% endblock %}
+
+{% comment %}   
+{% block submitbar %}
+<div id=submitbar>
+    <a href="emails{{baseurl}}">{% trans "Emails" %}</a>
+</div>{% endblock %}
+{% endcomment %}   
