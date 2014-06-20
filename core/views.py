@@ -2215,7 +2215,6 @@ def contactgroup_news_delete(request, gid, nid):
     return generic_delete(request, o, cg.get_absolute_url() + 'news/')
 
 
-
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_files(request, gid):
@@ -2224,29 +2223,6 @@ def contactgroup_files(request, gid):
 
     cg = get_object_or_404(ContactGroup, pk=gid)
 
-    folder = cg.static_folder()
-    try:
-        files = os.listdir(folder)
-    except OSError as (errno, errmsg):
-        messages.add_message(request, messages.ERROR, _('Error while reading shared files list in %(folder)s: %(errmsg)s') % {
-            'folder': folder,
-            'errmsg': errmsg})
-        files = []
-
-    # listdir() returns some data in utf-8, we want everything in unicode:
-    unicode_files = []
-    for file in files:
-        if isinstance(file, unicode):
-            unicode_files.append(file)
-        else:
-            unicode_files.append(unicode(file, 'utf8', 'replace'))
-    files = unicode_files
-
-    if '.htaccess' in files:
-        files.remove('.htaccess')
-    files.sort()
-
-
     args = {}
     args['title'] = _('Files for group %s') % cg.name
     args['cg'] = cg
@@ -2254,11 +2230,8 @@ def contactgroup_files(request, gid):
     args['nav'] = cg.get_smart_navbar() \
                   .add_component(('files', _('files')))
     args['active_submenu'] = 'files'
-    args['files'] = files
+    args['files'] = cg.get_filenames()
     return render_to_response('group_files.html', args, RequestContext(request))
-
-
-
 
 
 class MailmanSyncForm(forms.Form):

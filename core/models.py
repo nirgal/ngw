@@ -746,6 +746,35 @@ class ContactGroup(NgwModel):
             f.write("Require group %i\n" % self.id)
             f.close()
 
+    def get_filenames(self):
+        '''
+        Returns the list of static files of that contacts group
+        '''
+        folder = self.static_folder()
+        try:
+            files = os.listdir(folder)
+        except OSError as (errno, errmsg):
+            logging.error(_('Error while reading shared files list in %(folder)s: %(errmsg)s') % {
+                'folder': folder,
+                'errmsg': errmsg})
+            return []
+
+        # listdir() returns some data in utf-8, we want everything in unicode:
+        unicode_files = []
+        for file in files:
+            if isinstance(file, unicode):
+                unicode_files.append(file)
+            else:
+                unicode_files.append(unicode(file, 'utf8', 'replace'))
+        files = unicode_files
+
+        if '.htaccess' in files:
+            files.remove('.htaccess')
+
+        files.sort()
+        return files
+
+
     def get_filters_classes(self):
         return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, )
 

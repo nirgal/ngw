@@ -48,8 +48,13 @@ https://pypi.python.org/pypi/django-secure
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing with ejabberd tables
 
-Support Image fields
+Support Image contactfields
 
 Add table ContactMessageReadBy(msg_id, contact_id)
 
 News display: Make a paginated global news display. (homepage)
+
+Files handling:
+- Clean up display
+- Upload form
+- Get rid of PHP -> previews
