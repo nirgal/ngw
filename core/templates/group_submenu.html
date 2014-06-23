@@ -1,8 +1,51 @@
 {% load i18n %}
 <div id=submenucontainer>
-<a href="{{cg.get_absolute_url}}members/"><div class="submenuitem {% if active_submenu == "members" %}activesubmenuitem{% endif %}">{% trans "Members" %}</div></a>
-<a href="{{cg.get_absolute_url}}news/"><div class="submenuitem {% if active_submenu == "news" %}activesubmenuitem{% endif %}">{% trans "News" %}</div></a>
-<a href="{{cg.get_absolute_url}}files"><div class="submenuitem {% if active_submenu == "files" %}activesubmenuitem{% endif %}">{% trans "Files" %}</div></a>
-<a href="{{cg.get_absolute_url}}messages"><div class="submenuitem {% if active_submenu == "messages" %}activesubmenuitem{% endif %}">{% trans "Messages" %}</div></a>
-<br clear=all>
+{% spaceless %}
+{% if cg_perms.c %}
+    <a href="{{cg.get_absolute_url}}members/">
+{% endif %}
+    <div class="submenuitem {% if active_submenu == "members" %}activesubmenuitem{% endif %}"{% if not cg_perms.c %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+        {% trans "Members" %}
+    </div>
+{% if cg_perms.c %}
+    </a>
+{% endif %}
+{% endspaceless %}
+
+{% spaceless %}
+{% if cg_perms.n %}
+    <a href="{{cg.get_absolute_url}}news/">
+{% endif %}
+    <div class="submenuitem {% if active_submenu == "news" %}activesubmenuitem{% endif %}"{% if not cg_perms.n %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+        {% trans "News" %}
+    </div>
+{% if cg_perms.n %}
+    </a>
+{% endif %}
+{% endspaceless %}
+
+{% spaceless %}
+{% if cg_perms.u %}
+    <a href="{{cg.get_absolute_url}}files">
+{% endif %}
+    <div class="submenuitem {% if active_submenu == "files" %}activesubmenuitem{% endif %}"{% if not cg_perms.u %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+        {% trans "Files" %}
+    </div>
+{% if cg_perms.u %}
+    </a>
+{% endif %}
+{% endspaceless %}
+
+{% spaceless %}
+{% if cg_perms.o %}
+    <a href="{{cg.get_absolute_url}}messages">
+{% endif %}
+    <div class="submenuitem {% if active_submenu == "messages" %}activesubmenuitem{% endif %}"{% if not cg_perms.o %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+        {% trans "Messages" %}
+    </div>
+{% if cg_perms.o %}
+    </a>
+{% endif %}
+{% endspaceless %}
+
 </div>

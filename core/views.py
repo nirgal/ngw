@@ -138,11 +138,12 @@ def unauthorized(request):
 @require_group(GROUP_USER_NGW)
 def home(request):
     operator_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.group_id = contact_group.id AND contact_in_group.contact_id=%s AND contact_in_group.flags & %s <> 0)' % (request.user.id, CIGFLAG_OPERATOR)])
+
     return render_to_response('home.html', {
         'title': _('Home page'),
         'nav': Navbar(),
         'operator_groups': operator_groups,
-        'news': ContactGroupNews.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_group_news.contact_group_id)' % request.user.id])[:5],
+        'news': ContactGroupNews.objects.extra(where=['perm_c_can_see_news_cg(%s, contact_group_news.contact_group_id)' % request.user.id])[:5],
         'GroupUserNgw': ContactGroup.objects.get(id=GROUP_USER_NGW),
     }, RequestContext(request))
 
@@ -1311,6 +1312,22 @@ def event_list(request):
 
 @login_required()
 @require_group(GROUP_USER_NGW)
+def contactgroup_details(request, gid):
+    '''
+    Redirect to members list, if allowed.
+    Otherwise, try to find some authorized page.
+    '''
+    cg = get_object_or_404(ContactGroup, pk=gid)
+    if perms.c_can_see_members_cg(request.user.id, gid):
+        return HttpResponseRedirect(cg.get_absolute_url() + 'members/')
+    if perms.c_can_see_news_cg(request.user.id, gid):
+        return HttpResponseRedirect(cg.get_absolute_url() + 'news/')
+    if perms.c_can_see_files_cg(request.user.id, gid):
+        return HttpResponseRedirect(cg.get_absolute_url() + 'files')
+    raise PermissionDenied
+
+@login_required()
+@require_group(GROUP_USER_NGW)
 def contactgroup_members(request, gid, output_format=''):
     if not perms.c_can_see_members_cg(request.user.id, gid):
         raise PermissionDenied
@@ -1404,6 +1421,7 @@ def contactgroup_members(request, gid, output_format=''):
         args['strfilter'] = strfilter
         args['filter'] = filter
         args['cg'] = cg
+        args['cg_perms'] = cg.get_contact_perms(request.user.id)
         args['emails'] = emails
         args['noemails'] = noemails
         args['nav'] = cg.get_smart_navbar() \
@@ -1442,6 +1460,7 @@ def contactgroup_members(request, gid, output_format=''):
     args['query'] = q
     args['cols'] = cols
     args['cg'] = cg
+    args['cg_perms'] = cg.get_contact_perms(request.user.id)
     ####
     args['objtype'] = ContactGroup
     args['filter'] = strfilter
@@ -1497,13 +1516,15 @@ def contactgroup_messages(request, gid):
     messages = ContactMsg.objects.filter(cig__group_id=gid)
     args = {}
     args['title'] = _('Messages for %s') % cg.unicode_with_date()
-    args['o'] = cg
+    args['cg'] = cg
+    args['cg_perms'] = cg.get_contact_perms(request.user.id)
     args['nav'] = cg.get_smart_navbar() \
                   .add_component(('messages', _('messages')))
     args['contact_messages'] = messages
     args['active_submenu'] = 'messages'
 
     return render_to_response('group_messages.html', args, RequestContext(request))
+
 
 class ContactGroupForm(forms.Form):
     name = forms.CharField(label=_('Name'),
@@ -2011,6 +2032,7 @@ def contactingroup_edit(request, gid, cid):
         'contact': unicode(contact),
         'group': cg.unicode_with_date() }
     args['cg'] = cg
+    args['cg_perms'] = cg.get_contact_perms(request.user.id)
     args['contact'] = contact
     args['objtype'] = ContactInGroup
 
@@ -2139,6 +2161,7 @@ def contactgroup_news(request, gid):
     args['title'] = _('News for group %s') % cg.name
     args['news'] = ContactGroupNews.objects.filter(contact_group=gid)
     args['cg'] = cg
+    args['cg_perms'] = cg.get_contact_perms(request.user.id)
     args['objtype'] = ContactGroupNews
     args['nav'] = cg.get_smart_navbar() \
                   .add_component(('news', _('news')))
@@ -2191,6 +2214,7 @@ def contactgroup_news_edit(request, gid, nid):
     args = {}
     args['title'] = _('News edition')
     args['cg'] = cg
+    args['cg_perms'] = cg.get_contact_perms(request.user.id)
     args['form'] = form
     if nid:
         args['o'] = news
@@ -2226,6 +2250,7 @@ def contactgroup_files(request, gid):
     args = {}
     args['title'] = _('Files for group %s') % cg.name
     args['cg'] = cg
+    args['cg_perms'] = cg.get_contact_perms(request.user.id)
     args['objtype'] = ContactGroupNews
     args['nav'] = cg.get_smart_navbar() \
                   .add_component(('files', _('files')))
@@ -2261,6 +2286,7 @@ Ci-joint votre message original.
     args['nav'] = cg.get_smart_navbar() \
                   .add_component(('mailman', _('mailman')))
     args['cg'] = cg
+    args['cg_perms'] = cg.get_contact_perms(request.user.id)
 
     if request.method == 'POST':
         form = MailmanSyncForm(request.POST)

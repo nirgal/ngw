@@ -14,15 +14,13 @@
 {% endif %}
 {% endfor %}
 
-{% if user.is_admin %}
-<h1 class="boxheader">{% trans "Lastest updates" %}</h1>
+<h1 class="boxheader">{% trans "Lastest news" %}</h1>
 <div class=box>
 {% for article in news %}
 <b>{{ article.date|date:"DATE_FORMAT" }}</b> • <b>{{article.title}}</b><br>
 {{ article.text|linebreaksbr }}<br><br>
 {% endfor %}
-<a href="{{ GroupUserNgw.get_absolute_url }}news/">{% trans "All news..." %}</a>
+<a href="{{ GroupUserNgw.get_absolute_url }}news/">{% trans "All user news..." %}</a>
 </div>
-{% endif %}
 
 {% endblock %}

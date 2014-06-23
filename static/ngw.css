@@ -256,7 +256,7 @@ br.clearall {
     background: #f0f0f0;
 }
 
-.submenuitem:hover, .activesubmenuitem {
+a .submenuitem:hover, .activesubmenuitem {
     font-weight: bold;
     border:1px solid black;
     background: white;

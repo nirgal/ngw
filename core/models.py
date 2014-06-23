@@ -695,6 +695,27 @@ class ContactGroup(NgwModel):
         return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
 
 
+    def get_contact_perms(self, contact_id):
+        '''
+        Returns a dictionary will all perms for a user & a group
+        '''
+        # TODO optimize this in a single SQL call
+        return {
+            'o': perms.c_operatorof_cg(contact_id, self.id),
+            #'v'
+            'e': perms.c_can_see_cg(contact_id, self.id),
+            'E': perms.c_can_change_cg(contact_id, self.id),
+            'c': perms.c_can_see_members_cg(contact_id, self.id),
+            'C': perms.c_can_change_members_cg(contact_id, self.id),
+            'f': perms.c_can_view_fields_cg(contact_id, self.id),
+            'F': perms.c_can_write_fields_cg(contact_id, self.id),
+            'n': perms.c_can_see_news_cg(contact_id, self.id),
+            'N': perms.c_can_change_news_cg(contact_id, self.id),
+            'u': perms.c_can_see_files_cg(contact_id, self.id),
+            'U': perms.c_can_change_files_cg(contact_id, self.id),
+        }
+
+
     def get_link_name(self):
         "Name will then be clickable in the list"
         return self.get_absolute_url()
