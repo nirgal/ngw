@@ -7,16 +7,22 @@
 
 {% block body %}
     {% for n in news %}
-    <h1 class="boxheader"><a href="{{n.get_absolute_url}}">{{ n.title }}</a></h1>
+    <h1 class="boxheader">{% if cg_perms.N %}<a href="{{n.get_absolute_url}}">{% endif %}{{ n.title }}{% if cg_perms.N %}</a>{% endif %}</h1>
     <div class=box>
     <b>{{ n.date|date:"DATE_FORMAT" }}</b> - {% trans "by" %} <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
     {{ n.text|linebreaksbr }}<br>
     </div>
+    {% empty %}
+    <div class=box>
+    {% trans "There are no news for that group." %}
+    </div>
     {% endfor %}
 
     {% block submitbar %}
+    {% if cg_perms.N %}
     <div id=submitbar>
     <a href="add"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> {% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
     </div>
+    {% endif %}
     {% endblock %}
 {% endblock %}

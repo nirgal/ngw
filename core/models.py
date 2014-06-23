@@ -93,6 +93,12 @@ ADMIN_CIGFLAGS =  (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
                  | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
                  | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES)
 
+OBSERVER_CIGFLAGS = (CIGFLAG_VIEWER
+                | CIGFLAG_SEE_CG
+                | CIGFLAG_SEE_MEMBERS
+                | CIGFLAG_VIEW_FIELDS
+                | CIGFLAG_VIEW_NEWS
+                | CIGFLAG_VIEW_FILES )
 # dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
 TRANS_CIGFLAG_CODE2INT = {}
 TRANS_CIGFLAG_CODE2TXT = {}
@@ -716,7 +722,7 @@ class ContactGroup(NgwModel):
         # } that returns data in a single query
         sql = '''
             SELECT bit_or(admin_flags) FROM
-                (
+            (
                 SELECT bit_or(gmg_perms.flags) AS admin_flags
                 FROM contact_in_group
                 JOIN (
@@ -729,17 +735,32 @@ class ContactGroup(NgwModel):
                 ON contact_in_group.group_id=gmg_perms.group_id
                     AND contact_in_group.flags & 1 <> 0
                     AND contact_id = %(cid)s
-            ) AS inherited_admin
-            UNION
-                (
-                SELECT contact_in_group.flags AS admin_flags
-                FROM contact_in_group
-                WHERE contact_in_group.group_id=%(gid)s
-                AND contact_in_group.contact_id=%(cid)s
-                )
+                UNION
+                    (
+                    SELECT contact_in_group.flags AS admin_flags
+                    FROM contact_in_group
+                    WHERE contact_in_group.group_id=%(gid)s
+                    AND contact_in_group.contact_id=%(cid)s
+                    )
+                UNION
+                    (
+                    SELECT %(ADMIN_CIGFLAGS)s AS admin_flags
+                    WHERE c_ismemberof_cg(%(cid)s, %(GROUP_ADMIN)s)
+                    )
+                UNION
+                    (
+                    SELECT %(OBSERVER_CIGFLAGS)s AS admin_flags
+                    WHERE c_ismemberof_cg(%(cid)s, %(GROUP_OBSERVERS)s)
+                    )
+            ) AS compiled
             ''' % {
             'cid': contact_id,
-            'gid': self.id}
+            'gid': self.id,
+            'ADMIN_CIGFLAGS': ADMIN_CIGFLAGS,
+            'OBSERVER_CIGFLAGS': OBSERVER_CIGFLAGS,
+            'GROUP_ADMIN': GROUP_ADMIN,
+            'GROUP_OBSERVERS': GROUP_OBSERVERS,
+            }
         cursor = connection.cursor()
         cursor.execute(sql)
         row = cursor.fetchone()
