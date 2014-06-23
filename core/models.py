@@ -697,22 +697,69 @@ class ContactGroup(NgwModel):
 
     def get_contact_perms(self, contact_id):
         '''
-        Returns a dictionary will all perms for a user & a group
+        Returns a dictionary will all that group permissions for a given user
         '''
-        # TODO optimize this in a single SQL call
+        # This is the optimized version of
+        # return {
+        #    'o': perms.c_operatorof_cg(contact_id, self.id),
+        #    #'v'
+        #    'e': perms.c_can_see_cg(contact_id, self.id),
+        #    'E': perms.c_can_change_cg(contact_id, self.id),
+        #    'c': perms.c_can_see_members_cg(contact_id, self.id),
+        #    'C': perms.c_can_change_members_cg(contact_id, self.id),
+        #    'f': perms.c_can_view_fields_cg(contact_id, self.id),
+        #    'F': perms.c_can_write_fields_cg(contact_id, self.id),
+        #    'n': perms.c_can_see_news_cg(contact_id, self.id),
+        #    'N': perms.c_can_change_news_cg(contact_id, self.id),
+        #    'u': perms.c_can_see_files_cg(contact_id, self.id),
+        #    'U': perms.c_can_change_files_cg(contact_id, self.id),
+        # } that returns data in a single query
+        sql = '''
+            SELECT bit_or(admin_flags) FROM
+                (
+                SELECT bit_or(gmg_perms.flags) AS admin_flags
+                FROM contact_in_group
+                JOIN (
+                    SELECT self_and_subgroups(father_id) AS group_id,
+                        bit_or(flags) AS flags
+                    FROM group_manage_group
+                    WHERE subgroup_id=%(gid)s
+                    GROUP BY group_id
+                ) AS gmg_perms
+                ON contact_in_group.group_id=gmg_perms.group_id
+                    AND contact_in_group.flags & 1 <> 0
+                    AND contact_id = %(cid)s
+            ) AS inherited_admin
+            UNION
+                (
+                SELECT contact_in_group.flags AS admin_flags
+                FROM contact_in_group
+                WHERE contact_in_group.group_id=%(gid)s
+                AND contact_in_group.contact_id=%(cid)s
+                )
+            ''' % {
+            'cid': contact_id,
+            'gid': self.id}
+        cursor = connection.cursor()
+        cursor.execute(sql)
+        row = cursor.fetchone()
+        if row:
+            perms = row[0]
+        else:
+            perms = 0
         return {
-            'o': perms.c_operatorof_cg(contact_id, self.id),
-            #'v'
-            'e': perms.c_can_see_cg(contact_id, self.id),
-            'E': perms.c_can_change_cg(contact_id, self.id),
-            'c': perms.c_can_see_members_cg(contact_id, self.id),
-            'C': perms.c_can_change_members_cg(contact_id, self.id),
-            'f': perms.c_can_view_fields_cg(contact_id, self.id),
-            'F': perms.c_can_write_fields_cg(contact_id, self.id),
-            'n': perms.c_can_see_news_cg(contact_id, self.id),
-            'N': perms.c_can_change_news_cg(contact_id, self.id),
-            'u': perms.c_can_see_files_cg(contact_id, self.id),
-            'U': perms.c_can_change_files_cg(contact_id, self.id),
+            'o': perms & CIGFLAG_OPERATOR,
+            'v': perms & CIGFLAG_VIEWER,
+            'e': perms & CIGFLAG_SEE_CG,
+            'E': perms & CIGFLAG_CHANGE_CG,
+            'c': perms & CIGFLAG_SEE_MEMBERS,
+            'C': perms & CIGFLAG_CHANGE_MEMBERS,
+            'f': perms & CIGFLAG_VIEW_FIELDS,
+            'F': perms & CIGFLAG_WRITE_FIELDS,
+            'n': perms & CIGFLAG_VIEW_NEWS,
+            'N': perms & CIGFLAG_WRITE_NEWS,
+            'u': perms & CIGFLAG_VIEW_FILES,
+            'U': perms & CIGFLAG_WRITE_FILES,
         }
 
 

@@ -8,12 +8,12 @@ Global search widget (top right) should send to /contacts/ ? But what about add_
 
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
-Default group:
-- Grant operator permissions when creating a new group
+Favorite groups.
 
 Default supergroup(s)
 
-Favorite groups.
+Default group:
+- Grant operator permissions when creating a new group
 
 Make a MultiWidget for flags, including javascript pre-checks/clears
 
