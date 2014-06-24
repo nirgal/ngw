@@ -593,6 +593,8 @@ class Contact(NgwModel):
     def is_admin(self):
         return self.is_member_of(GROUP_ADMIN)
 
+    def can_see_all_contacts(self):
+        return perms.c_can_see_members_cg(self.id, GROUP_EVERYBODY)
 
     def update_lastconnection(self):
         # see NgwAuthBackend.authenticate
