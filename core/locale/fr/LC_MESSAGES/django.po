@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-06-23 11:32+0200\n"
-"PO-Revision-Date: 2014-06-19 18:50+0200\n"
+"PO-Revision-Date: 2014-06-24 15:59+0200\n"
 "Last-Translator: \n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -16,6 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Lokalize 1.5\n"
+"Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
 
 #: contactsearch.py:362
 msgid "Add a field"
@@ -1216,7 +1217,7 @@ msgstr "Il n'y a pas de message."
 #: templates/group_submenu.html:7 templates/group_submenu.html.py:19
 #: templates/group_submenu.html:31 templates/group_submenu.html.py:43
 msgid "You don't have permission to browse that item"
-msgstr "Vous n'avez pas la permission de parcourrir cet élément"
+msgstr "Vous n'avez pas la permission de parcourir cet élément"
 
 #: templates/group_submenu.html:20
 msgid "News"
@@ -1409,3 +1410,4 @@ msgstr "Retour"
 #: templates/type_change.html:22
 msgid "Delete incompatible data"
 msgstr "Effacer les données incompatibles"
+
