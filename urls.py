@@ -79,6 +79,7 @@ urlpatterns = patterns('',
     url(r'^contacts/(?P<cid>\d+)/filters/$', 'ngw.core.views.contact_filters_list'),
     url(r'^contacts/(?P<cid>\d+)/filters/add$', 'ngw.core.views.contact_filters_add'),
     url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)$', 'ngw.core.views.contact_filters_edit'),
+    url(r'^contacts/(?P<cid>\d+)/default_group$', 'ngw.core.views.contact_default_group'),
 
     url(r'^contactgroups/$', 'ngw.core.views.contactgroup_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),

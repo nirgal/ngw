@@ -62,6 +62,7 @@
       <a href="pass">{% trans "Change password" %}</a>
       {% if user.is_admin %}
       <a href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
+      <a href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
       {% endif %}
       {% endif %}
     </div>

@@ -4,16 +4,13 @@ Show a real message when cookies are disabled:
 - If test_cookie is not set at /login, redirect to /login?test_cookie
 - If test_cookie is still not set, show a warning
 
-Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
-
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
+
+Button to create a basic default group.
 
 Favorite groups.
 
-Default supergroup(s)
-
-Default group:
-- Grant operator permissions when creating a new group
+Default supergroup(s).
 
 Make a MultiWidget for flags, including javascript pre-checks/clears
 
@@ -54,7 +51,13 @@ Add table ContactMessageReadBy(msg_id, contact_id)
 
 News display: Make a paginated global news display. (homepage)
 
+Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
+
 Files handling:
 - Clean up display
 - Upload form
 - Get rid of PHP -> previews
+
+Delete a filter.
+
+Event selection widget (Do not load everything at once, like for column selection)

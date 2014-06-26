@@ -705,7 +705,7 @@ class ContactEditForm(forms.Form):
         forms.Form.__init__(self, *args, **kargs)
 
         if perms.c_can_write_fields_cg(user_id, GROUP_EVERYBODY):
-            self.fields['name'] = forms.CharField()
+            self.fields['name'] = forms.CharField(label=_('Name'))
         if cid:
             contact = get_object_or_404(Contact, pk=cid)
             cfields = contact.get_all_writable_fields(user_id)
@@ -1112,6 +1112,40 @@ def contact_filters_edit(request, cid=None, fid=None):
                   .add_component((unicode(fid), filtername))
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
+
+
+class DefaultGroupForm(forms.Form):
+    def __init__(self, contact, *args, **kargs):
+        super(DefaultGroupForm, self).__init__(*args, **kargs)
+        available_groups = contact.get_allgroups_member().filter(date__isnull=True)
+        choices = [ (cg.id, cg.name) for cg in available_groups
+            if not cg.date and perms.c_can_see_cg(contact.id, cg.id) ]
+        self.fields['default_group'] = forms.ChoiceField(label=_('Default group'), choices=choices)
+
+@login_required()
+@require_group(GROUP_USER_NGW)
+def contact_default_group(request, cid=None):
+    contact = get_object_or_404(Contact, pk=cid)
+    if not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW) and cid != request.user.id:
+        raise PermissionDenied
+
+    if request.method == 'POST':
+        form = DefaultGroupForm(contact, request.POST)
+        if form.is_valid():
+            contact.set_fieldvalue(request, FIELD_DEFAULT_GROUP, form.cleaned_data['default_group'])
+            messages.add_message(request, messages.SUCCESS, _('Default group has been changed sucessfully.') )
+            return HttpResponseRedirect(contact.get_absolute_url())
+    else:
+        default_group = contact.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
+        form = DefaultGroupForm(contact, initial={'default_group': default_group})
+    args = {}
+    args['title'] = _('User default group')
+    args['contact'] = contact
+    args['form'] = form
+    args['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                  .add_component(contact.get_navcomponent()) \
+                  .add_component(('default_group', _('default group')))
+    return render_to_response('contact_default_group.html', args, RequestContext(request))
 
 
 #@login_required()
@@ -1708,9 +1742,24 @@ def contactgroup_edit(request, id):
                 field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
                 intflag = TRANS_CIGFLAG_CODE2INT[flag]
                 initialdata[field_name] = cg.get_visible_mananger_groups_ids(request.user.id, intflag)
-            form = ContactGroupForm(request.user.id, initialdata)
         else: # add new one
-            form = ContactGroupForm(request.user.id)
+            default_group_id = request.user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
+            if not default_group_id:
+                messages.add_message(request, messages.WARNING,
+                    _('You must define a default group before you can create a group.'))
+                return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+            default_group_id = int(default_group_id)
+            if not request.user.is_member_of(default_group_id):
+                messages.add_message(request, messages.WARNING,
+                    _('You no longer are member of your default group. Please define a new default group.'))
+                return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+            if not perms.c_can_see_cg(request.user.id, default_group_id):
+                messages.add_message(request, messages.WARNING,
+                    _('You no longer are authorized to see your default group. Please define a new default group.'))
+                return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+            initialdata = {
+                TRANS_CIGFLAG_CODE2TXT['o'] + '_groups': (default_group_id,)}
+        form = ContactGroupForm(request.user.id, initial=initialdata)
     args = {}
     args['title'] = title
     args['id'] = id

@@ -16,9 +16,9 @@ SET search_path = public, pg_catalog;
 --
 
 COPY choice_group (id, name, sort_by_key) FROM stdin;
-1	Pays	f
-9	Oui / Non	t
-41	Status du mot de passe	t
+1	Country	f
+9	Yes / No	t
+41	Password status	t
 \.
 
 SELECT pg_catalog.setval('choice_group_id_seq', 46, true);
@@ -29,11 +29,11 @@ SELECT pg_catalog.setval('choice_group_id_seq', 46, true);
 
 COPY choice (choice_group_id, key, value) FROM stdin;
 1	fr	France
-1	uk	Royaume Uni
-1	ch	Suisse
-1	it	Italie
-9	1	Oui
-9	2	Non
+1	uk	United Kingdom
+1	ch	Switzerland
+1	it	Italy
+9	1	Yes
+9	2	No
 41	1	Generated
 41	3	User defined
 41	2	Generated and mailed
