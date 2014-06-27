@@ -641,6 +641,8 @@ def contact_list(request):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_detail(request, gid=None, cid=None):
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         if not perms.c_can_see_members_cg(request.user.id, gid):
@@ -649,7 +651,6 @@ def contact_detail(request, gid=None, cid=None):
         # gid is undefined: access through global contact list
         if cid != request.user.id and not perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
             raise PermissionDenied
-
     c = get_object_or_404(Contact, pk=cid)
 
     rows = []
@@ -679,7 +680,8 @@ def contact_detail(request, gid=None, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_vcard(request, gid=None, cid=None):
-    cid = int(cid)
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if cid == request.user.id:
         # The user can see himself
         pass
@@ -732,6 +734,8 @@ class ContactEditForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_edit(request, gid=None, cid=None):
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if gid: # edit/add in a group
         if not perms.c_can_see_members_cg(request.user.id, gid):
             raise PermissionDenied
@@ -903,9 +907,8 @@ class ContactPasswordForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_pass(request, gid=None, cid=None):
-    if gid is not None:
-        gid = int(gid)
-    cid = int(cid)
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
@@ -957,9 +960,8 @@ def hook_change_password(request):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_pass_letter(request, gid=None, cid=None):
-    if gid is not None:
-        gid = int(gid)
-    cid = int(cid)
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
@@ -1008,6 +1010,8 @@ def contact_pass_letter(request, gid=None, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_delete(request, gid=None, cid=None):
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if not request.user.is_admin():
         return unauthorized(request)
     o = get_object_or_404(Contact, pk=cid)
@@ -1025,6 +1029,7 @@ def contact_delete(request, gid=None, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_add(request, cid=None):
+    cid = cid and int(cid) or None
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
@@ -1044,6 +1049,7 @@ def contact_filters_add(request, cid=None):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_list(request, cid=None):
+    cid = cid and int(cid) or None
     if cid != request.user.id and not perms.c_can_view_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
@@ -1068,6 +1074,8 @@ class FilterEditForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_edit(request, cid=None, fid=None):
+    cid = cid and int(cid) or None
+    fid = fid and int(fid) or None
     # Warning, here fid is the index in the filter list of a given user
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
@@ -1118,13 +1126,15 @@ class DefaultGroupForm(forms.Form):
     def __init__(self, contact, *args, **kargs):
         super(DefaultGroupForm, self).__init__(*args, **kargs)
         available_groups = contact.get_allgroups_member().filter(date__isnull=True)
-        choices = [ (cg.id, cg.name) for cg in available_groups
+        choices = [ ('', _('Create new personnal group'))] + [ (cg.id, cg.name) for cg in available_groups
             if not cg.date and perms.c_can_see_cg(contact.id, cg.id) ]
-        self.fields['default_group'] = forms.ChoiceField(label=_('Default group'), choices=choices)
+        self.fields['default_group'] = forms.ChoiceField(
+            label=_('Default group'), choices=choices, required=False)
 
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_default_group(request, cid=None):
+    cid = cid and int(cid) or None
     contact = get_object_or_404(Contact, pk=cid)
     if not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW) and cid != request.user.id:
         raise PermissionDenied
@@ -1132,7 +1142,24 @@ def contact_default_group(request, cid=None):
     if request.method == 'POST':
         form = DefaultGroupForm(contact, request.POST)
         if form.is_valid():
-            contact.set_fieldvalue(request, FIELD_DEFAULT_GROUP, form.cleaned_data['default_group'])
+            default_group = form.cleaned_data['default_group']
+            if not default_group:
+                cg = ContactGroup(
+                    name = _('Group of %s') % contact.name,
+                    description = _('This is the default group of %s') % contact.name,
+                    )
+                cg.save()
+
+                cig = ContactInGroup(
+                    contact_id=cid,
+                    group_id=cg.id,
+                    flags = CIGFLAG_MEMBER|ADMIN_CIGFLAGS,
+                    )
+                cig.save()
+                messages.add_message(request, messages.SUCCESS, _('Personnal group created.') )
+                default_group = str(cg.id)
+
+            contact.set_fieldvalue(request, FIELD_DEFAULT_GROUP, default_group)
             messages.add_message(request, messages.SUCCESS, _('Default group has been changed sucessfully.') )
             return HttpResponseRedirect(contact.get_absolute_url())
     else:
@@ -1351,6 +1378,7 @@ def contactgroup_details(request, gid):
     Redirect to members list, if allowed.
     Otherwise, try to find some authorized page.
     '''
+    gid = gid and int(gid) or None
     cg = get_object_or_404(ContactGroup, pk=gid)
     if perms.c_can_see_members_cg(request.user.id, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'members/')
@@ -1363,6 +1391,7 @@ def contactgroup_details(request, gid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_members(request, gid, output_format=''):
+    gid = gid and int(gid) or None
     if not perms.c_can_see_members_cg(request.user.id, gid):
         raise PermissionDenied
 
@@ -1519,6 +1548,7 @@ def contactgroup_members(request, gid, output_format=''):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_emails(request, gid):
+    gid = gid and int(gid) or None
     if request.method == 'POST':
         if not perms.c_can_see_members_cg(request.user.id, gid):
             raise PermissionDenied
@@ -1543,6 +1573,7 @@ def contactgroup_emails(request, gid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_messages(request, gid):
+    gid = gid and int(gid) or None
     if not perms.c_operatorof_cg(request.user.id, gid):
         raise PermissionDenied
 
@@ -1644,6 +1675,7 @@ class ContactGroupForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_edit(request, id):
+    id = id and int(id) or None
     objtype = ContactGroup
     if id:
         cg = get_object_or_404(ContactGroup, pk=id)
@@ -1796,6 +1828,7 @@ def on_contactgroup_delete(cg):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_delete(request, id):
+    id = id and int(id) or None
     if not perms.c_can_change_cg(request.user.id, id):
         raise PermissionDenied
     o = get_object_or_404(ContactGroup, pk=id)
@@ -2068,6 +2101,8 @@ class ContactInGroupForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_edit(request, gid, cid):
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if not perms.c_can_change_members_cg(request.user.id, gid):
         raise PermissionDenied
     try:
@@ -2155,6 +2190,8 @@ def contactingroup_edit(request, gid, cid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_edit_inline(request, gid, cid):
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if not perms.c_can_change_members_cg(request.user.id, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
@@ -2180,6 +2217,8 @@ def contactingroup_edit_inline(request, gid, cid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_delete(request, gid, cid):
+    gid = gid and int(gid) or None
+    cid = cid and int(cid) or None
     if not perms.c_can_change_members_cg(request.user.id, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
@@ -2203,6 +2242,7 @@ def contactingroup_delete(request, gid, cid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news(request, gid):
+    gid = gid and int(gid) or None
     if not perms.c_can_see_news_cg(request.user.id, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
@@ -2226,6 +2266,8 @@ class NewsEditForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_edit(request, gid, nid):
+    gid = gid and int(gid) or None
+    nid = nid and int(nid) or None
     if not perms.c_can_change_news_cg(request.user.id, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
@@ -2281,6 +2323,8 @@ def contactgroup_news_edit(request, gid, nid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_news_delete(request, gid, nid):
+    gid = gid and int(gid) or None
+    nid = nid and int(nid) or None
     if not perms.c_can_change_news_cg(request.user.id, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
@@ -2291,6 +2335,7 @@ def contactgroup_news_delete(request, gid, nid):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_files(request, gid):
+    gid = gid and int(gid) or None
     if not perms.c_can_see_files_cg(request.user.id, gid):
         raise PermissionDenied
 
@@ -2314,6 +2359,7 @@ class MailmanSyncForm(forms.Form):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_mailman(request, id):
+    id = id and int(id) or None
     initial_value = '''
 Les résultats de vos commandes courriels sont fournies ci-dessous.
 Ci-joint votre message original.
@@ -2380,6 +2426,7 @@ def field_list(request):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def field_move_up(request, id):
+    id = id and int(id) or None
     if not request.user.is_admin():
         return unauthorized(request)
     cf = get_object_or_404(ContactField, pk=id)
@@ -2392,6 +2439,7 @@ def field_move_up(request, id):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def field_move_down(request, id):
+    id = id and int(id) or None
     if not request.user.is_admin():
         return unauthorized(request)
     cf = get_object_or_404(ContactField, pk=id)
@@ -2465,6 +2513,7 @@ class FieldEditForm(forms.Form):
 def field_edit(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
+    id = id and int(id) or None
     objtype = ContactField
     initial = {}
     if id:
@@ -2574,6 +2623,7 @@ def field_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
     o = get_object_or_404(ContactField, pk=id)
+    id = id and int(id) or None
     next_url = reverse('ngw.core.views.field_list')
     if o.system:
         messages.add_message(request, messages.ERROR, _('Field %s is locked and CANNOT be deleted.') % o.name)
@@ -2747,6 +2797,7 @@ def choicegroup_edit(request, id=None):
     if not request.user.is_admin():
         return unauthorized(request)
     objtype = ChoiceGroup
+    id = id and int(id) or None
     if id:
         cg = get_object_or_404(ChoiceGroup, pk=id)
         title = _('Editing %s') % unicode(cg)
@@ -2788,5 +2839,6 @@ def choicegroup_edit(request, id=None):
 def choicegroup_delete(request, id):
     if not request.user.is_admin():
         return unauthorized(request)
+    id = id and int(id) or None
     o = get_object_or_404(ChoiceGroup, pk=id)
     return generic_delete(request, o, reverse('ngw.core.views.choicegroup_list'))

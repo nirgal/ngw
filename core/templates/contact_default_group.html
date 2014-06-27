@@ -3,9 +3,11 @@
 
 {% block body %}
 <div class=box>
-{% trans "Default group members will be granted full access priviledges when you create a permanent group and/or event." %}
+{% trans "Default group members will be granted full access priviledges over next permanent groups and event that you'll create. For exemple, if you set your default group to Users - this is not a good idea - every single user will get full priviledges over the next groups you'll create." %}
 <br>
 {% trans "You will need to modify permissions manually if you want to create a contacts group can do not have that default permission." %}
+<br>
+{% trans "You can either choose an existing group, or create a new personnal group with just you inside." %}
 </div>
 <form method="post">
 {% csrf_token %}

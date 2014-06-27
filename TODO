@@ -6,8 +6,6 @@ Show a real message when cookies are disabled:
 
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
-Button to create a basic default group.
-
 Favorite groups.
 
 Default supergroup(s).
@@ -61,3 +59,5 @@ Files handling:
 Delete a filter.
 
 Event selection widget (Do not load everything at once, like for column selection)
+
+Fix display toggle on contact_detail.html. No need to be Admin for setting default group, only able to set user_ngw fields.
