@@ -54,12 +54,6 @@ Create the structure, populate the initial data, and create the extra views and 
   $ psql -h localhost -U ngw ngw -f sql/functions.sql
   $ ./manage.py syncdb
 
-This will create an admin account:
-login: admin
-password: hahlahT8
-
-Please change it immediately.
-
 Apache
 ======
 Enable ssl in apache:
@@ -81,6 +75,12 @@ aptitude install php5 php5-gd
 
 user or group www-data should have write access to /var/lib/ngw/static/static/g so that thumbnails are generated only once.
 
+
+Admin account setup:
+====================
+
+In order to create an admin account, use:
+./manage.py createsuperuser
 
 Optionnal extensions
 ====================

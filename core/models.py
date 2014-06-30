@@ -277,6 +277,25 @@ class MyContactManager(models.Manager):
             raise Contact.MultipleObjectsReturned
         return login_value.contact
 
+    def create_superuser(self, name, password):
+        contact = Contact(name=name)
+        contact.save()
+
+        cfv = ContactFieldValue(contact_id=contact.id,
+                                contact_field_id = FIELD_LOGIN,
+                                value = name)
+        cfv.save()
+
+        cfv = ContactFieldValue(contact_id=contact.id,
+                                contact_field_id = FIELD_PASSWORD,
+                                value = make_password(password))
+        cfv.save()
+
+        cig = ContactInGroup(contact_id=contact.id,
+                             group_id=GROUP_ADMIN,
+                             flags=CIGFLAG_MEMBER|CIGFLAG_OPERATOR)
+        cig.save()
+
 
 class Contact(NgwModel):
     id = models.AutoField(primary_key=True)
@@ -1752,14 +1771,6 @@ class ContactInGroup(NgwModel):
 
     def get_absolute_url(self):
         return self.contact_group.get_absolute_url() + 'members/' + str(self.contact_id) + '/membership'
-
-
-class ContactSysMsg(NgwModel):
-    id = models.AutoField(primary_key=True)
-    contact = models.ForeignKey(Contact)
-    message = models.TextField()
-    class Meta:
-        db_table = 'contact_sysmsg'
 
 
 class ContactGroupNews(NgwModel):

@@ -23,7 +23,7 @@ Move save() from views to forms
 Sticky groups:
 - When you join a 'sticky' group though inheritance, group membership should be permanent.
 
-Invite groups:
+Invite groups (?):
 - Disable invitation buttons when a group doesn't support the feature.
 
 Use PermissionDenied exception rather than calling views.unauthorized() directly.

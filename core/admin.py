@@ -4,7 +4,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from django.contrib import admin
 from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
     ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
-    ContactFieldValue, ContactSysMsg )
+    ContactFieldValue)
 
 admin.site.register(Config)
 
@@ -36,4 +36,3 @@ class ContactFieldValueAdmin(admin.ModelAdmin):
     list_display = 'contact', 'contact_field', 'value'
 admin.site.register(ContactFieldValue, ContactFieldValueAdmin)
 
-admin.site.register(ContactSysMsg)

@@ -21,7 +21,7 @@ COPY choice_group (id, name, sort_by_key) FROM stdin;
 41	Password status	t
 \.
 
-SELECT pg_catalog.setval('choice_group_id_seq', 46, true);
+SELECT pg_catalog.setval('choice_group_id_seq', 100, true);
 
 --
 -- Data for Name: choice; Type: TABLE DATA; Schema: public; Owner: ngw
@@ -52,16 +52,6 @@ phpbb acl dictionary
 query_page_length	100
 \.
 
-
---
--- Data for Name: contact; Type: TABLE DATA; Schema: public; Owner: ngw
---
-
-COPY contact (id, name) FROM stdin;
-1	Default admin
-\.
-
-SELECT pg_catalog.setval('contact_id_seq', 1080, true);
 
 --
 -- Data for Name: contact_group; Type: TABLE DATA; Schema: public; Owner: ngw
@@ -102,32 +92,6 @@ COPY contact_field (id, name, hint, type, contact_group_id, sort_weight, choice_
 
 SELECT pg_catalog.setval('contact_field_id_seq', 100, true);
 
---
--- Data for Name: contact_field_value; Type: TABLE DATA; Schema: public; Owner: ngw
---
-
-COPY contact_field_value (contact_id, contact_field_id, value) FROM stdin;
-1	1	admin
-1	2	crypt$$/BHLc/u80sjCs
-1	3	2013-10-23 10:19:15
-1	4	name,field_7,field_92,field_100
-1	7	test@exemple.net
-1	11	75000
-1	14	Paris
-1	48	fr
-1	75	3
-\.
-
-
---
--- Data for Name: contact_in_group; Type: TABLE DATA; Schema: public; Owner: ngw
---
-
-COPY contact_in_group (id, contact_id, group_id, flags, note) FROM stdin;
-1	1	8	9	\N
-\.
-
-SELECT pg_catalog.setval('contact_in_group_id_seq', 2, true);
 
 --
 -- Data for Name: group_in_group; Type: TABLE DATA; Schema: public; Owner: ngw
