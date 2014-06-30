@@ -8,6 +8,7 @@ import os
 from functools import wraps
 from datetime import datetime, timedelta
 import subprocess
+import logging
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection

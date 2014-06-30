@@ -1149,6 +1149,7 @@ def contact_default_group(request, cid=None):
                     description = _('This is the default group of %s') % contact.name,
                     )
                 cg.save()
+                cg.check_static_folder_created()
 
                 cig = ContactInGroup(
                     contact_id=cid,
