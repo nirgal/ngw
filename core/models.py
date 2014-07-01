@@ -1673,7 +1673,7 @@ class EmptyBoundFilter(BaseBoundFilter):
     def apply_filter_to_query(self, query):
         return query
     def to_html(self, indent_level=0):
-        return self.indent(indent_level) + 'All contacts'
+        return string_concat(self.indent(indent_level), _('All contacts'))
 
 
 class AndBoundFilter(BaseBoundFilter):

@@ -1113,6 +1113,8 @@ def contact_filters_edit(request, cid=None, fid=None):
         filter_html = contactsearch.parse_filterstring(filterstr, request.user.id).to_html()
     except PermissionDenied:
         filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
+    except ContactField.DoesNotExist:
+        filter_html = _("Unparsable filter: Field does not exist.")
     args['filter_html'] = filter_html
     args['nav'] = Navbar(Contact.get_class_navcomponent()) \
                   .add_component(contact.get_navcomponent()) \
