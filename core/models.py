@@ -141,7 +141,7 @@ def _initialise_cigflags_constants():
 _initialise_cigflags_constants()
 
 # Ends with a /
-GROUP_STATIC_DIR = "/usr/lib/ngw/static/static/g/"
+GROUP_STATIC_DIR = "/usr/lib/ngw/static/g/"
 
 class NgwModel(models.Model):
     do_not_call_in_templates = True # prevent django from trying to instanciate objtype

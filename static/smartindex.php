@@ -94,7 +94,7 @@ function get_thumb_url($curentdir, $filename) {
 	if (file_exists($thumbname) && filemtime($thumbname)>=filemtime($filename))
 		return $thumbname;
 	else
-		return "/static/iconify.php?id=".htmlspecialchars(urlencode($curentdir.$filename));
+		return "/iconify.php?id=".htmlspecialchars(urlencode($curentdir.$filename));
 }
 
 
@@ -105,7 +105,7 @@ if ($qmpos !== FALSE)
     $curentdir = substr($curentdir, 0, $qmpos);
 $curentdir = urldecode($curentdir);
 //echo 'curentdir=' . $curentdir;
-chdir(getcwd().'/..'.$curentdir); // we need to remove static from getcwd
+chdir(getcwd().$curentdir);
 //echo 'dir=' . getcwd() .'<br>';
 $filelist = glob("*");
 $filelistUpper = array_map('strtoupper', $filelist);
@@ -135,7 +135,7 @@ if ($mode=='diaporama1') {
     else
         header("Refresh: 15;url=https://".$_SERVER['HTTP_HOST'].$utf8_curentdir.'?mode=diaporama1');
     echo '<title>'.$curentdir.' - picture '.$num.'</title>';
-    echo '<link rel=stylesheet href="/static/diapo.css">';
+    echo '<link rel=stylesheet href="/diapo.css">';
     echo '<div style="text-align:center;">';
 	//echo("url=".$_REQUEST['HTTP_HOST']);
     echo '<a href="." target=_top>Index</a> ';
@@ -144,12 +144,12 @@ if ($mode=='diaporama1') {
     echo '<tr>';
     echo '<td>';
     if ($num>0)
-        echo '<a href="?mode=diaporama1&num='.($num-1).'"><img src="/static/left.png" height=30 width=30 alt="Précédent"></a>';
+        echo '<a href="?mode=diaporama1&num='.($num-1).'"><img src="/left.png" height=30 width=30 alt="Précédent"></a>';
     echo '<td>';
     echo '<a href="'.htmlspecialchars($filename).'" target=_top><img src="'.get_thumb_url($curentdir.$filename).'"/></a><br/>';
     echo '<td>';
     if ($num<count($array_by_type['image'])-1)
-        echo '<a href="?mode=diaporama1&num='.($num+1).'"><img src="/static/right.png" height=30 width=30 alt="Suivant"></a>';
+        echo '<a href="?mode=diaporama1&num='.($num+1).'"><img src="/right.png" height=30 width=30 alt="Suivant"></a>';
     echo '</table>';
     echo '</div>';
 
@@ -160,11 +160,11 @@ if ($mode=='diaporama1') {
 	echo '</frameset>';
 } else if ($mode=='diaporama_rowframe') {
     echo '<body style="margin:0;">';
-    echo '<link rel=stylesheet href="/static/diapo.css">';
+    echo '<link rel=stylesheet href="/diapo.css">';
 	echo '<div style="height:150px;"><nobr>';
 	$num=0;
     foreach($array_by_type['image'] as $filename) {
-        //echo "<a href='".htmlspecialchars($curentdir)."?mode=diaporama1&num=".$num."' target=big><img src='/static/iconify.php?id=".htmlspecialchars(urlencode($curentdir.$filename))."' height=150/></a>";
+        //echo "<a href='".htmlspecialchars($curentdir)."?mode=diaporama1&num=".$num."' target=big><img src='/iconify.php?id=".htmlspecialchars(urlencode($curentdir.$filename))."' height=150/></a>";
         //echo "<a href='".htmlspecialchars($curentdir)."?mode=diaporama1&num=".$num."' target=big><img src='".get_thumb_url($curentdir.$filename)."' height=150/></a>";
         echo "<a href='?mode=diaporama1&num=".$num."' target=big><img src='".get_thumb_url($curentdir.$filename)."' height=150/></a>";
 		$num++;

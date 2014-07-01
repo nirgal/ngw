@@ -10,7 +10,7 @@
     {% for f in files %}
         {% if forloop.first %}
         {% endif %}
-        ‣ <a href="/static/g/{{cg.id}}/{{f}}">{{f}}</a><br>
+        ‣ <a href="/g/{{cg.id}}/{{f}}">{{f}}</a><br>
     {% empty %}
         {% trans "There are no files in that group." %}
     {% endfor %}

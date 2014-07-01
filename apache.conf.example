@@ -21,8 +21,8 @@ WSGIPythonPath /usr/lib
     <Directory "/usr/lib/ngw/static">
         AllowOverride AuthConfig
     </Directory>
-    <Location "/static/g/">
-        DirectoryIndex index.html index.php /static/smartindex.php
+    <Location "/g/">
+        DirectoryIndex index.html index.php /smartindex.php
     </Location>
 
     <Location "/">
