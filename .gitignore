@@ -10,5 +10,4 @@ mailing/templates
 !mailing/templates/resetpassword.odt
 mailing/generated
 settings.py
-static/static/c/
 static/static/g/
