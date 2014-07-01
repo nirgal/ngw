@@ -1075,7 +1075,7 @@ class FilterEditForm(forms.Form):
 @require_group(GROUP_USER_NGW)
 def contact_filters_edit(request, cid=None, fid=None):
     cid = cid and int(cid) or None
-    fid = fid and int(fid) or None
+    fid = int(fid)
     # Warning, here fid is the index in the filter list of a given user
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
@@ -1100,7 +1100,7 @@ def contact_filters_edit(request, cid=None, fid=None):
             filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
             #print(repr(filter_list_str))
             contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-            messages.add_message(request, messages.SUCCESS, _('Filter has been renamed sucessfully!'))
+            messages.add_message(request, messages.SUCCESS, _('Filter has been renamed.'))
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else:
         form = FilterEditForm(initial={ 'name': filtername })
@@ -1120,6 +1120,27 @@ def contact_filters_edit(request, cid=None, fid=None):
                   .add_component((unicode(fid), filtername))
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
+
+@login_required()
+@require_group(GROUP_USER_NGW)
+def contact_filters_delete(request, cid=None, fid=None):
+    cid = cid and int(cid) or None
+    fid = int(fid)
+    # Warning, here fid is the index in the filter list of a given user
+    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
+        raise PermissionDenied
+    contact = get_object_or_404(Contact, pk=cid)
+    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
+    if not filter_list_str:
+        return HttpResponse(_('ERROR: no custom filter for that user'))
+    else:
+        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
+    del filter_list[fid]
+    filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
+    contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
+    messages.add_message(request, messages.SUCCESS, _('Filter has been deleted.'))
+    return HttpResponseRedirect(contact.get_absolute_url())
+
 
 
 class DefaultGroupForm(forms.Form):

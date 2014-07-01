@@ -5,7 +5,7 @@
     <div class=box>
     {% if filters %}
         {% for f in filters %}
-        ‣ <a href="./{{forloop.counter0}}">{{f}}</a><br>
+        ‣ <a href="./{{forloop.counter0}}/">{{f}}</a><br>
         {# {{f|get:1|safe}}<br> #}
         {% endfor %}
         </div>
@@ -14,10 +14,8 @@
     {% endif %}
 
     {% block submitbar %}
-    {% comment %}
     <div id=submitbar>
     <a href="{{ contact.get_absolute_url}}" id=default>Contact details</a>
     </div>
-    {% endcomment %}
     {% endblock %}
 {% endblock %}
