@@ -44,8 +44,6 @@ Support Image contactfields
 
 Add table ContactMessageReadBy(msg_id, contact_id)
 
-News display: Make a paginated global news display. (homepage)
-
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
 
 Files handling:

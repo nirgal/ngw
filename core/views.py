@@ -17,6 +17,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as auth_logout
@@ -139,12 +140,24 @@ def unauthorized(request):
 def home(request):
     operator_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.group_id = contact_group.id AND contact_in_group.contact_id=%s AND contact_in_group.flags & %s <> 0)' % (request.user.id, CIGFLAG_OPERATOR)])
 
+    qry_news = ContactGroupNews.objects.extra(where=['perm_c_can_see_news_cg(%s, contact_group_news.contact_group_id)' % request.user.id])
+    paginator = Paginator(qry_news, 7)
+
+    page = request.GET.get('page')
+    try:
+        news = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        news = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        news = paginator.page(paginator.num_pages)
+
     return render_to_response('home.html', {
         'title': _('Home page'),
         'nav': Navbar(),
         'operator_groups': operator_groups,
-        'news': ContactGroupNews.objects.extra(where=['perm_c_can_see_news_cg(%s, contact_group_news.contact_group_id)' % request.user.id])[:5],
-        'GroupUserNgw': ContactGroup.objects.get(id=GROUP_USER_NGW),
+        'news': news,
     }, RequestContext(request))
 
 
