@@ -30,9 +30,6 @@ Use PermissionDenied exception rather than calling views.unauthorized() directly
 
 Check date is not null when creating an event
 
-Enhance xmpp extensions:
-- support changepassword ?
-
 Implement slicing in ContactQuerySet
 
 (jpv) Remove pwgen dependency

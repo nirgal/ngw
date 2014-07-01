@@ -2,8 +2,16 @@ This ngw extension provide ejabberd authentication against django database.
 
 /etc/ejabberd/ejabberd.cfg will need to contain something like:
 {auth_method, external}.
-{extauth_program, "/usr/lib/ngw/manage.py ejabberd_auth"}.
+{extauth_program, "/usr/lib/ngw/manage.py ejabberd_auth -v 2"}.
 
+Logging will be available in /tmp/jabauth.log
+Verbosity setting:
+0: ERROR
+1: WARNING
+2: INFO
+3: DEBUG
+
+Do not use level 3 since passwords will be logged!
 
 Also, you'll need to define some constants in your settings.py:
 
