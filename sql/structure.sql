@@ -114,8 +114,7 @@ CREATE TABLE contact_in_group (
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     flags integer NOT NULL,
-    note text,
-    PRIMARY KEY (contact_id, group_id)
+    note text
 );
 
 CREATE INDEX contact_in_group_contact_id_index ON contact_in_group (contact_id);
