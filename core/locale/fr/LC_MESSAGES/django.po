@@ -744,23 +744,23 @@ msgstr "Ils peuvent tout voir, mais n'ont un accès qu'en lecture seule."
 
 #: views.py:1991
 msgid "Can see group exists"
-msgstr "Peux voir que le groupe existe"
+msgstr "Peut voir que le groupe existe"
 
 #: views.py:1992
 msgid "Can change group"
-msgstr "Peux modifier le groupe"
+msgstr "Peut modifier le groupe"
 
 #: views.py:1993
 msgid "Can change the group itself, delete it."
-msgstr "Peux modifier le groupe lui-même, l'effacer."
+msgstr "Peut modifier le groupe lui-même, l'effacer."
 
 #: views.py:1994 templates/group_add_contacts_to.html:119
 msgid "Can see members"
-msgstr "Peux voir les membres"
+msgstr "Peut voir les membres"
 
 #: views.py:1995 templates/group_add_contacts_to.html:127
 msgid "Can change members"
-msgstr "Peux modifier les membres"
+msgstr "Peut modifier les membres"
 
 #: views.py:1996 templates/group_add_contacts_to.html:136
 msgid "Can view fields"
@@ -771,8 +771,8 @@ msgid ""
 "Can view the fields (like \"address\" or \"email\") associated with that "
 "group. Few groups support that."
 msgstr ""
-"Peux voir les champs (comme \"adresse\" ou \"courriel\") associés avec ce "
-"groupe. Peux de groupe supportent cela."
+"Peut voir les champs (comme \"adresse\" ou \"courriel\") associés avec ce "
+"groupe. Peu de groupe supportent cela."
 
 #: views.py:1998 templates/group_add_contacts_to.html:144
 msgid "Can write fields"
@@ -796,7 +796,7 @@ msgstr "Peut lire les fichiers envoyés"
 
 #: views.py:2003
 msgid "View the uploaded files. Few group supports that."
-msgstr "Voir les fichiers envoyés. Peux de groupes supportent cette option."
+msgstr "Voir les fichiers envoyés. Peu de groupes supportent cette option."
 
 #: views.py:2004 templates/group_add_contacts_to.html:178
 msgid "Can upload files"
@@ -1182,11 +1182,11 @@ msgstr "Invitation déclinée"
 
 #: templates/group_add_contacts_to.html:103
 msgid "Can see group"
-msgstr "Peux voir le groupe"
+msgstr "Peut voir le groupe"
 
 #: templates/group_add_contacts_to.html:110
 msgid "Group editor"
-msgstr "Peux modifier le groupe"
+msgstr "Peut modifier le groupe"
 
 #: templates/group_add_contacts_to.html:170
 msgid "Can view files"
