@@ -50,7 +50,7 @@ def ngw_mailmerge(filename_in, fields, target_dir):
         found.setString(fields.get(field_name, 'FIELD NOT FOUND'))
         found = document.findNext(found.getEnd(), find_replace)
 
-    oldumask = os.umask(0007)
+    oldumask = os.umask(0o007)
 
     filename_out = TMPDIR + '/' + get_outputprefix() + '.pdf'
 

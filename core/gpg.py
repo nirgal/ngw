@@ -4,6 +4,7 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 import subprocess
 from django.conf import settings
+from django.utils.encoding import force_text
 from django.http import HttpResponse
 
 GPG_HOME = getattr(settings, 'GPG_HOME', None)
@@ -14,7 +15,7 @@ def subprocess_run(*args):
     args = [ arg.encode('utf8') for arg in args ]
     process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     out, err = process.communicate()
-    return process.returncode, unicode(out, 'utf8', 'replace'), unicode(err, 'utf8', 'replace')
+    return process.returncode, force_text(out, errors='replace'), force_text(err, errors='replace')
 
 #def _split_uid(uid):
 #    p1 = uid.find('<')

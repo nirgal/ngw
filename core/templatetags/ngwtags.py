@@ -5,6 +5,7 @@ import inspect
 from django import template
 from django.utils import html
 from django.utils.safestring import mark_safe
+from django.utils.encoding import force_text
 
 register = template.Library()
 
@@ -78,11 +79,11 @@ def ngw_display(obj, coldesc):
         return result
 
     try:
-        flink = obj.__getattribute__("get_link_"+coldesc[2].encode('utf-8'))
+        flink = obj.__getattribute__('get_link_'+force_text(coldesc[2]))
         link = flink()
         if link:
             result = '<a href="'+link+'">'+result+'</a>'
-    except AttributeError, e:
+    except AttributeError as e:
         pass 
     return result
 

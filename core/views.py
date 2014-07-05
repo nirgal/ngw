@@ -14,6 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import force_text, smart_text
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -96,7 +97,7 @@ def get_display_fields(user):
             try:
                 groupid = int(fname[len(DISP_GROUP_PREFIX):])
             except ValueError:
-                print('Error in default fields: %s has invalid syntax.' % fname.encode('utf8'))
+                print('Error in default fields: %s has invalid syntax.' % fname)
                 continue
             try:
                 ContactGroup.objects.get(pk=groupid)
@@ -107,7 +108,7 @@ def get_display_fields(user):
             try:
                 fieldid = int(fname[len(DISP_FIELD_PREFIX):])
             except ValueError:
-                print('Error in default fields: %s has invalid syntax.' % fname.encode('utf8'))
+                print('Error in default fields: %s has invalid syntax.' % fname)
                 continue
             try:
                 ContactField.objects.get(pk=fieldid)
@@ -115,7 +116,7 @@ def get_display_fields(user):
                 print('Error in default fields: There is no field #%d.' % fieldid)
                 continue
         else:
-            print('Error in default fields: Invalid syntax in "%s".' % fname.encode('utf8'))
+            print('Error in default fields: Invalid syntax in "%s".' % fname)
             continue
         result.append(fname)
     if not result:
@@ -231,7 +232,7 @@ def query_print_entities(request, template_name, args, extrasort=None):
     args['page'] = page
     args['npages'] = (totalcount+NB_LINES_PER_PAGE-1)//NB_LINES_PER_PAGE
 
-    if not args.has_key('baseurl'):
+    if 'baseurl' not in args:
         args['baseurl'] = '?'
     return render_to_response(template_name, args, RequestContext(request))
 
@@ -244,12 +245,12 @@ def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
     if confirm:
         if ondelete_function:
             ondelete_function(o)
-        name = unicode(o)
+        name = force_text(o)
         log = Log()
         log.contact_id = request.user.id
         log.action = LOG_ACTION_DEL
         pk_names = (o._meta.pk.attname,) # default django pk name
-        log.target = unicode(o.__class__.__name__)+' '+' '.join([unicode(o.__getattribute__(fieldname)) for fieldname in pk_names])
+        log.target = force_text(o.__class__.__name__)+' '+' '.join([force_text(o.__getattribute__(fieldname)) for fieldname in pk_names])
         log.target_repr = o.get_class_verbose_name()+' '+name
         o.delete()
         log.save()
@@ -385,7 +386,7 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'member': flags & CIGFLAG_MEMBER,
         'invited': flags & CIGFLAG_INVITED,
         'declined': flags & CIGFLAG_DECLINED,
-        'cig_url': contact_group.get_absolute_url()+'members/'+unicode(contact_with_extra_fields.id),
+        'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
         'title': contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date(),
         'next_url': request.get_full_path(),
         }, RequestContext(request))
@@ -586,9 +587,9 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
 def get_available_fields(user_id):
     result = [ (DISP_NAME, 'Name') ]
     for cf in ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight'):
-        result.append((DISP_FIELD_PREFIX+unicode(cf.id), cf.name))
+        result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
     for cg in ContactGroup.objects.extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % user_id]).order_by('-date', 'name'):
-        result.append((DISP_GROUP_PREFIX+unicode(cg.id), cg.unicode_with_date()))
+        result.append((DISP_GROUP_PREFIX+force_text(cg.id), cg.unicode_with_date()))
     return result
 
 
@@ -675,7 +676,7 @@ def contact_detail(request, gid=None, cid=None):
             pass # ignore blank values
 
     args = {}
-    args['title'] = _('Details for %s') % unicode(c)
+    args['title'] = _('Details for %s') % force_text(c)
     if gid:
         #args['title'] += ' in group '+cg.unicode_with_date()
         args['contact_group'] = cg
@@ -709,7 +710,7 @@ def contact_vcard(request, gid=None, cid=None):
     # ...) are readable by user
 
     contact = get_object_or_404(Contact, pk=cid)
-    return HttpResponse(contact.vcard().encode('utf-8'), mimetype='text/x-vcard')
+    return HttpResponse(contact.vcard(), mimetype='text/x-vcard')
 
 
 
@@ -741,7 +742,7 @@ class ContactEditForm(forms.Form):
         for cf in cfields:
             f = cf.get_form_fields()
             if f:
-                self.fields[unicode(cf.id)] = f
+                self.fields[force_text(cf.id)] = f
 
 
 @login_required()
@@ -769,7 +770,7 @@ def contact_edit(request, gid=None, cid=None):
     objtype = Contact
     if cid:
         contact = get_object_or_404(Contact, pk=cid)
-        title = _('Editing %s') % unicode(contact)
+        title = _('Editing %s') % force_text(contact)
     else:
         title = _('Adding a new %s') % objtype.get_class_verbose_name()
 
@@ -788,7 +789,7 @@ def contact_edit(request, gid=None, cid=None):
                     if contact.name != data['name']:
                         log = Log(contact_id=request.user.id)
                         log.action = LOG_ACTION_CHANGE
-                        log.target = 'Contact ' + unicode(contact.id)
+                        log.target = 'Contact ' + force_text(contact.id)
                         log.target_repr = 'Contact ' + contact.name
                         log.property = 'Name'
                         log.property_repr = 'Name'
@@ -807,13 +808,13 @@ def contact_edit(request, gid=None, cid=None):
 
                 log = Log(contact_id=request.user.id)
                 log.action = LOG_ACTION_ADD
-                log.target = 'Contact ' + unicode(contact.id)
+                log.target = 'Contact ' + force_text(contact.id)
                 log.target_repr = 'Contact ' + contact.name
                 log.save()
 
                 log = Log(contact_id=request.user.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = 'Contact ' + unicode(contact.id)
+                log.target = 'Contact ' + force_text(contact.id)
                 log.target_repr = 'Contact ' + contact.name
                 log.property = 'Name'
                 log.property_repr = 'Name'
@@ -833,7 +834,7 @@ def contact_edit(request, gid=None, cid=None):
                     continue
                 #cfname = cf.name
                 cfid = cf.id
-                newvalue = data[unicode(cfid)]
+                newvalue = data[force_text(cfid)]
                 if newvalue != None:
                     newvalue = cf.formfield_value_to_db_value(newvalue)
                 contact.set_fieldvalue(request, cf, newvalue)
@@ -841,9 +842,9 @@ def contact_edit(request, gid=None, cid=None):
             messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved sucessfully!') % contact.name)
 
             if cg:
-                base_url = cg.get_absolute_url() + 'members/' + unicode(contact.id) + '/'
+                base_url = cg.get_absolute_url() + 'members/' + force_text(contact.id) + '/'
             else:
-                base_url = contact.get_class_absolute_url() + unicode(contact.id) + '/'
+                base_url = contact.get_class_absolute_url() + force_text(contact.id) + '/'
 
             if request.POST.get('_continue', None):
                 return HttpResponseRedirect(base_url + 'edit')
@@ -863,16 +864,16 @@ def contact_edit(request, gid=None, cid=None):
             for cfv in contact.values.all():
                 cf = cfv.contact_field
                 if cf.type != FTYPE_PASSWORD:
-                    initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
+                    initialdata[force_text(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
             form = ContactEditForm(request.user.id, cid=cid, initial=initialdata, contactgroup=cg)
 
         else:
             for cf in ContactField.objects.all():
                 if cf.default:
                     if cf.type == FTYPE_DATE and cf.default == 'today':
-                        initialdata[unicode(cf.id)] = date.today()
+                        initialdata[force_text(cf.id)] = date.today()
                     else:
-                        initialdata[unicode(cf.id)] = cf.db_value_to_formfield_value(cf.default)
+                        initialdata[force_text(cf.id)] = cf.db_value_to_formfield_value(cf.default)
 
             if cg:
                 initialdata['groups'] = [ cg.id ]
@@ -937,7 +938,7 @@ def contact_pass(request, gid=None, cid=None):
             messages.add_message(request, messages.SUCCESS, 'Password has been changed sucessfully!')
             if gid:
                 cg = get_object_or_404(ContactGroup, pk=gid)
-                return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + unicode(cid) + '/')
+                return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + force_text(cid) + '/')
             else:
                 return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else: # GET
@@ -1003,7 +1004,7 @@ def contact_pass_letter(request, gid=None, cid=None):
                 cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
             except ContactFieldValue.DoesNotExist:
                 continue
-            fields[cf.name] = unicode(cfv).replace('\r', '')
+            fields[cf.name] = force_text(cfv).replace('\r', '')
             #if cfv:
             #    rows.append((cf.name, mark_safe(cfv.as_html())))
         fields['name'] = contact.name
@@ -1132,7 +1133,7 @@ def contact_filters_edit(request, cid=None, fid=None):
     args['nav'] = Navbar(Contact.get_class_navcomponent()) \
                   .add_component(contact.get_navcomponent()) \
                   .add_component(('filters', _('custom filters'))) \
-                  .add_component((unicode(fid), filtername))
+                  .add_component((force_text(fid), filtername))
 
     return render_to_response('customfilter_user.html', args, RequestContext(request))
 
@@ -1393,7 +1394,7 @@ def event_list(request):
 
     month_events = {}
     for cg in q:
-        if not month_events.has_key(cg.date):
+        if cg.date not in month_events:
             month_events[cg.date] = []
         month_events[cg.date].append(cg)
 
@@ -1503,7 +1504,7 @@ def contactgroup_members(request, gid, output_format=''):
         result = ''
         for contact in q:
             result += contact.vcard()
-        return HttpResponse(result.encode('utf-8'), mimetype='text/x-vcard')
+        return HttpResponse(result, mimetype='text/x-vcard')
     elif output_format == 'emails':
         emails = []
         noemails = []
@@ -2150,7 +2151,7 @@ def contactingroup_edit(request, gid, cid):
     contact = Contact.objects.get(pk=cid)
     args = {}
     args['title'] = _('Contact %(contact)s in group %(group)s') % {
-        'contact': unicode(contact),
+        'contact': force_text(contact),
         'group': cg.unicode_with_date() }
     args['cg'] = cg
     args['cg_perms'] = cg.get_contact_perms(request.user.id)
@@ -2173,7 +2174,7 @@ def contactingroup_edit(request, gid, cid):
                 if data[field_name]:
                     newflags |= TRANS_CIGFLAG_CODE2INT[code]
             if not newflags:
-                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(unicode(cg.id), cid)))
+                return HttpResponseRedirect(reverse('ngw.core.views.contactingroup_delete', args=(force_text(cg.id), cid)))
             if (cig.flags ^ newflags) & ADMIN_CIGFLAGS \
                 and not perms.c_operatorof_cg(request.user.id, cg.id):
                 # If you change any permission flags of that group, you must be a group operator
@@ -2518,7 +2519,7 @@ class FieldEditForm(forms.Form):
         else:
             cls_contact_field = ContactField.get_contact_field_type_by_dbid('TEXT')
         if cls_contact_field.has_choice:
-            if self.fields['choicegroup'].widget.attrs.has_key('disabled'):
+            if 'disabled' in self.fields['choicegroup'].widget.attrs:
                 del self.fields['choicegroup'].widget.attrs['disabled']
             self.fields['choicegroup'].required = True
         else:
@@ -2555,7 +2556,7 @@ def field_edit(request, id):
     initial = {}
     if id:
         cf = get_object_or_404(ContactField, pk=id)
-        title = _('Editing %s') % unicode(cf)
+        title = _('Editing %s') % smart_text(cf)
         initial['name'] = cf.name
         initial['hint'] = cf.hint
         initial['contact_group'] = cf.contact_group_id
@@ -2581,7 +2582,7 @@ def field_edit(request, id):
                                   sort_weight = int(data['move_after']))
                 cf.save()
             else:
-                if not cf.system and (cf.type != data['type'] or unicode(cf.choice_group_id) != data['choicegroup']):
+                if not cf.system and (cf.type != data['type'] or force_text(cf.choice_group_id) != data['choicegroup']):
                     deletion_details = []
                     newcls = ContactField.get_contact_field_type_by_dbid(data['type'])
                     choice_group_id = None
@@ -2837,7 +2838,7 @@ def choicegroup_edit(request, id=None):
     id = id and int(id) or None
     if id:
         cg = get_object_or_404(ChoiceGroup, pk=id)
-        title = _('Editing %s') % unicode(cg)
+        title = _('Editing %s') % smart_text(cg)
     else:
         cg = None
         title = _('Adding a new %s') % objtype.get_class_verbose_name()

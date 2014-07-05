@@ -1,11 +1,12 @@
 # -*- encoding: utf-8 -*-
 
 from __future__ import division, print_function, unicode_literals
-import urllib2
+from django.utils import six
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.utils.safestring import mark_safe
 from django.utils import html
+from django.utils.encoding import force_text
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.shortcuts import render_to_response
@@ -30,12 +31,10 @@ def format_link_list(l):
           for url, name, dom_id in l])
 
 
-class LexicalError(StandardError):
-    def __init__(self, *args, **kargs):
-        StandardError.__init__(self, *args, **kargs)
-class FilterSyntaxError(StandardError):
-    def __init__(self, *args, **kargs):
-        StandardError.__init__(self, *args, **kargs)
+class LexicalError(Exception if six.PY3 else StandardError):
+    pass
+class FilterSyntaxError(Exception if six.PY3 else StandardError):
+    pass
 
 class FilterLexer(object):
     """ Trivial parser that recognise a few types, see Type class bellow """
@@ -53,8 +52,8 @@ class FilterLexer(object):
             self.str = str
 
         def __repr__(self):
-            types = { 0: b'WORD', 1: b'STRING', 2: b'INT', 3: b'LPARENTHESIS', 4: b'RPARENTHESIS', 5: b'COMMA' }
-            return b'Lexem<' + types[self.type] + b',' + self.str.encode('utf8') + '>'
+            types = { 0: 'WORD', 1: 'STRING', 2: 'INT', 3: 'LPARENTHESIS', 4: 'RPARENTHESIS', 5: 'COMMA' }
+            return force_str('Lexem<' + types[self.type] + ',' + self.str + '>')
             
     def __init__(self, str):
         self.buffer = str
@@ -134,19 +133,19 @@ def _filter_parse_expression(lexer, user_id):
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'and':
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
         subfilter1 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise ("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
         
         subfilter2 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.RPARENTHESIS:
-            raise ("Unexpected %s. Expected ')'." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected ')'." % force_text(repr(lexem)))
         
         return AndBoundFilter(subfilter1, subfilter2)
 
@@ -154,19 +153,19 @@ def _filter_parse_expression(lexer, user_id):
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'or':
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
         subfilter1 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise ("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
         
         subfilter2 = _filter_parse_expression(lexer, user_id)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.RPARENTHESIS:
-            raise ("Unexpected %s. Expected ')'." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected ')'." % force_text(repr(lexem)))
         
         return OrBoundFilter(subfilter1, subfilter2)
 
@@ -174,20 +173,20 @@ def _filter_parse_expression(lexer, user_id):
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'ffilter':
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.INT:
-            raise FilterSyntaxError("Unexpected %s. Expected INT." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected INT." % force_text(repr(lexem)))
         field_id = int(lexem.str)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise FilterSyntaxError("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
         
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         field_filter_name = lexem.str
 
         params = [ ]
@@ -197,7 +196,7 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+                raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
 
             lexem = lexer.next()
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -217,20 +216,20 @@ def _filter_parse_expression(lexer, user_id):
     elif lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'gfilter':
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.INT:
-            raise FilterSyntaxError("Unexpected %s. Expected INT." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected INT." % force_text(repr(lexem)))
         group_id = int(lexem.str)
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise FilterSyntaxError("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
         
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         group_filter_name = lexem.str
 
         params = [ ]
@@ -240,7 +239,7 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+                raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
 
             lexem = lexer.next()
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -258,11 +257,11 @@ def _filter_parse_expression(lexer, user_id):
     elif lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'nfilter':
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         name_filter_name = lexem.str
 
         params = [ ]
@@ -272,7 +271,7 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+                raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
 
             lexem = lexer.next()
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -286,11 +285,11 @@ def _filter_parse_expression(lexer, user_id):
     elif lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'allevents':
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
         lexem = lexer.next()
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % unicode(repr(lexem), 'utf8'))
+            raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         allevents_filter_name = lexem.str
 
         params = [ ]
@@ -300,7 +299,7 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % unicode(repr(lexem), 'utf8'))
+                raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
 
             lexem = lexer.next()
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -312,7 +311,7 @@ def _filter_parse_expression(lexer, user_id):
         return filter.bind(*params)
 
     else:
-        raise FilterSyntaxError("Unexpected %s." % unicode(repr(lexem), 'utf8'))
+        raise FilterSyntaxError("Unexpected %s." % force_text(repr(lexem)))
     
 
 def _filter_parse_expression_root(lexer, user_id):
@@ -325,7 +324,7 @@ def _filter_parse_expression_root(lexer, user_id):
     except StopIteration:
         return exp
     else:
-        raise FilterSyntaxError("Unexpected %s after end of string." % unicode(repr(lexem), 'utf8'))
+        raise FilterSyntaxError("Unexpected %s after end of string." % force_text(repr(lexem)))
 
 
 def parse_filterstring(sfilter, user_id):
@@ -362,18 +361,18 @@ def contactsearch_get_fields(request, kind):
         body = string_concat(body, _('Add a field'), ': ')
         fields = ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id]).order_by('sort_weight')
         body = string_concat(body,
-            format_link_list([("javascript:select_field('name')", _("Name"), "field_name")]+[ ("javascript:select_field('field_"+unicode(cf.id)+"')", no_br(html.escape(cf.name)), "field_field_"+unicode(cf.id)) for cf in fields]))
+            format_link_list([("javascript:select_field('name')", _("Name"), "field_name")]+[ ("javascript:select_field('field_"+force_text(cf.id)+"')", no_br(html.escape(cf.name)), "field_field_"+force_text(cf.id)) for cf in fields]))
     elif kind == 'group':
-        body = string_concat(body, u('Add a group'), ': ')
+        body = string_concat(body, _('Add a group'), ': ')
         groups = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('name')
         body = string_concat(body,
-            format_link_list([ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups]))
+            format_link_list([ ("javascript:select_field('group_"+force_text(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+force_text(cg.id)) for cg in groups]))
     elif kind == 'event':
         body = string_concat(body, _('Add an event'), ': ')
         groups = ContactGroup.objects.exclude(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
         body = string_concat(body, format_link_list(
             [ ("javascript:select_field('allevents')", no_br('All events'), "field_allevents") ] +
-            [ ("javascript:select_field('group_"+unicode(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+unicode(cg.id)) for cg in groups]))
+            [ ("javascript:select_field('group_"+force_text(cg.id)+"')", no_br(cg.unicode_with_date()), "field_group_"+force_text(cg.id)) for cg in groups]))
     elif kind == 'custom':
         body = string_concat(body, _('Add a custom filter'), ': ')
         body = string_concat(body, format_link_list([ ("javascript:select_field('custom_user')", _("Custom filters for %s") % request.user.name, 'field_custom_user')]))
@@ -436,7 +435,7 @@ def contactsearch_get_filters(request, field):
         else:
             filter_list = parse_filter_list_str(filter_list_str)
             body = string_concat(body, _('Select a custom filter'), ': ')
-            body = string_concat(body, format_link_list([ ("javascript:select_filtername('"+unicode(i)+"')", no_br(filter[0]), "usercustom_"+unicode(i)) for i, filter in enumerate(filter_list) ]))
+            body = string_concat(body, format_link_list([ ("javascript:select_filtername('"+force_text(i)+"')", no_br(filter[0]), "usercustom_"+force_text(i)) for i, filter in enumerate(filter_list) ]))
     else:
         body = string_concat(body, _('ERROR in get_filters: field==%s') % field)
     
@@ -464,7 +463,7 @@ def contactsearch_get_params(request, field, filtername):
         if not perms.c_can_view_fields_cg(request.user.id, field.contact_group_id):
             raise PermissionDenied
         filter = field.get_filter_by_name(filtername)
-        filter_internal_beginin = 'ffilter(' + unicode(field_id) + ','
+        filter_internal_beginin = 'ffilter(' + force_text(field_id) + ','
 
     elif field.startswith('group_'):
         group_id = int(field[len('group_'):])
@@ -472,7 +471,7 @@ def contactsearch_get_params(request, field, filtername):
             raise PermissionDenied
         group = ContactGroup.objects.get(pk=group_id)
         filter = group.get_filter_by_name(filtername)
-        filter_internal_beginin = 'gfilter(' + unicode(group_id) + ','
+        filter_internal_beginin = 'gfilter(' + force_text(group_id) + ','
 
     elif field == 'allevents':
         filter = AllEventsMetaField.get_filter_by_name(filtername)
@@ -505,29 +504,29 @@ def contactsearch_get_params(request, field, filtername):
         js += filtername
         for i, param_type in enumerate(parameter_types):
             js += ",'+"
-            if param_type == unicode:
-                js += "escape_quote(document.getElementById('filter_param_" + unicode(i) + "').value)"
+            if param_type == six.text_type:
+                js += "escape_quote(document.getElementById('filter_param_" + force_text(i) + "').value)"
             elif param_type == int:
-                js += "document.getElementById('filter_param_" + unicode(i) + "').value"
+                js += "document.getElementById('filter_param_" + force_text(i) + "').value"
             elif isinstance(param_type, ChoiceGroup):
-                js += "escape_quote(document.getElementById('filter_param_" + unicode(i) + "').options[document.getElementById('filter_param_" + unicode(i) + "').selectedIndex].value)"
+                js += "escape_quote(document.getElementById('filter_param_" + force_text(i) + "').options[document.getElementById('filter_param_" + force_text(i) + "').selectedIndex].value)"
             else:
-                raise Exception("Unsupported filter parameter of type " + unicode(param_type))
+                raise Exception("Unsupported filter parameter of type " + force_text(param_type))
             js += "+'"
         js += ")'"
 
     if previous_filter: # CLEAN ME
         body = string_concat(body, "<form id='filter_param_form' onsubmit=\"newfilter=", js, "; combine='and'; for (i=0; i<document.forms['filter_param_form']['filter_combine'].length; ++i) if (document.forms['filter_param_form']['filter_combine'][i].checked) combine=document.forms['filter_param_form']['filter_combine'][i].value; newfilter=combine+'('+document.getElementById('filter').value+','+newfilter+')'; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n")
         for i, param_type in enumerate(parameter_types):
-            if param_type in (unicode, int):
-                body = string_concat(body, "<input type=text id=\"filter_param_" + unicode(i) + "\"><br>\n")
+            if param_type in (six.text_type, int):
+                body = string_concat(body, "<input type=text id=\"filter_param_" + force_text(i) + "\"><br>\n")
             elif isinstance(param_type, ChoiceGroup):
-                body = string_concat(body, "<select id=\"filter_param_", unicode(i), "\">\n")
+                body = string_concat(body, "<select id=\"filter_param_", force_text(i), "\">\n")
                 for choice_key, choice_value in param_type.ordered_choices:
                     body = string_concat(body, "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)})
                 body = string_concat(body, "</select>\n")
             else:
-                raise Exception("Unsupported filter parameter of type "+unicode(param_type))
+                raise Exception("Unsupported filter parameter of type "+force_text(param_type))
         body = string_concat(body, _('Filter combinaison type'), ": <input type=radio name='filter_combine' value=and checked>", _('AND'), " <input type=radio name='filter_combine' value=or>", _('OR'), "\n")
         body = string_concat(body, "<input type=submit value=\"", _('Add and apply filter'), "\" onclick=\"add_another_filter=false;\">\n")
         body = string_concat(body, "<input type=submit value=\"", _('Continue adding conditions'), "\" onclick=\"add_another_filter=true;\">\n")
@@ -536,15 +535,15 @@ def contactsearch_get_params(request, field, filtername):
     else:
         body = string_concat(body, "<form id='filter_param_form' onsubmit=\"newfilter=", js, "; document.getElementById('filter').value=newfilter; if (!add_another_filter) document.forms['mainform'].submit(); else { select_field(null); ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter); } return false;\">\n")
         for i, param_type in enumerate(parameter_types):
-            if param_type in (unicode, int):
-                body = string_concat(body, "<input type=text id=\"filter_param_", unicode(i), "\"><br>\n")
+            if param_type in (six.text_type, int):
+                body = string_concat(body, "<input type=text id=\"filter_param_", force_text(i), "\"><br>\n")
             elif isinstance(param_type, ChoiceGroup):
-                body = string_concat(body, "<select id=\"filter_param_" + unicode(i) + "\">\n")
+                body = string_concat(body, "<select id=\"filter_param_" + force_text(i) + "\">\n")
                 for choice_key, choice_value in param_type.ordered_choices:
                     body = string_concat(body, "<option value=\"%(choice_key)s\">%(choice_value)s</option>\n" % { 'choice_key': html.escape(choice_key), 'choice_value': html.escape(choice_value)})
                 body = string_concat(body, "</select><br>\n")
             else:
-                raise Exception("Unsupported filter parameter of type " + unicode(param_type))
+                raise Exception("Unsupported filter parameter of type " + force_text(param_type))
         body = string_concat(body, "<input type=submit value=\"", _('Apply filter'), "\" onclick=\"add_another_filter=false;\">\n")
         body = string_concat(body, "<input type=submit value=\"", _('Set filter and add another condition'), "\" onclick=\"add_another_filter=true;\">\n")
         body = string_concat(body, "</form>\n")
@@ -562,8 +561,8 @@ def contactsearch_filter_to_html(request):
     '''
     strfilter = request.META['QUERY_STRING']
     if strfilter:
-        strfilter = urllib2.unquote(strfilter)
-        strfilter = unicode(strfilter, 'utf-8')
+        strfilter = six.moves.urllib.parse.unquote(strfilter)
+        strfilter = force_text(strfilter)
     else:
         strfilter = ''
     filter = parse_filterstring(strfilter, request.user.id)

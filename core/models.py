@@ -10,12 +10,14 @@ from datetime import datetime, timedelta
 import subprocess
 import logging
 from django.core.exceptions import PermissionDenied
+from django.utils.encoding import force_text, smart_text
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection
 from django import forms
 from django.http import Http404
 from django.utils import html
 from django.utils import formats
+from django.utils import six
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib import messages
 import decoratedstr # Nirgal external package
@@ -148,32 +150,32 @@ class NgwModel(models.Model):
 
     @classmethod
     def get_class_verbose_name(cls):
-        return unicode(cls._meta.verbose_name)
+        return cls._meta.verbose_name
 
     @classmethod
     def get_class_verbose_name_plural(cls):
-        return unicode(cls._meta.verbose_name_plural)
+        return cls._meta.verbose_name_plural
 
     @classmethod
     def get_class_urlfragment(cls):
-        return unicode(cls.__name__.lower(), 'utf8') + 's'
+        return force_text(cls.__name__.lower()) + 's'
 
     def get_urlfragment(self):
-        return unicode(self.id)
+        return force_text(self.id)
 
     @classmethod
     def get_class_navcomponent(cls):
         return cls.get_class_urlfragment(), cls.get_class_verbose_name_plural()
 
     def get_navcomponent(self):
-        return self.get_urlfragment(), unicode(self)
+        return self.get_urlfragment(), smart_text(self)
 
     @classmethod
     def get_class_absolute_url(cls):
         return '/' + cls.get_class_urlfragment() + '/'
 
     def get_absolute_url(self):
-        return self.get_class_absolute_url() + unicode(self.id) + '/'
+        return self.get_class_absolute_url() + force_text(self.id) + '/'
 
     class Meta:
         abstract = True
@@ -416,7 +418,7 @@ class Contact(NgwModel):
     def get_fieldvalues_by_type(self, type_):
         if isinstance(type_, ContactField):
             type_ = type_.db_type_id
-        assert isinstance(type_, unicode)
+        assert isinstance(type_, six.text_type)
         fields = ContactField.objects.filter(type=type_).order_by('sort_weight')
         # TODO: check authority
         result = []
@@ -431,7 +433,7 @@ class Contact(NgwModel):
             cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
         except ContactFieldValue.DoesNotExist:
             return ''
-        return unicode(cfv)
+        return smart_text(cfv)
 
     def set_fieldvalue(self, request, field, newvalue):
         """
@@ -452,24 +454,24 @@ class Contact(NgwModel):
                 if cfv.value != newvalue:
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = 'Contact ' + unicode(self.id)
+                    log.target = 'Contact ' + force_text(self.id)
                     log.target_repr = 'Contact ' + self.name
-                    log.property = unicode(field_id)
+                    log.property = force_text(field_id)
                     log.property_repr = field.name
-                    log.change = 'change from ' + unicode(cfv)
+                    log.change = 'change from ' + smart_text(cfv)
                     cfv.value = newvalue
-                    log.change += ' to ' + unicode(cfv)
+                    log.change += ' to ' + smart_text(cfv)
                     cfv.save()
                     log.save()
                     hooks.contact_field_changed(request, field_id, self)
             else:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_DEL
-                log.target = 'Contact ' + unicode(self.id)
+                log.target = 'Contact ' + force_text(self.id)
                 log.target_repr = 'Contact ' + self.name
-                log.property = unicode(field_id)
+                log.property = smart_text(field_id)
                 log.property_repr = field.name
-                log.change = 'old value was ' + unicode(cfv)
+                log.change = 'old value was ' + smart_text(cfv)
                 cfv.delete()
                 log.save()
                 hooks.contact_field_changed(request, field_id, self)
@@ -477,16 +479,16 @@ class Contact(NgwModel):
             if newvalue:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = 'Contact ' + unicode(self.id)
+                log.target = 'Contact ' + force_text(self.id)
                 log.target_repr = 'Contact ' + self.name
-                log.property = unicode(field_id)
+                log.property = smart_text(field_id)
                 log.property_repr = field.name
                 cfv = ContactFieldValue()
                 cfv.contact = self
                 cfv.contact_field = field
                 cfv.value = newvalue
                 cfv.save()
-                log.change = 'new value is ' + unicode(cfv)
+                log.change = 'new value is ' + smart_text(cfv)
                 log.save()
                 hooks.contact_field_changed(request, field_id, self)
 
@@ -523,7 +525,7 @@ class Contact(NgwModel):
 
         bday = self.get_fieldvalue_by_id(FIELD_BIRTHDAY)
         if bday:
-            vcf += line('BDAY', unicode(bday))
+            vcf += line('BDAY', force_text(bday))
 
         vcf += line('END', 'VCARD')
         return vcf
@@ -549,7 +551,7 @@ class Contact(NgwModel):
             return login
         i = 1
         while True:
-            altlogin = login + unicode(i)
+            altlogin = login + force_text(i)
             if not get_logincfv_by_login(self.id, altlogin):
                 return altlogin
             i += 1
@@ -656,9 +658,9 @@ class ContactGroup(NgwModel):
 
     def get_absolute_url(self):
         if self.date:
-            return '/events/' + unicode(self.id) + '/'
+            return '/events/' + force_text(self.id) + '/'
         else:
-            return self.get_class_absolute_url() + unicode(self.id) + '/'
+            return self.get_class_absolute_url() + force_text(self.id) + '/'
 
 
     def get_direct_supergroups_ids(self):
@@ -864,20 +866,15 @@ class ContactGroup(NgwModel):
         folder = self.static_folder()
         try:
             files = os.listdir(folder)
-        except OSError as (errno, errmsg):
-            logging.error(_('Error while reading shared files list in %(folder)s: %(errmsg)s') % {
+        except OSError as err:
+            logging.error(_('Error while reading shared files list in %(folder)s: %(err)s') % {
                 'folder': folder,
-                'errmsg': errmsg})
+                'err': err})
             return []
 
         # listdir() returns some data in utf-8, we want everything in unicode:
-        unicode_files = []
-        for file in files:
-            if isinstance(file, unicode):
-                unicode_files.append(file)
-            else:
-                unicode_files.append(unicode(file, 'utf8', 'replace'))
-        files = unicode_files
+        files = [ force_text(file, errors='replace')
+            for file in files ]
 
         if '.htaccess' in files:
             files.remove('.htaccess')
@@ -980,7 +977,7 @@ class ContactGroup(NgwModel):
             cig = ContactInGroup(contact_id=contact.id, group_id=self.id, flags=0)
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_ADD
-            log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+            log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
             log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
             log.save()
             result = LOG_ACTION_ADD
@@ -1003,7 +1000,7 @@ class ContactGroup(NgwModel):
                     cig.flags |= intflag
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                    log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
                     log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
                     log.property = TRANS_CIGFLAG_CODE2TXT[flag]
                     log.property_repr = log.property.replace('_', ' ').capitalize()
@@ -1024,7 +1021,7 @@ class ContactGroup(NgwModel):
                     cig.flags &= ~intflag
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+                    log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
                     log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
                     log.property = TRANS_CIGFLAG_CODE2TXT[flag]
                     log.property_repr = log.property.replace('_', ' ').capitalize()
@@ -1036,7 +1033,7 @@ class ContactGroup(NgwModel):
             cig.delete()
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_DEL
-            log.target = 'ContactInGroup ' + unicode(contact.id) + ' ' + unicode(self.id)
+            log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
             log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
             result = LOG_ACTION_CHANGE
         else:
@@ -1153,7 +1150,7 @@ class ContactField(NgwModel):
         raise NotImplementedError()
 
     def formfield_value_to_db_value(self, value):
-        return unicode(value)
+        return smart_text(value)
 
     def db_value_to_formfield_value(self, value):
         return value
@@ -1207,14 +1204,14 @@ class FilterHelper(object):
         params_sql = { }
         for k, v in kargs.iteritems():
             #print(k, "=", v)
-            auto_param_name = 'autoparam_' + unicode(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
-            if isinstance(v, unicode):
+            auto_param_name = 'autoparam_' + force_text(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
+            if isinstance(v, six.text_type):
                 params_where[ k ] = '%(' + auto_param_name + k + ')s'
                 params_sql[ auto_param_name+k ] = v
             elif isinstance(v, int):
                 params_where[ k ] = v
             else:
-                raise Exception('Unsupported type ' + unicode(type(v)))
+                raise Exception('Unsupported type ' + force_text(type(v)))
         where = where % params_where
         return where, params_sql
 
@@ -1249,10 +1246,10 @@ class NameFilterStartsWith(Filter):
         value = decoratedstr.decorated_match(value)
         return '(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', { 'value_name1': '^' + value, 'value_name2': ' '+value }
     def to_html(self, value):
-        return string_concat('<b>Name</b> ', self.__class__.human_name, ' "', unicode(value), '"')
+        return string_concat('<b>Name</b> ', self.__class__.human_name, ' "', value, '"')
 
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 NameFilterStartsWith.internal_name = 'startswith'
 NameFilterStartsWith.human_name = _('has a word starting with')
 
@@ -1272,10 +1269,10 @@ class FieldFilterOp1(FieldFilter):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         result = string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' ')
-        if isinstance(value, unicode):
+        if isinstance(value, six.text_type):
             value = string_concat('"', value, '"')
         else:
-            value = unicode(value)
+            value = force_text(value)
         return string_concat(result, value)
 
 
@@ -1284,7 +1281,7 @@ class FieldFilterStartsWith(FieldFilterOp1):
         value = decoratedstr.decorated_match(value)
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', { 'field_id':self.field_id, 'value1': '^'+value, 'value2': ' '+value}
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 FieldFilterStartsWith.internal_name = 'startswith'
 FieldFilterStartsWith.human_name = _('has a word starting with')
 
@@ -1293,7 +1290,7 @@ class FieldFilterEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value}
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 FieldFilterEQ.internal_name = 'eq'
 FieldFilterEQ.human_name = '='
 
@@ -1302,7 +1299,7 @@ class FieldFilterNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 FieldFilterNEQ.internal_name = 'neq'
 FieldFilterNEQ.human_name = '≠'
 
@@ -1311,7 +1308,7 @@ class FieldFilterLE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 FieldFilterLE.internal_name = 'le'
 FieldFilterLE.human_name = '≤'
 
@@ -1320,7 +1317,7 @@ class FieldFilterGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 FieldFilterGE.internal_name = 'ge'
 FieldFilterGE.human_name = '≥'
 
@@ -1329,7 +1326,7 @@ class FieldFilterLIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 FieldFilterLIKE.internal_name = 'like'
 FieldFilterLIKE.human_name = 'SQL LIKE'
 
@@ -1338,7 +1335,7 @@ class FieldFilterILIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', { 'field_id':self.field_id, 'value':value }
     def get_param_types(self):
-        return (unicode,)
+        return (six.text_type,)
 FieldFilterILIKE.internal_name = 'ilike'
 FieldFilterILIKE.human_name = 'SQL ILIKE'
 
@@ -1606,17 +1603,17 @@ class AllEventsNotReactedSince(Filter):
         value = decoratedstr.decorated_match(value)
         return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (CIGFLAG_MEMBER | CIGFLAG_DECLINED), { 'date':value }
     def to_html(self, value):
-        return string_concat(self.__class__.human_name, ' "', unicode(value), '"')
+        return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
-        return (unicode,) # TODO: Accept date parameters
+        return (six.text_type,) # TODO: Accept date parameters
 AllEventsNotReactedSince.internal_name = 'notreactedsince'
 AllEventsNotReactedSince.human_name = _('has not reacted to any invitation since')
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': unicode((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
     def to_html(self, value):
-        return string_concat(self.__class__.human_name, ' "', unicode(value), '"')
+        return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
         return (int,)
 AllEventsReactionYearRatioLess.internal_name = 'yearreactionratioless'
@@ -1624,9 +1621,9 @@ AllEventsReactionYearRatioLess.human_name = _('1 year invitation reaction percen
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': unicode((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
     def to_html(self, value):
-        return string_concat(self.__class__.human_name, ' "', unicode(value), '"')
+        return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
         return (int,)
 AllEventsReactionYearRatioMore.internal_name = 'yearreactionratiomore'
