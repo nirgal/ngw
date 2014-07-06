@@ -15,6 +15,7 @@ from django.utils import html
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text, smart_text
+from django.utils.six import iteritems, itervalues
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -483,7 +484,7 @@ class ContactQuerySet(RawQuerySet):
 
     def compile(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in self.qry_fields.iteritems()])
+        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in iteritems(self.qry_fields)])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE ( ' + ') AND ('.join(self.qry_where) + ' )'
@@ -501,7 +502,7 @@ class ContactQuerySet(RawQuerySet):
 
     def count(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS %s' % (v, k) for k, v in self.qry_fields.iteritems()])
+        qry += ', '.join(['%s AS %s' % (v, k) for k, v in iteritems(self.qry_fields)])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE (' + ') AND ('.join(self.qry_where) + ')'
@@ -2505,7 +2506,7 @@ class FieldEditForm(forms.Form):
         self.fields['contact_group'].widget.choices = [ (g.id, g.name) for g in contacttypes ]
 
         self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id)
-            for cls in ContactField.types_classes.itervalues() ] # TODO: Sort
+            for cls in itervalues(ContactField.types_classes) ] # TODO: Sort
         js_test_type_has_choice = ' || '.join([ "this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
             if cls.has_choice ])
@@ -2821,7 +2822,7 @@ class ChoiceGroupForm(forms.Form):
             else: # that key has be deleted
                 #print('DELETING', k)
                 c.delete()
-        for k, v in choices.iteritems():
+        for k, v in iteritems(choices):
             #print('ADDING', k)
             cg.choices.create(key=k, value=v)
 

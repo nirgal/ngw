@@ -7,6 +7,8 @@ import logging
 import struct
 from django.core.management.base import NoArgsCommand
 from django.conf import settings
+from django.utils.encoding import force_text
+from django.utils import six
 from django.contrib.auth.hashers import check_password, make_password
 from ngw.core.models import ( ContactFieldValue,
     FIELD_LOGIN, FIELD_PASSWORD )
@@ -86,19 +88,19 @@ def cmd_setpass(login, domain, newpass):
     return True
 
 
-def main():
+def process_line():
     logger.debug('Incoming connection. Reading command length...')
     cmdlength = sys.stdin.read(2)
     logger.debug('Received %s', repr(cmdlength))
-    cmdlength, = struct.unpack(b'>h', cmdlength)
+    cmdlength, = struct.unpack(b'>H', cmdlength)
 
     logger.debug('Reading %s bytes long command...', cmdlength)
     bindata = sys.stdin.read(cmdlength)
 
     logger.debug('Received command: %s', repr(bindata))
-    data = unicode(bindata, 'utf-8', 'strict')
+    data = force_text(bindata)
 
-    data = data.split(b':', 1)
+    data = data.split(':', 1)
     if len(data) != 2:
         logger.error('Command %s has no arguments', data)
     cmd, args = data
@@ -131,5 +133,10 @@ class Command(NoArgsCommand):
         hdlr = logging.FileHandler('/tmp/jabauth.log')
         hdlr.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
         logger.addHandler(hdlr)
+
+        if six.PY3:
+            sys.stdin = open(0, 'rb') # reopen stdin in binary mode
+            sys.stdout = open(1, 'wb') # reopen stdout in binary mode
+
         while True:
-            main()
+            process_line()
