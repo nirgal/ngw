@@ -63,7 +63,7 @@
 {% for week in year_month.weeks %}
 <tr>
 {% for d, events in week.days %}
-<td><div class="calday{% ifequal d today %} {% trans "today" %}{% endifequal %}">
+<td><div class="calday{% ifequal d today %} today{% endifequal %}">
 
 {{ d.day }}
 </div>

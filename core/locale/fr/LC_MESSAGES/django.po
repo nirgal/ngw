@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-07-06 17:47+0200\n"
+"POT-Creation-Date: 2014-07-06 18:00+0200\n"
 "PO-Revision-Date: 2014-06-30 12:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
@@ -125,8 +125,8 @@ msgstr "groupes de contacts"
 #, python-format
 msgid "Error while reading shared files list in %(folder)s: %(err)s"
 msgstr ""
-"Erreur lors de la lecture de la liste des fichiers partagés dans le dossier %(folder)s: "
-"%(err)s"
+"Erreur lors de la lecture de la liste des fichiers partagés dans le dossier "
+"%(folder)s: %(err)s"
 
 #: models.py:1116
 msgid "Contact fields"
@@ -1399,10 +1399,6 @@ msgstr "Avancer d'un an"
 #: templates/list_events.html:40
 msgid "Add event"
 msgstr "Ajouter un événement"
-
-#: templates/list_events.html:66
-msgid "today"
-msgstr "aujourd'hui"
 
 #: templates/login.html:8
 msgid "Your username and password didn't match. Please try again."
