@@ -21,7 +21,7 @@
     {% if user.can_see_all_contacts %}
     <div id=header_search style="float:right;">
         <form id=header_realform action="/contactgroups/1/members/"><input type=hidden name=filter value=""></form>
-        <form id=header_displayedform action="#" onclick="document.forms['header_displayedform']['filter'].value='';" onsubmit="javascript:v=escape_quote(document.forms['header_displayedform']['filter'].value); document.forms['header_realform']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; document.forms['header_realform'].submit(); return false;"><input name=filter value="{% trans "Quick contact search" %}"></form>
+        <form id=header_displayedform action="#" onclick="document.forms['header_displayedform']['filter'].value='';" onsubmit="javascript:v=escape_quote(document.forms['header_displayedform']['filter'].value); document.forms['header_realform']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; document.forms['header_realform'].submit(); return false;"><input name=filter value="{% trans "Quick contact search" %}" size=30></form>
     </div>
     {% endif %}
 	<div id=tabs>
