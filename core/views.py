@@ -16,6 +16,7 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text, smart_text
 from django.utils.six import iteritems, itervalues
+from django.utils import formats
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -1335,12 +1336,14 @@ class YearMonthCal:
         return '%s-%s' % (self.year+1, self.month)
 
     def weeks(self):
+        first_day_of_week = formats.get_format('FIRST_DAY_OF_WEEK')
+
         first_day_of_month = date(self.year, self.month, 1)
         first_day_of_month_isocal = first_day_of_month.isocalendar()
-        firstweeknumber = first_day_of_month_isocal[1]
+        #firstweeknumber = first_day_of_month_isocal[1]
 
         first_day_of_month_isoweekday = first_day_of_month_isocal[2] # 1=monday, 7=sunday
-        first_week_date = first_day_of_month - timedelta(days=first_day_of_month_isoweekday-1)
+        first_week_date = first_day_of_month - timedelta(days=(first_day_of_month_isoweekday-first_day_of_week)%7)
 
         nextyear, nextmonth = self.year, self.month
         nextmonth += 1
@@ -1407,6 +1410,7 @@ def event_list(request):
     args['nav'] = Navbar().add_component(('events', _('events')))
     args['year_month'] = YearMonthCal(year, month, month_events)
     args['today'] = date.today()
+
     return query_print_entities(request, 'list_events.html', args)
 
 

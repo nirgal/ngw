@@ -52,13 +52,14 @@
 <col width='14.285%'>
 </colgroup>
 <tr>
-<th>{% trans "Monday" %}
-<th>{% trans "Tuesday" %}
-<th>{% trans "Wenesday" %}
-<th>{% trans "Thrusday" %}
-<th>{% trans "Friday" %}
-<th>{% trans "Saturday" %}
-<th>{% trans "Sunday" %}
+{% for week in year_month.weeks %}
+{% if forloop.first %}
+{% for d, events in week.days %}
+<th>{{d|date:"l"|title}}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
 {% for week in year_month.weeks %}
 <tr>
 {% for d, events in week.days %}
