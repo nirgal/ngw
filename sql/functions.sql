@@ -25,6 +25,8 @@ ALTER TABLE contact_group_news ALTER COLUMN "date" TYPE timestamp with time zone
 ALTER TABLE contact_message ALTER COLUMN send_date TYPE timestamp with time zone;
 ALTER TABLE contact_message ALTER COLUMN read_date TYPE timestamp with time zone;
 ALTER TABLE contact_group ALTER COLUMN "date" TYPE timestamp with time zone;
+DROP SEQUENCE IF EXISTS contact_field_value_contact_id_seq CASCADE;
+
 -- End migration script
 
 

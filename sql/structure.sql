@@ -95,7 +95,7 @@ CREATE TABLE contact_field (
 --
 
 CREATE TABLE contact_field_value (
-    contact_id serial NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
+    contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     contact_field_id integer NOT NULL REFERENCES contact_field(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     value text,
     PRIMARY KEY (contact_id, contact_field_id)
