@@ -4,13 +4,13 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 
 import datetime
-import httplib
-import urllib
 import json
 import logging
 from django.conf import settings
+from django.utils.six.moves import urllib, http_client
 from django.utils.translation import ugettext, activate as language_activate
 from django.utils.timezone import now
+from django.utils.encoding import force_str
 from django.core.mail import send_mass_mail
 from ngw.core.models import ContactMsg
 
@@ -52,7 +52,7 @@ def do_sync():
 
         if 'otid' not in sync_info:
             if not ot_conn:
-                ot_conn = httplib.HTTPSConnection('onetime.info')
+                ot_conn = http_client.HTTPSConnection('onetime.info')
 
             logger.info('Storing message for %s.', msg.cig.contact)
 
@@ -61,7 +61,7 @@ def do_sync():
                 days = (dt - now()).days
             else:
                 days = 21
-            ot_conn.request('POST', '/', urllib.urlencode({
+            ot_conn.request('POST', '/', urllib.parse.urlencode({
                 'message': msg.text.encode(settings.DEFAULT_CHARSET),
                 'once': True,
                 'expiration': days,
@@ -76,8 +76,10 @@ def do_sync():
                 logger.error("Temporary storage server error: %s %s" % (response.status, response.reason))
                 logger.error("%s", response.read())
                 continue # Try next message
-            jresponse = json.load(response)
+            #jresponse = json.load(response)
             #logger.debug("%s", jresponse)
+            sresponse = response.read()
+            jresponse = json.loads(force_str(sresponse))
 
             sync_info['otid'] = jresponse['url'][1:]
             sync_info['answer_password'] = jresponse['answer_password']
@@ -115,9 +117,9 @@ def do_sync():
             # Ignore message that were deleted on remote storage
             continue
         if not ot_conn:
-            ot_conn = httplib.HTTPSConnection('onetime.info')
+            ot_conn = http_client.HTTPSConnection('onetime.info')
 
-        ot_conn.request('POST', '/'+sync_info['otid']+'/answers', urllib.urlencode({
+        ot_conn.request('POST', '/'+sync_info['otid']+'/answers', urllib.parse.urlencode({
             'password': sync_info['answer_password']
         }), {
             'Content-type': 'application/x-www-form-urlencoded',
@@ -136,7 +138,9 @@ def do_sync():
             logger.error("Temporary storage server error: %s %s" % (response.status, response.reason))
             logger.error("%s", response.read())
             continue # Try next message
-        jresponse = json.load(response)
+        #jresponse = json.load(response)
+        sresponse = response.read()
+        jresponse = json.loads(force_str(sresponse))
         logger.debug(jresponse)
         for response_text in jresponse:
             logger.info('Received answer from %s.', msg.cig.contact)
