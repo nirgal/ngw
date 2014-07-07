@@ -21,6 +21,7 @@ You need to edit your settings.py:
 
 You need to set up a cron tab:
 */5 * * * * /usr/lib/ngw/manage.py msgsync -v 2
+0 * * * * /usr/lib/ngw/manage.py clearsessions
 
 You also need to compile translation files. It is suggested you create a .git/hooks/post-merge file 755 file:
 ---8<---------------------------
