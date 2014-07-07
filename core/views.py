@@ -1619,7 +1619,7 @@ def contactgroup_messages(request, gid):
         raise PermissionDenied
 
     cg = get_object_or_404(ContactGroup, pk=gid)
-    messages = ContactMsg.objects.filter(cig__group_id=gid)
+    messages = ContactMsg.objects.filter(cig__group_id=gid).order_by('-send_date')
     args = {}
     args['title'] = _('Messages for %s') % cg.unicode_with_date()
     args['cg'] = cg
