@@ -64,6 +64,8 @@ CIGFLAG_VIEW_NEWS      =  2048 # 'n'ews
 CIGFLAG_WRITE_NEWS     =  4096 # 'N'
 CIGFLAG_VIEW_FILES     =  8192 # 'u'ploaded
 CIGFLAG_WRITE_FILES    = 16384 # 'U'
+CIGFLAG_VIEW_MSGS      = 32768 # 'x'ternal messages
+CIGFLAG_WRITE_MSGS     = 65536 # 'X'
 
 # That information contains:
 # int value (see above)
@@ -75,8 +77,8 @@ __cig_flag_info__ = (
     (CIGFLAG_MEMBER, 'm', 'member', '', 'id'),
     (CIGFLAG_INVITED, 'i', 'invited', '', 'md'),
     (CIGFLAG_DECLINED, 'd', 'declined', '', 'mi'),
-    (CIGFLAG_OPERATOR, 'o', 'operator', 'veEcCfFnNuU', ''),
-    (CIGFLAG_VIEWER, 'v', 'viewer', 'ecfnu', ''),
+    (CIGFLAG_OPERATOR, 'o', 'operator', 'veEcCfFnNuUxX', ''),
+    (CIGFLAG_VIEWER, 'v', 'viewer', 'ecfnux', ''),
     (CIGFLAG_SEE_CG, 'e', 'see_group', '', ''),
     (CIGFLAG_CHANGE_CG, 'E', 'change_group', 'e', ''),
     (CIGFLAG_SEE_MEMBERS, 'c', 'see_members', 'e', ''),
@@ -87,6 +89,8 @@ __cig_flag_info__ = (
     (CIGFLAG_WRITE_NEWS, 'N', 'write_news', 'en', ''),
     (CIGFLAG_VIEW_FILES, 'u', 'view_files', 'e', ''),
     (CIGFLAG_WRITE_FILES, 'U', 'write_files', 'eu', ''),
+    (CIGFLAG_VIEW_MSGS, 'x', 'view_msgs', 'e', ''),
+    (CIGFLAG_WRITE_MSGS, 'X', 'write_msgs', 'ex', ''),
 )
 
 ADMIN_CIGFLAGS =  (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
@@ -94,14 +98,16 @@ ADMIN_CIGFLAGS =  (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
                  | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
                  | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
                  | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
-                 | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES)
+                 | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES
+                 | CIGFLAG_VIEW_MSGS | CIGFLAG_WRITE_MSGS)
 
 OBSERVER_CIGFLAGS = (CIGFLAG_VIEWER
                 | CIGFLAG_SEE_CG
                 | CIGFLAG_SEE_MEMBERS
                 | CIGFLAG_VIEW_FIELDS
                 | CIGFLAG_VIEW_NEWS
-                | CIGFLAG_VIEW_FILES )
+                | CIGFLAG_VIEW_FILES
+                | CIGFLAG_VIEW_MSGS)
 # dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
 TRANS_CIGFLAG_CODE2INT = {}
 TRANS_CIGFLAG_CODE2TXT = {}
@@ -743,6 +749,8 @@ class ContactGroup(NgwModel):
         #    'N': perms.c_can_change_news_cg(contact_id, self.id),
         #    'u': perms.c_can_see_files_cg(contact_id, self.id),
         #    'U': perms.c_can_change_files_cg(contact_id, self.id),
+        #    'x': perms.c_can_see_msgs_cg(contact_id, self.id),
+        #    'X': perms.c_can_change_msgs_cg(contact_id, self.id),
         # } that returns data in a single query
         sql = '''
             SELECT bit_or(admin_flags) FROM
@@ -805,6 +813,8 @@ class ContactGroup(NgwModel):
             'N': perms & CIGFLAG_WRITE_NEWS,
             'u': perms & CIGFLAG_VIEW_FILES,
             'U': perms & CIGFLAG_WRITE_FILES,
+            'x': perms & CIGFLAG_VIEW_MSGS,
+            'X': perms & CIGFLAG_WRITE_MSGS,
         }
 
 
@@ -957,7 +967,7 @@ class ContactGroup(NgwModel):
                 else: # operation == '-'
                     del_mode |= CIGFLAG_DECLINED
                     add_mode &= ~CIGFLAG_DECLINED
-            elif letter in 'oveEcCfFnNuU':
+            elif letter in 'oveEcCfFnNuUxX':
                 intmode = TRANS_CIGFLAG_CODE2INT[letter]
                 if operation == '+':
                     add_mode |= intmode
@@ -982,7 +992,7 @@ class ContactGroup(NgwModel):
             log.save()
             result = LOG_ACTION_ADD
 
-        for flag in 'midoveEcCfFnNuU':
+        for flag in 'midoveEcCfFnNuUxX':
             intflag = TRANS_CIGFLAG_CODE2INT[flag]
             if add_mode & intflag:
                 if not cig.flags & intflag:
@@ -1060,19 +1070,23 @@ class ContactGroup(NgwModel):
         if added_contacts:
             msgpart_contacts = ', '.join([c.name for c in added_contacts])
             if len(added_contacts)==1:
-                msg = 'Contact %s has been added in %s with status %s.'
+                msg = _('Contact %(contact)s has been added in %(group)s with status %(status)s.')
             else:
-                msg = 'Contacts %s have been added in %s with status %s.'
-            messages.add_message(request, messages.SUCCESS,
-                msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
+                msg = _('Contact %(contacts)s have been added in %(group)s with status %(status)s.')
+            messages.add_message(request, messages.SUCCESS, msg % {
+                'contacts': msgpart_contacts,
+                'group': self.unicode_with_date(),
+                'status': group_member_mode})
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
             if len(changed_contacts)==1:
-                msg = 'Contact %s allready was in %s. Status has been changed to %s.'
+                msg = _('Contact %(contact)s already was in %(group)s. Status has been changed to %(status)s.')
             else:
-                msg = 'Contacts %s allready were in %s. Status have been changed to %s.'
-            messages.add_message(request, messages.SUCCESS,
-                msg % (msgpart_contacts, self.unicode_with_date(), group_member_mode))
+                msg = _('Contacts %(contact)s already were in %(group)s. Status has been changed to %(status)s.')
+            messages.add_message(request, messages.SUCCESS, msg % {
+                'contacts': msgpart_contacts,
+                'group': self.unicode_with_date(),
+                'status': group_member_mode})
 
 
 

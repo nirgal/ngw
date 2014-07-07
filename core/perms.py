@@ -171,3 +171,27 @@ def c_can_change_files_cg(cid, gid):
     if row:
         return row[0]
     return False
+
+
+def c_can_view_msgs_cg(cid, gid):
+    '''
+    Returns True if contact cid can see files of contactgroup gid.
+    '''
+    cursor = connection.cursor()
+    cursor.execute("SELECT perm_c_can_view_msgs_cg(%s, %s)", [cid, gid])
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+    return False
+
+
+def c_can_write_msgs_cg(cid, gid):
+    '''
+    Returns True if contact cid can add/change/delete files of contactgroup gid.
+    '''
+    cursor = connection.cursor()
+    cursor.execute("SELECT perm_c_can_write_msgs_cg(%s, %s)", [cid, gid])
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+    return False

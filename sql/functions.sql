@@ -27,6 +27,10 @@ ALTER TABLE contact_message ALTER COLUMN read_date TYPE timestamp with time zone
 ALTER TABLE contact_group ALTER COLUMN "date" TYPE timestamp with time zone;
 DROP SEQUENCE IF EXISTS contact_field_value_contact_id_seq CASCADE;
 
+UPDATE contact_in_group SET flags = flags|32768|65536 WHERE (flags & 8) <> 0;
+UPDATE contact_in_group SET flags = flags|32768 WHERE (flags & 16) <> 0;
+UPDATE group_manage_group SET flags = flags|32768|65536 WHERE (flags & 8) <> 0;
+UPDATE group_manage_group SET flags = flags|32768 WHERE (flags & 16) <> 0;
 -- End migration script
 
 
@@ -184,7 +188,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
-    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|32|64|128|256|512|1024|2048|4096|8192|16384);
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|32|64|128|256|512|1024|2048|4096|8192|16384|32768|65536);
 $$;
 
 CREATE OR REPLACE FUNCTION perm_c_can_change_cg(integer, integer) RETURNS boolean
@@ -230,6 +234,16 @@ $$;
 CREATE OR REPLACE FUNCTION perm_c_can_change_files_cg(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
     SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|16384);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_view_msgs_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR c_has_cg_permany($1, $2, 8|16|32768|65536);
+$$;
+
+CREATE OR REPLACE FUNCTION perm_c_can_write_msgs_cg(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+    SELECT c_ismemberof_cg($1, 8) OR c_has_cg_permany($1, $2, 8|65536);
 $$;
 
 

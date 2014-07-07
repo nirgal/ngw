@@ -319,7 +319,7 @@ def membership_to_text(contact_with_extra_fields, group_id):
     if debug_memberships:
         # That version show everything, even when obvious like
         # Inherited member + member
-        for code in 'midoveEcCfFnNuU':
+        for code in 'midoveEcCfFnNuUxX':
             if flags & TRANS_CIGFLAG_CODE2INT[code]:
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
@@ -329,7 +329,7 @@ def membership_to_text(contact_with_extra_fields, group_id):
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
                 memberships.append(nice_perm + ' ' + automatic_member_indicator)
-        for code in 'oveEcCfFnNuU':
+        for code in 'oveEcCfFnNuUxX':
             if flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
@@ -346,7 +346,7 @@ def membership_to_text(contact_with_extra_fields, group_id):
         elif flags & CIGFLAG_DECLINED:
             memberships.append(_("Declined"))
 
-        for code in 'ovEcCfFnNuUe':
+        for code in 'ovEcCfFnNuUexX':
             if flags & TRANS_CIGFLAG_CODE2INT[code]:
                 nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
                 nice_perm = nice_perm.replace('_', ' ').capitalize()
@@ -1429,6 +1429,8 @@ def contactgroup_details(request, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'news/')
     if perms.c_can_see_files_cg(request.user.id, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'files')
+    if perms.c_can_view_msgs_cg(request.user.id, gid):
+        return HttpResponseRedirect(cg.get_absolute_url() + 'messages')
     raise PermissionDenied
 
 @login_required()
@@ -1615,7 +1617,7 @@ def contactgroup_emails(request, gid):
 @require_group(GROUP_USER_NGW)
 def contactgroup_messages(request, gid):
     gid = gid and int(gid) or None
-    if not perms.c_operatorof_cg(request.user.id, gid):
+    if not perms.c_can_view_msgs_cg(request.user.id, gid):
         raise PermissionDenied
 
     cg = get_object_or_404(ContactGroup, pk=gid)
@@ -1702,12 +1704,20 @@ class ContactGroupForm(forms.Form):
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to upload files.'),
         widget=FilterMultipleSelectWidget('groups', False))
+    view_msgs_groups = forms.MultipleChoiceField(label=_('Message viewer groups'),
+        required=False,
+        help_text=_('Members of these groups will automatically be granted permission to view messages in that group.'),
+        widget=FilterMultipleSelectWidget('groups', False))
+    write_msgs_groups = forms.MultipleChoiceField(label=_('Message sender groups'),
+        required=False,
+        help_text=_('Members of these groups will automatically be granted permission to send messages.'),
+        widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, for_user, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
         visible_groups_choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
         self.fields['direct_supergroups'].choices = visible_groups_choices
-        for flag in 'oveEcCfFnNuU':
+        for flag in 'oveEcCfFnNuUxX':
             field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
             self.fields[field_name].choices = visible_groups_choices
 
@@ -1760,7 +1770,7 @@ def contactgroup_edit(request, id):
                 GroupInGroup.objects.get(father_id=sgid, subgroup_id=cg.id).delete()
 
             # Update the administrative groups
-            for flag in 'oveEcCfFnNuU':
+            for flag in 'oveEcCfFnNuUxX':
                 field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
                 intflag = TRANS_CIGFLAG_CODE2INT[flag]
                 old_groups_ids = set(cg.get_visible_mananger_groups_ids(request.user.id, intflag))
@@ -1811,7 +1821,7 @@ def contactgroup_edit(request, id):
                 'mailman_address': cg.mailman_address,
                 'direct_supergroups': cg.get_visible_direct_supergroups_ids(request.user.id),
             }
-            for flag in 'ovveEcCfFnNuU':
+            for flag in 'ovveEcCfFnNuUxX':
                 field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
                 intflag = TRANS_CIGFLAG_CODE2INT[flag]
                 initialdata[field_name] = cg.get_visible_mananger_groups_ids(request.user.id, intflag)
@@ -2006,6 +2016,8 @@ class ContactInGroupForm(forms.Form):
     view_files = forms.BooleanField(label=_('Can view uploaded files'), required=False,
         help_text=_('View the uploaded files. Few group supports that.'))
     write_files = forms.BooleanField(label=_('Can upload files'), required=False)
+    view_msgs = forms.BooleanField(label=_('Can view messages'), required=False)
+    write_msgs = forms.BooleanField(label=_('Can write messages'), required=False)
     note = forms.CharField(required=False)
 
     def __init__(self, *args, **kargs):
@@ -2038,6 +2050,8 @@ class ContactInGroupForm(forms.Form):
                 this.form.write_news.checked=true;
                 this.form.view_files.checked=true;
                 this.form.write_files.checked=true;
+                this.form.view_msgs.checked=true;
+                this.form.write_msgs.checked=true;
             }'''}
         self.fields['viewer'].widget.attrs = { 'onchange': '''
             if (this.checked) {
@@ -2046,6 +2060,7 @@ class ContactInGroupForm(forms.Form):
                 this.form.view_fields.checked=true;
                 this.form.view_news.checked=true;
                 this.form.view_files.checked=true;
+                this.form.view_msgs.checked=true;
             } else {
                 this.form.operator.checked=false;
             }'''}
@@ -2062,6 +2077,8 @@ class ContactInGroupForm(forms.Form):
                 this.form.write_news.checked=false;
                 this.form.view_files.checked=false;
                 this.form.write_files.checked=false;
+                this.form.view_msgs.checked=false;
+                this.form.write_msgs.checked=false;
             }'''}
         self.fields['change_group'].widget.attrs = { 'onchange': '''
             if (this.checked) {
@@ -2126,6 +2143,21 @@ class ContactInGroupForm(forms.Form):
             if (this.checked) {
                 this.form.see_group.checked=true;
                 this.form.view_files.checked=true;
+            } else {
+                this.form.operator.checked=false;
+            }'''}
+        self.fields['view_msgs'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+            } else {
+                this.form.operator.checked=false;
+                this.form.viewer.checked=false;
+                this.form.write_msgs.checked=false;
+            }'''}
+        self.fields['write_msgs'].widget.attrs = { 'onchange': '''
+            if (this.checked) {
+                this.form.see_group.checked=true;
+                this.form.view_msgs.checked=true;
             } else {
                 this.form.operator.checked=false;
             }'''}

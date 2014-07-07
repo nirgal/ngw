@@ -73,6 +73,8 @@ function selectAll(target_checked) {
         this.form.membership_write_news.checked=true;
         this.form.membership_view_files.checked=true;
         this.form.membership_write_files.checked=true;
+        this.form.membership_view_msgs.checked=true;
+        this.form.membership_write_msgs.checked=true;
     }
 "><label for=membership_operator>{% trans "Operator" %}</label>
 <input type=checkbox id=membership_viewer name=membership_viewer onchange="
@@ -82,6 +84,7 @@ function selectAll(target_checked) {
         this.form.membership_view_fields.checked=true;
         this.form.membership_view_news.checked=true;
         this.form.membership_view_files.checked=true;
+        this.form.membership_view_msgs.checked=true;
     } else {
         this.form.membership_operator.checked=false;
     }
@@ -99,6 +102,8 @@ function selectAll(target_checked) {
         this.form.membership_write_news.checked=false;
         this.form.membership_view_files.checked=false;
         this.form.membership_write_files.checked=false;
+        this.form.membership_view_msgs.checked=false;
+        this.form.membership_write_msgs.checked=false;
     }
 "><label for=membership_see_group>{% trans "Can see group" %}</label>
 <input type=checkbox id=membership_change_group name=membership_change_group onchange="
@@ -176,6 +181,23 @@ function selectAll(target_checked) {
         this.form.membership_operator.checked=false;
     }
 "><label for=membership_write_files>{% trans "Can upload files" %}</label>
+<input type=checkbox id=membership_view_msgs name=membership_view_msgs onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+        this.form.membership_viewer.checked=false;
+        this.form.membership_write_files.checked=false;
+    }
+"><label for=membership_view_msgs>{% trans "Can view messages" %}</label>
+<input type=checkbox id=membership_write_msgs name=membership_write_msgs onchange="
+    if (this.checked) {
+        this.form.membership_see_group.checked=true;
+        this.form.membership_view_msgs.checked=true;
+    } else {
+        this.form.membership_operator.checked=false;
+    }
+"><label for=membership_write_msgs>{% trans "Can write messages" %}</label>
 </div>
 
 {% block submitbar %}
