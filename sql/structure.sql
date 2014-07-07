@@ -128,7 +128,7 @@ CREATE TABLE contact_group_news (
     id serial NOT NULL PRIMARY KEY,
     author_id integer REFERENCES contact(id) ON UPDATE CASCADE ON DELETE CASCADE,
     contact_group_id integer REFERENCES contact_group(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    date timestamp without time zone NOT NULL,
+    date timestamp with time zone NOT NULL,
     title text NOT NULL,
     text text NOT NULL
 );
@@ -167,7 +167,7 @@ CREATE INDEX group_manage_group_group_id_index ON group_manage_group (subgroup_i
 
 CREATE TABLE log (
     id serial NOT NULL PRIMARY KEY,
-    dt timestamp without time zone NOT NULL,
+    dt timestamp with time zone NOT NULL,
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     action integer NOT NULL,
     target text NOT NULL,
@@ -184,8 +184,8 @@ CREATE TABLE log (
 CREATE TABLE contact_message (
     id serial NOT NULL PRIMARY KEY,
     cig_id integer NOT NULL REFERENCES contact_in_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
-    send_date timestamp without time zone NOT NULL,
-    read_date timestamp without time zone,
+    send_date timestamp with time zone NOT NULL,
+    read_date timestamp with time zone,
     is_answer boolean DEFAULT false NOT NULL,
     text text,
     sync_info text

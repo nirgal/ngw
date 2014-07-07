@@ -19,6 +19,12 @@ CREATE TABLE IF NOT EXISTS contact_message (
     sync_info text
 );
 ALTER TABLE contact_group DROP COLUMN IF EXISTS has_news;
+
+SET TIMEZONE TO UTC;
+ALTER TABLE contact_group_news ALTER COLUMN "date" TYPE timestamp with time zone;
+ALTER TABLE contact_message ALTER COLUMN send_date TYPE timestamp with time zone;
+ALTER TABLE contact_message ALTER COLUMN read_date TYPE timestamp with time zone;
+ALTER TABLE contact_group ALTER COLUMN "date" TYPE timestamp with time zone;
 -- End migration script
 
 
