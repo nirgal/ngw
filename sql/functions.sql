@@ -34,7 +34,7 @@ UPDATE group_manage_group SET flags = flags|32768 WHERE (flags & 16) <> 0;
 
 SET TIMEZONE TO UTC;
 ALTER TABLE contact_group ALTER COLUMN "date" TYPE date;
-ALTER TABLE logs  ALTER COLUMN "date" TYPE timestamp with time zone;
+ALTER TABLE log  ALTER COLUMN "dt" TYPE timestamp with time zone;
 -- End migration script
 
 
