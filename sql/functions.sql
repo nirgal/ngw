@@ -31,6 +31,10 @@ UPDATE contact_in_group SET flags = flags|32768|65536 WHERE (flags & 8) <> 0;
 UPDATE contact_in_group SET flags = flags|32768 WHERE (flags & 16) <> 0;
 UPDATE group_manage_group SET flags = flags|32768|65536 WHERE (flags & 8) <> 0;
 UPDATE group_manage_group SET flags = flags|32768 WHERE (flags & 16) <> 0;
+
+SET TIMEZONE TO UTC;
+ALTER TABLE contact_group ALTER COLUMN "date" TYPE date;
+ALTER TABLE logs  ALTER COLUMN "date" TYPE timestamp with time zone;
 -- End migration script
 
 
