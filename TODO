@@ -1,9 +1,3 @@
-(jpv) Make a nicer login form (css)
-
-Show a real message when cookies are disabled:
-- If test_cookie is not set at /login, redirect to /login?test_cookie
-- If test_cookie is still not set, show a warning
-
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
 Favorite groups.
@@ -25,8 +19,6 @@ Sticky groups:
 
 Invite groups (?):
 - Disable invitation buttons when a group doesn't support the feature.
-
-Use PermissionDenied exception rather than calling views.unauthorized() directly.
 
 Check date is not null when creating an event
 
@@ -54,3 +46,7 @@ Files handling:
 Event selection widget (Do not load everything at once, like for column selection)
 
 Fix display toggle on contact_detail.html. No need to be Admin for setting default group, only able to set user_ngw fields.
+
+Show a real message when cookies are disabled:
+- If test_cookie is not set at /login, redirect to /login?test_cookie
+- If test_cookie is still not set, show a warning

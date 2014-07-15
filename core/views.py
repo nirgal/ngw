@@ -60,7 +60,7 @@ FTYPE_PASSWORD = 'PASSWORD'
 def logout(request):
     auth_logout(request)
     return render_to_response('message.html', {
-        'message': mark_safe(_('Have a nice day!<br><a href="%s">Login again</a>.') % settings.LOGIN_URL)
+        'message': mark_safe(_('Have a nice day!<br><br><a href="%s">Login again</a>.') % settings.LOGIN_URL)
         }, RequestContext(request))
 
 
@@ -125,12 +125,6 @@ def get_display_fields(user):
         result = [ DISP_NAME ]
     return result
 
-
-def unauthorized(request):
-    return HttpResponseForbidden(
-        loader.render_to_string('message.html',{
-            'message': _('Sorry. You are not authorized to browse that page.')},
-            RequestContext(request)))
 
 #######################################################################
 #
@@ -1029,7 +1023,7 @@ def contact_delete(request, gid=None, cid=None):
     gid = gid and int(gid) or None
     cid = cid and int(cid) or None
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     o = get_object_or_404(Contact, pk=cid)
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
@@ -2501,7 +2495,7 @@ def field_list(request):
 def field_move_up(request, id):
     id = id and int(id) or None
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     cf = get_object_or_404(ContactField, pk=id)
     cf.sort_weight -= 15
     cf.save()
@@ -2514,7 +2508,7 @@ def field_move_up(request, id):
 def field_move_down(request, id):
     id = id and int(id) or None
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     cf = get_object_or_404(ContactField, pk=id)
     cf.sort_weight += 15
     cf.save()
@@ -2585,7 +2579,7 @@ class FieldEditForm(forms.Form):
 @require_group(GROUP_USER_NGW)
 def field_edit(request, id):
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     id = id and int(id) or None
     objtype = ContactField
     initial = {}
@@ -2694,7 +2688,7 @@ def field_edit(request, id):
 @require_group(GROUP_USER_NGW)
 def field_delete(request, id):
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     o = get_object_or_404(ContactField, pk=id)
     id = id and int(id) or None
     next_url = reverse('ngw.core.views.field_list')
@@ -2714,7 +2708,7 @@ def field_delete(request, id):
 @require_group(GROUP_USER_NGW)
 def choicegroup_list(request):
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     args = {}
     args['query'] = ChoiceGroup.objects
     args['cols'] = [
@@ -2868,7 +2862,7 @@ class ChoiceGroupForm(forms.Form):
 @require_group(GROUP_USER_NGW)
 def choicegroup_edit(request, id=None):
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     objtype = ChoiceGroup
     id = id and int(id) or None
     if id:
@@ -2911,7 +2905,7 @@ def choicegroup_edit(request, id=None):
 @require_group(GROUP_USER_NGW)
 def choicegroup_delete(request, id):
     if not request.user.is_admin():
-        return unauthorized(request)
+        raise PermissionDenied
     id = id and int(id) or None
     o = get_object_or_404(ChoiceGroup, pk=id)
     return generic_delete(request, o, reverse('ngw.core.views.choicegroup_list'))
