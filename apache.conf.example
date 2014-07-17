@@ -20,6 +20,7 @@ WSGIPythonPath /usr/lib
     ErrorLog "/usr/lib/ngw/apache_error.log"
 
     Alias /static/admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
+    Alias /static/session_security/  /usr/lib/python2.7/dist-packages/session_security/static/session_security/
     Alias /static/ /usr/lib/ngw/static/
     Alias /media/ /usr/lib/ngw/media/
 
@@ -43,6 +44,7 @@ WSGIPythonPath /usr/lib
 
     WSGIScriptAliasMatch ^(/login)$               /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/logout)$              /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/session_security/.*)$ /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/)$                    /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/jsi18n/.*)$           /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/logs)$                /usr/lib/ngw/core/wsgi.py$1

@@ -45,7 +45,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.4/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [ '127.0.0.1', ]
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -124,6 +124,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware', # set up request.user from session
+    'session_security.middleware.SessionSecurityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -141,6 +142,7 @@ INSTALLED_APPS = (
 #    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'session_security',
     'ngw.core',
 #    'ngw.extensions.phpbb',
 #    'ngw.extensions.mailman',
@@ -172,7 +174,7 @@ AUTH_USER_MODEL = 'core.Contact'
 LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
 
-SESSION_COOKIE_AGE = 1800 # 30'
+SESSION_COOKIE_AGE = 15*60
 SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
 SESSION_COOKIE_SECURE = True # We are not using http, only https
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # We have short time sessions anyways
@@ -232,3 +234,7 @@ EMAIL_PORT = 465
 #DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
 EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
+
+#django-session-security settings:
+SESSION_SECURITY_WARN_AFTER=SESSION_COOKIE_AGE-2*60 # 2 minutes before
+SESSION_SECURITY_EXPIRE_AFTER=SESSION_COOKIE_AGE

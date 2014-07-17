@@ -55,6 +55,8 @@ urlpatterns = patterns('',
     url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
     url(r'^jsi18n/(?P<packages>\S+?)/$', 'django.views.i18n.javascript_catalog'),
 
+    url(r'session_security/', include('session_security.urls')),
+
     url(r'^hook_change_password$', 'ngw.core.views.hook_change_password'),
 
     url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),

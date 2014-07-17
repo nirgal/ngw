@@ -38,6 +38,15 @@ cd $OLDPWD
 cd core/;../manage.py compilemessages;cd -
 cd extensions/externalmessages/;../../manage.py compilemessages;cd -
 
+Session security extra plugin:
+------------------------------
+Download code at https://github.com/yourlabs/django-session-security/releases
+ln -s /home/admin/django-session-security-2.2.0/session_security /usr/lib/python2.7/dist-packages/
+cd django-session-security-2.2.0/session_security
+django-admin compilemessages
+cd -
+
+
 Postgres setup
 ==============
 
