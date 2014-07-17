@@ -1071,7 +1071,7 @@ class ContactGroup(NgwModel):
         if added_contacts:
             msgpart_contacts = ', '.join([c.name for c in added_contacts])
             if len(added_contacts)==1:
-                msg = _('Contact %(contact)s has been added in %(group)s with status %(status)s.')
+                msg = _('Contact %(contacts)s has been added in %(group)s with status %(status)s.')
             else:
                 msg = _('Contact %(contacts)s have been added in %(group)s with status %(status)s.')
             messages.add_message(request, messages.SUCCESS, msg % {
@@ -1081,7 +1081,7 @@ class ContactGroup(NgwModel):
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
             if len(changed_contacts)==1:
-                msg = _('Contact %(contact)s already was in %(group)s. Status has been changed to %(status)s.')
+                msg = _('Contact %(contacts)s already was in %(group)s. Status has been changed to %(status)s.')
             else:
                 msg = _('Contacts %(contact)s already were in %(group)s. Status has been changed to %(status)s.')
             messages.add_message(request, messages.SUCCESS, msg % {

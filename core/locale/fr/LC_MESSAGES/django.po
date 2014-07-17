@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-07-15 11:40+0200\n"
+"POT-Creation-Date: 2014-07-17 17:20+0200\n"
 "PO-Revision-Date: 2014-06-30 12:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
@@ -22,7 +22,7 @@ msgstr ""
 msgid "Add a field"
 msgstr "Ajouter un champs"
 
-#: contactsearch.py:365 models.py:310 views.py:536 views.py:538 views.py:720
+#: contactsearch.py:365 models.py:311 views.py:536 views.py:538 views.py:720
 #: views.py:1274 views.py:1389 views.py:1632 views.py:2479 views.py:2520
 #: views.py:2560 views.py:2715
 msgid "Name"
@@ -79,11 +79,11 @@ msgstr "ERREUR dans get_filters: champs==%s"
 msgid "Filter combinaison type"
 msgstr "Type de combinaison de filtre"
 
-#: contactsearch.py:531 models.py:1700
+#: contactsearch.py:531 models.py:1701
 msgid "AND"
 msgstr "ET"
 
-#: contactsearch.py:531 models.py:1713
+#: contactsearch.py:531 models.py:1714
 msgid "OR"
 msgstr "OU"
 
@@ -103,39 +103,40 @@ msgstr "Appliquer le filtre"
 msgid "Set filter and add another condition"
 msgstr "Définir le filtre et ajouter un autre condition"
 
-#: models.py:596
+#: models.py:597
 #, python-format
 msgid "Login information generated for User %s."
 msgstr "Identifiants de connexion générés pour l'Utilisateur %s"
 
-#: models.py:600
+#: models.py:601
 #, python-format
 msgid "Login information deleted for User %s."
 msgstr "Identifiants de connexion effacés pour l'Utilisateur %s"
 
-#: models.py:659 views.py:1404 templates/base.html:30
+#: models.py:660 views.py:1404 templates/base.html:31
 msgid "events"
 msgstr "événements"
 
-#: models.py:661
+#: models.py:662
 msgid "contact groups"
 msgstr "groupes de contacts"
 
-#: models.py:880
+#: models.py:881
 #, python-format
 msgid "Error while reading shared files list in %(folder)s: %(err)s"
 msgstr ""
 "Erreur lors de la lecture de la liste des fichiers partagés dans le dossier "
 "%(folder)s: %(err)s"
 
-#: models.py:1073
+#: models.py:1074
 #, python-format
-msgid "Contact %(contact)s has been added in %(group)s with status %(status)s."
+msgid ""
+"Contact %(contacts)s has been added in %(group)s with status %(status)s."
 msgstr ""
-"Le contact %(contact)s a été ajouté dans le groupe %(group)s avec le statut "
+"Le contact %(contacts)s a été ajouté dans le groupe %(group)s avec le statut "
 "%(status)s."
 
-#: models.py:1075
+#: models.py:1076
 #, python-format
 msgid ""
 "Contact %(contacts)s have been added in %(group)s with status %(status)s."
@@ -143,16 +144,16 @@ msgstr ""
 "Les contacts %(contacts)s ont été ajoutés dans le groupe %(group)s avec le "
 "statut %(status)s."
 
-#: models.py:1083
+#: models.py:1084
 #, python-format
 msgid ""
-"Contact %(contact)s already was in %(group)s. Status has been changed to "
+"Contact %(contacts)s already was in %(group)s. Status has been changed to "
 "%(status)s."
 msgstr ""
-"Le contact %(contact)s était déjà dans %(group)s. Son statut a été changé à "
+"Le contact %(contacts)s était déjà dans %(group)s. Son statut a été changé à "
 "%(status)s."
 
-#: models.py:1085
+#: models.py:1086
 #, python-format
 msgid ""
 "Contacts %(contact)s already were in %(group)s. Status has been changed to "
@@ -161,83 +162,83 @@ msgstr ""
 "Les contacts %(contact)s étaient déjà dans %(group)s. Leur statut a été "
 "changé à %(status)s."
 
-#: models.py:1130
+#: models.py:1131
 msgid "Contact fields"
 msgstr "Champs des contacts"
 
-#: models.py:1268 models.py:1300
+#: models.py:1269 models.py:1301
 msgid "has a word starting with"
 msgstr "a un mot commençant par"
 
-#: models.py:1363
+#: models.py:1364
 msgid "is undefined"
 msgstr "est indéfini"
 
-#: models.py:1372
+#: models.py:1373
 msgid "is defined"
 msgstr "est défini"
 
-#: models.py:1435
+#: models.py:1436
 msgid "Age (years) ≥"
 msgstr "Age (années) ≥"
 
-#: models.py:1444
+#: models.py:1445
 msgid "date until event ≥"
 msgstr "date jusqu'à l'événement ≥"
 
-#: models.py:1453
+#: models.py:1454
 msgid "In the future"
 msgstr "Dans le futur"
 
-#: models.py:1495
+#: models.py:1496
 msgid "contains"
 msgstr "contient"
 
-#: models.py:1509
+#: models.py:1510
 msgid "doesn't contain"
 msgstr "ne contient pas"
 
-#: models.py:1527
+#: models.py:1528
 msgid "is member of group"
 msgstr "est membre du groupe"
 
-#: models.py:1544
+#: models.py:1545
 msgid "is not member of group"
 msgstr "n'est pas membre du groupe"
 
-#: models.py:1561
+#: models.py:1562
 msgid "has been invited in group"
 msgstr "a été invité dans le groupe"
 
-#: models.py:1578
+#: models.py:1579
 msgid "has not been invited in group"
 msgstr "n'a pas été invité dans le groupe"
 
-#: models.py:1595
+#: models.py:1596
 msgid "has declined invitation in group"
 msgstr "a décliné l'invitation dans le groupe"
 
-#: models.py:1612
+#: models.py:1613
 msgid "has not declined invitation in group"
 msgstr "n'a pas décliné l'invitation dans le groupe"
 
-#: models.py:1624
+#: models.py:1625
 msgid "has not reacted to any invitation since"
 msgstr "n'a pas réagi à une invitation depuis le"
 
-#: models.py:1634
+#: models.py:1635
 msgid "1 year invitation reaction percentage less than"
 msgstr "Pourcentage de réaction aux invitations sur 1 an inférieur à"
 
-#: models.py:1644
+#: models.py:1645
 msgid "1 year invitation reaction percentage more than"
 msgstr "Pourcentage réaction aux invitations sur 1 an supérieur à"
 
-#: models.py:1687
+#: models.py:1688
 msgid "All contacts"
 msgstr "Tous les contacts"
 
-#: models.py:1774
+#: models.py:1775
 #, python-format
 msgid "contact %(contactname)s in group %(groupname)s"
 msgstr "contact %(contactname)s dans le groupe %(groupname)s"
@@ -886,7 +887,7 @@ msgstr ""
 msgid "News for group %s"
 msgstr "Nouvelles pour le groupe %s"
 
-#: views.py:2323 templates/base.html:28
+#: views.py:2323 templates/base.html:29
 msgid "news"
 msgstr "nouvelles"
 
@@ -999,31 +1000,31 @@ msgstr "Désolé. Vous n'êtes pas autorisé à parcourir cette page."
 msgid "Sorry. A server error occured."
 msgstr "Désolé. Une erreur est survenue sur le serveur."
 
-#: templates/base.html:18
+#: templates/base.html:19
 msgid "Welcome"
 msgstr "Bienvenue"
 
-#: templates/base.html:18
+#: templates/base.html:19
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: templates/base.html:24
+#: templates/base.html:25
 msgid "Quick contact search"
 msgstr "Recherche rapide de contacts"
 
-#: templates/base.html:29
+#: templates/base.html:30
 msgid "groups"
 msgstr "groupes"
 
-#: templates/base.html:32
+#: templates/base.html:33
 msgid "fields"
 msgstr "champs"
 
-#: templates/base.html:33
+#: templates/base.html:34
 msgid "choices"
 msgstr "choix"
 
-#: templates/base.html:34
+#: templates/base.html:35
 msgid "logs"
 msgstr "historique"
 
