@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
 
 from __future__ import division, absolute_import, print_function, unicode_literals
+from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.views.generic.base import RedirectView
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.conf.urls.static import static
 
 
 # Uncomment the next two lines to enable the admin:
@@ -110,6 +111,4 @@ urlpatterns = patterns('',
     #url(r'^admin/', include(admin.site.urls)),
 )
 
-# Also serve static files in DEBUG mode:
-# Note that staticfiles can't be in settings INSTALLED_APPS or /* will be matched first
-urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

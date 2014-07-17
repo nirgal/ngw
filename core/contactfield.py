@@ -141,7 +141,7 @@ class EmailContactField(ContactField):
         proxy = True
     def format_value_html(self, value):
         if gpg.is_email_secure(value):
-            gpg_indicator = ' <a href="/pks/lookup?op=get&options=mr&extact=on&search=' + http.urlquote_plus(value) + '"><img src="' + settings.STATIC_URL + 'static/key.jpeg" alt=key title="GPG key available" border=0></a>'
+            gpg_indicator = ' <a href="/pks/lookup?op=get&options=mr&extact=on&search=' + http.urlquote_plus(value) + '"><img src="' + settings.STATIC_URL + 'key.jpeg" alt=key title="GPG key available" border=0></a>'
         else:
             gpg_indicator = ''
         return '<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s' % {'value':value, 'gpg_indicator':gpg_indicator}

@@ -27,7 +27,7 @@ Implement slicing in ContactQuerySet
 (jpv) Remove pwgen dependency
 
 (jpv) Enable active session expiration:
-https://pypi.python.org/pypi/django-secure
+https://github.com/yourlabs/django-session-security/releases
 
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing with ejabberd tables

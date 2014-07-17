@@ -9,6 +9,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 import subprocess
 import logging
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text
 from django.utils.translation import ugettext_lazy as _, string_concat
@@ -149,7 +150,7 @@ def _initialise_cigflags_constants():
 _initialise_cigflags_constants()
 
 # Ends with a /
-GROUP_STATIC_DIR = "/usr/lib/ngw/static/g/"
+GROUP_STATIC_DIR = settings.MEDIA_ROOT+'g/'
 
 class NgwModel(models.Model):
     do_not_call_in_templates = True # prevent django from trying to instanciate objtype

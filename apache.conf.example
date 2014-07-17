@@ -11,18 +11,23 @@ WSGIPythonPath /usr/lib
     SSLEngine on
     SSLCertificateFile /etc/ssl/certs/ngw.crt
     SSLCertificateKeyFile /etc/ssl/private/ngw.key
+    #SSLCertificateChainFile ...
+    #SSLCACertificateFile ...
  
-    DocumentRoot "/usr/lib/ngw/static"
     AddDefaultCharset UTF-8
     ServerSignature Off
     #CustomLog "/dev/null" " "
     ErrorLog "/usr/lib/ngw/apache_error.log"
 
-    <Directory "/usr/lib/ngw/static">
+    Alias /static/admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
+    Alias /static/ /usr/lib/ngw/static/
+    Alias /media/ /usr/lib/ngw/media/
+
+    <Directory "/usr/lib/ngw/media">
         AllowOverride AuthConfig
     </Directory>
-    <Location "/g/">
-        DirectoryIndex index.html index.php /smartindex.php
+    <Location /media/g/>
+        DirectoryIndex index.html index.php /static/smartindex.php
     </Location>
 
     <Location "/">
@@ -33,24 +38,21 @@ WSGIPythonPath /usr/lib
         WSGIAuthGroupScript /usr/lib/ngw/core/wsgi.py
     </Location>
 
-    Alias /admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
-
     # We want HTTP_AUTHORIZATION to go to python for now:
     WSGIPassAuthorization On
 
-
-    WSGIScriptAliasMatch ^(/login)$             /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/logout)$            /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/)$                  /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/jsi18n/.*)$         /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/logs)$              /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/contacts/.*)$       /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/contactgroups/.*)$  /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/events/.*)$         /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/contactfields/.*)$  /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/choicegroups/.*)$   /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/pks/.*)$            /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/test)$              /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/login)$               /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/logout)$              /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/)$                    /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/jsi18n/.*)$           /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/logs)$                /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/contacts/.*)$         /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/contactgroups/.*)$    /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/events/.*)$           /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/contactfields/.*)$    /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/choicegroups/.*)$     /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/pks/.*)$              /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/test)$                /usr/lib/ngw/core/wsgi.py$1
     #WSGIScriptAliasMatch ^/hook_change_password$ /usr/lib/ngw/core/wsgi.py/hook_change_password
     #<LocationMatch "^/hook_change_password$">
     #    require valid-user
