@@ -1,3 +1,7 @@
+Fix message "This page is asking you to confirm that you want to leave...":
+- Quick contact search
+- Group quick search
+
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
 
 Favorite groups.
@@ -36,9 +40,13 @@ Add table ContactMessageReadBy(msg_id, contact_id)
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
 
 Files handling:
+- Serve media files as static from django (with auth)
+- Check filetype on upload (extensions and/or magic)
+- list of authorized types (choice)
 - Clean up display
-- Upload form
+- Handle sub-folders
 - Get rid of PHP -> previews
+- Improve previews with (tumbler package with d-bus commands and ajax integration?)
 
 Event selection widget (Do not load everything at once, like for column selection)
 
@@ -47,3 +55,4 @@ Fix display toggle on contact_detail.html. No need to be Admin for setting defau
 Show a real message when cookies are disabled:
 - If test_cookie is not set at /login, redirect to /login?test_cookie
 - If test_cookie is still not set, show a warning
+Or javascript might do the trick more easily

@@ -2399,6 +2399,10 @@ def contactgroup_news_delete(request, gid, nid):
     return generic_delete(request, o, cg.get_absolute_url() + 'news/')
 
 
+class UploadFileForm(forms.Form):
+    file_to_upload = forms.FileField()
+
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_files(request, gid):
@@ -2407,6 +2411,36 @@ def contactgroup_files(request, gid):
         raise PermissionDenied
 
     cg = get_object_or_404(ContactGroup, pk=gid)
+
+    if request.method == 'POST':
+        if not perms.c_can_change_files_cg(request.user.id, gid):
+            raise PermissionDenied
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            upfile = request.FILES['file_to_upload']
+            # name has already been sanitized by UploadedFile._set_name
+            # .htaccess is the last dangerous file name
+            if upfile.name == '.htaccess':
+                raise PermissionDenied
+            physical_filename = os.path.join(cg.static_folder(), upfile.name)
+            destination = None
+            try:
+                destination = open(physical_filename, 'wb')
+                for chunk in upfile.chunks():
+                    destination.write(chunk)
+                messages.add_message(request, messages.SUCCESS,
+                    _('File %s has been uploaded sucessfully.') % upfile.name)
+            except IOError as err:
+                messages.add_message(request, messages.ERROR,
+                    _('Could not upload file %(filename)s: %(error)s') % {
+                        'filename': upfile.name,
+                        'error': str(err)})
+            finally:
+                if destination:
+                    destination.close()
+            form = UploadFileForm() # ready for another file
+    else:
+        form = UploadFileForm()
 
     args = {}
     args['title'] = _('Files for group %s') % cg.name
@@ -2417,6 +2451,7 @@ def contactgroup_files(request, gid):
                   .add_component(('files', _('files')))
     args['active_submenu'] = 'files'
     args['files'] = cg.get_filenames()
+    args['form'] = form
     return render_to_response('group_files.html', args, RequestContext(request))
 
 

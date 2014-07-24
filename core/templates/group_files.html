@@ -15,12 +15,28 @@
         {% trans "There are no files in that group." %}
     {% endfor %}
     </div>
-    
+
+    {% if cg_perms.U %}
+    {{form.media|safe}}
+    {# {{ form.errors } #}
+    {% block preform %}{% endblock %}
+    <form name=objchange method=post enctype="multipart/form-data">
+    {% csrf_token %}
+    <table class=objchange>
+    {{ form.as_table }}
+    </table>
+    {% endif %}
+
+{% block submitbar %}
+{% if cg_perms.U %}
+<div id=submitbar>
+    <input type=submit value="{% trans "Send" %}" id="default">
+</div>
+{% endif %}
 {% endblock %}
 
-{% comment %}   
-{% block submitbar %}
-<div id=submitbar>
-    <a href="emails{{baseurl}}">{% trans "Emails" %}</a>
-</div>{% endblock %}
-{% endcomment %}   
+{% if cg_perms.U %}
+</form>
+{% endif %}
+
+{% endblock %}
