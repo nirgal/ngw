@@ -22,6 +22,7 @@ from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django import forms
+from django.views import static
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
@@ -2453,6 +2454,18 @@ def contactgroup_files(request, gid):
     args['files'] = cg.get_filenames()
     args['form'] = form
     return render_to_response('group_files.html', args, RequestContext(request))
+
+@login_required()
+@require_group(GROUP_USER_NGW)
+def media_group_file(request, gid, filename):
+    gid = int(gid)
+    if not perms.c_can_see_files_cg(request.user.id, gid):
+        raise PermissionDenied
+
+    cg = get_object_or_404(ContactGroup, pk=gid)
+
+    basedir = cg.static_folder()
+    return static.serve(request, filename, cg.static_folder(), show_indexes=False)
 
 
 class MailmanSyncForm(forms.Form):

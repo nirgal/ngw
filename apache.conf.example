@@ -22,14 +22,6 @@ WSGIPythonPath /usr/lib
     Alias /static/admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
     Alias /static/session_security/  /usr/lib/python2.7/dist-packages/session_security/static/session_security/
     Alias /static/ /usr/lib/ngw/static/
-    Alias /media/ /usr/lib/ngw/media/
-
-    <Directory "/usr/lib/ngw/media">
-        AllowOverride AuthConfig
-    </Directory>
-    <Location /media/g/>
-        DirectoryIndex index.html index.php /static/smartindex.php
-    </Location>
 
     <Location "/">
         AuthType Basic
@@ -53,6 +45,7 @@ WSGIPythonPath /usr/lib
     WSGIScriptAliasMatch ^(/events/.*)$           /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/contactfields/.*)$    /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/choicegroups/.*)$     /usr/lib/ngw/core/wsgi.py$1
+    WSGIScriptAliasMatch ^(/media/.*)$            /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/pks/.*)$              /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/test)$                /usr/lib/ngw/core/wsgi.py$1
     #WSGIScriptAliasMatch ^/hook_change_password$ /usr/lib/ngw/core/wsgi.py/hook_change_password

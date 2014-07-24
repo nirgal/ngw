@@ -104,6 +104,8 @@ urlpatterns = patterns('',
     url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choicegroup_edit'),
     url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choicegroup_delete'),
 
+    url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', 'ngw.core.views.media_group_file'),
+
     url(r'^pks/lookup$', 'ngw.core.gpg.lookup'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
