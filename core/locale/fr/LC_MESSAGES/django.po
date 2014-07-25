@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-07-25 14:55+0200\n"
+"POT-Creation-Date: 2014-07-25 16:52+0200\n"
 "PO-Revision-Date: 2014-06-30 12:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
@@ -1480,13 +1480,21 @@ msgstr "Avancer d'un an"
 msgid "Add event"
 msgstr "Ajouter un événement"
 
-#: templates/login.html:8
+#: templates/login.html:13
 msgid "Your username and password didn't match. Please try again."
 msgstr ""
 "Votre nom d'utilisateur et votre mot de passe ne correspondent pas. Essayez "
 "encore."
 
-#: templates/login.html:26
+#: templates/login.html:18
+msgid "That web site requires javascript."
+msgstr "Ce site web nécessite javascript."
+
+#: templates/login.html:22
+msgid "That web site requires cookies."
+msgstr "Ce site web nécessite des cookies."
+
+#: templates/login.html:41
 msgid "Login"
 msgstr "Connexion"
 

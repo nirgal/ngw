@@ -3,14 +3,28 @@
 {% load i18n %}
 
 {% block body %}
-
-{% if form.errors %}
-<p>{% trans "Your username and password didn't match. Please try again." %}</p>
-{% endif %}
+{{form.media|safe}}
 
 <div class=fullpagebox>
 <form method="post" action="{% url 'django.contrib.auth.views.login' %}">
 {% csrf_token %}
+{% if form.errors %}
+<ul class=errorlist>
+<li>{% trans "Your username and password didn't match. Please try again." %}</li>
+</ul>
+{% endif %}
+<noscript>
+<ul class=errorlist>
+<li>{% trans "That web site requires javascript." %}</li>
+</ul>
+</noscript>
+<ul class=errorlist id=cookies_needed style="display:none;">
+<li>{% trans "That web site requires cookies." %}</li>
+</ul>
+<script>
+if (!document.cookie)
+    document.getElementById('cookies_needed').style.display='block';
+</script>
 <table class=objchange>
 <tr>
     <td>{{ form.username.label_tag }}</td>
@@ -23,10 +37,10 @@
 </table>
 
 <br>
-<input type="submit" value="{% trans "Login" %}"/>
+<div align=center>
+<input style="float:none !important;" type="submit" value="{% trans "Login" %}"/></div>
 <input type="hidden" name="next" value="{{ next }}" />
 </form>
-<br clear=all>
 </div>
 
 {% endblock %}
