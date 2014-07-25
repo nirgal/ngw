@@ -11,7 +11,7 @@ import subprocess
 import logging
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.utils.encoding import force_text, smart_text
+from django.utils.encoding import force_text, smart_text, force_str
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection
 from django import forms
@@ -863,20 +863,31 @@ class ContactGroup(NgwModel):
         if not os.path.isdir(dirname):
             print("Creating missing directory for group %i" % self.id)
             os.makedirs(dirname)
-        htaccess_path = os.path.join(dirname, ".htaccess")
-        if not os.path.isfile(htaccess_path):
-            print("Creating missing .htaccess file for group %i" % self.id)
-            f = open(htaccess_path, 'w')
-            f.write("Require group %i\n" % self.id)
-            f.close()
 
-    def get_filenames(self):
+    def get_fullfilename(self, path='/'):
+        '''
+        path is the relative file name within group media folder.
+        Returns the full name
+        path already be unquoted, but that's all: That function has the
+        responsability to check that the path is valid and within the group
+        media directory.
+        THAT FUNCTION IS ONLY SAFE ON LINUX
+        '''
+        directory = self.static_folder() # /usr/lib/ngw/media/g/556
+        fullfilename = os.path.normpath(directory + os.path.sep + path)
+        if not fullfilename.startswith(os.path.normpath(directory)+os.path.sep) \
+        and not fullfilename == directory:
+            raise PermissionDenied
+        return fullfilename
+
+
+    def get_filenames(self, path='/'):
         '''
         Returns the list of static files of that contacts group
         '''
-        folder = self.static_folder()
+        folder = self.get_fullfilename(path)
         try:
-            files = os.listdir(folder)
+            files = os.listdir(force_str(folder))
         except OSError as err:
             logging.error(_('Error while reading shared files list in %(folder)s: %(err)s') % {
                 'folder': folder,
@@ -887,8 +898,8 @@ class ContactGroup(NgwModel):
         files = [ force_text(file, errors='replace')
             for file in files ]
 
-        if '.htaccess' in files:
-            files.remove('.htaccess')
+        # hide files starting with a dot:
+        iles = [ file for file in files if file[0]!='.' ]
 
         files.sort()
         return files

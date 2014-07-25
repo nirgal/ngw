@@ -5,7 +5,7 @@ from django.core.management.base import NoArgsCommand
 from ngw.core.models import ContactGroup
 
 class Command(NoArgsCommand):
-    help = 'Creates missing folders and their .htaccess after db restore'
+    help = 'Creates missing media folders'
 
     def handle_noargs(self, **options):
         for group in ContactGroup.objects.all():

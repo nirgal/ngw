@@ -79,13 +79,7 @@ Add a new line "Listen 443" to /etc/apache2/ports.conf" if it's now there allrea
 Enable virtual hosts on https:
 Add a new line "NameVirtualHost *:443" before "Listen 443"
 
-
-Static files and thumbnails
-===========================
-aptitude install php5 php5-gd
-
-user or group www-data should have write access to /var/lib/ngw/static/static/g so that thumbnails are generated only once.
-
+User or group www-data should have write access to /usr/lib/ngw/media/g. If you want to run the debug runserver command from time to time, I suggest you chown :www-data that folder, with g+ws mode.
 
 Admin account setup:
 ====================

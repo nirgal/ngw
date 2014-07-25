@@ -6,15 +6,19 @@
 {% endblock %}
 
 {% block body %}
-    <div class=box>
     {% for f in files %}
         {% if forloop.first %}
+        <div class=box>
         {% endif %}
-        ‣ <a href="{{MEDIA_URL}}g/{{cg.id}}/{{f}}">{{f}}</a><br>
+        ‣ <a href="{{MEDIA_URL}}g/{{cg.id}}{{path|urlencode}}/{{f|urlencode}}">{{f}}</a><br>
+        {% if forloop.last %}
+        </div>
+        {% endif %}
     {% empty %}
+        <div class=fullpagebox>
         {% trans "There are no files in that group." %}
+        </div>
     {% endfor %}
-    </div>
 
     {% if cg_perms.U %}
     {{form.media|safe}}

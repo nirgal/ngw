@@ -40,11 +40,9 @@ Add table ContactMessageReadBy(msg_id, contact_id)
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
 
 Files handling:
-- Handle sub-folders
-- Clean up display
+- Improve display (mimetype, size, ...)
 - Check cache/no cache
-- Get rid of PHP -> previews
-- Improve previews with (tumbler package with d-bus commands and ajax integration?)
+- Improve previews (tumbler package with d-bus commands and ajax integration?)
 
 Event selection widget (Do not load everything at once, like for column selection)
 

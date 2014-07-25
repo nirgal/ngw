@@ -26,7 +26,7 @@
 
 {% spaceless %}
 {% if cg_perms.u %}
-    <a href="{{cg.get_absolute_url}}files">
+    <a href="{{cg.get_absolute_url}}files/">
 {% endif %}
     <div class="submenuitem {% if active_submenu == "files" %}activesubmenuitem{% endif %}"{% if not cg_perms.u %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
         {% trans "Files" %}

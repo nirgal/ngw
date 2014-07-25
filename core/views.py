@@ -14,7 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_text, smart_text
+from django.utils.encoding import force_unicode, force_text, smart_text
 from django.utils.six import iteritems, itervalues
 from django.utils import formats
 from django.shortcuts import render_to_response, get_object_or_404
@@ -1423,7 +1423,7 @@ def contactgroup_details(request, gid):
     if perms.c_can_see_news_cg(request.user.id, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'news/')
     if perms.c_can_see_files_cg(request.user.id, gid):
-        return HttpResponseRedirect(cg.get_absolute_url() + 'files')
+        return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
     if perms.c_can_view_msgs_cg(request.user.id, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'messages')
     raise PermissionDenied
@@ -2401,17 +2401,21 @@ def contactgroup_news_delete(request, gid, nid):
 
 
 class UploadFileForm(forms.Form):
-    file_to_upload = forms.FileField()
+    file_to_upload = forms.FileField(label=_('File to upload'))
 
 
 @login_required()
 @require_group(GROUP_USER_NGW)
-def contactgroup_files(request, gid):
+def contactgroup_files(request, gid, path):
     gid = gid and int(gid) or None
     if not perms.c_can_see_files_cg(request.user.id, gid):
         raise PermissionDenied
 
     cg = get_object_or_404(ContactGroup, pk=gid)
+
+    #return render_to_response('message.html', {
+    #    'message': 'real path = %s' % cg.get_fullfilename('')
+    #    }, RequestContext(request))
 
     if request.method == 'POST':
         if not perms.c_can_change_files_cg(request.user.id, gid):
@@ -2420,13 +2424,10 @@ def contactgroup_files(request, gid):
         if form.is_valid():
             upfile = request.FILES['file_to_upload']
             # name has already been sanitized by UploadedFile._set_name
-            # .htaccess is the last dangerous file name
-            if upfile.name == '.htaccess':
-                raise PermissionDenied
-            physical_filename = os.path.join(cg.static_folder(), upfile.name)
+            fullfilename = cg.get_fullfilename(path + os.path.sep + upfile.name)
             destination = None
             try:
-                destination = open(physical_filename, 'wb')
+                destination = open(force_str(fullfilename), 'wb')
                 for chunk in upfile.chunks():
                     destination.write(chunk)
                 messages.add_message(request, messages.SUCCESS,
@@ -2451,9 +2452,11 @@ def contactgroup_files(request, gid):
     args['nav'] = cg.get_smart_navbar() \
                   .add_component(('files', _('files')))
     args['active_submenu'] = 'files'
-    args['files'] = cg.get_filenames()
+    args['path'] = path
+    args['files'] = cg.get_filenames(path)
     args['form'] = form
     return render_to_response('group_files.html', args, RequestContext(request))
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -2464,7 +2467,9 @@ def media_group_file(request, gid, filename):
 
     cg = get_object_or_404(ContactGroup, pk=gid)
 
-    basedir = cg.static_folder()
+    fullfilename = cg.get_fullfilename(filename)
+    if os.path.isdir(force_str(fullfilename)):
+        return HttpResponseRedirect('/contactgroups/'+force_unicode(cg.id)+'/files/'+filename)
     return static.serve(request, filename, cg.static_folder(), show_indexes=False)
 
 
