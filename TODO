@@ -1,5 +1,4 @@
 Fix message "This page is asking you to confirm that you want to leave...":
-- Quick contact search
 - Group quick search
 
 When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
