@@ -14,7 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_unicode, force_text, smart_text
+from django.utils.encoding import force_text, smart_text
 from django.utils.six import iteritems, itervalues
 from django.utils import formats
 from django.shortcuts import render_to_response, get_object_or_404
@@ -2469,7 +2469,7 @@ def media_group_file(request, gid, filename):
 
     fullfilename = cg.get_fullfilename(filename)
     if os.path.isdir(force_str(fullfilename)):
-        return HttpResponseRedirect('/contactgroups/'+force_unicode(cg.id)+'/files/'+filename)
+        return HttpResponseRedirect('/contactgroups/'+force_text(cg.id)+'/files/'+filename)
     return static.serve(request, filename, cg.static_folder(), show_indexes=False)
 
 
