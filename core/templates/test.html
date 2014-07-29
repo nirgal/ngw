@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n staticfiles %}
 {% block body %}
 
 <form>
@@ -26,7 +26,7 @@
 </div>
 </form>
 <script>
-SelectFilter.init("id_groups", "Groups", 0, '{{STATIC_URL}}admin/');
+SelectFilter.init("id_groups", "Groups", 0, '{% static "admin/" %}');
 </script>
 {{form.media}}
 <a href="https://logout@{{ request.META.HTTP_HOST }}/logout">logout</a><br>

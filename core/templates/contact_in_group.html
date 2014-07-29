@@ -1,5 +1,5 @@
 {% extends "edit.html" %}
-{% load i18n %}
+{% load i18n staticfiles %}
 
 {% block body %}
 {{ inherited_info }}
@@ -9,6 +9,6 @@
 {% block submitbar %}
 <div id=submitbar>
     <input type=submit value="{% trans "Save" %}" id="default">
-    <a href="{{o.get_absolute_url}}remove"><img src="{{STATIC_URL}}admin/img/icon_deletelink.gif" border=0 valign=middle> {% trans "Remove from group" %}</a>
+    <a href="{{o.get_absolute_url}}remove"><img src="{% static "admin/img/icon_deletelink.gif" %}" border=0 valign=middle> {% trans "Remove from group" %}</a>
 </div>
 {% endblock %}

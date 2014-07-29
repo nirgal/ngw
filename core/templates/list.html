@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n staticfiles %}
 
 {% block body %}
     
@@ -11,7 +11,7 @@
 
     {% block submitbar %}
     <div id=submitbar>
-    <a href="{{ objtype.get_class_absolute_url}}add"><img src="{{STATIC_URL}}admin/img/icon_addlink.gif" border=0> {% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
+    <a href="{{ objtype.get_class_absolute_url}}add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
     </div>
     {% endblock %}
 

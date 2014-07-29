@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n ngwtags %}
+{% load i18n staticfiles ngwtags %}
 
 {% block body %}
     {{form.media|safe}}
@@ -15,7 +15,7 @@
     {% block submitbar %}
     <div id=submitbar>
     <input type=submit value="{% trans "Save" %}" id="default">
-    <a href="./delete"><img src="{{STATIC_URL}}admin/img/icon_deletelink.gif" border=0 valign=middle> {% trans "Delete" %}</a>
+    <a href="./delete"><img src="{% static "admin/img/icon_deletelink.gif" %}" border=0 valign=middle> {% trans "Delete" %}</a>
     </div>
     {% endblock %}
 {% endblock %}

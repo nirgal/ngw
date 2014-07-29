@@ -1,5 +1,5 @@
 {% extends "list.html" %}
-{% load i18n %}
+{% load i18n staticfiles %}
 
 {% block body %}
 
@@ -97,7 +97,7 @@ function set_filter(newfilter) {
     </script>
 {% else %}
     <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['mainform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['mainform'].submit(); return false;">
-        <img src="{{STATIC_URL}}admin/img/icon_searchbox.png" alt="Search">
+        <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search">
         <input name=filter id=defaultfocus style="width:auto;">
         &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:ajax_load_innerhtml('filterbox', '/contacts/filter');">{% trans "Advanced search" %}</a>
     </form>
