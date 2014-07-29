@@ -19,8 +19,6 @@ WSGIPythonPath /usr/lib
     #CustomLog "/dev/null" " "
     ErrorLog "/usr/lib/ngw/apache_error.log"
 
-    Alias /static/admin/  /usr/share/pyshared/django/contrib/admin/static/admin/
-    Alias /static/session_security/  /usr/lib/python2.7/dist-packages/session_security/static/session_security/
     Alias /static/ /usr/lib/ngw/static/
 
     <Location "/">
