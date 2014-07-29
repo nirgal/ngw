@@ -44,5 +44,3 @@ Files handling:
 - Improve previews (tumbler package with d-bus commands and ajax integration?)
 
 Event selection widget (Do not load everything at once, like for column selection)
-
-Fix display toggle on contact_detail.html. No need to be Admin for setting default group, only able to set user_ngw fields.

@@ -679,12 +679,16 @@ def contact_detail(request, gid=None, cid=None):
         args['contact_group'] = cg
         args['nav'] = cg.get_smart_navbar() \
                       .add_component(('members', _('members')))
+        args['cg_perms'] = cg.get_contact_perms(request.user.id)
+        args['active_submenu'] = 'members'
     else:
         args['nav'] = Navbar(Contact.get_class_navcomponent())
     args['nav'].add_component(c.get_navcomponent())
     args['objtype'] = Contact
     args['contact'] = c
     args['rows'] = rows
+    args['group_user_perms'] = ContactGroup.objects.get(pk=GROUP_USER).get_contact_perms(request.user.id)
+    args['group_user_ngw_perms'] = ContactGroup.objects.get(pk=GROUP_USER_NGW).get_contact_perms(request.user.id)
     return render_to_response('contact_detail.html', args, RequestContext(request))
 
 

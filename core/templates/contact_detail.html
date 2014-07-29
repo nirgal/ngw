@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% load i18n ngwtags %}
 
+{% block submenu %}
+{% if contact_group %}
+{% include "group_submenu.html" %}
+{% endif %}
+{% endblock %}
+
 {% block body %}
     <table class=objlist>
     <tr><td>
@@ -59,11 +65,13 @@
       {# <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
       {% endif %}
       {% if contact.get_login %}
-      <a href="pass">{% trans "Change password" %}</a>
-      {% if user.is_admin or user.id = contact.id %}
-      <a href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
-      <a href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
-      {% endif %}
+        {% if group_user_perms.F or user.id = contact.id %}
+            <a href="pass">{% trans "Change password" %}</a>
+        {% endif %}
+        {% if group_user_ngw_perms.F or user.id = contact.id %}
+            <a href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
+            <a href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
+        {% endif %}
       {% endif %}
     </div>
     {% endblock %}
