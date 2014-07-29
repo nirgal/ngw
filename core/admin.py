@@ -6,11 +6,13 @@ from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
     ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
     ContactFieldValue)
 
-admin.site.register(Config)
+class ConfigAdmin(admin.ModelAdmin):
+    list_display = 'id',
+admin.site.register(Config, ConfigAdmin)
 
 
 class ContactAdmin(admin.ModelAdmin):
-    fields = 'name',
+    list_display = 'name',
 admin.site.register(Contact, ContactAdmin)
 
 admin.site.register(ContactGroup)
