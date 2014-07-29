@@ -20,23 +20,15 @@ You need to edit your settings.py:
   get_random_string(50, 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
 
 You need to set up a cron tab:
-*/5 * * * * /usr/lib/ngw/manage.py msgsync -v 2
-0 * * * * /usr/lib/ngw/manage.py clearsessions
+*/5 * * * * /usr/lib/ngw/manage msgsync -v 2
+0 * * * * /usr/lib/ngw/manage clearsessions
 
 You also need to compile translation files. It is suggested you create a .git/hooks/post-merge file 755 file:
 ---8<---------------------------
 #!/bin/bash
 echo "Running $0" >&2
-cd /usr/lib/ngw/core/
-/usr/lib/ngw/manage.py compilemessages
-cd $OLDPWD
-cd /usr/lib/ngw/extensions/externalmessages/
-/usr/lib/ngw/manage.py compilemessages
-cd $OLDPWD
+make
 ---8<---------------------------
-
-cd core/;../manage.py compilemessages;cd -
-cd extensions/externalmessages/;../../manage.py compilemessages;cd -
 
 Session security extra plugin:
 ------------------------------
@@ -63,7 +55,7 @@ Create the structure, populate the initial data, and create the extra views and 
   $ psql -h localhost -U ngw ngw -f sql/structure.sql
   $ psql -h localhost -U ngw ngw -f sql/initialdata.sql
   $ psql -h localhost -U ngw ngw -f sql/functions.sql
-  $ ./manage.py syncdb
+  $ ./manage syncdb
 
 Apache
 ======
@@ -85,7 +77,7 @@ Admin account setup:
 ====================
 
 In order to create an admin account, use:
-./manage.py createsuperuser
+./manage createsuperuser
 
 Optionnal extensions
 ====================
