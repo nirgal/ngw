@@ -132,7 +132,7 @@ def _initialise_cigflags_constants():
         CIGFLAGS_CODEDEPENDS[code] = requires
         CIGFLAGS_CODEONDELETE[code] = conflicts
 
-    for cflag, depends in CIGFLAGS_CODEDEPENDS.items():
+    for cflag, depends in six.iteritems(CIGFLAGS_CODEDEPENDS):
         for depend in depends:
             if cflag not in CIGFLAGS_CODEONDELETE[depend]:
                 CIGFLAGS_CODEONDELETE[depend] += cflag
@@ -1228,7 +1228,7 @@ class FilterHelper(object):
         # integers are expanded inline
         params_where = { }
         params_sql = { }
-        for k, v in kargs.iteritems():
+        for k, v in six.iteritems(kargs):
             #print(k, "=", v)
             auto_param_name = 'autoparam_' + force_text(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
             if isinstance(v, six.text_type):

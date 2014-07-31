@@ -645,6 +645,7 @@ def contact_list(request):
     args['filter'] = strfilter
     args['fields'] = strfields
     args['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
+    args['no_confirm_form_discard'] = True
 
     return query_print_entities(request, 'list_contact.html', args)
 
@@ -1579,6 +1580,7 @@ def contactgroup_members(request, gid, output_format=''):
     args['display_subgroups'] = 'g' in display
     args['display_admins'] = 'a' in display
     args['active_submenu'] = 'members'
+    args['no_confirm_form_discard'] = True
 
     response = query_print_entities(request, 'group_detail.html', args)
     #from django.db import connection

@@ -14,7 +14,7 @@
 <script type="text/javascript">window.__admin_media_prefix__ = "{% filter escapejs %}{% static "admin/" %}{% endfilter %}";</script>
 {% block extrahead %}{% endblock %}
 {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
-{% include 'session_security/all.html' %}
+{% include 'session_security.html' %}
 
 <div id=banner>
 	<span id=sitetitle>{{ banner|safe }}</span>
