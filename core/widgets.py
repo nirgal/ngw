@@ -13,7 +13,7 @@ class NgwCalendarWidget(forms.TextInput):
         #css = {
         #    'all': ('pretty.css',)
         #}
-        js = ('ngw.js', 'admin/js/calendar.js', 'admin/js/admin/DateTimeShortcuts.js')
+        js = ('ngw/ngw.js', 'admin/js/calendar.js', 'admin/js/admin/DateTimeShortcuts.js')
 
 
 class FilterMultipleSelectWidget(forms.SelectMultiple):

@@ -3,7 +3,7 @@
 <a href="javascript:show_membership_extrainfo('{{gid}}_{{cid}}')">{{membership_str}}</a>
 {% if note %}<br>{{note}}{% endif %}
 <div class=membershipextra id="membership_{{gid}}_{{cid}}">
-    <a href="javascript:show_membership_extrainfo(null)"><img src="{% static "close.png" %}" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>
+    <a href="javascript:show_membership_extrainfo(null)"><img src="{% static "ngw/close.png" %}" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px;"></a>
     {{title}}<br>
     <form action="{{cig_url}}/membershipinline" method=post>
         {% csrf_token %}
