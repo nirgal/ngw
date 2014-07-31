@@ -1,4 +1,5 @@
-When you set/change supergroups, we need to check you have permission to add curent members in the supergroups.
+When adding someone in a group, check supergroups permission to add members.
+Or just allow supergroup inherited...
 
 Favorite groups.
 

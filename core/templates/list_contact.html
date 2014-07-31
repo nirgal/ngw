@@ -1,8 +1,7 @@
 {% extends "list.html" %}
 {% load i18n staticfiles %}
 
-{% block body %}
-
+{% block extrahead %}{{ block.super }}
 <style>
 .membershipextra {
     position:absolute;
@@ -80,7 +79,32 @@ function set_filter(newfilter) {
 }
 </script>
 
+<script>
+function submit_fields() {
+    var sel = document.forms['field_selection_widget'].selected_fields;
+    var new_fields='';
+    for (i=0; i<sel.options.length; i++) {
+        if (new_fields!='')
+            new_fields+=','
+        new_fields+=sel.options[i].value;
+    }
+    document.getElementById('fields').value = new_fields;
+    if (document.forms['field_selection_widget'].savecolumns.checked) {
+        p = document.getElementById('mainform');
+        savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
+    }
+    document.forms['mainform'].submit();
+}
+function show_field_selection() {
+    document.getElementById('select_fields_title').style.display='block';
+    document.getElementById('select_fields').style.display='block';
+    document.getElementById('submitbar').style.display='none';
+    document.getElementById('objlist').style.display='none';
+}
+</script>
+{% endblock %}
 
+{% block body %}
 <form id="mainform">
     <div style="text-align:left; display:none;">{% trans "Internal representation of the filter" %}:</div>
     <input type=hidden id=filter name=filter value="{{filter}}">
@@ -108,29 +132,6 @@ function set_filter(newfilter) {
 
 {{ block.super }}
 
-<script>
-function submit_fields() {
-    var sel = document.forms['field_selection_widget'].selected_fields;
-    var new_fields='';
-    for (i=0; i<sel.options.length; i++) {
-        if (new_fields!='')
-            new_fields+=','
-        new_fields+=sel.options[i].value;
-    }
-    document.getElementById('fields').value = new_fields;
-    if (document.forms['field_selection_widget'].savecolumns.checked) {
-        p = document.getElementById('mainform');
-        savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
-    }
-    document.forms['mainform'].submit();
-}
-function show_field_selection() {
-    document.getElementById('select_fields_title').style.display='block';
-    document.getElementById('select_fields').style.display='block';
-    document.getElementById('submitbar').style.display='none';
-    document.getElementById('objlist').style.display='none';
-}
-</script>
 <h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>
 <div id="select_fields" class=box style="display:none;">
     {{ field_form.media|safe }}

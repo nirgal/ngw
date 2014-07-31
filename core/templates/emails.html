@@ -1,11 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block submenu %}
-{% include "group_submenu.html" %}
-{% endblock %}
-
-{% block body %}
+{% block extrahead %}{{ block.super }}
 <script>
 function selectAll(target_checked) {
     inputs = document.getElementById("contact_list").elements;
@@ -42,8 +38,14 @@ function onFocusTextArea() {
     if (elmt.value == '{% trans "Enter your message here." %}')
         elmt.value = '';
 }
-
 </script>
+{% endblock %}
+
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
+{% block body %}
 
     <h1 class=boxheader>{% trans "Memberships" %}</h1>
     <div class=box>

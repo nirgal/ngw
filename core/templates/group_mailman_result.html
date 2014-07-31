@@ -1,7 +1,7 @@
 {% extends "message.html" %}
 {% load i18n %}
 
-{% block body %}
+{% block extrahead %}{{ block.super }}
 <script type='text/javascript'>
 function nm_check(id, checked) {
     if (checked) {
@@ -13,7 +13,9 @@ function nm_check(id, checked) {
     }
 }
 </script>
+{% endblock %}
 
+{% block body %}
 <div class=box>
 {% for res in sync_res %}
 <input type=checkbox name=mn_{{ forloop.counter }} onchange="nm_check('{{ forloop.counter }}', this.checked)">{{ res.0 }}<br>

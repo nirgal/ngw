@@ -1,14 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block body %}
-<form id="contact_list" method="post">
-<h1 class="boxheader">{% trans "Selected people" %}</h1>
-<div class=box>
-{% csrf_token %}
-{% for c in query %}
-<input type=checkbox name="contact_{{c.id}}" id="contact_{{c.id}}" checked> <label for="contact_{{c.id}}">{{c}}</label><br>
-{% endfor %}
+{% block extrahead %}{{ block.super }}
 <script>
 function selectAll(target_checked) {
     inputs = document.getElementById("contact_list").elements;
@@ -19,6 +12,16 @@ function selectAll(target_checked) {
     }
 }
 </script>
+{% endblock %}
+
+{% block body %}
+<form id="contact_list" method="post">
+<h1 class="boxheader">{% trans "Selected people" %}</h1>
+<div class=box>
+{% csrf_token %}
+{% for c in query %}
+<input type=checkbox name="contact_{{c.id}}" id="contact_{{c.id}}" checked> <label for="contact_{{c.id}}">{{c}}</label><br>
+{% endfor %}
 <a href="javascript:selectAll(true)">{% trans "Select all" %}</a> - <a href="javascript:selectAll(false)">{% trans "Unselect all" %}</a>
 </div>
 
