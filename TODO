@@ -39,7 +39,6 @@ Add table ContactMessageReadBy(msg_id, contact_id)
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
 
 Files handling:
-- NavBar
 - Improve display (mimetype, size, ...)
 - Check cache/no cache
 - Improve previews (tumbler package with d-bus commands and ajax integration?)

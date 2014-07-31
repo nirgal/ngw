@@ -2455,6 +2455,13 @@ def contactgroup_files(request, gid, path):
     args['objtype'] = ContactGroupNews
     args['nav'] = cg.get_smart_navbar() \
                   .add_component(('files', _('files')))
+    base_fullname = cg.get_fullfilename()
+    path_fullname = cg.get_fullfilename(path)
+    if not path_fullname.startswith(base_fullname):
+        raise PermissionDenied
+    for part in path_fullname[len(base_fullname):].split('/'):
+        if part:
+            args['nav'] = args['nav'].add_component(part)
     args['active_submenu'] = 'files'
     args['path'] = path
     args['files'] = cg.get_filenames(path)
