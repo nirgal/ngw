@@ -15,13 +15,18 @@ class ContactAdmin(admin.ModelAdmin):
     list_display = 'name',
 admin.site.register(Contact, ContactAdmin)
 
-admin.site.register(ContactGroup)
-admin.site.register(GroupInGroup)
-admin.site.register(ContactInGroup)
+class ContactGroupAdmin(admin.ModelAdmin):
+    list_display = 'name', 'description'
+    search_fields = 'name',
+admin.site.register(ContactGroup, ContactGroupAdmin)
+
+#admin.site.register(GroupInGroup)
+#admin.site.register(ContactInGroup)
 
 class ChoiceAdminInLine(admin.TabularInline):
     model = Choice
 class ChoiceGroupAdmin(admin.ModelAdmin):
+    list_display = 'name', 'choices'
     inlines = [ ChoiceAdminInLine ]
 admin.site.register(ChoiceGroup, ChoiceGroupAdmin)
 
@@ -31,7 +36,7 @@ class ContactGroupNewsAdmin(admin.ModelAdmin):
 admin.site.register(ContactGroupNews, ContactGroupNewsAdmin)
 
 class ContactFieldAdmin(admin.ModelAdmin):
-    pass
+    list_display = 'name', 'type', 'contact_group', 'system'
 admin.site.register(ContactField, ContactFieldAdmin)
 
 class ContactFieldValueAdmin(admin.ModelAdmin):

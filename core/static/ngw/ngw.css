@@ -1,86 +1,80 @@
-body {
-    margin: 0;
-    font-family: sans-serif;
-/*    background-color: #f0f0f0;*/
-}
-body, table {
-    font-size: 90%;
-}
-a[href] {
-    text-decoration: none;
+a:link, a:visited {
 	color: #141466;
 }
-a[href]:hover {
-    text-decoration: underline;
+a:hover {
+	text-decoration: underline;
 }
-
-a img { 
-    border:none;
+#header {
+	background: white;
 }
-
-#banner {
-	background: lightblue;
-	border-bottom: 1px solid darkblue;
+#upperheader {
+	background: #417690;
+	border-bottom: 1px solid white;
 	padding: 5px;
 	padding-bottom: 0px;
 }
-#banner #sitetitle {
+
+#upperheader #branding {
 	float: left;
 	margin-left: 0.5ex;
 	font-size: 130%;
-	/*
-	font-weight:bold;
-	font-size:200%;
-	*/
 }
-#banner #userinfo {
+#header #user-tools {
 	float: right;
 }
-#banner #userinfo a[href] {
-	text-decoration:underline;
-}
 
-#banner #tabs a[href] {
+#header #tabs a[href] {
     display: inline-block;
-    background: #eee;
-    border: 1px solid darkblue;
+    background: #909090;
+    color: black;
+    border: 1px solid #909090;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
-    -moz-border-radius-topleft: 5px;
-    -moz-border-radius-topright: 5px;
-    -webkit-border-top-left-radius: 5px;
-    -webkit-border-top-right-radius: 5px;
     border-bottom: none;
     margin: 0.7ex -1ex 0ex 3ex;
     padding: 0.5ex 1ex 0.5ex 1ex;
     font-weight: bold;
     font-size: 120%;
 }
-#banner #tabs a[href]:hover {
-    background: white;
-}
-#banner #tabs a[href]#active {
-    background: white;
+
+#header #tabs a[href]:hover {
+    background: #eee;
     margin-bottom: -1px;
-    border-bottom: 1px solid white;
+    border: 1px solid white;
+    border-bottom: 1px solid #eee;
+}
+#header #tabs a[href]#active {
+    background: #eee;
+    margin-bottom: -1px;
+    border: 1px solid white;
+    border-bottom: 1px solid #eee;
 }
 
-#nav {
-    border-bottom: 1px solid #ccc;
-    padding: 0ex;
-    padding-left: 1ex;
+div.breadcrumbs {
+    border-top: none;
+}
+div.breadcrumbs a:link, div.breadcrumbs a:visited {
+    color: black !important;
 }
 
 #footer {
     text-align: center;
-    background: lightblue;
-    border-top: 1px solid darkblue;
-    font-size: 70%;
-}
-
-#main {
+    background: #417690;
+    border-top: 1px solid #909090;
+    background: #417690;
+    color: #ffc;
+    font-size: 80%;
     padding: 0;
 }
+
+#footer a:link, #footer a:visited {
+    color: white;
+}
+
+#footer a:hover {
+    text-decoration: underline;
+}
+
 div#title, h1 {
     font-weight:bold;
     font-size: 120%;
@@ -99,7 +93,8 @@ div.fullpagebox {
     width:50%;
     margin-left:auto;
     margin-right:auto;
-    margin-top:15ex;
+    margin-top:10ex;
+    margin-bottom:4ex;
     border-radius:1ex;
     padding:3ex;
 }
@@ -177,21 +172,7 @@ table.objchange ul.multiplechoice li {
     display: inline;
 }
 
-ul.errorlist {
-    background-color: red;
-    padding: 0ex;
-    padding-left: 28px;
-    margin-bottom: 1ex;
-    border:1px solid black;
-    font-weight:bold;
-    color: white;
-    list-style-image: url(../admin/img/icon_alert.gif);
-}
-ul.errorlist li {
-/*    padding: 0;
-    margin: 0;
-    */
-}
+
 input[type=text], textarea {
     border:1px solid #ccc;
     width: 100%;
@@ -223,7 +204,6 @@ input[type=submit] , #submitbar a, .submitbar a, #submitbar .pseudotitle {
     margin-top: 0.5ex;  /* same as #submitbar/padding */ 
     margin-bottom: 0.5ex; 
     font-weight:bold; 
-
     background: url(../admin/img/nav-bg.gif) bottom repeat-x;
     color: black;
 }

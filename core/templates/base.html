@@ -1,8 +1,11 @@
 {% load i18n staticfiles ngwtags %}<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
 <title>{{ title|safe }}</title>
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/base.css" %}">
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/changelists.css" %}">
 <link rel="stylesheet" type="text/css" href="{% static "ngw/ngw.css" %}">
-<link rel="stylesheet" type="text/css" href="{% static "admin/css/widgets.css" %}">
+{% block extrastyle %}{% endblock %}
 <script src="{% static "admin/js/core.js" %}" type="text/javascript"></script>
 <script src="{% static "admin/js/admin/RelatedObjectLookups.js" %}" type="text/javascript"></script>
 <script src="{% static "admin/js/jquery.js" %}" type="text/javascript"></script>
@@ -16,68 +19,76 @@
 {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
 {% include 'session_security.html' %}
 
-<div id=banner>
-	<span id=sitetitle>{{ banner|safe }}</span>
-	{% if user.is_authenticated %}<span id=userinfo>{% trans "Welcome" %} <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="/logout">{% trans "Logout" %}</a></span>{% endif %}
-	<br class=clearall>
-	{% if nav %}
-    {% if user.can_see_all_contacts %}
-    <div id=header_search style="float:right;">
-        <form id=header_quicksearch action="/contactgroups/1/members/"
-            onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); document.forms['header_quicksearch']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; return true;">
-            <input type=hidden name=filter>
-            <input name=disp_filter value="{% trans "Quick contact search" %}" size=30
-                onclick="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
-                onblur="if (this.value=='') { this.value='{% trans "Quick contact search" %}'; }"
-            >
-            </form>
+
+<!-- Container -->
+<div id="container">
+
+    <!-- Header -->
+    <div id="header">
+        <div id="upperheader">
+            <div id=branding>{{ banner|safe }}</div>
+            {% if user.is_authenticated %}<div id="user-tools">{% trans "Welcome" %} <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="/logout">{% trans "Logout" %}</a></div>{% endif %}
+            <br class=clearall>
+            {% if user.can_see_all_contacts %}
+            <div id=header_search style="float:right;">
+                <form id=header_quicksearch action="/contactgroups/1/members/"
+                    onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); document.forms['header_quicksearch']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; return true;">
+                    <input type=hidden name=filter>
+                    <input name=disp_filter value="{% trans "Quick contact search" %}" size=30
+                        onclick="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
+                        onblur="if (this.value=='') { this.value='{% trans "Quick contact search" %}'; }"
+                    >
+                </form>
+            </div>
+            {% endif %}
+            {% if nav %}
+            <div id=tabs>
+                <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
+                <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
+                <a href="/events/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
+                {% if user.is_admin %}
+                <a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>{% trans "fields" %}</a>
+                <a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>{% trans "choices" %}</a>
+                <a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>{% trans "logs" %}</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% if nav %}
+        <div class=breadcrumbs>
+        {% for urlfragment, navname in nav.components %}
+            {% if forloop.counter0 %} › {% endif %}
+            {% if not forloop.last %}
+                <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
+            {% endif %}
+            {{ navname }}
+            {% if not forloop.last %}
+                </a>
+            {% endif %}
+        {% endfor %}
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
-	<div id=tabs>
-		<a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
-		<a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
-		<a href="/events/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
-		{% if user.is_admin %}
-		<a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>{% trans "fields" %}</a>
-		<a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>{% trans "choices" %}</a>
-		<a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>{% trans "logs" %}</a>
-		{% endif %}
-	</div>
-	{% endif %}
-</div>
+    <!-- END Header -->
 
-<div id=main>
-<div id=nav>
-{% if user.is_authenticated %}
-{% for urlfragment, navname in nav.components %}
-    {% if forloop.counter0 %} › {% endif %}
-    {% if not forloop.last %}
-        <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
-    {% endif %}
-    {{ navname }}
-    {% if not forloop.last %}
-        </a>
-    {% endif %}
+    <!-- Content -->
+    <div id=content class="{% block coltype %}colM{% endblock %}">
 
-{% endfor %}
-{% endif %}
-</div>
+        {% block submenu %}{% endblock %}
 
-<div style="padding:1ex;">
-{% block submenu %}{% endblock %}
+        {% block messages %}
+            {% if messages %}
+            <ul class="messagelist">{% for message in messages %}
+              <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>
+            {% endfor %}</ul>
+            {% endif %}
+        {% endblock messages %}
 
-{% for msg in messages %}
-<div style="border: 1px solid #999; padding:1ex; margin:1ex; background: #ffc;">
-{{ msg }}
-</div>
-{% endfor %}
+        <div id=title>{{ title }}</div>
+        {% block body %}
+        <p>No body.
+        {% endblock %}
 
-<div id=title>{{ title }}</div>
-{% block body %}
-<p>No body.
-{% endblock %}
-
-</div>
 </div>
 
 <div id=footer>

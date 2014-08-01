@@ -315,6 +315,11 @@ class Contact(NgwModel):
     REQUIRED_FIELDS = [] # Needed by contrib.auth
 
     is_active = True # FIXME
+    is_staff = True # FIXME XXX XXX 
+    def has_module_perms(self, package_name):
+        return True
+    def has_perm(self, perm, obj=None):
+        return True
 
     class Meta:
         db_table = 'contact'

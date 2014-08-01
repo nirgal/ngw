@@ -15,7 +15,9 @@
 {{ msg.text|linebreaksbr }}
 </div>
 {% empty %}
+<div class=fullpagebox>
 {% trans "There are no messages." %}
+</div>
 {% endfor %}
 
 {% endblock %}

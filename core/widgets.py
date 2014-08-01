@@ -18,7 +18,7 @@ class NgwCalendarWidget(forms.TextInput):
 
 class FilterMultipleSelectWidget(forms.SelectMultiple):
     class Media:
-        js = ('ngw.js',)
+        js = ('ngw/ngw.js',)
 
     def __init__(self, verbose_name, is_stacked, attrs=None, choices=()):
         self.verbose_name = verbose_name
