@@ -8,9 +8,11 @@ function dump(o) {
 }
 
 function check_footer_bottom() {
-    min_height = document.body.clientHeight - $('#header').outerHeight() - $('#footer').outerHeight();
-    min_height -= 2*10; /* margin top and bottom */
-    /* alert('min_height='+min_height); */
+    min_height = document.body.clientHeight - $('#header').outerHeight() - $('#footer').outerHeight() - $('.breadcrumbs').outerHeight();
+    // remove messages:
+    min_height -= $('.messagelist').outerHeight();
+    // remove margins:
+    min_height -= $('#content').outerHeight(true) - $('#content').outerHeight(false);
     if (min_height > 0)
         $('#content').css('min-height', min_height+'px');
 }

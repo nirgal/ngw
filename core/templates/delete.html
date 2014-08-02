@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block body %}
+{% block content %}
 {% blocktrans with objecttype=o.get_class_verbose_name obect=o %}You are about to delete {{ objecttype }} {{ o }}. Are you sure ?{% endblocktrans %}
     {% block submitbar %}
     <div id=submitbar>

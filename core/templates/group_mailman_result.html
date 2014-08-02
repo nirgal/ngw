@@ -15,7 +15,7 @@ function nm_check(id, checked) {
 </script>
 {% endblock %}
 
-{% block body %}
+{% block content %}
 <div class=box>
 {% for res in sync_res %}
 <input type=checkbox name=mn_{{ forloop.counter }} onchange="nm_check('{{ forloop.counter }}', this.checked)">{{ res.0 }}<br>

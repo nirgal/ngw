@@ -5,7 +5,7 @@
 {% include "group_submenu.html" %}
 {% endblock %}
 
-{% block body %}
+{% block content %}
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
     {% if cg.date %}{% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b><br>{% endif %}
     {% if cg.budget_code %}{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b><br>{% endif %}

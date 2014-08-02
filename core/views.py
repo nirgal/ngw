@@ -166,8 +166,9 @@ def test(request):
         'title': 'Test',
         'env': os.environ,
         'objtype': Contact,
+        'nav': Navbar('test'),
     }
-    #raise Exception('Boum')
+    messages.add_message(request, messages.INFO, 'This is a test')
     return render_to_response('test.html', args, RequestContext(request))
 
 

@@ -75,10 +75,6 @@ div.breadcrumbs a:link, div.breadcrumbs a:visited {
     text-decoration: underline;
 }
 
-div#title, h1 {
-    font-weight:bold;
-    font-size: 120%;
-}
 h1.boxheader {
     margin-bottom: 0px;
 }

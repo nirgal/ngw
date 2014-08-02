@@ -13,6 +13,7 @@ admin.site.register(Config, ConfigAdmin)
 
 class ContactAdmin(admin.ModelAdmin):
     list_display = 'name',
+    search_fields = 'name',
 admin.site.register(Contact, ContactAdmin)
 
 class ContactGroupAdmin(admin.ModelAdmin):

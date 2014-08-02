@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n staticfiles ngwtags %}
 
-{% block body %}
+{% block content %}
     {{form.media|safe}}
     <form method="post">
     {% csrf_token %}

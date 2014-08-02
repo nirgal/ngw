@@ -5,7 +5,7 @@
 {% include "group_submenu.html" %}
 {% endblock %}
 
-{% block body %}
+{% block content %}
     {% for n in news %}
     <h1 class="boxheader">{% if cg_perms.N %}<a href="{{n.get_absolute_url}}">{% endif %}{{ n.title }}{% if cg_perms.N %}</a>{% endif %}</h1>
     <div class=box>
