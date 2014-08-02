@@ -1057,7 +1057,7 @@ def contact_filters_add(request, cid=None):
     else:
         filter_list = []
     filter_list.append((_('No name'), filter_str))
-    filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
+    filter_list_str = ','.join(['"' + force_text(name) + '","' + force_text(filterstr) + '"' for name, filterstr in filter_list])
     contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
     messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
     return HttpResponseRedirect(reverse('ngw.core.views.contact_filters_edit', args=(cid, len(filter_list)-1)))
