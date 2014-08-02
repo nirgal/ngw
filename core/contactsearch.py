@@ -388,12 +388,12 @@ def parse_filter_list_str(txt):
     ( filtername, filter_string )
     '''
     list = txt.split(',')
-    for idx in xrange(len(list)-1, 0, -1):
+    for idx in range(len(list)-1, 0, -1):
         if list[idx-1][-1] != '"' or list[idx][0] != '"':
             #print("merging elements ", idx-1, "and", idx, "of", repr(list))
             list[idx-1] += ',' + list[idx]
             del list[idx]
-    for idx in xrange(len(list)):
+    for idx in range(len(list)):
         assert(list[idx][0] == '"')
         assert(list[idx][-1] == '"')
         list[idx] = list[idx][1:-1]
