@@ -54,26 +54,21 @@
 
     </table>
 
-    {% block submitbar %}
-    <div id=submitbar>
+    <div class="submit-row">
+      <a class="button default" href="edit">{% trans "Edit" %}</a>
       {% if user.is_admin %}
-      <a id=default href="..">{% trans "Contact list" %}</a>
-      {% endif %}
-      <a href="edit">{% trans "Edit" %}</a>
-      {% if user.is_admin %}
-      <a href="vcard">{% trans "VCard" %}</a>
-      {# <a href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
+      <a class=button href="vcard">{% trans "VCard" %}</a>
+      {# <a class=button href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
       {% endif %}
       {% if contact.get_login %}
         {% if group_user_perms.F or user.id = contact.id %}
-            <a href="pass">{% trans "Change password" %}</a>
+            <a class=button href="pass">{% trans "Change password" %}</a>
         {% endif %}
         {% if group_user_ngw_perms.F or user.id = contact.id %}
-            <a href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
-            <a href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
+            <a class=button href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
+            <a class=button href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
         {% endif %}
       {% endif %}
     </div>
-    {% endblock %}
 
 {% endblock %}

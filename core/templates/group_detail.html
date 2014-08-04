@@ -82,18 +82,18 @@
 
     
 {% block submitbar %}
-<div id=submitbar>
-    <a href="javascript:show_field_selection();" id=default> {% trans "Select displayed columns" %}</a>
-    <a href="{{cg.get_absolute_url}}edit">{% trans "Edit" %}</a>
-    <a href="emails{{baseurl}}">{% trans "Emails" %}</a>
-    <a href="vcards{{baseurl}}">{% trans "Vcards" %}</a> 
-    <a href="csv{{baseurl}}">{% trans "CSV export" %}</a> 
+<div class="submit-row" id=submitbar>
+    <a class="button default" href="javascript:show_field_selection();"> {% trans "Select displayed columns" %}</a>
+    <a class=button href="{{cg.get_absolute_url}}edit">{% trans "Edit" %}</a>
+    <a class=button href="emails{{baseurl}}">{% trans "Emails" %}</a>
+    <a class=button href="vcards{{baseurl}}">{% trans "Vcards" %}</a> 
+    <a class=button href="csv{{baseurl}}">{% trans "CSV export" %}</a> 
     {% if cg.date %}
     {% else %}
-    <a href="add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Create a new contact in that group" %}</a>
+    <a class=button href="add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Create a new contact in that group" %}</a>
     {% endif %}
-    <a href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add to another group" %}</a>
+    <a class=button href="{{cg.get_class_absolute_url}}add_contacts_to?gid={{cg.id}}&amp;filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add to another group" %}</a>
     {% if cg.mailman_address %}
-    <a href="../mailman">{% trans "Mailman" %}</a>
+    <a class=button href="../mailman">{% trans "Mailman" %}</a>
     {% endif %}
 </div>{% endblock %}

@@ -7,8 +7,8 @@
 {% endblock %}
 
 {% block submitbar %}
-<div id=submitbar>
-    <input type=submit value="{% trans "Save" %}" id="default">
-    <a href="{{o.get_absolute_url}}remove"><img src="{% static "admin/img/icon_deletelink.gif" %}" border=0 valign=middle> {% trans "Remove from group" %}</a>
+<div class="submit-row">
+    <input type=submit value="{% trans "Save" %}" class="default">
+    <p class="deletelink-box"><a href="{{o.get_absolute_url}}remove" class="deletelink">{% trans "Remove from group" %}</a></p>
 </div>
 {% endblock %}

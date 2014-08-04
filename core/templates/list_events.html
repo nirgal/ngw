@@ -33,14 +33,15 @@
 {% endblock %}
 
 {% block content %}
-<div id=submitbar>
-    <a href="?dt={{year_month.prev_year}}" title="{% trans "Go back one year" %}" style="margin-left:2ex;">↞</a>
-    <a href="?dt={{year_month.prev_month}}" title="{% trans "Go back one month" %}" style="margin-left:.5ex;">←</a>
-    <a href="." style="margin-left:.5ex;" title="{% trans "Go to current month" %}">{% trans "Today" %}</a>
-    <a href="?dt={{year_month.next_month}}" title="{% trans "Go forward one month" %}" style="margin-left:.5ex;">→</a>
-    <a href="?dt={{year_month.next_year}}" title="{% trans "Go forward one year" %}" style="margin-left:.5ex;">↠</a>
-    <a href=add style="float:right;"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add event" %}</a>
-    <div class=pseudotitle style="float:none; text-align:center; border:none; background:none; font-size:140%; padding-top:0;"><b>{{year_month.first_day|date:"YEAR_MONTH_FORMAT"|title}}</b></div>
+<div class="submit-row" style="text-align:center;">
+    <a class=button href="?dt={{year_month.prev_year}}" title="{% trans "Go back one year" %}" style="float:left; margin-left:2ex;">↞</a>
+    <a class=button href="?dt={{year_month.prev_month}}" title="{% trans "Go back one month" %}" style="float:left; margin-left:.5ex;">←</a>
+    <a class=button href="." style="float:left; margin-left:.5ex;" title="{% trans "Go to current month" %}">{% trans "Today" %}</a>
+    <a class=button href="?dt={{year_month.next_month}}" title="{% trans "Go forward one month" %}" style="float:left; margin-left:.5ex;">→</a>
+    <a class=button href="?dt={{year_month.next_year}}" title="{% trans "Go forward one year" %}" style="float:left; margin-left:.5ex;">↠</a>
+    <a class=button href=add style="float:right;"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add event" %}</a>
+    <h2 style="display:inline-block; text-align:center; padding-top:0; margin:0 0 0 5px; font-weight: bold;">{{year_month.first_day|date:"YEAR_MONTH_FORMAT"|title}}</h2>
+
 </div>
 <br>
 <table class='ncalendar'>

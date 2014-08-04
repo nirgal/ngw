@@ -1604,7 +1604,7 @@ def contactgroup_emails(request, gid):
                 continue
             contact_id = param[len('contact_'):]
             contact = get_object_or_404(Contact, pk=contact_id)
-            cig = ContactInGroup.objects.get(contact=contact_id, group_id=gid)
+            cig = ContactInGroup.objects.get(contact_id=contact_id, group_id=gid)
             contact_msg = ContactMsg(cig=cig)
             contact_msg.send_date = datetime.utcnow()
             contact_msg.text = message

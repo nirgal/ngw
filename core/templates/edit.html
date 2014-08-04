@@ -12,12 +12,12 @@
 </table>
 
     {% block submitbar %}
-    <div id=submitbar>
-    <input type=submit value="{% trans "Save" %}" id="default">
+    <div class="submit-row">
+    <input type=submit value="{% trans "Save" %}" class="default" name="_save">
     {% if not id %}<input type=submit value="{% trans "Save and add another" %}" name="_addanother">{% endif %}
     <input type=submit value="{% trans "Save and continue editing" %}" name="_continue">
     {% if id %}
-    <a href="delete"><img src="{% static "admin/img/icon_deletelink.gif" %}" border=0 valign=middle> {% trans "Delete" %}</a>
+     <p class="deletelink-box"><a href="delete" class="deletelink">{% trans "Delete" %}</a></p>
     {% endif %}
     </div>
     {% endblock %}

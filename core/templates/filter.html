@@ -11,10 +11,10 @@
 <div id="curent_filter" style="text-align:left;" class=box>
 {{filter_html}}
 </div>
-<div class=submitbar>
-<a href="javascript:document.forms['mainform'].submit();" id=default>{% trans "Apply filter" %}</a>
-<a href="javascript:set_filter('');select_grouptype(null);">{% trans "Reset filter" %}</a>
-<a href="javascript:document.location='{{user.get_absolute_url}}'+'filters/add?filterstr='+document.getElementById('filter').value;">{% trans "Save filter" %}</a>
+<div class="submit-row">
+<a class="button" href="javascript:document.forms['mainform'].submit();" id=default>{% trans "Apply filter" %}</a>
+<a class="button" href="javascript:set_filter('');select_grouptype(null);">{% trans "Reset filter" %}</a>
+<a class="button" href="javascript:document.location='{{user.get_absolute_url}}'+'filters/add?filterstr='+document.getElementById('filter').value;">{% trans "Save filter" %}</a>
 </div>
 
 

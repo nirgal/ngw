@@ -17,8 +17,8 @@
     {{ key }}: {{ value }}<br>
 {% endfor %}
     {% block submitbar %}
-    <div id=submitbar>
-    <a id=default href="javascript:history.back()">{% trans "Back" %}</a>
+    <div class="submit-row">
+    <a class="button default" href="javascript:history.back()">{% trans "Back" %}</a>
     <input type=submit name=confirm value="{% trans "Delete incompatible data" %}">
     </div>
     {% endblock %}

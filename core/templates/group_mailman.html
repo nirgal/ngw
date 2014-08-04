@@ -11,5 +11,7 @@ Send <tt>who listpassword</tt> to <a href="mailto:{{ requestaddress }}">{{ reque
 {% endblock %}
 
 {% block submitbar %}
-<input type=submit value="{% trans "Send" %}" id="default">
+<div class="submit-row">
+<input type=submit value="{% trans "Send" %}" class="default">
+</div>
 {% endblock %}

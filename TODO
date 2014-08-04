@@ -42,3 +42,5 @@ Files handling:
 - Improve previews (tumbler package with d-bus commands and ajax integration?)
 
 Event selection widget (Do not load everything at once, like for column selection)
+
+Message sending to an inherited member.

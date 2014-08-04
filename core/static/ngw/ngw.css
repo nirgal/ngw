@@ -1,9 +1,3 @@
-a:link, a:visited {
-	color: #141466;
-}
-a:hover {
-	text-decoration: underline;
-}
 #header {
 	background: white;
 }
@@ -57,6 +51,27 @@ div.breadcrumbs a:link, div.breadcrumbs a:visited {
     color: black !important;
 }
 
+
+#submenucontainer {
+    display: block;
+    width: auto;
+    text-align: center;
+}
+
+.submenuitem {
+    display: inline-block;
+    padding-left: 3ex;
+    padding-right: 3ex;
+    background: #f0f0f0;
+}
+
+a .submenuitem:hover, .activesubmenuitem {
+    font-weight: bold;
+    border:1px solid black;
+    background: white;
+}
+
+
 #footer {
     text-align: center;
     background: #417690;
@@ -74,6 +89,28 @@ div.breadcrumbs a:link, div.breadcrumbs a:visited {
 #footer a:hover {
     text-decoration: underline;
 }
+
+/* We want links in submit-row to look like submit buttons */
+.submit-row a.button:link, .submit-row a.button:visited {
+    display: inline-block;
+    background: white url(../admin/img/nav-bg.gif) bottom repeat-x;
+    font-family: "Lucida Grande", Verdana, Arial, sans-serif;
+    color: black;
+    margin: 0 0 0 5px;
+    font-size: 11px;
+    border: 1px solid #bbb;
+    border-color: #ddd #aaa #aaa #ddd;
+}
+.submit-row a.button:hover {
+    text-decoration: none;
+}
+.submit-row a.button.default:link, .submit-row a.button.default:visited {
+    border: 2px solid #5b80b2;
+    background: #7CA0C7 url(../admin/img/default-bg.gif) bottom repeat-x;
+    font-weight: bold;
+    color: white;
+}
+
 
 h1.boxheader {
     margin-bottom: 0px;
@@ -174,76 +211,9 @@ input[type=text], textarea {
     width: 100%;
 }
 
-#submitbar, .submitbar {
-    width: auto;
-    display: block;
-    overflow: auto;
-    margin-top: 2ex;
-    padding: 0.5ex;
-    border: solid 1px #999;
-    text-align: center;
-}
-
-input[type=submit] , #submitbar a, .submitbar a, #submitbar .pseudotitle {
-    /*display: inline-block;*/
-    float: left;
-    font-size: 90%; /* needed 100%*/
-    text-decoration: none;
-    border: 1px solid #999;
-    background: #fcd;
-    padding-top: 0.5ex;
-    padding-bottom: 0.5ex;
-    padding-left: 3ex;
-    padding-right: 3ex;
-    margin-left: 2ex;
-    margin-right: 2ex; 
-    margin-top: 0.5ex;  /* same as #submitbar/padding */ 
-    margin-bottom: 0.5ex; 
-    font-weight:bold; 
-    background: url(../admin/img/nav-bg.gif) bottom repeat-x;
-    color: black;
-}
-input[type=submit]:hover , #submitbar a:hover, .submitbar a:hover {
-    background: url(../admin/img/nav-bg-reverse.gif) top repeat-x;
-}
-
-input[type=submit]#default , #submitbar a#default, .submitbar a#default {
-    background: #7CA0C7 url(../admin/img/default-bg.gif) bottom repeat-x;
-    color:white;
-    
-}
-input[type=submit]:hover#default , #submitbar a:hover#default, .submitbar a:hover#default {
-    background: #7CA0C7 url(../admin/img/default-bg-reverse.gif) top repeat-x;
-}
-
-
-form {
-    margin: 0px;
-}
-br.clearall {
-    clear: both;
-}
 
 /* Hack for admin multiple select widget */
 .selector h2 {
     margin-bottom: 0px;
 }
 
-#submenucontainer {
-    display: block;
-    width: auto;
-    text-align: center;
-}
-
-.submenuitem {
-    display: inline-block;
-    padding-left: 3ex;
-    padding-right: 3ex;
-    background: #f0f0f0;
-}
-
-a .submenuitem:hover, .activesubmenuitem {
-    font-weight: bold;
-    border:1px solid black;
-    background: white;
-}

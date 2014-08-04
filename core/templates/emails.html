@@ -88,8 +88,8 @@ function onFocusTextArea() {
     <textarea name=message id=messagetxt rows=20 onfocus='onFocusTextArea()'>{% trans "Enter your message here." %}</textarea>
 
     {% block submitbar %}
-    <div id=submitbar>
-      <a href="mailto:?bcc={% for cid,contact,email in emails %}{% if forloop.counter0 %},{% endif %}{{ email }}{% endfor %}" id=default>{% trans "Use my program" %}</a>
+    <div class=submit-row>
+      <a href="mailto:?bcc={% for cid,contact,email in emails %}{% if forloop.counter0 %},{% endif %}{{ email }}{% endfor %}" class="button default">{% trans "Use my program" %}</a>
       <input type=submit value="{% trans "Send from server" %}">
     </div>
     {% endblock %}
