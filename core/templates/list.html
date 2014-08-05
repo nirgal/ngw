@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% load i18n staticfiles %}
 
+{% block bodyclass %}change-list{% endblock %}
+
+{% block coltype %}flex{% endblock %}
+
 {% block content %}
+<div id="content-main">
     
     {% block prequerylist %}{% endblock %}
     {% include "query_entities.html" %}
@@ -15,4 +20,5 @@
     </div>
     {% endblock %}
 
+</div>
 {% endblock %}

@@ -1,37 +1,45 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block coltype %}colMS{% endblock %}
+
 {% block content %}
-
-{% for g in operator_groups %}
-{% if forloop.first %}
-    <h1 class="boxheader">{% trans "You are operator of theses groups" %}:</h1>
-    <div class=box>
-{% endif %}
-‣ <a href="{{g.get_absolute_url}}">{{ g.unicode_with_date }}</a><br>
-{% if forloop.last %}
-    </div>
-{% endif %}
-{% endfor %}
-
-<h1 class="boxheader">{% trans "Lastest news" %}</h1>
+<div id="content-main">
 {% for article in news %}
-<div class=box>
-<b>{{ article.date|date:"DATE_FORMAT" }}</b> • <b>{{article.title}}</b><br>
-{{ article.text|linebreaksbr }}
-</div>
+    <div class=module>
+    <h2>{{ article.date|date:"DATE_FORMAT" }}</b> • <b>{{article.title}}</b></h2>
+    <div class=padded>{{ article.text|linebreaksbr }}</div>
+    </div>
 {% endfor %}
-
 
 {% if news.has_previous or news.has_next %}
-<div class="submitbar">
+<div class="submit-row">
     {% if news.has_previous %}
-        <a href="?page={{ news.previous_page_number }}">{% trans "Newer news" %}</a>
+        <a class=button href="?page={{ news.previous_page_number }}">{% trans "Newer news" %}</a>
     {% endif %}
 
     {% if news.has_next %}
-        <a href="?page={{ news.next_page_number }}">{% trans "Older news" %}</a>
+        <a class="button default" href="?page={{ news.next_page_number }}">{% trans "Older news" %}</a>
     {% endif %}
 </div>
 {% endif %}
+</div>
+{% endblock %}
+
+
+{% block sidebar %}
+<div id="content-related">
+{% for g in operator_groups %}
+    {% if forloop.first %}
+        <div class=module>
+        <h2>{% trans "You are operator of theses groups" %}:</h2>
+        <ul class=padded>
+    {% endif %}
+    <li><a href="{{g.get_absolute_url}}">{{ g.unicode_with_date }}</a><br>
+    {% if forloop.last %}
+        </ul>
+        </div>
+    {% endif %}
+{% endfor %}
+</div>
 {% endblock %}

@@ -152,7 +152,7 @@ def home(request):
         news = paginator.page(paginator.num_pages)
 
     return render_to_response('home.html', {
-        'title': _('Home page'),
+        'title': _('Lastest news'),
         'nav': Navbar(),
         'operator_groups': operator_groups,
         'news': news,

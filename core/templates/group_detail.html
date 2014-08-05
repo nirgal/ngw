@@ -5,7 +5,8 @@
 {% include "group_submenu.html" %}
 {% endblock %}
 
-{% block content %}
+{% block prequerylist %}
+<div class=box>
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
     {% if cg.date %}{% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b><br>{% endif %}
     {% if cg.budget_code %}{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b><br>{% endif %}
@@ -33,9 +34,11 @@
     </form>
     <br>
     {{ block.super }}
+</div>
 {% endblock %}
 
 {% block presubmitbar %}
+    {{ block.super }}
     {% ifnotequal cg.id 1 %}
         {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
             {% if forloop.first %}
@@ -96,4 +99,5 @@
     {% if cg.mailman_address %}
     <a class=button href="../mailman">{% trans "Mailman" %}</a>
     {% endif %}
-</div>{% endblock %}
+</div>
+{% endblock %}

@@ -3,6 +3,8 @@
 
 {% block content %}
     {{form.media|safe}}
+<div id="content-main">
+<div class=module>
     <form method="post">
     {% csrf_token %}
     <table class=objchange>
@@ -11,11 +13,14 @@
     <th>{% trans "Filter" %}
     <td>{{ filter_html|safe }}
     </table>
+</div>
 
-    {% block submitbar %}
-    <div class=submit-row>
+{% block submitbar %}
+<div class=submit-row>
     <input type=submit value="{% trans "Save" %}" class="default">
     <p class="deletelink-box"><a href="./delete" class="deletelink">{% trans "Delete" %}</a></p>
-    </div>
-    {% endblock %}
+</div>
+{% endblock %}
+
+</div>
 {% endblock %}

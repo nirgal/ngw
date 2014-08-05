@@ -6,12 +6,15 @@
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
     {% for f in files %}
         {% if forloop.first %}
-        <div class=box>
+        <div class=module>
+        <ul class="padded">
         {% endif %}
-        ‣ <a href="{{MEDIA_URL}}g/{{cg.id}}{{path|urlencode}}/{{f|urlencode}}">{{f}}</a><br>
+        <li><a href="{{MEDIA_URL}}g/{{cg.id}}{{path|urlencode}}/{{f|urlencode}}">{{f}}</a><br>
         {% if forloop.last %}
+        </ul>
         </div>
         {% endif %}
     {% empty %}
@@ -24,11 +27,13 @@
     {{form.media|safe}}
     {# {{ form.errors } #}
     {% block preform %}{% endblock %}
+    <div class=module>
     <form name=objchange method=post enctype="multipart/form-data">
     {% csrf_token %}
     <table class=objchange>
     {{ form.as_table }}
     </table>
+    </div>
     {% endif %}
 
 {% block submitbar %}
@@ -43,4 +48,5 @@
 </form>
 {% endif %}
 
+</div>
 {% endblock %}

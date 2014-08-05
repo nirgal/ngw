@@ -2,7 +2,7 @@
 {% comment %}
 That file must be included in a full template.
 Parameters:
-    q: A query yielding tuple of entities
+    query: A query yielding tuple of entities
     cols: A list of 4-tuples: ("column name", entity number, "property or method NAME of the entity", "matching table column for sort")
     count: number of objects
     npages: number of pages
@@ -12,47 +12,33 @@ Optionnal parameters:
     page: number of the page actually printed
 {% endcomment %}
 
-<table id=objlist class=objlist>
+<div class="module" id="changelist">
+<div class="results">
+<form id="changelist-form" action="" method="post">{% csrf_token %}
+<table id=result_list>
 {% for row in query %}
     {% if not forloop.counter0 %}
         <thead>
-        <tr class=rowodd id=objsummary>
-            <td colspan={{ cols|length }}>
-            {% ifnotequal npages 1 %}
-                {% blocktrans count npages=npages %}{{ npages }} page{% plural %}{{ npages }} pages{% endblocktrans %}
-                {% for i in page|pagenumber_iterator:npages %}
-                    {% ifnotequal page i %}
-                    <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
-                    {% else %}
-                    <span style="border: solid 1px #999; width: auto; background:#fce">
-                    {% endifnotequal %}
-                    <b>{{i}}</b>
-                    {% ifnotequal page i %}
-                    </a>
-                    {% else %}
-                    </span>
-                    {% endifnotequal %}&nbsp;
-                {% endfor %}
-                -
-            {% endifnotequal %}
-            {% blocktrans count count=count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
         <tr>
         {% for col in cols %}
-            <th>
+            <th scope="col" class="{% if col|get_notnull:3 %}sortable{% endif %}">
+            <div class="text">
+            {% if order|order_absmatch:forloop.counter0 %}<span style="float:right;">{% if order|order_isreverted %}▼{% else %}▲{% endif %}</span>{% endif %}
             {% if col|get_notnull:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
             {{col|get:0}}
             {% if col|get_notnull:3 %}</a>{% endif %}
-            {% if order|order_absmatch:forloop.counter0 %}{% if order|order_isreverted %} ▼{% else %} ▲{% endif %}{% endif %}
+            </div>
+            <div class=clear></div>
         {% endfor %}
         <tbody>
     {% endif %}
-    <tr class=row{% cycle odd,even as oddity %}>
+    <tr class={% cycle 'row1' 'row2' %}>
     {% for col in cols %}
         <td>{{row|ngw_display:col|safe}} <!-- TODO: check safe -->
     {% endfor %}
 {% endfor %}
-<tr class=row{% cycle oddity %} id=objsummary>
-    <td colspan={{ cols|length }}>
+</table>
+<p class=paginator>
     {% ifnotequal npages 1 %}
         {% blocktrans count npages=npages %}{{ npages }} page{% plural %}{{ npages }} pages{% endblocktrans %}
         {% for i in page|pagenumber_iterator:npages %}
@@ -71,4 +57,7 @@ Optionnal parameters:
         -
     {% endifnotequal %}
     {% blocktrans count count=count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
-</table>
+</p>
+</form>
+</div>
+</div>

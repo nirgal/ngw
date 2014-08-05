@@ -8,6 +8,8 @@
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
+<div class=module>
     <table class=objlist>
     <tr><td>
     
@@ -53,22 +55,24 @@
     {% endfor %}
 
     </table>
+</div>
 
-    <div class="submit-row">
-      <a class="button default" href="edit">{% trans "Edit" %}</a>
-      {% if user.is_admin %}
-      <a class=button href="vcard">{% trans "VCard" %}</a>
-      {# <a class=button href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
-      {% endif %}
-      {% if contact.get_login %}
-        {% if group_user_perms.F or user.id = contact.id %}
-            <a class=button href="pass">{% trans "Change password" %}</a>
-        {% endif %}
-        {% if group_user_ngw_perms.F or user.id = contact.id %}
-            <a class=button href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
-            <a class=button href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
-        {% endif %}
-      {% endif %}
-    </div>
+<div class="submit-row">
+  <a class="button default" href="edit">{% trans "Edit" %}</a>
+  {% if user.is_admin %}
+  <a class=button href="vcard">{% trans "VCard" %}</a>
+  {# <a class=button href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
+  {% endif %}
+  {% if contact.get_login %}
+    {% if group_user_perms.F or user.id = contact.id %}
+        <a class=button href="pass">{% trans "Change password" %}</a>
+    {% endif %}
+    {% if group_user_ngw_perms.F or user.id = contact.id %}
+        <a class=button href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
+        <a class=button href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
+    {% endif %}
+  {% endif %}
+</div>
 
+</div>
 {% endblock %}

@@ -46,9 +46,11 @@ function onFocusTextArea() {
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
+<div class=module>
 
-    <h1 class=boxheader>{% trans "Memberships" %}</h1>
-    <div class=box>
+    <h3>{% trans "Memberships" %}</h3>
+    <p>
     {% trans "Include members" %}: {% if display_member %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
     {% trans "Include invited" %}: {% if display_invited %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
@@ -58,12 +60,11 @@ function onFocusTextArea() {
     {% trans "Include subgroups" %}: {% if display_subgroups %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
     {% trans "Include admins" %}: {% if display_admins %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
-    </div>
+    </p>
+
     {% if strfilter %}
-    <h1 class=boxheader>{% trans "Filter" %}</h1>
-    <div class=box>
-    {{filter.to_html|safe}}<br>
-    </div>
+    <h3>{% trans "Filter" %}:</h3>
+    <p>{{filter.to_html|safe}}</p>
     {% endif %}
 
     <p>{% trans "Don't forget to <b>use Bcc</b> whenever you can!" %}
@@ -85,14 +86,16 @@ function onFocusTextArea() {
     {% endif %}
 
     <p>
-    <textarea name=message id=messagetxt rows=20 onfocus='onFocusTextArea()'>{% trans "Enter your message here." %}</textarea>
+    <textarea name=message id=messagetxt style="width:100%" rows=20 onfocus='onFocusTextArea()'>{% trans "Enter your message here." %}</textarea>
+</div>
 
-    {% block submitbar %}
-    <div class=submit-row>
+{% block submitbar %}
+<div class=submit-row>
       <a href="mailto:?bcc={% for cid,contact,email in emails %}{% if forloop.counter0 %},{% endif %}{{ email }}{% endfor %}" class="button default">{% trans "Use my program" %}</a>
       <input type=submit value="{% trans "Send from server" %}">
-    </div>
-    {% endblock %}
+</div>
+{% endblock %}
 
-    </form>
+</form>
+</div>
 {% endblock %}

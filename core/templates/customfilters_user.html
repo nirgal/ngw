@@ -2,20 +2,24 @@
 {% load i18n %}
 
 {% block content %}
-    <div class=box>
+<div id="content-main">
+<div class=module>
     {% if filters %}
         {% for f in filters %}
-        ‣ <a href="./{{forloop.counter0}}/">{{f}}</a><br>
-        {# {{f|get:1|safe}}<br> #}
+        {% if forloop.first %}<ul>{% endif %}
+        <li><a href="./{{forloop.counter0}}/">{{f}}</a><br>
+        {% if forloop.last %}</ul>{% endif %}
         {% endfor %}
-        </div>
     {% else %}
         {% trans "That user has no custom filter." %}
     {% endif %}
+</div>
 
-    {% block submitbar %}
-    <div class=submit-row>
+{% block submitbar %}
+<div class=submit-row>
     <a href="{{ contact.get_absolute_url}}" class="button default">Contact details</a>
-    </div>
-    {% endblock %}
+</div>
+{% endblock %}
+
+</div>
 {% endblock %}

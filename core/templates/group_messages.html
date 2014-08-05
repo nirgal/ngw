@@ -6,18 +6,22 @@
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
 
 {% for msg in contact_messages %}
-<div class=box>
-{% if msg.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{msg.cig.contact.name}}<br>
-{% trans "Date" %}: {{msg.send_date}}<br>
-<br>
-{{ msg.text|linebreaksbr }}
+<div class=module>
+    <p>
+    {% if msg.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{msg.cig.contact.name}}<br>
+    {% trans "Date" %}: {{msg.send_date}}<br>
+    <br>
+    {{ msg.text|linebreaksbr }}
+    </p>
 </div>
 {% empty %}
 <div class=fullpagebox>
-{% trans "There are no messages." %}
+    {% trans "There are no messages." %}
 </div>
 {% endfor %}
 
+</div>
 {% endblock %}

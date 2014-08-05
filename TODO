@@ -44,3 +44,5 @@ Files handling:
 Event selection widget (Do not load everything at once, like for column selection)
 
 Message sending to an inherited member.
+
+Type change deletion check is buggy.

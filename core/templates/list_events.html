@@ -7,18 +7,14 @@
     width: 100%;
 }
 .ncalendar th {
-    border-bottom: 1px solid #999;
-    border-left: none;
     font-weight: normal;
-}
-.ncalendar tr + tr {
-    /* all lines but the first */
-    border-top: 1px solid #ccc;
+    border: 1px solid #999;
 }
 .ncalendar td {
     vertical-align: top;
     height: 7ex;
     padding: 0;
+    border: 1px solid #999;
 }
 .calday {
     background-color: #eee;
@@ -33,6 +29,8 @@
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
+
 <div class="submit-row" style="text-align:center;">
     <a class=button href="?dt={{year_month.prev_year}}" title="{% trans "Go back one year" %}" style="float:left; margin-left:2ex;">↞</a>
     <a class=button href="?dt={{year_month.prev_month}}" title="{% trans "Go back one month" %}" style="float:left; margin-left:.5ex;">←</a>
@@ -43,40 +41,40 @@
     <h2 style="display:inline-block; text-align:center; padding-top:0; margin:0 0 0 5px; font-weight: bold;">{{year_month.first_day|date:"YEAR_MONTH_FORMAT"|title}}</h2>
 
 </div>
-<br>
+
 <table class='ncalendar'>
-<colgroup>
-<col width='14.285%'>
-<col width='14.285%'>
-<col width='14.285%'>
-<col width='14.285%'>
-<col width='14.285%'>
-<col width='14.285%'>
-<col width='14.285%'>
-</colgroup>
-<tr>
-{% for week in year_month.weeks %}
-{% if forloop.first %}
-{% for d, events in week.days %}
-<th>{{d|date:"l"|title}}
-{% endfor %}
-{% endif %}
-{% endfor %}
-
-{% for week in year_month.weeks %}
-<tr>
-{% for d, events in week.days %}
-<td><div class="calday{% ifequal d today %} today{% endifequal %}">
-
-{{ d.day }}
-</div>
-{% for event in events %}
-{% if forloop.counter0 %}<br>
-{% endif %}
-• <a href="{{event.get_absolute_url}}" title="{{event.description}}">{{ event }}</a>
-{% endfor %}
-{% endfor %}
-{% endfor %}
+    <colgroup>
+    <col width='14.285%'>
+    <col width='14.285%'>
+    <col width='14.285%'>
+    <col width='14.285%'>
+    <col width='14.285%'>
+    <col width='14.285%'>
+    <col width='14.285%'>
+    </colgroup>
+    <tr>
+    {% for week in year_month.weeks %}
+    {% if forloop.first %}
+    {% for d, events in week.days %}
+    <th>{{d|date:"l"|title}}
+    {% endfor %}
+    {% endif %}
+    {% endfor %}
+    
+    {% for week in year_month.weeks %}
+    <tr>
+    {% for d, events in week.days %}
+    <td><div class="calday{% ifequal d today %} today{% endifequal %}">
+    
+    {{ d.day }}
+    </div>
+    {% for event in events %}
+    {% if forloop.counter0 %}<br>
+    {% endif %}
+    • <a href="{{event.get_absolute_url}}" title="{{event.description}}">{{ event }}</a>
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
 </table>
-<br>
+</div>
 {% endblock %}

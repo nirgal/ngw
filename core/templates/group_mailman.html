@@ -2,16 +2,16 @@
 {% load i18n %}
 
 {% block preform %}
-<div class=box>
+<div class=module>
 {% blocktrans with requestaddress=cg.mailman_request_address %}
-Send <tt>who listpassword</tt> to <a href="mailto:{{ requestaddress }}">{{ requestaddress }}</a> and copy paste the answer bellow. Replace the example.
-<p>Be careful not to forget <b>-request</b> in the email address, since you probably don't want every suscriber to receive the password in their mailbox!
+<p>Send <tt>who listpassword</tt> to <a href="mailto:{{ requestaddress }}">{{ requestaddress }}</a> and copy paste the answer bellow. Replace the example.
+<br>Be careful not to forget <b>-request</b> in the email address, since you probably don't want every suscriber to receive the password in their mailbox!
 {% endblocktrans %}
 </div>
 {% endblock %}
 
 {% block submitbar %}
 <div class="submit-row">
-<input type=submit value="{% trans "Send" %}" class="default">
+    <input type=submit value="{% trans "Send" %}" class="default">
 </div>
 {% endblock %}

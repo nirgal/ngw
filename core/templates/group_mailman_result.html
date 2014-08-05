@@ -16,20 +16,28 @@ function nm_check(id, checked) {
 {% endblock %}
 
 {% block content %}
-<div class=box>
-{% for res in sync_res %}
-<input type=checkbox name=mn_{{ forloop.counter }} onchange="nm_check('{{ forloop.counter }}', this.checked)">{{ res.0 }}<br>
-{% endfor %}
-<hr>
-{% trans "People to unsubscribe" %}:<br>
-{% for res in sync_res %}
-{% if res.1 %}<span id=umm_{{ forloop.counter }} style="display:none;">{{ res.1 }}<br></span>{% endif %}
-{% endfor %}
-<hr>
-{% trans "People to subscribe" %}:<br>
-{% for res in sync_res %}
-{% if res.2 %}<span id=smm_{{ forloop.counter }} style="display:none;">{{ res.2 }}<br></span>{% endif %}
-{% endfor %}
+<div id="content-main">
+<div class=module>
+    <p>
+    {% for res in sync_res %}
+    <input type=checkbox name=mn_{{ forloop.counter }} onchange="nm_check('{{ forloop.counter }}', this.checked)">{{ res.0 }}<br>
+    {% endfor %}
+    </p>
+    <hr>
+    <h4>{% trans "People to unsubscribe" %}:</h4>
+    <p>
+    {% for res in sync_res %}
+    {% if res.1 %}<span id=umm_{{ forloop.counter }} style="display:none;">{{ res.1 }}<br></span>{% endif %}
+    {% endfor %}
+    </p>
+    <hr>
+    <h4>{% trans "People to subscribe" %}:</h4>
+    <p>
+    {% for res in sync_res %}
+    {% if res.2 %}<span id=smm_{{ forloop.counter }} style="display:none;">{{ res.2 }}<br></span>{% endif %}
+    {% endfor %}
+    </p>
 
+</div>
 </div>
 {% endblock %}

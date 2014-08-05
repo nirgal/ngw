@@ -104,7 +104,9 @@ function show_field_selection() {
 </script>
 {% endblock %}
 
-{% block content %}
+
+
+{% block prequerylist %}
 <form id="mainform">
     <div style="text-align:left; display:none;">{% trans "Internal representation of the filter" %}:</div>
     <input type=hidden id=filter name=filter value="{{filter}}">
@@ -129,27 +131,29 @@ function show_field_selection() {
     <script>document.forms['quickfilter_displayedform'].filter.focus();</script>
 {% endif %}
 </div>
+{% endblock %}
 
-{{ block.super }}
 
+{% block presubmitbar %}
 <h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>
-<div id="select_fields" class=box style="display:none;">
+<div id="select_fields" class=module style="display:none;">
     {{ field_form.media|safe }}
     <form id=field_selection_widget action="#" onsubmit="submit_fields(); return false;"> {# Form id is needed by SelectFilter widget #}
     <table class=objchange>
         {{fields_form.as_table}}
     </table>
+
     <div class=submitbar style="text-align:left;">
         <input type=checkbox name=savecolumns id="field_selection_widget_save_default"><label for="field_selection_widget_save_default">{% trans "Save column selection as my default" %}</label><br>
         <input type=submit value="{% trans "Set columns" %}">
     </div>
     </form>
 </div>
-
 {% endblock %}
+
 
 {% block submitbar %}
 <div class="submit-row">
-  <a href="javascript:show_field_selection();" id=default>{% trans "Select displayed columns" %}</a>
+  <a class=button href="javascript:show_field_selection();" id=default>{% trans "Select displayed columns" %}</a>
 </div>
 {% endblock %}

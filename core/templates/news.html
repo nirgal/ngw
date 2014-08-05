@@ -6,11 +6,18 @@
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
     {% for n in news %}
-    <h1 class="boxheader">{% if cg_perms.N %}<a href="{{n.get_absolute_url}}">{% endif %}{{ n.title }}{% if cg_perms.N %}</a>{% endif %}</h1>
-    <div class=box>
-    <b>{{ n.date|date:"DATE_FORMAT" }}</b> - {% trans "by" %} <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
-    {{ n.text|linebreaksbr }}<br>
+    <div class=module>
+    <h2>
+        {% if cg_perms.N %}<a href="{{n.get_absolute_url}}">{% endif %}
+        {{ n.title }}
+        {% if cg_perms.N %}</a>{% endif %}
+    </h2>
+    <p>
+        <b>{{ n.date|date:"DATE_FORMAT" }}</b> - {% trans "by" %} <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
+        {{ n.text|linebreaksbr }}
+    </p>
     </div>
     {% empty %}
     <div class=fullpagebox>
@@ -25,4 +32,5 @@
     </div>
     {% endif %}
     {% endblock %}
+</div>
 {% endblock %}

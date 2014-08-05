@@ -63,6 +63,8 @@ div.breadcrumbs a:link, div.breadcrumbs a:visited {
     padding-left: 3ex;
     padding-right: 3ex;
     background: #f0f0f0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
 }
 
 a .submenuitem:hover, .activesubmenuitem {
@@ -132,88 +134,14 @@ div.fullpagebox {
     padding:3ex;
 }
 
-table {
-    border-collapse: collapse;
-    border: 1px solid #999;
-}
-
-table tr.rowodd {
-    background: #EDF3FE;
-}
-table tr.roweven {
-    background: white;
-}
-
-th + th ,  th + td , td + th, td + td { /* all but first line */
-    border-left: 1px solid #ccc;
-}
-
-table.objlist {
-    width: 100%;
-}
-table.objlist thead th {
-    text-align: left;
-    border-bottom: 1px solid #999;
-    padding-left: 0.5ex;
-    background: url(../admin/img/nav-bg.gif) bottom repeat-x;
-    background-color: #fff;
-}
-table.objlist thead th.sorted {
-    background:url(../admin/img/arrow-up.gif) right .4em no-repeat;
-}
-table.objlist thead th.sorted_reverse {
-    background:url(../admin/img/arrow-down.gif) right .4em no-repeat;
-}
-
-table.objlist td {
-    padding: 0.5ex;
-}
-
-table.objlist tr#objsummary {
-    border-top: 1px solid #999;
-    border-bottom: 1px solid #999;
-    font-size: 80%;
-}
-
-table.objchange {
-    width: 100%;
-    padding: 0;
-}
-
-table.objchange tr + tr { /* all but first line */
-    border-top: 1px solid #999;
-}
-
-table.objchange td, table.objchange th {
-    padding: 0.5ex;
-}
-table.objchange td {
-    font-size: 80%;
-}
-table.objchange th {
-    text-align: left;
-    padding-left: 1ex;
-    font-weight: normal;
-}
 
 
-table.objchange ul.multiplechoice {
-    padding: 0;
+.padded {
+    padding: 1ex;
+    bbackground: yellow;
 }
-table.objchange ul.multiplechoice li {
-    font-size: 120%;
-    display: inline;
-}
-
-
-input[type=text], textarea {
-    border:1px solid #ccc;
-    width: 100%;
-}
-
 
 /* Hack for admin multiple select widget */
 .selector h2 {
     margin-bottom: 0px;
 }
-

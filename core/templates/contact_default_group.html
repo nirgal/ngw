@@ -2,24 +2,28 @@
 {% load i18n %}
 
 {% block content %}
-<div class=box>
-{% trans "Default group members will be granted full access priviledges over next permanent groups and event that you'll create. For exemple, if you set your default group to Users - this is not a good idea - every single user will get full priviledges over the next groups you'll create." %}
-<br>
-{% trans "You will need to modify permissions manually if you want to create a contacts group can do not have that default permission." %}
-<br>
-{% trans "You can either choose an existing group, or create a new personnal group with just you inside." %}
+<div id="content-main">
+<div class=module>
+    <p>
+    {% trans "Default group members will be granted full access priviledges over next permanent groups and event that you'll create. For exemple, if you set your default group to Users - this is not a good idea - every single user will get full priviledges over the next groups you'll create." %}
+    <br>
+    {% trans "You will need to modify permissions manually if you want to create a contacts group can do not have that default permission." %}
+    <br>
+    {% trans "You can either choose an existing group, or create a new personnal group with just you inside." %}
+    </p>
+    <form method="post">
+    {% csrf_token %}
+        <table class=objchange>
+        {{ form.as_table }}
+        </table>
 </div>
-<form method="post">
-{% csrf_token %}
-    <table class=objchange>
-    {{ form.as_table }}
-    </table>
-
-    {% block submitbar %}
-    <div class=submit-row>
+    
+{% block submitbar %}
+<div class=submit-row>
     <input type=submit value="{% trans "Save" %}" class="default">
-    </div>
-    {% endblock %}
-
+</div>
+{% endblock %}
+    
 </form>
+</div>
 {% endblock %}
