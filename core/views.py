@@ -178,7 +178,10 @@ def test(request):
 #
 ########################################################################
 
-def query_print_entities(request, template_name, args, extrasort=None):
+def query_print(request, template_name, args, extrasort=None):
+    '''
+    This function renders the query, paginated
+    '''
     try:
         object_query_page_length = Config.objects.get(pk='query_page_length')
         NB_LINES_PER_PAGE = int(object_query_page_length.text)
@@ -214,21 +217,20 @@ def query_print_entities(request, template_name, args, extrasort=None):
     if extrasort:
         q = extrasort(q)
 
-    totalcount = q.count()
-
+    paginator = Paginator(q, NB_LINES_PER_PAGE)
     page = request.REQUEST.get('_page', 1)
     try:
-        page = int(page)
-    except ValueError:
-        page = 1
-    q = q[NB_LINES_PER_PAGE*(page-1):NB_LINES_PER_PAGE*page]
+        q = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        q = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        q = paginator.page(paginator.num_pages)
 
     args['query'] = q
     args['cols'] = cols
     args['order'] = order
-    args['count'] = totalcount
-    args['page'] = page
-    args['npages'] = (totalcount+NB_LINES_PER_PAGE-1)//NB_LINES_PER_PAGE
 
     if 'baseurl' not in args:
         args['baseurl'] = '?'
@@ -287,7 +289,7 @@ def logs(request):
         ( _('Property'), None, 'property_repr', 'property_repr'),
         ( _('Change'), None, 'change', 'change'),
     ]
-    return query_print_entities(request, 'list_log.html', args)
+    return query_print(request, 'list_log.html', args)
 
 #######################################################################
 #
@@ -648,7 +650,7 @@ def contact_list(request):
     args['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
     args['no_confirm_form_discard'] = True
 
-    return query_print_entities(request, 'list_contact.html', args)
+    return query_print(request, 'list_contact.html', args)
 
 
 @login_required()
@@ -1294,7 +1296,14 @@ def contactgroup_list(request):
     args['cols'] = cols
     args['objtype'] = ContactGroup
     args['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-    return query_print_entities(request, 'list.html', args)
+    return query_print(request, 'list.html', args)
+
+
+#from django.views.generic import ListView
+#class ContactGroupList(ListView):
+#    template_name = 'list.html'
+#    def get_queryset(self):
+#        return ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
 
 
 class WeekDate:
@@ -1412,7 +1421,7 @@ def event_list(request):
     args['year_month'] = YearMonthCal(year, month, month_events)
     args['today'] = date.today()
 
-    return query_print_entities(request, 'list_events.html', args)
+    return query_print(request, 'list_events.html', args)
 
 
 @login_required()
@@ -1583,7 +1592,7 @@ def contactgroup_members(request, gid, output_format=''):
     args['active_submenu'] = 'members'
     args['no_confirm_form_discard'] = True
 
-    response = query_print_entities(request, 'group_detail.html', args)
+    response = query_print(request, 'group_detail.html', args)
     #from django.db import connection
     #import pprint
     #pprint.PrettyPrinter(indent=4).pprint(connection.queries)
@@ -2554,7 +2563,7 @@ def field_list(request):
     args['nav'] = Navbar(ContactField.get_class_navcomponent())
     def extrasort(query):
         return query.order_by('sort_weight')
-    return query_print_entities(request, 'list.html', args, extrasort=extrasort)
+    return query_print(request, 'list.html', args, extrasort=extrasort)
 
 
 @login_required()
@@ -2785,7 +2794,7 @@ def choicegroup_list(request):
     args['title'] = _('Select a choice group')
     args['objtype'] = ChoiceGroup
     args['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
-    return query_print_entities(request, 'list.html', args)
+    return query_print(request, 'list.html', args)
 
 
 class ChoicesWidget(forms.MultiWidget):

@@ -11,6 +11,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 admin.autodiscover()
 
+#from ngw.core.views import ContactGroupList
+
 groups_urlpatterns = patterns('',
     url(r'^add$', 'ngw.core.views.contactgroup_edit', {'id': None}),
     url(r'^(?P<gid>\d+)/$', 'ngw.core.views.contactgroup_details'),
@@ -85,6 +87,7 @@ urlpatterns = patterns('',
     url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/delete$', 'ngw.core.views.contact_filters_delete'),
     url(r'^contacts/(?P<cid>\d+)/default_group$', 'ngw.core.views.contact_default_group'),
 
+    #url(r'^contactgroups2/$', ContactGroupList.as_view()),
     url(r'^contactgroups/$', 'ngw.core.views.contactgroup_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),
     url(r'^events/$', 'ngw.core.views.event_list'),

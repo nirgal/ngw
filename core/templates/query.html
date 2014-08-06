@@ -4,12 +4,8 @@ That file must be included in a full template.
 Parameters:
     query: A query yielding tuple of entities
     cols: A list of 4-tuples: ("column name", entity number, "property or method NAME of the entity", "matching table column for sort")
-    count: number of objects
-    npages: number of pages
 Optionnal parameters:
-    sc: number of the column used to sort
-    sr: 1 for reversed sort
-    page: number of the page actually printed
+    order: number of the column used to sort
 {% endcomment %}
 
 <div class="module" id="changelist">
@@ -39,16 +35,18 @@ Optionnal parameters:
 {% endfor %}
 </table>
 <p class=paginator>
-    {% ifnotequal npages 1 %}
-        {% blocktrans count npages=npages %}{{ npages }} page{% plural %}{{ npages }} pages{% endblocktrans %}
-        {% for i in page|pagenumber_iterator:npages %}
-            {% ifnotequal page i %}
+    {% ifnotequal query.paginator.num_pages 1 %}
+        {% blocktrans count npages=query.paginator.num_pages %}
+            {{ npages }} page{% plural %}{{ npages }} pages
+        {% endblocktrans %}
+        {% for i in query.number|pagenumber_iterator:query.paginator.num_pages %}
+            {% ifnotequal query.number i %}
             <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
             {% else %}
             <span style="border: solid 1px #999; width: auto; background:#fce">
             {% endifnotequal %}
             <b>{{i}}</b>
-            {% ifnotequal page i %}
+            {% ifnotequal query.number i %}
             </a>
             {% else %}
             </span>
@@ -56,7 +54,7 @@ Optionnal parameters:
         {% endfor %}
         -
     {% endifnotequal %}
-    {% blocktrans count count=count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
+    {% blocktrans count count=query.paginator.count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
 </p>
 </form>
 </div>
