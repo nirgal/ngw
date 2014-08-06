@@ -34,6 +34,7 @@ Optionnal parameters:
     {% endfor %}
 {% endfor %}
 </table>
+{% if query.paginator %}
 <p class=paginator>
     {% ifnotequal query.paginator.num_pages 1 %}
         {% blocktrans count npages=query.paginator.num_pages %}
@@ -56,6 +57,7 @@ Optionnal parameters:
     {% endifnotequal %}
     {% blocktrans count count=query.paginator.count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
 </p>
+{% endif %}
 </form>
 </div>
 </div>
