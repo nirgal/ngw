@@ -180,7 +180,7 @@ def test(request):
 #
 ########################################################################
 
-def query_print(request, template_name, args, extrasort=None):
+def query_print(request, template_name, args, forcesort=None):
     '''
     This function renders the query, paginated
     '''
@@ -197,12 +197,12 @@ def query_print(request, template_name, args, extrasort=None):
     nosort = False
     order = request.REQUEST.get('_order', '')
 
-    if order or not extrasort:
-        # disable default sort on column 0 if there's an extrasort parameter
+    if order and not forcesort:
+        # disable default sort on column 0 if there's an forcesort parameter
         try:
             intorder = int(order)
         except ValueError:
-            if extrasort:
+            if forcesort:
                 order = ''
                 nosort = True
             else:
@@ -214,10 +214,11 @@ def query_print(request, template_name, args, extrasort=None):
                 q = q.order_by(sort_col)
             else:
                 q = q.order_by('-'+sort_col)
-    else: # no order and extrasort
+    else: # no order and forcesort
         order = ''
-    if extrasort:
-        q = extrasort(q)
+    if forcesort:
+        q = q.order_by(forcesort)
+
 
     paginator = Paginator(q, NB_LINES_PER_PAGE)
     page = request.REQUEST.get('_page', 1)
@@ -1270,7 +1271,6 @@ def contactgroup_list(request):
         else:
             return cg.description[:DESCRIPTION_MAXLEN] + '…'
 
-	
     def print_fields(cg):
         if cg.field_group:
             fields = cg.contact_fields
@@ -2587,16 +2587,14 @@ def field_list(request):
     args['cols'] = [
         ( _('Name'), None, 'name', 'name'),
         ( _('Type'), None, 'type_as_html', 'type'),
-        ( _('Only for'), None, 'contact_group', 'contact_group_id'),
+        ( _('Only for'), None, 'contact_group', 'contact_group__name'),
         ( _('System locked'), None, 'system', 'system'),
         #( _('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     args['title'] = _('Select an optionnal field')
     args['objtype'] = ContactField
     args['nav'] = Navbar(ContactField.get_class_navcomponent())
-    def extrasort(query):
-        return query.order_by('sort_weight')
-    return query_print(request, 'list.html', args, extrasort=extrasort)
+    return query_print(request, 'list.html', args, forcesort='sort_weight')
 
 
 @login_required()
