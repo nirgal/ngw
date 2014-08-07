@@ -1,9 +1,9 @@
 {% load i18n ngwtags %}
 {% comment %}
 That file must be included in a full template.
-Parameters:
-    query: A query yielding tuple of entities
-    cols: A list of 4-tuples: ("column name", entity number, "property or method NAME of the entity", "matching table column for sort")
+Context:
+    query: A iterable object
+    cols: A list of 4-tuples: ("column title", "function", "property or method NAME of the row", "matching table column for sort")
 Optionnal parameters:
     order: number of the column used to sort
 {% endcomment %}

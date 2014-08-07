@@ -69,11 +69,8 @@ def ngw_display(obj, coldesc):
             return ''
         #result = html.escape(result)
 
-    if inspect.isfunction(coldesc[1]):
-        #print("isfunction")
-        return coldesc[1](result)
-    if inspect.ismethod(coldesc[1]):
-        #print("ismethod")
+    if inspect.isfunction(coldesc[1]) or inspect.ismethod(coldesc[1]):
+        #print("ismethod/isfunction")
         result =  coldesc[1](result)
         #print(result)
         return result

@@ -152,6 +152,18 @@ _initialise_cigflags_constants()
 # Ends with a /
 GROUP_STATIC_DIR = settings.MEDIA_ROOT+'g/'
 
+
+def _truncate_text(txt, maxlen=200):
+    if len(txt) < maxlen:
+        return txt
+    return txt[:maxlen] + '…'
+
+#def _truncate_list(lst, maxlen=5):
+#    if len(lst)>maxlen:
+#        return lst[:maxlen] + ['…']
+#    return lst
+
+
 class NgwModel(models.Model):
     do_not_call_in_templates = True # prevent django from trying to instanciate objtype
 
@@ -847,6 +859,22 @@ class ContactGroup(NgwModel):
         if self.date:
             result += ' ‧ ' + formats.date_format(self.date, "DATE_FORMAT")
         return result
+
+    def description100(self):
+        '''
+        Same as description, but length is truncated after 200 characters.
+        '''
+        return _truncate_text(self.description, 100)
+
+    #def visible_direct_supergroups_5(uid):
+    #    LIST_PREVIEW_LEN = 5
+    #    def _trucate_list(l):
+    #        if len(l)>LIST_PREVIEW_LEN:
+    #            return l[:LIST_PREVIEW_LEN] + ['…']
+    #        return l
+    #    def inner(cg):
+    #        return ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % uid])[:LIST_PREVIEW_LEN+1]]))
+    #    return inner
 
     def mailman_request_address(self):
         ''' Adds -request before the @ of the address '''

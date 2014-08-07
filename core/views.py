@@ -1264,12 +1264,6 @@ def contactgroup_list(request):
         if len(l)>LIST_PREVIEW_LEN:
             return l[:LIST_PREVIEW_LEN] + ['…']
         return l
-    def _trucate_description(cg):
-        DESCRIPTION_MAXLEN = 200
-        if len(cg.description) < DESCRIPTION_MAXLEN:
-            return cg.description
-        else:
-            return cg.description[:DESCRIPTION_MAXLEN] + '…'
 
     def print_fields(cg):
         if cg.field_group:
@@ -1283,15 +1277,15 @@ def contactgroup_list(request):
 
     q = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     cols = [
-        #( _('Date'), None, 'html_date', ContactGroup.date ),
+        #( _('Date'), None, 'html_date', 'date' ),
         ( _('Name'), None, 'name', 'name' ),
-        ( _('Description'), None, lambda cg: _trucate_description(cg), None ),
-        #( _('Description'), None, 'description', lambda cg: len(cg.description)<100 and cg.description + '!!' or cg.description[:100] + '…', None ),
+        ( _('Description'), None, 'description100', 'description' ),
         #( _('Contact fields'), None, print_fields, 'field_group' ),
         ( _('Super groups'), None, lambda cg: ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])[:LIST_PREVIEW_LEN+1]])), None ),
+        #( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
         ( _('Sub groups'), None, lambda cg: ', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])][:LIST_PREVIEW_LEN+1])), None ),
         #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
-        #( _('Members'), None, lambda cg: str(len(cg.get_members())), None ),
+        #( _('Members'), None, lambda cg: str(len(cg.get_all_members())), None ),
         #( _('System\u00a0locked'), None, 'system', 'system' ),
     ]
     args = {}
