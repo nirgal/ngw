@@ -5,6 +5,7 @@ from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
 import json
+from functools import wraps
 import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -17,6 +18,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text, smart_text
 from django.utils.six import iteritems, itervalues
 from django.utils import formats
+from django.utils.decorators import available_attrs # python2 compat
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -65,22 +67,22 @@ def logout(request):
         }, RequestContext(request))
 
 
-# decorator for requests
-class require_group:
-    def __init__(self, required_group):
-        self.required_group = required_group
-    def __call__(self, func):
-        def wrapped(*args, **kwargs):
-            request = args[0]
+def require_group(required_group):
+    '''
+    Decorator to make a view only accept users from a given group. Usage:
+    '''
+    def decorator(func):
+        @wraps(func, assigned=available_attrs(func))
+        def inner(request, *args, **kwargs):
             try:
                 user = request.user
             except AttributeError:
                 raise PermissionDenied
-            if not user.is_member_of(self.required_group):
+            if not user.is_member_of(required_group):
                 raise PermissionDenied
-            return func(*args, **kwargs)
-        return wrapped
-
+            return func(request, *args, **kwargs)
+        return inner
+    return decorator
 
 def get_display_fields(user):
     # check the field still exists
@@ -231,6 +233,8 @@ def query_print(request, template_name, args, extrasort=None):
     args['query'] = q
     args['cols'] = cols
     args['order'] = order
+    #args['paginator'] = paginator
+    #args['page_obj'] = 
 
     if 'baseurl' not in args:
         args['baseurl'] = '?'
@@ -1300,10 +1304,39 @@ def contactgroup_list(request):
 
 
 #from django.views.generic import ListView
+#from django.utils.decorators import method_decorator
 #class ContactGroupList(ListView):
+#
+#    @method_decorator(login_required)
+#    @method_decorator(require_group(GROUP_USER_NGW))
+#    def dispatch(self, *args, **kwargs):
+#        return super(ContactGroupList, self).dispatch(*args, **kwargs)
+#
 #    template_name = 'list.html'
+#    context_object_name = 'query'
+#    page_kwarg = '_page'
+#
 #    def get_queryset(self):
 #        return ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+#
+#    def get_paginate_by(self, queryset):
+#        try:
+#            object_query_page_length = Config.objects.get(pk='query_page_length')
+#            return int(object_query_page_length.text)
+#        except (Config.DoesNotExist, ValueError):
+#            return 200
+#
+#    def get_context_data(self, *args, **kwargs):
+#        context = super(ContactGroupList, self).get_context_data(*args, **kwargs)
+#        context['title'] = _('Select a contact group')
+#        context['cols'] = [
+#            ( _('Name'), None, 'name', 'name' ),
+#        ]
+#        context['objtype'] = ContactGroup
+#        context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
+#        context['order'] = '' # FIXME
+#        context['query'].paginator = context['paginator']
+#        return context
 
 
 class WeekDate:
