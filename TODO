@@ -46,5 +46,3 @@ Event selection widget (Do not load everything at once, like for column selectio
 Message sending to an inherited member.
 
 Type change deletion check is buggy.
-
-Bug: fields are not sorted when clicking table header

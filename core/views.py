@@ -180,7 +180,7 @@ def test(request):
 #
 ########################################################################
 
-def query_print(request, template_name, context, forcesort=None):
+def query_print(request, template_name, context, defaultsort=''):
     '''
     This function renders the query, paginated
     '''
@@ -188,31 +188,23 @@ def query_print(request, template_name, context, forcesort=None):
     cols = context['cols']
 
     # get sort column name
-    nosort = False
     order = request.REQUEST.get('_order', '')
-
-    if order and not forcesort:
-        # disable default sort on column 0 if there's an forcesort parameter
-        try:
-            intorder = int(order)
-        except ValueError:
-            if forcesort:
-                order = ''
-                nosort = True
-            else:
-                order = '0'
-                intorder = 0
-        if not nosort:
-            sort_col = cols[abs(intorder)][3]
-            if not order or order[0] != '-':
-                q = q.order_by(sort_col)
-            else:
-                q = q.order_by('-'+sort_col)
-    else: # no order and forcesort
-        order = ''
-    if forcesort:
-        q = q.order_by(forcesort)
-
+    try:
+        intorder = int(order)
+    except ValueError:
+        if defaultsort:
+            order = ''
+            intorder = None
+            q = q.order_by(defaultsort)
+        else:
+            order = '0'
+            intorder = 0
+    if intorder is not None:
+        sort_col = cols[abs(intorder)][3]
+        if not order or order[0] != '-':
+            q = q.order_by(sort_col)
+        else:
+            q = q.order_by('-'+sort_col)
 
     paginator = Paginator(q, Config.get_object_query_page_length())
     page = request.REQUEST.get('_page', 1)
@@ -2578,7 +2570,7 @@ def field_list(request):
     context['title'] = _('Select an optionnal field')
     context['objtype'] = ContactField
     context['nav'] = Navbar(ContactField.get_class_navcomponent())
-    return query_print(request, 'list.html', context, forcesort='sort_weight')
+    return query_print(request, 'list.html', context, defaultsort='sort_weight')
 
 
 @login_required()
