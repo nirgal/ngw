@@ -234,8 +234,9 @@ def query_print(request, template_name, context, forcesort=None):
     context['query'] = q
     context['cols'] = cols
     context['order'] = order
-    #context['paginator'] = paginator
-    #context['page_obj'] = 
+
+    context['paginator'] = paginator
+    context['page_obj'] = q
 
     if 'baseurl' not in context:
         context['baseurl'] = '?'
@@ -1329,7 +1330,6 @@ def contactgroup_list(request):
 #        context['objtype'] = ContactGroup
 #        context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
 #        context['order'] = '' # FIXME
-#        context['query'].paginator = context['paginator']
 #        return context
 
 

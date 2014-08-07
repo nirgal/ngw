@@ -34,20 +34,20 @@ Optionnal parameters:
     {% endfor %}
 {% endfor %}
 </table>
-{% if query.paginator %}
+{% if paginator %}
 <p class=paginator>
-    {% ifnotequal query.paginator.num_pages 1 %}
-        {% blocktrans count npages=query.paginator.num_pages %}
+    {% ifnotequal paginator.num_pages 1 %}
+        {% blocktrans count npages=paginator.num_pages %}
             {{ npages }} page{% plural %}{{ npages }} pages
         {% endblocktrans %}
-        {% for i in query.number|pagenumber_iterator:query.paginator.num_pages %}
-            {% ifnotequal query.number i %}
+        {% for i in page_obj.number|pagenumber_iterator:paginator.num_pages %}
+            {% ifnotequal page_obj.number i %}
             <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
             {% else %}
             <span style="border: solid 1px #999; width: auto; background:#fce">
             {% endifnotequal %}
             <b>{{i}}</b>
-            {% ifnotequal query.number i %}
+            {% ifnotequal page_obj.number i %}
             </a>
             {% else %}
             </span>
@@ -55,7 +55,7 @@ Optionnal parameters:
         {% endfor %}
         -
     {% endifnotequal %}
-    {% blocktrans count count=query.paginator.count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
+    {% blocktrans count count=paginator.count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
 </p>
 {% endif %}
 </form>
