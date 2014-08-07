@@ -47,4 +47,4 @@ Message sending to an inherited member.
 
 Type change deletion check is buggy.
 
-Delete Config item "group header".
+Bug: fields are not sorted when clicking table header

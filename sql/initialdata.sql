@@ -45,7 +45,6 @@ COPY choice (choice_group_id, key, value) FROM stdin;
 --
 
 COPY config (id, text) FROM stdin;
-groups header	
 columns	name,field_7,field_8,field_10
 banner	<big>NGW</big> Group Ware
 phpbb acl dictionary	
