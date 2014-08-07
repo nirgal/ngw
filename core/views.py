@@ -2817,7 +2817,7 @@ def choicegroup_list(request):
     if not request.user.is_admin():
         raise PermissionDenied
     args = {}
-    args['query'] = ChoiceGroup.objects
+    args['query'] = ChoiceGroup.objects.all()
     args['cols'] = [
         ( _('Name'), None, 'name', 'name'),
         ( _('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
