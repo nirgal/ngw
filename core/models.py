@@ -250,6 +250,14 @@ class Config(NgwModel):
     class Meta:
         db_table = 'config'
 
+    @staticmethod
+    def get_object_query_page_length():
+        try:
+            object_query_page_length = Config.objects.get(pk='query_page_length')
+            return int(object_query_page_length.text)
+        except (Config.DoesNotExist, ValueError):
+            return 200
+
 
 class Choice(NgwModel):
     oid = models.AutoField(primary_key=True)

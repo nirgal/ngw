@@ -184,12 +184,6 @@ def query_print(request, template_name, context, forcesort=None):
     '''
     This function renders the query, paginated
     '''
-    try:
-        object_query_page_length = Config.objects.get(pk='query_page_length')
-        NB_LINES_PER_PAGE = int(object_query_page_length.text)
-    except (Config.DoesNotExist, ValueError):
-        NB_LINES_PER_PAGE = 200
-
     q = context['query']
     cols = context['cols']
 
@@ -220,7 +214,7 @@ def query_print(request, template_name, context, forcesort=None):
         q = q.order_by(forcesort)
 
 
-    paginator = Paginator(q, NB_LINES_PER_PAGE)
+    paginator = Paginator(q, Config.get_object_query_page_length())
     page = request.REQUEST.get('_page', 1)
     try:
         q = paginator.page(page)
@@ -1315,11 +1309,7 @@ def contactgroup_list(request):
 #        return ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
 #
 #    def get_paginate_by(self, queryset):
-#        try:
-#            object_query_page_length = Config.objects.get(pk='query_page_length')
-#            return int(object_query_page_length.text)
-#        except (Config.DoesNotExist, ValueError):
-#            return 200
+#       return Config.get_object_query_page_length()
 #
 #    def get_context_data(self, *args, **kwargs):
 #        context = super(ContactGroupList, self).get_context_data(*args, **kwargs)
