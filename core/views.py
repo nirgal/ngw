@@ -164,14 +164,14 @@ def home(request):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def test(request):
-    args = {
+    context = {
         'title': 'Test',
         'env': os.environ,
         'objtype': Contact,
         'nav': Navbar('test'),
     }
     messages.add_message(request, messages.INFO, 'This is a test')
-    return render_to_response('test.html', args, RequestContext(request))
+    return render_to_response('test.html', context, RequestContext(request))
 
 
 ########################################################################
@@ -180,7 +180,7 @@ def test(request):
 #
 ########################################################################
 
-def query_print(request, template_name, args, forcesort=None):
+def query_print(request, template_name, context, forcesort=None):
     '''
     This function renders the query, paginated
     '''
@@ -190,8 +190,8 @@ def query_print(request, template_name, args, forcesort=None):
     except (Config.DoesNotExist, ValueError):
         NB_LINES_PER_PAGE = 200
 
-    q = args['query']
-    cols = args['cols']
+    q = context['query']
+    cols = context['cols']
 
     # get sort column name
     nosort = False
@@ -231,15 +231,15 @@ def query_print(request, template_name, args, forcesort=None):
         # If page is out of range (e.g. 9999), deliver last page of results.
         q = paginator.page(paginator.num_pages)
 
-    args['query'] = q
-    args['cols'] = cols
-    args['order'] = order
-    #args['paginator'] = paginator
-    #args['page_obj'] = 
+    context['query'] = q
+    context['cols'] = cols
+    context['order'] = order
+    #context['paginator'] = paginator
+    #context['page_obj'] = 
 
-    if 'baseurl' not in args:
-        args['baseurl'] = '?'
-    return render_to_response(template_name, args, RequestContext(request))
+    if 'baseurl' not in context:
+        context['baseurl'] = '?'
+    return render_to_response(template_name, context, RequestContext(request))
 
 
 # Helper function that is never call directly, hence the lack of authentification check
@@ -281,12 +281,12 @@ def logs(request):
     if not request.user.is_admin():
         raise PermissionDenied
 
-    args = {}
-    args['title'] = _('Global log')
-    args['nav'] = Navbar(Log.get_class_navcomponent())
-    args['objtype'] = Log
-    args['query'] = Log.objects.all()
-    args['cols'] = [
+    context = {}
+    context['title'] = _('Global log')
+    context['nav'] = Navbar(Log.get_class_navcomponent())
+    context['objtype'] = Log
+    context['query'] = Log.objects.all()
+    context['cols'] = [
         ( _('Date UTC'), None, 'small_date', 'dt'),
         ( _('User'), None, 'contact', 'contact__name'),
         ( _('Action'), None, 'action_txt', 'action'),
@@ -294,7 +294,7 @@ def logs(request):
         ( _('Property'), None, 'property_repr', 'property_repr'),
         ( _('Change'), None, 'change', 'change'),
     ]
-    return query_print(request, 'list_log.html', args)
+    return query_print(request, 'list_log.html', context)
 
 #######################################################################
 #
@@ -643,19 +643,19 @@ def contact_list(request):
     # request.user can see:
     #q.qry_where.append('')
 
-    args = {}
-    args['title'] = _('Contact list')
-    args['baseurl'] = baseurl
-    args['objtype'] = Contact
-    args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['query'] = q
-    args['cols'] = cols
-    args['filter'] = strfilter
-    args['fields'] = strfields
-    args['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
-    args['no_confirm_form_discard'] = True
+    context = {}
+    context['title'] = _('Contact list')
+    context['baseurl'] = baseurl
+    context['objtype'] = Contact
+    context['nav'] = Navbar(Contact.get_class_navcomponent())
+    context['query'] = q
+    context['cols'] = cols
+    context['filter'] = strfilter
+    context['fields'] = strfields
+    context['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
+    context['no_confirm_form_discard'] = True
 
-    return query_print(request, 'list_contact.html', args)
+    return query_print(request, 'list_contact.html', context)
 
 
 @login_required()
@@ -681,24 +681,24 @@ def contact_detail(request, gid=None, cid=None):
         except ContactFieldValue.DoesNotExist:
             pass # ignore blank values
 
-    args = {}
-    args['title'] = _('Details for %s') % force_text(c)
+    context = {}
+    context['title'] = _('Details for %s') % force_text(c)
     if gid:
-        #args['title'] += ' in group '+cg.unicode_with_date()
-        args['contact_group'] = cg
-        args['nav'] = cg.get_smart_navbar() \
-                      .add_component(('members', _('members')))
-        args['cg_perms'] = cg.get_contact_perms(request.user.id)
-        args['active_submenu'] = 'members'
+        #context['title'] += ' in group '+cg.unicode_with_date()
+        context['contact_group'] = cg
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('members', _('members')))
+        context['cg_perms'] = cg.get_contact_perms(request.user.id)
+        context['active_submenu'] = 'members'
     else:
-        args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(c.get_navcomponent())
-    args['objtype'] = Contact
-    args['contact'] = c
-    args['rows'] = rows
-    args['group_user_perms'] = ContactGroup.objects.get(pk=GROUP_USER).get_contact_perms(request.user.id)
-    args['group_user_ngw_perms'] = ContactGroup.objects.get(pk=GROUP_USER_NGW).get_contact_perms(request.user.id)
-    return render_to_response('contact_detail.html', args, RequestContext(request))
+        context['nav'] = Navbar(Contact.get_class_navcomponent())
+    context['nav'].add_component(c.get_navcomponent())
+    context['objtype'] = Contact
+    context['contact'] = c
+    context['rows'] = rows
+    context['group_user_perms'] = ContactGroup.objects.get(pk=GROUP_USER).get_contact_perms(request.user.id)
+    context['group_user_ngw_perms'] = ContactGroup.objects.get(pk=GROUP_USER_NGW).get_contact_perms(request.user.id)
+    return render_to_response('contact_detail.html', context, RequestContext(request))
 
 
 @login_required()
@@ -891,25 +891,25 @@ def contact_edit(request, gid=None, cid=None):
             else:
                 form = ContactEditForm(request.user.id, cid=cid)
 
-    args = {}
-    args['form'] = form
-    args['title'] = title
-    args['id'] = cid
-    args['objtype'] = objtype
+    context = {}
+    context['form'] = form
+    context['title'] = title
+    context['id'] = cid
+    context['objtype'] = objtype
     if gid:
-        args['nav'] = cg.get_smart_navbar() \
-                      .add_component(('members', _('members')))
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('members', _('members')))
     else:
-        args['nav'] = Navbar(Contact.get_class_navcomponent())
+        context['nav'] = Navbar(Contact.get_class_navcomponent())
     if cid:
-        args['nav'].add_component(contact.get_navcomponent()) \
-                   .add_component(('edit', _('edit')))
+        context['nav'].add_component(contact.get_navcomponent()) \
+                      .add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component(('add', _('add')))
+        context['nav'].add_component(('add', _('add')))
     if cid:
-        args['o'] = contact
+        context['o'] = contact
 
-    return render_to_response('edit.html', args, RequestContext(request))
+    return render_to_response('edit.html', context, RequestContext(request))
 
 
 class ContactPasswordForm(forms.Form):
@@ -936,9 +936,9 @@ def contact_pass(request, gid=None, cid=None):
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
-    args = {}
-    args['title'] = _('Change password')
-    args['contact'] = contact
+    context = {}
+    context['title'] = _('Change password')
+    context['contact'] = contact
     if request.method == 'POST':
         form = ContactPasswordForm(request.POST)
         if form.is_valid():
@@ -953,21 +953,21 @@ def contact_pass(request, gid=None, cid=None):
                 return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else: # GET
         form = ContactPasswordForm()
-    args['form'] = form
+    context['form'] = form
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
-        args['nav'] = cg.get_smart_navbar() \
-                      .add_component(('members', _('members')))
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('members', _('members')))
     else:
-        args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(contact.get_navcomponent()) \
-               .add_component(('password', _('password')))
+        context['nav'] = Navbar(Contact.get_class_navcomponent())
+    context['nav'].add_component(contact.get_navcomponent()) \
+                  .add_component(('password', _('password')))
     try:
-        args['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
+        context['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
         # So here the 'reset by letter' button will be enabled
     except AttributeError:
         pass # it's ok not to have a letter
-    return render_to_response('password.html', args, RequestContext(request))
+    return render_to_response('password.html', context, RequestContext(request))
 
 
 @login_required()
@@ -989,17 +989,17 @@ def contact_pass_letter(request, gid=None, cid=None):
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
-    args = {}
-    args['title'] = _('Generate a new password and print a letter')
-    args['contact'] = contact
+    context = {}
+    context['title'] = _('Generate a new password and print a letter')
+    context['contact'] = contact
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
-        args['nav'] = cg.get_smart_navbar() \
-                      .add_component(('members', _('members')))
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('members', _('members')))
     else:
-        args['nav'] = Navbar(Contact.get_class_navcomponent())
-    args['nav'].add_component(contact.get_navcomponent()) \
-               .add_component(('password letter', _('password letter')))
+        context['nav'] = Navbar(Contact.get_class_navcomponent())
+    context['nav'].add_component(contact.get_navcomponent()) \
+                  .add_component(('password letter', _('password letter')))
 
     if request.method == 'POST':
         new_password = Contact.generate_password()
@@ -1028,7 +1028,7 @@ def contact_pass_letter(request, gid=None, cid=None):
         response = CompatibleStreamingHttpResponse(open(fullpath, 'rb'), content_type='application/pdf')
         os.unlink(fullpath)
         return response
-    return render_to_response('password_letter.html', args, RequestContext(request))
+    return render_to_response('password_letter.html', context, RequestContext(request))
 
 
 @login_required()
@@ -1042,7 +1042,7 @@ def contact_delete(request, gid=None, cid=None):
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         base_nav = cg.get_smart_navbar() \
-                   .add_component(('members', _('members')))
+                     .add_component(('members', _('members')))
         next_url = cg.get_absolute_url() + 'members/'
     else:
         next_url = reverse('ngw.core.views.contact_list')
@@ -1082,14 +1082,14 @@ def contact_filters_list(request, cid=None):
     if filter_list_str:
         filter_list = contactsearch.parse_filter_list_str(filter_list_str)
         filters = [ filtername for filtername, filter_str in filter_list ]
-    args = {}
-    args['title'] = _('User custom filters')
-    args['contact'] = contact
-    args['filters'] = filters
-    args['nav'] = Navbar(Contact.get_class_navcomponent()) \
-                  .add_component(contact.get_navcomponent()) \
-                  .add_component(('filters', _('custom filters')))
-    return render_to_response('customfilters_user.html', args, RequestContext(request))
+    context = {}
+    context['title'] = _('User custom filters')
+    context['contact'] = contact
+    context['filters'] = filters
+    context['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                     .add_component(contact.get_navcomponent()) \
+                     .add_component(('filters', _('custom filters')))
+    return render_to_response('customfilters_user.html', context, RequestContext(request))
 
 
 class FilterEditForm(forms.Form):
@@ -1128,24 +1128,24 @@ def contact_filters_edit(request, cid=None, fid=None):
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else:
         form = FilterEditForm(initial={ 'name': filtername })
-    args = {}
-    args['title'] = _('User custom filter renaming')
-    args['contact'] = contact
-    args['form'] = form
-    args['filtername'] = filtername
+    context = {}
+    context['title'] = _('User custom filter renaming')
+    context['contact'] = contact
+    context['form'] = form
+    context['filtername'] = filtername
     try:
         filter_html = contactsearch.parse_filterstring(filterstr, request.user.id).to_html()
     except PermissionDenied:
         filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
     except ContactField.DoesNotExist:
         filter_html = _("Unparsable filter: Field does not exist.")
-    args['filter_html'] = filter_html
-    args['nav'] = Navbar(Contact.get_class_navcomponent()) \
-                  .add_component(contact.get_navcomponent()) \
-                  .add_component(('filters', _('custom filters'))) \
-                  .add_component((force_text(fid), filtername))
+    context['filter_html'] = filter_html
+    context['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                     .add_component(contact.get_navcomponent()) \
+                     .add_component(('filters', _('custom filters'))) \
+                     .add_component((force_text(fid), filtername))
 
-    return render_to_response('customfilter_user.html', args, RequestContext(request))
+    return render_to_response('customfilter_user.html', context, RequestContext(request))
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -1213,14 +1213,14 @@ def contact_default_group(request, cid=None):
     else:
         default_group = contact.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
         form = DefaultGroupForm(contact, initial={'default_group': default_group})
-    args = {}
-    args['title'] = _('User default group')
-    args['contact'] = contact
-    args['form'] = form
-    args['nav'] = Navbar(Contact.get_class_navcomponent()) \
-                  .add_component(contact.get_navcomponent()) \
-                  .add_component(('default_group', _('default group')))
-    return render_to_response('contact_default_group.html', args, RequestContext(request))
+    context = {}
+    context['title'] = _('User default group')
+    context['contact'] = contact
+    context['form'] = form
+    context['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                     .add_component(contact.get_navcomponent()) \
+                     .add_component(('default_group', _('default group')))
+    return render_to_response('contact_default_group.html', context, RequestContext(request))
 
 
 #@login_required()
@@ -1288,13 +1288,13 @@ def contactgroup_list(request):
         #( _('Members'), None, lambda cg: str(len(cg.get_all_members())), None ),
         #( _('System\u00a0locked'), None, 'system', 'system' ),
     ]
-    args = {}
-    args['title'] = _('Select a contact group')
-    args['query'] = q
-    args['cols'] = cols
-    args['objtype'] = ContactGroup
-    args['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-    return query_print(request, 'list.html', args)
+    context = {}
+    context['title'] = _('Select a contact group')
+    context['query'] = q
+    context['cols'] = cols
+    context['objtype'] = ContactGroup
+    context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
+    return query_print(request, 'list.html', context)
 
 
 #from django.views.generic import ListView
@@ -1439,16 +1439,16 @@ def event_list(request):
             month_events[cg.date] = []
         month_events[cg.date].append(cg)
 
-    args = {}
-    args['title'] = _('Events')
-    args['query'] = q
-    args['cols'] = cols
-    args['objtype'] = ContactGroup
-    args['nav'] = Navbar().add_component(('events', _('events')))
-    args['year_month'] = YearMonthCal(year, month, month_events)
-    args['today'] = date.today()
+    context = {}
+    context['title'] = _('Events')
+    context['query'] = q
+    context['cols'] = cols
+    context['objtype'] = ContactGroup
+    context['nav'] = Navbar().add_component(('events', _('events')))
+    context['year_month'] = YearMonthCal(year, month, month_events)
+    context['today'] = date.today()
 
-    return query_print(request, 'list_events.html', args)
+    return query_print(request, 'list_events.html', context)
 
 
 @login_required()
@@ -1501,8 +1501,8 @@ def contactgroup_members(request, gid, output_format=''):
         display = cg.get_default_display()
     baseurl += '&display='+display
 
-    args = {}
-    args['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
+    context = {}
+    context['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
     if output_format == 'csv':
         query_format = 'text'
     else:
@@ -1560,23 +1560,23 @@ def contactgroup_members(request, gid, output_format=''):
                 noemails.append(contact)
         emails.sort(key=lambda x:remove_decoration(x[1].name.lower()))
 
-        args['title'] = _('Emails for %s') % cg.name
-        args['strfilter'] = strfilter
-        args['filter'] = filter
-        args['cg'] = cg
-        args['cg_perms'] = cg.get_contact_perms(request.user.id)
-        args['emails'] = emails
-        args['noemails'] = noemails
-        args['nav'] = cg.get_smart_navbar() \
-                      .add_component(('members', _('members'))) \
-                      .add_component(('emails', _('emails')))
-        args['display_member'] = 'm' in display
-        args['display_invited'] = 'i' in display
-        args['display_declined'] = 'd' in display
-        args['display_subgroups'] = 'g' in display
-        args['display_admins'] = 'a' in display
-        args['active_submenu'] = 'members'
-        return render_to_response('emails.html', args, RequestContext(request))
+        context['title'] = _('Emails for %s') % cg.name
+        context['strfilter'] = strfilter
+        context['filter'] = filter
+        context['cg'] = cg
+        context['cg_perms'] = cg.get_contact_perms(request.user.id)
+        context['emails'] = emails
+        context['noemails'] = noemails
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('members', _('members'))) \
+                         .add_component(('emails', _('emails')))
+        context['display_member'] = 'm' in display
+        context['display_invited'] = 'i' in display
+        context['display_declined'] = 'd' in display
+        context['display_subgroups'] = 'g' in display
+        context['display_admins'] = 'a' in display
+        context['active_submenu'] = 'members'
+        return render_to_response('emails.html', context, RequestContext(request))
     elif output_format == 'csv':
         result = ''
         def _quote_csv(u):
@@ -1597,29 +1597,29 @@ def contactgroup_members(request, gid, output_format=''):
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
 
-    args['title'] = _('Contacts of group %s') % cg.unicode_with_date()
-    args['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
-    args['display'] = display
-    args['query'] = q
-    args['cols'] = cols
-    args['cg'] = cg
-    args['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context['title'] = _('Contacts of group %s') % cg.unicode_with_date()
+    context['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
+    context['display'] = display
+    context['query'] = q
+    context['cols'] = cols
+    context['cg'] = cg
+    context['cg_perms'] = cg.get_contact_perms(request.user.id)
     ####
-    args['objtype'] = ContactGroup
-    args['filter'] = strfilter
-    args['fields'] = strfields
+    context['objtype'] = ContactGroup
+    context['filter'] = strfilter
+    context['fields'] = strfields
     ####
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('members', _('members')))
-    args['display_member'] = 'm' in display
-    args['display_invited'] = 'i' in display
-    args['display_declined'] = 'd' in display
-    args['display_subgroups'] = 'g' in display
-    args['display_admins'] = 'a' in display
-    args['active_submenu'] = 'members'
-    args['no_confirm_form_discard'] = True
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('members', _('members')))
+    context['display_member'] = 'm' in display
+    context['display_invited'] = 'i' in display
+    context['display_declined'] = 'd' in display
+    context['display_subgroups'] = 'g' in display
+    context['display_admins'] = 'a' in display
+    context['active_submenu'] = 'members'
+    context['no_confirm_form_discard'] = True
 
-    response = query_print(request, 'group_detail.html', args)
+    response = query_print(request, 'group_detail.html', context)
     #from django.db import connection
     #import pprint
     #pprint.PrettyPrinter(indent=4).pprint(connection.queries)
@@ -1660,16 +1660,16 @@ def contactgroup_messages(request, gid):
 
     cg = get_object_or_404(ContactGroup, pk=gid)
     messages = ContactMsg.objects.filter(cig__group_id=gid).order_by('-send_date')
-    args = {}
-    args['title'] = _('Messages for %s') % cg.unicode_with_date()
-    args['cg'] = cg
-    args['cg_perms'] = cg.get_contact_perms(request.user.id)
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('messages', _('messages')))
-    args['contact_messages'] = messages
-    args['active_submenu'] = 'messages'
+    context = {}
+    context['title'] = _('Messages for %s') % cg.unicode_with_date()
+    context['cg'] = cg
+    context['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('messages', _('messages')))
+    context['contact_messages'] = messages
+    context['active_submenu'] = 'messages'
 
-    return render_to_response('group_messages.html', args, RequestContext(request))
+    return render_to_response('group_messages.html', context, RequestContext(request))
 
 
 class ContactGroupForm(forms.Form):
@@ -1881,20 +1881,20 @@ def contactgroup_edit(request, id):
             initialdata = {
                 TRANS_CIGFLAG_CODE2TXT['o'] + '_groups': (default_group_id,)}
         form = ContactGroupForm(request.user.id, initial=initialdata)
-    args = {}
-    args['title'] = title
-    args['id'] = id
-    args['objtype'] = objtype
-    args['form'] = form
+    context = {}
+    context['title'] = title
+    context['id'] = id
+    context['objtype'] = objtype
+    context['form'] = form
     if id:
-        args['o'] = cg
-        args['nav'] = cg.get_smart_navbar() \
-                      .add_component(('edit', _('edit')))
+        context['o'] = cg
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('edit', _('edit')))
     else:
-        args['nav'] = Navbar(ContactGroup.get_class_navcomponent()) \
-                      .add_component(('add', _('add')))
+        context['nav'] = Navbar(ContactGroup.get_class_navcomponent()) \
+                         .add_component(('add', _('add')))
 
-    return render_to_response('edit.html', args, RequestContext(request))
+    return render_to_response('edit.html', context, RequestContext(request))
 
 
 def on_contactgroup_delete(cg):
@@ -2014,14 +2014,14 @@ def contactgroup_add_contacts_to(request):
 
     q = filter.apply_filter_to_query(q)
 
-    args = {}
-    args['title'] = _('Add contacts to a group')
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('add_contacts_to', _('add contacts to')))
-    args['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
-    args['query'] = q
-    args['active_submenu'] = 'members'
-    return render_to_response('group_add_contacts_to.html', args, RequestContext(request))
+    context = {}
+    context['title'] = _('Add contacts to a group')
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('add_contacts_to', _('add contacts to')))
+    context['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
+    context['query'] = q
+    context['active_submenu'] = 'members'
+    return render_to_response('group_add_contacts_to.html', context, RequestContext(request))
 
 
 
@@ -2222,14 +2222,14 @@ def contactingroup_edit(request, gid, cid):
         cig = ContactInGroup(contact_id=cid, group_id=gid, flags=0)
     cg = ContactGroup.objects.get(pk=gid)
     contact = Contact.objects.get(pk=cid)
-    args = {}
-    args['title'] = _('Contact %(contact)s in group %(group)s') % {
+    context = {}
+    context['title'] = _('Contact %(contact)s in group %(group)s') % {
         'contact': force_text(contact),
         'group': cg.unicode_with_date() }
-    args['cg'] = cg
-    args['cg_perms'] = cg.get_contact_perms(request.user.id)
-    args['contact'] = contact
-    args['objtype'] = ContactInGroup
+    context['cg'] = cg
+    context['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context['contact'] = contact
+    context['objtype'] = ContactInGroup
 
     initial = {}
     for code, intval in TRANS_CIGFLAG_CODE2INT.items():
@@ -2263,7 +2263,7 @@ def contactingroup_edit(request, gid, cid):
     else:
         form = ContactInGroupForm(initial=initial)
 
-    args['form'] = form
+    context['form'] = form
 
     inherited_info = ''
 
@@ -2289,13 +2289,13 @@ def contactingroup_edit(request, gid, cid):
         if invisible_autoinvited_groups:
             inherited_info += '<li>Hidden group(s)...'
 
-    args['inherited_info'] = mark_safe(inherited_info)
+    context['inherited_info'] = mark_safe(inherited_info)
 
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('members', _('members'))) \
-                  .add_component(contact.get_navcomponent()) \
-                  .add_component(('membership', _('membership')))
-    return render_to_response('contact_in_group.html', args, RequestContext(request))
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('members', _('members'))) \
+                     .add_component(contact.get_navcomponent()) \
+                     .add_component(('membership', _('membership')))
+    return render_to_response('contact_in_group.html', context, RequestContext(request))
 
 
 @login_required()
@@ -2339,7 +2339,7 @@ def contactingroup_delete(request, gid, cid):
         return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
     #messages.add_message(request, messages.SUCCESS, '%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
     base_nav = cg.get_smart_navbar() \
-               .add_component(('members', _('members')))
+                  .add_component(('members', _('members')))
     return generic_delete(request, o, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
     # TODO: realnav bar is 'remove', not 'delete'
 
@@ -2357,16 +2357,16 @@ def contactgroup_news(request, gid):
     if not perms.c_can_see_news_cg(request.user.id, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
-    args = {}
-    args['title'] = _('News for group %s') % cg.name
-    args['news'] = ContactGroupNews.objects.filter(contact_group=gid)
-    args['cg'] = cg
-    args['cg_perms'] = cg.get_contact_perms(request.user.id)
-    args['objtype'] = ContactGroupNews
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('news', _('news')))
-    args['active_submenu'] = 'news'
-    return render_to_response('news.html', args, RequestContext(request))
+    context = {}
+    context['title'] = _('News for group %s') % cg.name
+    context['news'] = ContactGroupNews.objects.filter(contact_group=gid)
+    context['cg'] = cg
+    context['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context['objtype'] = ContactGroupNews
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('news', _('news')))
+    context['active_submenu'] = 'news'
+    return render_to_response('news.html', context, RequestContext(request))
 
 
 class NewsEditForm(forms.Form):
@@ -2413,23 +2413,23 @@ def contactgroup_news_edit(request, gid, nid):
             initial['title'] = news.title
             initial['text'] = news.text
         form = NewsEditForm(initial=initial)
-    args = {}
-    args['title'] = _('News edition')
-    args['cg'] = cg
-    args['cg_perms'] = cg.get_contact_perms(request.user.id)
-    args['form'] = form
+    context = {}
+    context['title'] = _('News edition')
+    context['cg'] = cg
+    context['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context['form'] = form
     if nid:
-        args['o'] = news
-        args['id'] = nid
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('news', ('news')))
+        context['o'] = news
+        context['id'] = nid
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('news', ('news')))
     if nid:
-        args['nav'].add_component(news.get_navcomponent()) \
-                   .add_component(('edit', _('edit')))
+        context['nav'].add_component(news.get_navcomponent()) \
+                      .add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component(('add', _('add')))
+        context['nav'].add_component(('add', _('add')))
 
-    return render_to_response('edit.html', args, RequestContext(request))
+    return render_to_response('edit.html', context, RequestContext(request))
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -2487,25 +2487,25 @@ def contactgroup_files(request, gid, path):
     else:
         form = UploadFileForm()
 
-    args = {}
-    args['title'] = _('Files for group %s') % cg.name
-    args['cg'] = cg
-    args['cg_perms'] = cg.get_contact_perms(request.user.id)
-    args['objtype'] = ContactGroupNews
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('files', _('files')))
+    context = {}
+    context['title'] = _('Files for group %s') % cg.name
+    context['cg'] = cg
+    context['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context['objtype'] = ContactGroupNews
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('files', _('files')))
     base_fullname = cg.get_fullfilename()
     path_fullname = cg.get_fullfilename(path)
     if not path_fullname.startswith(base_fullname):
         raise PermissionDenied
     for part in path_fullname[len(base_fullname):].split('/'):
         if part:
-            args['nav'] = args['nav'].add_component(part)
-    args['active_submenu'] = 'files'
-    args['path'] = path
-    args['files'] = cg.get_filenames(path)
-    args['form'] = form
-    return render_to_response('group_files.html', args, RequestContext(request))
+            context['nav'] = context['nav'].add_component(part)
+    context['active_submenu'] = 'files'
+    context['path'] = path
+    context['files'] = cg.get_filenames(path)
+    context['form'] = form
+    return render_to_response('group_files.html', context, RequestContext(request))
 
 
 @login_required()
@@ -2546,24 +2546,24 @@ Ci-joint votre message original.
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=id)
 
-    args = {}
-    args['title'] = _('Mailman synchronisation')
-    args['nav'] = cg.get_smart_navbar() \
-                  .add_component(('mailman', _('mailman')))
-    args['cg'] = cg
-    args['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context = {}
+    context['title'] = _('Mailman synchronisation')
+    context['nav'] = cg.get_smart_navbar() \
+                     .add_component(('mailman', _('mailman')))
+    context['cg'] = cg
+    context['cg_perms'] = cg.get_contact_perms(request.user.id)
 
     if request.method == 'POST':
         form = MailmanSyncForm(request.POST)
         if form.is_valid():
             data = form.clean()
-            args['sync_res'] = synchronise_group(cg, data['mail'])
-            return render_to_response('group_mailman_result.html', args, RequestContext(request))
+            context['sync_res'] = synchronise_group(cg, data['mail'])
+            return render_to_response('group_mailman_result.html', context, RequestContext(request))
     else:
         form = MailmanSyncForm(initial={'mail': initial_value})
 
-    args['form'] = form
-    return render_to_response('group_mailman.html', args, RequestContext(request))
+    context['form'] = form
+    return render_to_response('group_mailman.html', context, RequestContext(request))
 
 
 #######################################################################
@@ -2576,19 +2576,19 @@ Ci-joint votre message original.
 @require_group(GROUP_USER_NGW)
 def field_list(request):
     fields = ContactField.objects.order_by('sort_weight').extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id ])
-    args = {}
-    args['query'] = fields
-    args['cols'] = [
+    context = {}
+    context['query'] = fields
+    context['cols'] = [
         ( _('Name'), None, 'name', 'name'),
         ( _('Type'), None, 'type_as_html', 'type'),
         ( _('Only for'), None, 'contact_group', 'contact_group__name'),
         ( _('System locked'), None, 'system', 'system'),
         #( _('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
-    args['title'] = _('Select an optionnal field')
-    args['objtype'] = ContactField
-    args['nav'] = Navbar(ContactField.get_class_navcomponent())
-    return query_print(request, 'list.html', args, forcesort='sort_weight')
+    context['title'] = _('Select an optionnal field')
+    context['objtype'] = ContactField
+    context['nav'] = Navbar(ContactField.get_class_navcomponent())
+    return query_print(request, 'list.html', context, forcesort='sort_weight')
 
 
 @login_required()
@@ -2727,15 +2727,15 @@ def field_edit(request, id):
                             for cfv in [ dd[1] for dd in deletion_details ]:
                                 cfv.delete()
                         else:
-                            args = {}
-                            args['title'] = _('Type incompatible with existing data')
-                            args['id'] = id
-                            args['cf'] = cf
-                            args['deletion_details'] = deletion_details
+                            context = {}
+                            context['title'] = _('Type incompatible with existing data')
+                            context['id'] = id
+                            context['cf'] = cf
+                            context['deletion_details'] = deletion_details
                             for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
-                                args[k] = data[k]
-                            args['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
-                            return render_to_response('type_change.html', args, RequestContext(request))
+                                context[k] = data[k]
+                            context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
+                            return render_to_response('type_change.html', context, RequestContext(request))
 
                     cf.type = data['type']
                     cf.polymorphic_upgrade() # This is needed after changing type
@@ -2769,20 +2769,20 @@ def field_edit(request, id):
             form = FieldEditForm(None, initial=initial)
 
 
-    args = {}
-    args['form'] = form
-    args['title'] = title
-    args['id'] = id
-    args['objtype'] = objtype
+    context = {}
+    context['form'] = form
+    context['title'] = title
+    context['id'] = id
+    context['objtype'] = objtype
     if id:
-        args['o'] = cf
-    args['nav'] = Navbar(ContactField.get_class_navcomponent())
+        context['o'] = cf
+    context['nav'] = Navbar(ContactField.get_class_navcomponent())
     if id:
-        args['nav'].add_component(cf.get_navcomponent()) \
-                   .add_component(('edit', _('edit')))
+        context['nav'].add_component(cf.get_navcomponent()) \
+                      .add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component(('add', _('add')))
-    return render_to_response('edit.html', args, RequestContext(request))
+        context['nav'].add_component(('add', _('add')))
+    return render_to_response('edit.html', context, RequestContext(request))
 
 
 @login_required()
@@ -2810,16 +2810,16 @@ def field_delete(request, id):
 def choicegroup_list(request):
     if not request.user.is_admin():
         raise PermissionDenied
-    args = {}
-    args['query'] = ChoiceGroup.objects.all()
-    args['cols'] = [
+    context = {}
+    context['query'] = ChoiceGroup.objects.all()
+    context['cols'] = [
         ( _('Name'), None, 'name', 'name'),
         ( _('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
-    args['title'] = _('Select a choice group')
-    args['objtype'] = ChoiceGroup
-    args['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
-    return query_print(request, 'list.html', args)
+    context['title'] = _('Select a choice group')
+    context['objtype'] = ChoiceGroup
+    context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
+    return query_print(request, 'list.html', context)
 
 
 class ChoicesWidget(forms.MultiWidget):
@@ -2986,20 +2986,20 @@ def choicegroup_edit(request, id=None):
     else:
         form = ChoiceGroupForm(cg)
 
-    args = {}
-    args['title'] = title
-    args['id'] = id
-    args['objtype'] = objtype
-    args['form'] = form
+    context = {}
+    context['title'] = title
+    context['id'] = id
+    context['objtype'] = objtype
+    context['form'] = form
     if id:
-        args['o'] = cg
-    args['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
+        context['o'] = cg
+    context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
     if id:
-        args['nav'].add_component(cg.get_navcomponent()) \
-                   .add_component(('edit', _('edit')))
+        context['nav'].add_component(cg.get_navcomponent()) \
+                      .add_component(('edit', _('edit')))
     else:
-        args['nav'].add_component(('add', _('add')))
-    return render_to_response('edit.html', args, RequestContext(request))
+        context['nav'].add_component(('add', _('add')))
+    return render_to_response('edit.html', context, RequestContext(request))
 
 
 @login_required()
