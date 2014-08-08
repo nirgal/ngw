@@ -154,15 +154,10 @@ GROUP_STATIC_DIR = settings.MEDIA_ROOT+'g/'
 
 
 def _truncate_text(txt, maxlen=200):
+    'Utility function to truncate text longer that maxlen'
     if len(txt) < maxlen:
         return txt
     return txt[:maxlen] + '…'
-
-#def _truncate_list(lst, maxlen=5):
-#    if len(lst)>maxlen:
-#        return lst[:maxlen] + ['…']
-#    return lst
-
 
 class NgwModel(models.Model):
     do_not_call_in_templates = True # prevent django from trying to instanciate objtype
@@ -756,6 +751,8 @@ class ContactGroup(NgwModel):
     def get_all_members(self):
         return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
 
+    def get_members_count(self):
+        return self.get_all_members().count()
 
     def get_contact_perms(self, contact_id):
         '''
@@ -868,21 +865,11 @@ class ContactGroup(NgwModel):
             result += ' ‧ ' + formats.date_format(self.date, "DATE_FORMAT")
         return result
 
-    def description100(self):
+    def description_not_too_long(self):
         '''
-        Same as description, but length is truncated after 200 characters.
+        Same as description, but truncated if too long.
         '''
-        return _truncate_text(self.description, 100)
-
-    #def visible_direct_supergroups_5(uid):
-    #    LIST_PREVIEW_LEN = 5
-    #    def _trucate_list(l):
-    #        if len(l)>LIST_PREVIEW_LEN:
-    #            return l[:LIST_PREVIEW_LEN] + ['…']
-    #        return l
-    #    def inner(cg):
-    #        return ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % uid])[:LIST_PREVIEW_LEN+1]]))
-    #    return inner
+        return _truncate_text(self.description)
 
     def mailman_request_address(self):
         ''' Adds -request before the @ of the address '''

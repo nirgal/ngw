@@ -18,13 +18,15 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text, smart_text
 from django.utils.six import iteritems, itervalues
 from django.utils import formats
-from django.utils.decorators import available_attrs # python2 compat
+from django.utils.decorators import (method_decorator, available_attrs)
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django import forms
 from django.views import static
+from django.views.generic import TemplateView, ListView
+from django.views.generic.list import (MultipleObjectTemplateResponseMixin, BaseListView)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
@@ -72,7 +74,7 @@ def require_group(required_group):
     Decorator to make a view only accept users from a given group. Usage:
     '''
     def decorator(func):
-        @wraps(func, assigned=available_attrs(func))
+        @wraps(func, assigned=available_attrs(func)) # python2 compat
         def inner(request, *args, **kwargs):
             try:
                 user = request.user
@@ -1243,36 +1245,45 @@ def contact_default_group(request, cid=None):
 #
 #######################################################################
 
+def get_UContactGroup(userid):
+    LIST_PREVIEW_LEN = 5
+    def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
+        'Utility function to truncate text longer that LIST_PREVIEW_LEN'
+        if len(lst)>maxlen:
+            return lst[:maxlen] + ['…']
+        return lst
+    class UContactGroup(ContactGroup):
+        'User specific ContactGroup proxy'
+        class Meta(ContactGroup.Meta):
+            proxy = True
+        def visible_direct_supergroups_5(self):
+            return ', '.join(_truncate_list([sg.unicode_with_date() for sg in self.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
+        def visible_direct_subgroups_5(self):
+            return ', '.join(_truncate_list([sg.unicode_with_date() for sg in self.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
+        def rendered_fields(self):
+            if self.field_group:
+                fields = self.contactfield_set.all()
+                if fields:
+                    return ', '.join(['<a href="' + f.get_absolute_url() + '">'+html.escape(f.name) + '</a>' for f in fields])
+                else:
+                    return 'Yes (but none yet)'
+            else:
+                return 'No'
+    return UContactGroup
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_list(request):
-    LIST_PREVIEW_LEN = 5
-    def _trucate_list(l):
-        if len(l)>LIST_PREVIEW_LEN:
-            return l[:LIST_PREVIEW_LEN] + ['…']
-        return l
-
-    def print_fields(cg):
-        if cg.field_group:
-            fields = cg.contact_fields
-            if fields:
-                return ', '.join(['<a href="' + f.get_absolute_url() + '">'+html.escape(f.name) + '</a>' for f in fields])
-            else:
-                return 'Yes (but none yet)'
-        else:
-            return 'No'
-
-    q = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
+    UContactGroup = get_UContactGroup(request.user.id)
+    q = UContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     cols = [
-        #( _('Date'), None, 'html_date', 'date' ),
         ( _('Name'), None, 'name', 'name' ),
-        ( _('Description'), None, 'description100', 'description' ),
-        #( _('Contact fields'), None, print_fields, 'field_group' ),
-        ( _('Super groups'), None, lambda cg: ', '.join(_trucate_list([sg.unicode_with_date() for sg in cg.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])[:LIST_PREVIEW_LEN+1]])), None ),
-        #( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
-        ( _('Sub groups'), None, lambda cg: ', '.join(_trucate_list([html.escape(sg.unicode_with_date()) for sg in cg.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % request.user.id])][:LIST_PREVIEW_LEN+1])), None ),
+        ( _('Description'), None, 'description_not_too_long', 'description' ),
+        #( _('Contact fields'), None, 'rendered_fields', 'field_group' ),
+        ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
+        ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
         #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
-        #( _('Members'), None, lambda cg: str(len(cg.get_all_members())), None ),
+        #( _('Members'), None, 'get_members_count', None ),
         #( _('System\u00a0locked'), None, 'system', 'system' ),
     ]
     context = {}
@@ -1284,34 +1295,69 @@ def contactgroup_list(request):
     return query_print(request, 'list.html', context)
 
 
-#from django.views.generic import ListView
-#from django.utils.decorators import method_decorator
-#class ContactGroupList(ListView):
-#
+##class ProtectedListView(MultipleObjectTemplateResponseMixin, BaseListView):
+#class ProtectedListView(ListView):
 #    @method_decorator(login_required)
 #    @method_decorator(require_group(GROUP_USER_NGW))
 #    def dispatch(self, *args, **kwargs):
-#        return super(ContactGroupList, self).dispatch(*args, **kwargs)
+#        return super(ProtectedListView, self).dispatch(*args, **kwargs)
 #
+#class ContactGroupList(ProtectedListView):
 #    template_name = 'list.html'
 #    context_object_name = 'query'
 #    page_kwarg = '_page'
+#    cols = [
+#        ( _('Name'), None, 'name', 'name' ),
+#        ( _('Description'), None, 'description_not_too_long', 'description' ),
+#        #( _('Contact fields'), None, 'rendered_fields', 'field_group' ),
+#        ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
+#        ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
+#        #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
+#        #( _('Members'), None, 'get_members_count', None ),
+#        #( _('System\u00a0locked'), None, 'system', 'system' ),
+#    ]
 #
 #    def get_queryset(self):
-#        return ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+#        UContactGroup = get_UContactGroup(self.request.user.id)
+#
+#        query = UContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+#
+#        # Handle sorts
+#        defaultsort = ''
+#        order = self.request.REQUEST.get('_order', '')
+#        try:
+#            intorder = int(order)
+#        except ValueError:
+#            if defaultsort:
+#                order = ''
+#                intorder = None
+#                query = query.order_by(defaultsort)
+#            else:
+#                order = '0'
+#                intorder = 0
+#        if intorder is not None:
+#            sort_col = self.cols[abs(intorder)][3]
+#            if not order or order[0] != '-':
+#                query = query.order_by(sort_col)
+#            else:
+#                query = query.order_by('-'+sort_col)
+#
+#        self.order = order
+#
+#        return query
 #
 #    def get_paginate_by(self, queryset):
 #       return Config.get_object_query_page_length()
 #
-#    def get_context_data(self, *args, **kwargs):
-#        context = super(ContactGroupList, self).get_context_data(*args, **kwargs)
+#    def get_context_data(self, **kwargs):
+#        context = super(ContactGroupList, self).get_context_data(**kwargs)
 #        context['title'] = _('Select a contact group')
-#        context['cols'] = [
-#            ( _('Name'), None, 'name', 'name' ),
-#        ]
+#        context['cols'] = self.cols
 #        context['objtype'] = ContactGroup
 #        context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-#        context['order'] = '' # FIXME
+#        context['baseurl'] = '?'
+#        context['order'] = self.order
+#
 #        return context
 
 
