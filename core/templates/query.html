@@ -40,13 +40,14 @@ Optionnal parameters:
         {% blocktrans count npages=paginator.num_pages %}
             {{ npages }} page{% plural %}{{ npages }} pages
         {% endblocktrans %}
+        -
         {% for i in page_obj.number|pagenumber_iterator:paginator.num_pages %}
             {% ifnotequal page_obj.number i %}
-            <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}} style="border: solid 1px #999">
+            <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}}>
             {% else %}
-            <span style="border: solid 1px #999; width: auto; background:#fce">
+            <span class="this-page">
             {% endifnotequal %}
-            <b>{{i}}</b>
+            {{i}}
             {% ifnotequal page_obj.number i %}
             </a>
             {% else %}
