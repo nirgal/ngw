@@ -15,7 +15,7 @@ admin.autodiscover()
 
 groups_urlpatterns = patterns('',
     url(r'^add$', 'ngw.core.views.contactgroup_edit', {'id': None}),
-    url(r'^(?P<gid>\d+)/$', 'ngw.core.views.contactgroup_details'),
+    url(r'^(?P<gid>\d+)/$', 'ngw.core.views.contactgroup_index'),
     url(r'^(?P<id>\d+)/edit$', 'ngw.core.views.contactgroup_edit'),
     url(r'^(?P<id>\d+)/delete$', 'ngw.core.views.contactgroup_delete'),
     url(r'^(?P<gid>\d+)/members/$', 'ngw.core.views.contactgroup_members'),

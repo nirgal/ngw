@@ -58,20 +58,13 @@ FTYPE_PASSWORD = 'PASSWORD'
 
 #######################################################################
 #
-# Login / Logout
+# View decorator
 #
 #######################################################################
 
-def logout(request):
-    auth_logout(request)
-    return render_to_response('message.html', {
-        'message': mark_safe(_('Have a nice day!<br><br><a href="%s">Login again</a>.') % settings.LOGIN_URL)
-        }, RequestContext(request))
-
-
 def require_group(required_group):
     '''
-    Decorator to make a view only accept users from a given group. Usage:
+    Decorator to make a view only accept users from a given group.
     '''
     def decorator(func):
         @wraps(func, assigned=available_attrs(func)) # python2 compat
@@ -86,49 +79,18 @@ def require_group(required_group):
         return inner
     return decorator
 
-def get_display_fields(user):
-    # check the field still exists
-    result = []
-    default_fields = user.get_fieldvalue_by_id(FIELD_COLUMNS)
-    if not default_fields:
-        try:
-            default_fields = Config.objects.get(pk='columns').text
-        except Config.DoesNotExist:
-            pass
-    if not default_fields:
-        default_fields = ''
-    for fname in default_fields.split(','):
-        if fname == 'name':
-            pass
-        elif fname.startswith(DISP_GROUP_PREFIX):
-            try:
-                groupid = int(fname[len(DISP_GROUP_PREFIX):])
-            except ValueError:
-                print('Error in default fields: %s has invalid syntax.' % fname)
-                continue
-            try:
-                ContactGroup.objects.get(pk=groupid)
-            except ContactGroup.DoesNotExist:
-                print('Error in default fields: There is no group #%d.' % groupid)
-                continue
-        elif fname.startswith(DISP_FIELD_PREFIX):
-            try:
-                fieldid = int(fname[len(DISP_FIELD_PREFIX):])
-            except ValueError:
-                print('Error in default fields: %s has invalid syntax.' % fname)
-                continue
-            try:
-                ContactField.objects.get(pk=fieldid)
-            except ContactField.DoesNotExist:
-                print('Error in default fields: There is no field #%d.' % fieldid)
-                continue
-        else:
-            print('Error in default fields: Invalid syntax in "%s".' % fname)
-            continue
-        result.append(fname)
-    if not result:
-        result = [ DISP_NAME ]
-    return result
+
+#######################################################################
+#
+# Login / Logout
+#
+#######################################################################
+
+def logout(request):
+    auth_logout(request)
+    return render_to_response('message.html', {
+        'message': mark_safe(_('Have a nice day!<br><br><a href="%s">Login again</a>.') % settings.LOGIN_URL)
+        }, RequestContext(request))
 
 
 #######################################################################
@@ -556,6 +518,9 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
                 continue # Just ignore fields that can't be seen
 
             q.add_field(fieldid)
+            # TODO
+            # add_field should create as_html and as_text attributes
+            # then here is the last place where col[1] is ever used
 
             if format == 'html':
                 cols.append( (cf.name, cf.format_value_html, prop, prop) )
@@ -576,6 +541,51 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
             cols.append( (_('Status'), None, lambda c: membership_to_text(c, current_cg.id), None) )
             cols.append( (_('Note'), None, 'group_%s_note' % current_cg.id, None) )
     return q, cols
+
+
+def get_display_columns(user):
+    # check the field still exists
+    result = []
+    default_fields = user.get_fieldvalue_by_id(FIELD_COLUMNS)
+    if not default_fields:
+        try:
+            default_fields = Config.objects.get(pk='columns').text
+        except Config.DoesNotExist:
+            pass
+    if not default_fields:
+        default_fields = ''
+    for fname in default_fields.split(','):
+        if fname == 'name':
+            pass
+        elif fname.startswith(DISP_GROUP_PREFIX):
+            try:
+                groupid = int(fname[len(DISP_GROUP_PREFIX):])
+            except ValueError:
+                print('Error in default fields: %s has invalid syntax.' % fname)
+                continue
+            try:
+                ContactGroup.objects.get(pk=groupid)
+            except ContactGroup.DoesNotExist:
+                print('Error in default fields: There is no group #%d.' % groupid)
+                continue
+        elif fname.startswith(DISP_FIELD_PREFIX):
+            try:
+                fieldid = int(fname[len(DISP_FIELD_PREFIX):])
+            except ValueError:
+                print('Error in default fields: %s has invalid syntax.' % fname)
+                continue
+            try:
+                ContactField.objects.get(pk=fieldid)
+            except ContactField.DoesNotExist:
+                print('Error in default fields: There is no field #%d.' % fieldid)
+                continue
+        else:
+            print('Error in default fields: Invalid syntax in "%s".' % fname)
+            continue
+        result.append(fname)
+    if not result:
+        result = [ DISP_NAME ]
+    return result
 
 
 def get_available_columns(user_id):
@@ -617,7 +627,7 @@ def contact_list(request):
         fields = strfields.split(',')
         baseurl += '&fields='+strfields
     else:
-        fields = get_display_fields(request.user)
+        fields = get_display_columns(request.user)
         strfields = ','.join(fields)
 
     if (request.REQUEST.get('savecolumns')):
@@ -1246,6 +1256,10 @@ def contact_default_group(request, cid=None):
 #######################################################################
 
 def get_UContactGroup(userid):
+    '''
+    This make a user specific ContactGroup model proxy
+    with additionnal method for filtering out hidden objects
+    '''
     LIST_PREVIEW_LEN = 5
     def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
         'Utility function to truncate text longer that LIST_PREVIEW_LEN'
@@ -1481,7 +1495,7 @@ def event_list(request):
 
 @login_required()
 @require_group(GROUP_USER_NGW)
-def contactgroup_details(request, gid):
+def contactgroup_index(request, gid):
     '''
     Redirect to members list, if allowed.
     Otherwise, try to find some authorized page.
@@ -1497,6 +1511,7 @@ def contactgroup_details(request, gid):
     if perms.c_can_view_msgs_cg(request.user.id, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'messages')
     raise PermissionDenied
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -1514,7 +1529,7 @@ def contactgroup_members(request, gid, output_format=''):
         fields = strfields.split(',')
         baseurl += '&fields='+strfields
     else:
-        fields = get_display_fields(request.user)
+        fields = get_display_columns(request.user)
         strfields = ','.join(fields)
         # baseurl doesn't need to have default fields
         # They'll still be default next time
