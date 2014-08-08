@@ -578,7 +578,7 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
     return q, cols
 
 
-def get_available_fields(user_id):
+def get_available_columns(user_id):
     result = [ (DISP_NAME, 'Name') ]
     for cf in ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight'):
         result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
@@ -593,10 +593,10 @@ class FieldSelectForm(forms.Form):
     - readable field
     - groups whose members can be viewed
     '''
-    def __init__(self, user_id, *args, **kargs):
+    def __init__(self, user, *args, **kargs):
         #TODO: param user -> fine tuned fields selection
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_fields(user_id))
+        self.fields['selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_columns(user.id))
 
 
 @login_required()
@@ -641,7 +641,7 @@ def contact_list(request):
     context['cols'] = cols
     context['filter'] = strfilter
     context['fields'] = strfields
-    context['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
+    context['fields_form'] = FieldSelectForm(request.user, initial={'selected_fields': fields})
     context['no_confirm_form_discard'] = True
 
     return query_print(request, 'list_contact.html', context)
@@ -1530,7 +1530,7 @@ def contactgroup_members(request, gid, output_format=''):
     baseurl += '&display='+display
 
     context = {}
-    context['fields_form'] = FieldSelectForm(request.user.id, initial={'selected_fields': fields})
+    context['fields_form'] = FieldSelectForm(request.user, initial={'selected_fields': fields})
     if output_format == 'csv':
         query_format = 'text'
     else:
