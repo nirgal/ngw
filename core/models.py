@@ -687,7 +687,7 @@ class ContactGroup(NgwModel):
         if self.date:
             return '/events/' + force_text(self.id) + '/'
         else:
-            return self.get_class_absolute_url() + force_text(self.id) + '/'
+            return '/contactgroups/' + force_text(self.id) + '/'
 
 
     def get_direct_supergroups_ids(self):
