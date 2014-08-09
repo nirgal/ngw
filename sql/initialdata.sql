@@ -16,7 +16,7 @@ SET search_path = public, pg_catalog;
 --
 
 COPY choice_group (id, name, sort_by_key) FROM stdin;
-1	Country	f
+1	Countries	f
 9	Yes / No	t
 41	Password status	t
 \.
