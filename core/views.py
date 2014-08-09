@@ -1283,6 +1283,11 @@ def get_UContactGroup(userid):
                     return 'Yes (but none yet)'
             else:
                 return 'No'
+        def visible_member_count(self):
+            if perms.c_can_see_members_cg(userid, self.id):
+                return self.get_members_count()
+            else:
+                return 'Not available'
     return UContactGroup
 
 @login_required()
@@ -1297,7 +1302,7 @@ def contactgroup_list(request):
         ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
         ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
         #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
-        #( _('Members'), None, 'get_members_count', None ),
+        ( _('Members'), None, 'visible_member_count', None ),
         #( _('System\u00a0locked'), None, 'system', 'system' ),
     ]
     context = {}
@@ -1327,7 +1332,7 @@ def contactgroup_list(request):
 #        ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
 #        ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
 #        #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
-#        #( _('Members'), None, 'get_members_count', None ),
+#        ( _('Members'), None, 'visible_member_count', None ),
 #        #( _('System\u00a0locked'), None, 'system', 'system' ),
 #    ]
 #
