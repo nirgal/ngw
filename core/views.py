@@ -144,7 +144,7 @@ def test(request):
 #
 ########################################################################
 
-def query_print(request, template_name, context, defaultsort=''):
+def render_query(template_name, context, request, defaultsort=''):
     '''
     This function renders the query, paginated
     '''
@@ -245,7 +245,7 @@ def logs(request):
         ( _('Property'), None, 'property_repr', 'property_repr'),
         ( _('Change'), None, 'change', 'change'),
     ]
-    return query_print(request, 'list_log.html', context)
+    return render_query('list_log.html', context, request)
 
 #######################################################################
 #
@@ -654,7 +654,7 @@ def contact_list(request):
     context['fields_form'] = FieldSelectForm(request.user, initial={'selected_fields': fields})
     context['no_confirm_form_discard'] = True
 
-    return query_print(request, 'list_contact.html', context)
+    return render_query('list_contact.html', context, request)
 
 
 @login_required()
@@ -1306,7 +1306,7 @@ def contactgroup_list(request):
     context['cols'] = cols
     context['objtype'] = ContactGroup
     context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-    return query_print(request, 'list.html', context)
+    return render_query('list.html', context, request)
 
 
 ##class ProtectedListView(MultipleObjectTemplateResponseMixin, BaseListView):
@@ -1490,7 +1490,7 @@ def event_list(request):
     context['year_month'] = YearMonthCal(year, month, month_events)
     context['today'] = date.today()
 
-    return query_print(request, 'list_events.html', context)
+    return render_query('list_events.html', context, request)
 
 
 @login_required()
@@ -1662,7 +1662,7 @@ def contactgroup_members(request, gid, output_format=''):
     context['active_submenu'] = 'members'
     context['no_confirm_form_discard'] = True
 
-    response = query_print(request, 'group_detail.html', context)
+    response = render_query('group_detail.html', context, request)
     #from django.db import connection
     #import pprint
     #pprint.PrettyPrinter(indent=4).pprint(connection.queries)
@@ -2631,7 +2631,7 @@ def field_list(request):
     context['title'] = _('Select an optionnal field')
     context['objtype'] = ContactField
     context['nav'] = Navbar(ContactField.get_class_navcomponent())
-    return query_print(request, 'list.html', context, defaultsort='sort_weight')
+    return render_query('list.html', context, request, defaultsort='sort_weight')
 
 
 @login_required()
@@ -2862,7 +2862,7 @@ def choicegroup_list(request):
     context['title'] = _('Select a choice group')
     context['objtype'] = ChoiceGroup
     context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
-    return query_print(request, 'list.html', context)
+    return render_query('list.html', context, request)
 
 
 class ChoicesWidget(forms.MultiWidget):
