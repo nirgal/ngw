@@ -36,6 +36,18 @@
 {% endif %}
 {% endspaceless %}
 
+{% if cg.mailman_address %}
+{% if cg_perms.c %}
+    <a href="{{cg.get_absolute_url}}mailman">
+{% endif %}
+    <div class="submenuitem {% if active_submenu == "mailman" %}activesubmenuitem{% endif %}"{% if not cg_perms.c %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+        {% trans "Mailman" %}
+    </div>
+{% if cg_perms.c %}
+    </a>
+{% endif %}
+{% endif %}
+
 {% spaceless %}
 {% if cg_perms.x %}
     <a href="{{cg.get_absolute_url}}messages">
