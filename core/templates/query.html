@@ -37,9 +37,7 @@ Optionnal parameters:
 {% if paginator %}
 <p class=paginator>
     {% ifnotequal paginator.num_pages 1 %}
-        {% blocktrans count npages=paginator.num_pages %}
-            {{ npages }} page{% plural %}{{ npages }} pages
-        {% endblocktrans %}
+        {% blocktrans count npages=paginator.num_pages %}{{ npages }} page{% plural %}{{ npages }} pages{% endblocktrans %}
         -
         {% for i in page_obj.number|pagenumber_iterator:paginator.num_pages %}
             {% ifnotequal page_obj.number i %}
