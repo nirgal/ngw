@@ -1495,7 +1495,7 @@ def event_list(request):
     context['year_month'] = YearMonthCal(year, month, month_events)
     context['today'] = date.today()
 
-    return render_query('list_events.html', context, request)
+    return render_to_response('list_events.html', context, RequestContext(request))
 
 
 @login_required()
