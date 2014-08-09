@@ -11,7 +11,7 @@ import subprocess
 import logging
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.utils.encoding import force_text, smart_text, force_str
+from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection
 from django import forms
@@ -159,8 +159,16 @@ def _truncate_text(txt, maxlen=200):
         return txt
     return txt[:maxlen] + '…'
 
+
 class NgwModel(models.Model):
-    do_not_call_in_templates = True # prevent django from trying to instanciate objtype
+    '''
+    This is the base class for all models in that project.
+    '''
+    # prevent django from trying to instanciate objtype:
+    do_not_call_in_templates = True
+
+    class Meta:
+        abstract = True
 
     @classmethod
     def get_class_verbose_name(cls):
@@ -177,6 +185,9 @@ class NgwModel(models.Model):
     def get_urlfragment(self):
         return force_text(self.id)
 
+    def get_absolute_url(self):
+        return self.get_class_absolute_url() + force_text(self.id) + '/'
+
     @classmethod
     def get_class_navcomponent(cls):
         return cls.get_class_urlfragment(), cls.get_class_verbose_name_plural()
@@ -187,12 +198,6 @@ class NgwModel(models.Model):
     @classmethod
     def get_class_absolute_url(cls):
         return '/' + cls.get_class_urlfragment() + '/'
-
-    def get_absolute_url(self):
-        return self.get_class_absolute_url() + force_text(self.id) + '/'
-
-    class Meta:
-        abstract = True
 
 
 # Types of change
@@ -236,14 +241,15 @@ class Log(NgwModel):
                  LOG_ACTION_CHANGE: 'Update',
                  LOG_ACTION_DEL: 'Delete'}[self.action]
 
-
+@python_2_unicode_compatible
 class Config(NgwModel):
     id = models.CharField(max_length=32, primary_key=True)
     text = models.TextField(blank=True)
-    def __unicode__(self):
-        return self.id
     class Meta:
         db_table = 'config'
+
+    def __str__(self):
+        return self.id
 
     @staticmethod
     def get_object_query_page_length():
@@ -254,17 +260,19 @@ class Config(NgwModel):
             return 200
 
 
+@python_2_unicode_compatible
 class Choice(NgwModel):
     oid = models.AutoField(primary_key=True)
     choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
     key = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
-    def __unicode__(self):
+    def __str__(self):
         return self.value
     class Meta:
         db_table = 'choice'
 
 
+@python_2_unicode_compatible
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, blank=True)
@@ -273,7 +281,7 @@ class ChoiceGroup(NgwModel):
         db_table = 'choice_group'
         verbose_name = 'choices list'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @property
@@ -321,6 +329,7 @@ class MyContactManager(models.Manager):
         cig.save()
 
 
+@python_2_unicode_compatible
 class Contact(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(verbose_name=_('Name'), max_length=255, unique=True)
@@ -342,7 +351,7 @@ class Contact(NgwModel):
     def __repr__(self):
         return b'Contact <' + self.name.encode('utf-8') + b'>'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def  is_anonymous():
@@ -652,7 +661,7 @@ class Contact(NgwModel):
         cfv.save()
 
 
-
+@python_2_unicode_compatible
 class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
@@ -668,7 +677,7 @@ class ContactGroup(NgwModel):
     class Meta:
         db_table = 'contact_group'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def __repr__(self):
@@ -1141,7 +1150,7 @@ def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     return cls
 
 
-
+@python_2_unicode_compatible
 class ContactField(NgwModel):
     # This is a polymorphic class:
     # When it's ready, it's "upgraded" into one of its subclass
@@ -1172,7 +1181,7 @@ class ContactField(NgwModel):
     def __repr__(self):
         return b'ContactField <' + str(self.id) + b',' + self.name.encode('utf8') + b',' + self.type.encode('utf8') + b'>'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @staticmethod
@@ -1753,6 +1762,7 @@ class OrBoundFilter(BaseBoundFilter):
         return string_concat(self.f1.to_html(indent_level+1), '<br>', self.indent(indent_level), _('OR'), '<br>', self.f2.to_html(indent_level+1))
 
 
+@python_2_unicode_compatible
 class ContactFieldValue(NgwModel):
     oid = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact, related_name='values')
@@ -1765,7 +1775,7 @@ class ContactFieldValue(NgwModel):
         cf = self.contact_field
         return b'ContactFieldValue <"' + unicode(self.contact).encode('utf-8') + b'", "' + unicode(cf).encode('utf-8') + b'", "' + unicode(self).encode('utf-8') + b'">'
 
-    def __unicode__(self):
+    def __str__(self):
         cf = self.contact_field
         return cf.format_value_unicode(self.value)
 
@@ -1797,7 +1807,7 @@ class GroupManageGroup(NgwModel):
         return b'GroupManageGroup <%s %s>' % (self.subgroup_id, self.father_id)
 
 
-
+@python_2_unicode_compatible
 class ContactInGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact)
@@ -1810,7 +1820,7 @@ class ContactInGroup(NgwModel):
     def __repr__(self):
         return b'ContactInGroup<%s,%s>' % (self.contact_id, self.group_id)
 
-    def __unicode__(self):
+    def __str__(self):
         return _('contact %(contactname)s in group %(groupname)s') % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
 
     @classmethod
@@ -1824,6 +1834,7 @@ class ContactInGroup(NgwModel):
         return self.contact_group.get_absolute_url() + 'members/' + str(self.contact_id) + '/membership'
 
 
+@python_2_unicode_compatible
 class ContactGroupNews(NgwModel):
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Contact, null=True, blank=True)
@@ -1838,7 +1849,7 @@ class ContactGroupNews(NgwModel):
         verbose_name = 'news'
         verbose_name_plural = 'news'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def get_absolute_url(self):

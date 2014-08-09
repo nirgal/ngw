@@ -495,7 +495,7 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
             if format == 'html':
                 cols.append( (_('Name'), None, 'name_with_relative_link', 'name') )
             else:
-                cols.append( (_('Name'), None, '__unicode__', 'name') )
+                cols.append( (_('Name'), None, 'name', 'name') )
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
