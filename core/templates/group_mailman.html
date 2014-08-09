@@ -1,6 +1,10 @@
 {% extends "edit.html" %}
 {% load i18n %}
 
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
 {% block preform %}
 <div class=module>
 {% blocktrans with requestaddress=cg.mailman_request_address %}

@@ -2600,6 +2600,7 @@ Ci-joint votre message original.
                      .add_component(('mailman', _('mailman')))
     context['cg'] = cg
     context['cg_perms'] = cg.get_contact_perms(request.user.id)
+    context['active_submenu'] = 'mailman'
 
     if request.method == 'POST':
         form = MailmanSyncForm(request.POST)
