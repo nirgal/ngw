@@ -12,7 +12,7 @@ import logging
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
-from django.utils.translation import ugettext_lazy as _, string_concat
+from django.utils.translation import ugettext_lazy as _, pgettext_lazy, string_concat
 from django.db import models, connection
 from django import forms
 from django.http import Http404
@@ -217,6 +217,8 @@ class Log(NgwModel):
     change = models.TextField(blank=True, null=True)
     class Meta:
         db_table = 'log'
+        verbose_name = _('log')
+        verbose_name_plural = _('logs')
 
     #def __unicode__(self):
     #    return '%(date)s: %(contactname)s %(type_and_data)s' % {
@@ -247,6 +249,8 @@ class Config(NgwModel):
     text = models.TextField(blank=True)
     class Meta:
         db_table = 'config'
+        verbose_name = _('config')
+        verbose_name_plural = _('configs')
 
     def __str__(self):
         return self.id
@@ -270,6 +274,8 @@ class Choice(NgwModel):
         return self.value
     class Meta:
         db_table = 'choice'
+        verbose_name = _('choice')
+        verbose_name_plural = _('choices')
 
 
 @python_2_unicode_compatible
@@ -279,7 +285,8 @@ class ChoiceGroup(NgwModel):
     sort_by_key = models.BooleanField(default=False)
     class Meta:
         db_table = 'choice_group'
-        verbose_name = 'choices list'
+        verbose_name = _('choices list')
+        verbose_name_plural = _('choices lists')
 
     def __str__(self):
         return self.name
@@ -347,6 +354,8 @@ class Contact(NgwModel):
 
     class Meta:
         db_table = 'contact'
+        verbose_name = _('contact')
+        verbose_name_plural = _('contacts')
 
     def __repr__(self):
         return b'Contact <' + self.name.encode('utf-8') + b'>'
@@ -676,6 +685,8 @@ class ContactGroup(NgwModel):
     #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')
     class Meta:
         db_table = 'contact_group'
+        verbose_name = _('contact group')
+        verbose_name_plural = _('contact groups')
 
     def __str__(self):
         return self.name
@@ -1168,15 +1179,13 @@ class ContactField(NgwModel):
     default = models.TextField(blank=True)
     class Meta:
         db_table = 'contact_field'
+        verbose_name = _('contact field')
+        verbose_name_plural = _('contact fields')
         ordering = 'sort_weight',
 
     @classmethod
     def get_class_urlfragment(cls):
         return 'contactfields'
-
-    @classmethod
-    def get_class_verbose_name_plural(cls):
-        return _('Contact fields')
 
     def __repr__(self):
         return b'ContactField <' + str(self.id) + b',' + self.name.encode('utf8') + b',' + self.type.encode('utf8') + b'>'
@@ -1770,6 +1779,8 @@ class ContactFieldValue(NgwModel):
     value = models.TextField(blank=True)
     class Meta:
         db_table = 'contact_field_value'
+        verbose_name = _('contact field value')
+        verbose_name_plural = _('contact field values')
 
     def __repr__(self):
         cf = self.contact_field
@@ -1790,6 +1801,8 @@ class GroupInGroup(NgwModel):
     subgroup = models.ForeignKey(ContactGroup, related_name='direct_gig_supergroups')
     class Meta:
         db_table = 'group_in_group'
+        verbose_name = _('group in group')
+        verbose_name_plural = _('groups in group')
 
     def __repr__(self):
         return b'GroupInGroup <%s %s>' % (self.subgroup_id, self.father_id)
@@ -1802,6 +1815,8 @@ class GroupManageGroup(NgwModel):
     flags = models.IntegerField()
     class Meta:
         db_table = 'group_manage_group'
+        verbose_name = _('group managing group')
+        verbose_name_plural = _('groups managing group')
 
     def __repr__(self):
         return b'GroupManageGroup <%s %s>' % (self.subgroup_id, self.father_id)
@@ -1816,6 +1831,8 @@ class ContactInGroup(NgwModel):
     note = models.TextField(blank=True)
     class Meta:
         db_table = 'contact_in_group'
+        verbose_name = _('contact in group')
+        verbose_name_plural = _('contacts in group')
 
     def __repr__(self):
         return b'ContactInGroup<%s,%s>' % (self.contact_id, self.group_id)
@@ -1845,9 +1862,9 @@ class ContactGroupNews(NgwModel):
 
     class Meta:
         db_table = 'contact_group_news'
+        verbose_name = pgettext_lazy('singular', 'news')
+        verbose_name_plural = _('news')
         ordering = '-date',
-        verbose_name = 'news'
-        verbose_name_plural = 'news'
 
     def __str__(self):
         return self.title
@@ -1868,4 +1885,5 @@ class ContactMsg(NgwModel):
 
     class Meta:
         db_table = 'contact_message'
-        verbose_name = 'message'
+        verbose_name = _('message')
+        verbose_name_plural = _('messages')
