@@ -684,7 +684,7 @@ def contact_detail(request, gid=None, cid=None):
     context['title'] = _('Details for %s') % force_text(c)
     if gid:
         #context['title'] += ' in group '+cg.unicode_with_date()
-        context['contact_group'] = cg
+        context['cg'] = cg
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('members', _('members')))
         context['cg_perms'] = cg.get_contact_perms(request.user.id)
