@@ -59,24 +59,25 @@
             </div>
             {% endif %}
         </div>
+        {% block breadcrumbs %}
+        {% if nav %}
+        <div class=breadcrumbs>
+        {% for urlfragment, navname in nav.components %}
+            {% if forloop.counter0 %} › {% endif %}
+            {% if not forloop.last %}
+                <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
+            {% endif %}
+            {{ navname }}
+            {% if not forloop.last %}
+                </a>
+            {% endif %}
+        {% endfor %}
+        </div>
+        {% endif %}
+        {% endblock %}
+        {% block submenu %}{% endblock %}
     </div>
     <!-- END Header -->
-    {% block breadcrumbs %}
-    {% if nav %}
-    <div class=breadcrumbs>
-    {% for urlfragment, navname in nav.components %}
-        {% if forloop.counter0 %} › {% endif %}
-        {% if not forloop.last %}
-            <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
-        {% endif %}
-        {{ navname }}
-        {% if not forloop.last %}
-            </a>
-        {% endif %}
-    {% endfor %}
-    </div>
-    {% endif %}
-    {% endblock %}
     {% endif %}
 
     {% block messages %}
@@ -89,7 +90,6 @@
 
     <!-- Content -->
     <div id=content class="{% block coltype %}colM{% endblock %}">
-        {% block submenu %}{% endblock %}
         {% block pretitle %}{% endblock %}
         {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
         {% block content %}

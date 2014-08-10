@@ -8,7 +8,7 @@ function dump(o) {
 }
 
 function check_footer_bottom() {
-    min_height = document.body.clientHeight - $('#header').outerHeight() - $('#footer').outerHeight() - $('.breadcrumbs').outerHeight();
+    min_height = document.body.clientHeight - $('#header').outerHeight() - $('#footer').outerHeight(); // - $('.breadcrumbs').outerHeight();
     // remove messages:
     min_height -= $('.messagelist').outerHeight();
     // remove margins:

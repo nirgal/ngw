@@ -65,6 +65,8 @@ div.breadcrumbs a:link, div.breadcrumbs a:visited {
     background: #f0f0f0;
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
+    color: black;
+    margin-top: -1px;
 }
 
 a .submenuitem:hover, .activesubmenuitem {
