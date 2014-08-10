@@ -11,4 +11,4 @@ mailing/templates
 mailing/generated
 settings.py
 media/
-^static/
+/static/
