@@ -12,7 +12,7 @@ import logging
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
-from django.utils.translation import ugettext_lazy as _, pgettext_lazy, string_concat
+from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection
 from django import forms
 from django.http import Http404
@@ -1863,7 +1863,7 @@ class ContactGroupNews(NgwModel):
 
     class Meta:
         db_table = 'contact_group_news'
-        verbose_name = pgettext_lazy('singular', 'news')
+        verbose_name = _('news item')
         verbose_name_plural = _('news')
         ordering = '-date',
 
