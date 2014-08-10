@@ -72,7 +72,7 @@ class Command(NoArgsCommand):
             logger.debug('Looking for %s', upgrade_sql_file)
             try:
                 sql = open(upgrade_sql_file, 'r').read()
-            except FileNotFoundError:
+            except IOError: # FileNotFoundError is better, but is python3 only
                 logger.info('Database structure is up to date. version=%s.', version)
                 return
 
