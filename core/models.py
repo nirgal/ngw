@@ -26,6 +26,7 @@ from ngw.core.nav import Navbar
 from ngw.core import perms
 #from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
 from ngw.extensions import hooks
+from django.utils.crypto import get_random_string
 
 GROUP_EVERYBODY = 1 # Group "Contact"
 GROUP_USER = 2      # With login & password (does NOT mean it can access NGW, see bellow)
@@ -603,8 +604,7 @@ class Contact(NgwModel):
 
     @staticmethod
     def generate_password():
-        random_password = subprocess.Popen(['pwgen', '-N', '1'], stdout=subprocess.PIPE).communicate()[0]
-        random_password = random_password[:-1] # remove extra "\n"
+        random_password = get_random_string( 8, 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ0123456789!@#$%&*(-_=+)')
         return random_password
 
 
