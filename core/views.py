@@ -220,7 +220,7 @@ def logs(request):
         (_('Property'), None, 'property_repr', 'property_repr'),
         (_('Change'), None, 'change', 'change'),
     ]
-    return render_query('list_log.html', context, request)
+    return render_query('log_list.html', context, request)
 
 #######################################################################
 #
@@ -629,7 +629,7 @@ def contact_list(request):
     context['fields_form'] = FieldSelectForm(request.user, initial={'selected_fields': fields})
     context['no_confirm_form_discard'] = True
 
-    return render_query('list_contact.html', context, request)
+    return render_query('contact_list.html', context, request)
 
 
 @login_required()
@@ -1470,7 +1470,7 @@ def event_list(request):
     context['year_month'] = YearMonthCal(year, month, month_events)
     context['today'] = date.today()
 
-    return render_to_response('list_events.html', context, RequestContext(request))
+    return render_to_response('event_list.html', context, RequestContext(request))
 
 
 @login_required()
