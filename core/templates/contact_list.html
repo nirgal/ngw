@@ -46,6 +46,8 @@ function add_filter_breadcrumb(data) {
     - the select widget will use ajax to fetch next item
     */
 
+    $('#' + BASE_ID + '_loading').remove();
+
     id = partial_filter.length;
     params = data.params
     for (iparam in data.params) {
@@ -111,6 +113,8 @@ function filter_breadcrumb_changed(select) {
     }
     //alert('url: ' + url);
 
+    $('#add_filter').append('<span id=' + BASE_ID + '_loading>{% filter escapejs %}{% trans "loading" %}{% endfilter %}...</span>');
+
     $.ajax({
         url: url,
         success: add_filter_breadcrumb,
@@ -161,6 +165,13 @@ function save_filter() {
     document.location = '{{user.get_absolute_url}}filters/add?' + $.param({filterstr: filter});
 }
 
+/* Function called on clic on "Select displayed columns" */
+function show_column_selection() {
+    $('#select_fields_title').show();
+    $('#select_fields').show();
+    $('#submitbar').hide();
+    $('#changelist').hide();
+}
 
 /* Function called on column selection */
 function submit_fields() {
@@ -177,12 +188,6 @@ function submit_fields() {
         savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
     }
     document.forms['mainform'].submit();
-}
-function show_field_selection() {
-    $('#select_fields_title').show();
-    $('#select_fields').show();
-    $('#submitbar').hide();
-    $('#changelist').hide();
 }
 </script>
 {% endblock %}
@@ -279,6 +284,6 @@ add_filter_breadcrumb({
 
 {% block submitbar %}
 <div class="submit-row">
-  <a class=button href="javascript:show_field_selection();" id=default>{% trans "Select displayed columns" %}</a>
+  <a class=button href="javascript:show_column_selection();" id=default>{% trans "Select displayed columns" %}</a>
 </div>
 {% endblock %}
