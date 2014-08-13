@@ -68,10 +68,9 @@ urlpatterns = patterns('',
 
     url(r'^contacts/$', 'ngw.core.views.contact_list'),
     url(r'^contacts/add$', 'ngw.core.views.contact_edit', {'gid':None, 'cid':None}),
-    url(r'^contacts/filter$', 'ngw.core.contactsearch.editfilter'),
-    url(r'^contacts/search/fields/(?P<kind>\w+)$', 'ngw.core.contactsearch.contactsearch_get_fields'),
-    url(r'^contacts/search/filters/(?P<field>\w+)$', 'ngw.core.contactsearch.contactsearch_get_filters'),
-    url(r'^contacts/search/params/(?P<field>\w+)/(?P<filtername>\w+)$', 'ngw.core.contactsearch.contactsearch_get_params'),
+    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', 'ngw.core.contactsearch.ajax_get_columns'),
+    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', 'ngw.core.contactsearch.ajax_get_filters'),
+    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)/(?P<filter_id>[^/]+)$', 'ngw.core.contactsearch.ajax_get_filters_params'),
     url(r'^contacts/search/filter_to_html$', 'ngw.core.contactsearch.contactsearch_filter_to_html'),
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contact_make_login_mailing'),
 

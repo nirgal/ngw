@@ -6,13 +6,16 @@
 {% endblock %}
 
 {% block prequerylist %}
-<div class=box>
-    {% if cg.description %}{{ cg.description|linebreaksbr }}<br><br>{% endif %}
-    {% if cg.date %}{% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b><br>{% endif %}
-    {% if cg.budget_code %}{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b><br>{% endif %}
-    {% if cg.mailman_address %}{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b><br>{% endif %}
+<div class="module padded">
+    {% if cg.description %}{{ cg.description|linebreaksbr }}<br>{% endif %}
+    {% if cg.date %}<br>{% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b>{% endif %}
+    {% if cg.budget_code %}<br>{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b>{% endif %}
+    {% if cg.mailman_address %}<br>{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b>{% endif %}
+</div>
+    {{ block.super }}
+{% endblock %}
 
-    <p>
+{% block extrafilter %}
     <script>
     function submit_display(form) {
         display="";
@@ -32,9 +35,6 @@
     <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">{% trans "Include subgroups" %}</label>
     <input type=checkbox name="display_admins" id="id_display_admins" {% if display_admins %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_admins">{% trans "Admins" %}</label>
     </form>
-    <br>
-    {{ block.super }}
-</div>
 {% endblock %}
 
 {% block presubmitbar %}

@@ -23,63 +23,146 @@ function show_membership_extrainfo(gcid) {
         document.getElementById('membership_'+gcid).style.display='block';
     shown_membership_extrainfo_gcid = gcid;
 }
-</script>
 
-<script>
-{# For some obscure reason, that block of functions cannot be loaded via rpc #}
-var cur_grouptype=null;
-var cur_field=null;
-var cur_filtername=null;
-var add_another_filter=false;
 
-function select_grouptype(type) {
-    select_field(null);
-    if (type)
-        ajax_load_innerhtml("list_field", "/contacts/search/fields/"+type);
-    else
-        document.getElementById("list_field").innerHTML="";
 
-    if (cur_grouptype)
-        document.getElementById("filter_group_"+cur_grouptype).className = "";
-    if (type)
-        document.getElementById("filter_group_"+type).className = "activeSelectionItem";
-    cur_grouptype = type;
+BASE_ID = 'filter_breadcrumb_';
+var partial_filter = [];
+
+
+function add_filter_breadcrumb(data) {
+    /*
+    data is an object that can have 2 properties:
+    - submit_prefix: such as "ffilter(10,mchas"
+    - params: such as [ string, [ {id:'fr', text:'France'}, {id:'uk', text:'United Kingdom'} ]]
+              or { fields: 'Champs' }
+
+    If submit_prefix is set:
+    - Each item in parameter will yield a widget, with array being converted in select
+    - A submit button will appear, and as many widgets as needed for submission
+
+    If submit_prefix is empty:
+    - params should contain a single array
+    - the select widget will use ajax to fetch next item
+    */
+
+    id = partial_filter.length;
+    params = data.params
+    for (iparam in data.params) {
+        param = data.params[iparam];
+        html = '';
+        if (typeof(param) == 'object') {
+            //html += "{% filter escapejs %}{% trans "Type of filter" %}{% endfilter %} : ";
+            html += "<select id='" + BASE_ID + id + "'";
+            if (!data.submit_prefix)
+                html += " onchange='filter_breadcrumb_changed(this);' onkeyup='filter_breadcrumb_changed(this);'";
+            html += " class=string>";
+            html += "<option value=''>{% trans "Select" %}</option>";
+            for (i in param) {
+                choice = param[i];
+                html += "<option value=" + escape_quote(choice.id) + ">" + choice.text + "</option>";
+            }
+            html += "</select>";
+        } else if (param == 'string' || param == 'number') {
+            html += "<input id='" + BASE_ID + id + "' class=" + param + ">";
+        } else {
+            html += "ERROR: Unsupported parameter type " + param;
+        }
+
+        $('#add_filter').append(' '+html);
+        id++;
+    }
+    if (data.submit_prefix) {
+        submit_prefix = data.submit_prefix.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/&/g, '&amp;');
+        html = "<input id='" + BASE_ID + id + "' type=submit value='{% filter escapejs %}{% trans "Add" %}{% endfilter %}' onclick=\"filter_breadcrumbs_submit(\'" + submit_prefix + "\', " + partial_filter.length + ", " + params.length + ");\">";
+        $('#add_filter').append(' '+html);
+    }
 }
 
-function select_field(field) {
-    select_filtername(null);
-    if (field)
-        ajax_load_innerhtml("list_filters", "/contacts/search/filters/"+field);
-    else
-        document.getElementById("list_filters").innerHTML="";
-    if (cur_field)
-        document.getElementById("field_"+cur_field).className = "";
-    if (field)
-        document.getElementById("field_"+field).className = "activeSelectionItem";
-    cur_field = field;
+function filter_breadcrumb_changed(select) {
+    /* Get index in partial_filter */
+    iid = select.id;
+    iid = iid.substring(BASE_ID.length);
+    iid = parseInt(iid);
+
+    /* Remove all the html after the activated input */
+    for (i=iid+1; i<8; ++i) {
+        itemAfter = $('#' + BASE_ID + i);
+        if (itemAfter)
+            itemAfter.remove();
+    }
+
+    /* Remove the partial_filter items after the activated input */
+    while (partial_filter.length > iid)
+        partial_filter.pop();
+
+    val = $('#'+select.id).val();
+    if (!val)
+        return; // "please select" was selected: ignore it
+    //alert('val:' + val);
+
+    partial_filter.push(val);
+    //alert('partial_filter:' + partial_filter);
+
+    url = '/contacts/ajaxsearch'
+    for (i in partial_filter) {
+        urlfragment = partial_filter[i];
+        url += '/' + urlfragment;
+    }
+    //alert('url: ' + url);
+
+    $.ajax({
+        url: url,
+        success: add_filter_breadcrumb,
+        error: function (jqXHR, textStatus, errorThrown) {
+            msg = "{% filter escapejs %}{% trans "Error while fetching "%}{% endfilter %} " + url + ":\n";
+            msg += textStatus + ': ' + errorThrown;
+            alert(msg);
+        },
+    });
 }
 
-function select_filtername(filtername) {
-    previous_filter = document.getElementById('filter').value;
-    if (filtername)
-        ajax_load_innerhtml("filter_param", "/contacts/search/params/"+cur_field+"/"+filtername+"?previous_filter="+previous_filter);
-    else
-        document.getElementById("filter_param").innerHTML="";
+function filter_breadcrumbs_submit(submit_prefix, first_param, nb_param) {
+    newfilterstr = submit_prefix; // + " + " + first_param + " + " + nb_param;
+    for (i=first_param; i<first_param+nb_param; ++i) {
+        input = $('#' + BASE_ID + i);
+        param = input.val();
+        if (input.hasClass('string'))
+            param = escape_quote(param);
+        newfilterstr += ',';
+        newfilterstr += param;
+    }
+    newfilterstr += ')';
 
-    if (cur_filtername)
-        document.getElementById("filter_"+cur_filtername).className = "";
-    if (filtername)
-        document.getElementById("filter_"+filtername).className = "activeSelectionItem";
-    cur_filtername = filtername;
+    {% if filter %}
+    operator = $('#' + BASE_ID + 'combine').val();
+    newfilterstr = operator + "({% filter escapejs %}{{ filter|safe }}{% endfilter %}," + newfilterstr + ')';
+    {% endif %}
+    //alert(newfilterstr);
+    $('#mainform #filter').val(newfilterstr);
+    $('#mainform').submit();
 }
 
-function set_filter(newfilter) {
-    document.getElementById('filter').value=newfilter;
-    ajax_load_innerhtml('curent_filter','/contacts/search/filter_to_html?'+newfilter);
+/* Function called on click on "Advanced search" */
+function advanced_search() {
+    $('#advanced_search').show();
+    $('#basic_search').hide();
 }
-</script>
 
-<script>
+/* Function called on click on "Reset Filter" */
+function reset_filter() {
+    $('#mainform #filter').val('');
+    $('#mainform').submit();
+}
+
+/* Function called on click on "Save Filter" */
+function save_filter() {
+    filter = $('#mainform #filter').val();
+    document.location = '{{user.get_absolute_url}}filters/add?' + $.param({filterstr: filter});
+}
+
+
+/* Function called on column selection */
 function submit_fields() {
     var sel = document.forms['field_selection_widget'].selected_fields;
     var new_fields='';
@@ -96,10 +179,10 @@ function submit_fields() {
     document.forms['mainform'].submit();
 }
 function show_field_selection() {
-    document.getElementById('select_fields_title').style.display='block';
-    document.getElementById('select_fields').style.display='block';
-    document.getElementById('submitbar').style.display='none';
-    document.getElementById('objlist').style.display='none';
+    $('#select_fields_title').show();
+    $('#select_fields').show();
+    $('#submitbar').hide();
+    $('#changelist').hide();
 }
 </script>
 {% endblock %}
@@ -114,23 +197,65 @@ function show_field_selection() {
     <input type=hidden id=display name=display value="{{display}}">
 </form>
 
-<div id=filterbox class=box>
+<div id=filterbox class="module padded">
+{% block extrafilter %}{% endblock %}
 {% if filter %}
-    {% include "filter.html" %}
+    <h1>{% trans "Current filter" %}</h1>
+    <div id="curent_filter" class="padded">
+    {{filter_html}} {# Unsued, content is loaded bellow #}
+    </div>
     <script>
-    newfilter=document.getElementById('filter').value;
-    ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+newfilter);
+    filter=document.getElementById('filter').value;
+    ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+filter);
     </script>
-{% else %}
+{% endif %}
+
+<div id=advanced_search {% if not filter %}style="display:none;"{% endif %}>
+    <h1>{% trans "Add condition" %}</h1>
+    <div id=add_filter class="padded">
+    </div>
+
+    <div class="submit-row">
+    <a class="button" href="javascript:reset_filter();">{% trans "Reset filter" %}</a>
+    <a class="button" href="javascript:save_filter();">{% trans "Save filter" %}</a>
+    </div>
+</div>
+<div id=basic_search {% if filter %}style="display:none;"{% endif %}>
     <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['mainform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['mainform'].submit(); return false;">
         <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search">
         <input name=filter id=defaultfocus style="width:auto;">
-        &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:ajax_load_innerhtml('filterbox', '/contacts/filter');">{% trans "Advanced search" %}</a>
+        &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:advanced_search();">{% trans "Advanced search" %}</a>
     </form>
-
+    {% if not filter %}
     <script>document.forms['quickfilter_displayedform'].filter.focus();</script>
-{% endif %}
+    {% endif %}
 </div>
+</div>
+
+
+<script>
+/* Initialisation of the "Add filter" div */
+{% if filter %}
+{
+    html = '';
+    html += "<select id='" + BASE_ID + "combine'>";
+    html += "<option value=and>{% filter escapejs %}{% trans "And" %}{% endfilter %}</option>";
+    html += "<option value=or>{% filter escapejs %}{% trans "Or" %}{% endfilter %}</option>";
+    html += "</select>";
+    $('#add_filter').append(html);
+}
+{% endif %}
+add_filter_breadcrumb({
+    'params' : [
+    [   /* only one parameter: a choice */
+        {id: 'fields', text: "{% filter escapejs %}{% trans "Field" %}{% endfilter %}"},
+        {id: 'groups', text: "{% filter escapejs %}{% trans "Group" %}{% endfilter %}"},
+        {id: 'events', text: "{% filter escapejs %}{% trans "Event" %}{% endfilter %}"},
+        {id: 'custom', text: "{% filter escapejs %}{% trans "Custom" %}{% endfilter %}"},
+    ]],
+});
+</script>
+
 {% endblock %}
 
 

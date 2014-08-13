@@ -3,16 +3,23 @@
 
 {% block content %}
 <div id="content-main">
-<div class=module>
-    {% if filters %}
-        {% for f in filters %}
-        {% if forloop.first %}<ul>{% endif %}
-        <li><a href="./{{forloop.counter0}}/">{{f}}</a><br>
-        {% if forloop.last %}</ul>{% endif %}
-        {% endfor %}
-    {% else %}
-        {% trans "That user has no custom filter." %}
+{% if filters %}
+    {% for f in filters %}
+    {% if forloop.first %}
+    <div class=module>
+    <ul>
     {% endif %}
+    <li><a href="./{{forloop.counter0}}/">{{f}}</a><br>
+    {% if forloop.last %}
+    </ul>
+    </div>
+    {% endif %}
+    {% endfor %}
+{% else %}
+    <div class=fullpagebox>
+    {% trans "That user has no custom filter." %}
+    </div>
+{% endif %}
 </div>
 
 {% block submitbar %}

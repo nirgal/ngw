@@ -52,9 +52,8 @@ function ajax_load_innerhtml(element_id, url) {
     req.send(null);
 }
 
-
+/* Single quote a string, escaping as needed: */
 function escape_quote(str) {
-/* TODO: Add \ before any \ or ' */
-    return "'"+str+"'";
+    return "'" + str.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
 }
 

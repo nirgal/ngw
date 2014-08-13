@@ -5,7 +5,6 @@ from datetime import *
 from decoratedstr import remove_decoration
 from copy import copy
 import json
-from functools import wraps
 import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -27,7 +26,6 @@ from django import forms
 from django.views import static
 from django.views.generic import TemplateView, ListView
 from django.views.generic.list import (MultipleObjectTemplateResponseMixin, BaseListView)
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
 from ngw.core.models import *
@@ -37,6 +35,7 @@ from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core import contactsearch
 from ngw.core import perms
+from ngw.core.viewdecorators import *
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -54,30 +53,6 @@ FTYPE_RIB = 'RIB'
 FTYPE_CHOICE = 'CHOICE'
 FTYPE_MULTIPLECHOICE = 'MULTIPLECHOICE'
 FTYPE_PASSWORD = 'PASSWORD'
-
-
-#######################################################################
-#
-# View decorator
-#
-#######################################################################
-
-def require_group(required_group):
-    '''
-    Decorator to make a view only accept users from a given group.
-    '''
-    def decorator(func):
-        @wraps(func, assigned=available_attrs(func)) # python2 compat
-        def inner(request, *args, **kwargs):
-            try:
-                user = request.user
-            except AttributeError:
-                raise PermissionDenied
-            if not user.is_member_of(required_group):
-                raise PermissionDenied
-            return func(request, *args, **kwargs)
-        return inner
-    return decorator
 
 
 #######################################################################
@@ -2638,7 +2613,6 @@ def field_list(request):
     context['objtype'] = ContactField
     context['nav'] = Navbar(ContactField.get_class_navcomponent())
     return render_query('list.html', context, request, defaultsort='sort_weight')
-
 
 @login_required()
 @require_group(GROUP_USER_NGW)
