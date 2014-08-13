@@ -45,4 +45,6 @@ Message sending to an inherited member.
 
 Type change deletion check is buggy.
 
+When you add a field, you get the message about the field beeing deleted successfully.
+
 With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
