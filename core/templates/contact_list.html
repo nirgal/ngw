@@ -222,7 +222,7 @@ function show_field_selection() {
 </div>
 <div id=basic_search {% if filter %}style="display:none;"{% endif %}>
     <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['mainform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['mainform'].submit(); return false;">
-        <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search">
+        <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search" style="vertical-align:middle;">
         <input name=filter id=defaultfocus style="width:auto;">
         &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:advanced_search();">{% trans "Advanced search" %}</a>
     </form>
