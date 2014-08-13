@@ -48,3 +48,8 @@ Type change deletion check is buggy.
 When you add a field, you get the message about the field beeing deleted successfully.
 
 With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
+
+Contact search:
+- Automatically select the first option in choices
+- ajax_load_innerhtml is only use in one place: Drop it, call filter_to_html without ajax, from view. Delete loading image.
+- urls.py: route "custom" field_type to a specify view
