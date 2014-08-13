@@ -12,7 +12,7 @@ GPG_HOME = getattr(settings, 'GPG_HOME', None)
 # TODO: use --edit-key deluid to keep only one uid per key ?
 
 def subprocess_run(*args):
-    args = [ arg.encode('utf8') for arg in args ]
+    args = [arg.encode('utf8') for arg in args]
     process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     out, err = process.communicate()
     return process.returncode, force_text(out, errors='replace'), force_text(err, errors='replace')
@@ -38,7 +38,7 @@ def parse_pgp_listkey(output):
         #print(items)
         if items[0] == 'pub':
             id = items[4]
-            keyring[id] = { 'uids': [ items[9] ], 'length': items[2], 'algo': items[3], 'date': items[5] }
+            keyring[id] = {'uids': [items[9]], 'length': items[2], 'algo': items[3], 'date': items[5]}
         elif items[0] == 'uid':
             keyring[id]['uids'].append(items[9])
     return keyring

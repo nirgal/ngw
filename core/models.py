@@ -95,13 +95,13 @@ __cig_flag_info__ = (
     (CIGFLAG_WRITE_MSGS, 'X', 'write_msgs', 'ex', ''),
 )
 
-ADMIN_CIGFLAGS =  (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
-                 | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
-                 | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
-                 | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
-                 | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
-                 | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES
-                 | CIGFLAG_VIEW_MSGS | CIGFLAG_WRITE_MSGS)
+ADMIN_CIGFLAGS = (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
+                | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
+                | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
+                | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
+                | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
+                | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES
+                | CIGFLAG_VIEW_MSGS | CIGFLAG_WRITE_MSGS)
 
 OBSERVER_CIGFLAGS = (CIGFLAG_VIEWER
                 | CIGFLAG_SEE_CG
@@ -202,9 +202,9 @@ class NgwModel(models.Model):
 
 
 # Types of change
-LOG_ACTION_ADD      = 1
-LOG_ACTION_CHANGE   = 2
-LOG_ACTION_DEL      = 3
+LOG_ACTION_ADD    = 1
+LOG_ACTION_CHANGE = 2
+LOG_ACTION_DEL    = 3
 
 class Log(NgwModel):
     id = models.AutoField(primary_key=True)
@@ -240,9 +240,9 @@ class Log(NgwModel):
         return self.dt.strftime('%Y-%m-%d %H:%M:%S')
 
     def action_txt(self):
-        return { LOG_ACTION_ADD: 'Add',
-                 LOG_ACTION_CHANGE: 'Update',
-                 LOG_ACTION_DEL: 'Delete'}[self.action]
+        return {LOG_ACTION_ADD: 'Add',
+                LOG_ACTION_CHANGE: 'Update',
+                LOG_ACTION_DEL: 'Delete'}[self.action]
 
 @python_2_unicode_compatible
 class Config(NgwModel):
@@ -322,13 +322,13 @@ class MyContactManager(models.Manager):
         contact.save()
 
         cfv = ContactFieldValue(contact_id=contact.id,
-                                contact_field_id = FIELD_LOGIN,
-                                value = name)
+                                contact_field_id=FIELD_LOGIN,
+                                value=name)
         cfv.save()
 
         cfv = ContactFieldValue(contact_id=contact.id,
-                                contact_field_id = FIELD_PASSWORD,
-                                value = make_password(password))
+                                contact_field_id=FIELD_PASSWORD,
+                                value=make_password(password))
         cfv.save()
 
         cig = ContactInGroup(contact_id=contact.id,
@@ -400,7 +400,7 @@ class Contact(NgwModel):
 
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
-        return '<a href="%(id)d/">%(name)s</a>' % { 'id': self.id, 'name': html.escape(self.name) }
+        return '<a href="%(id)d/">%(name)s</a>' % {'id': self.id, 'name': html.escape(self.name)}
 
 
     def get_directgroups_member(self):
@@ -437,9 +437,9 @@ class Contact(NgwModel):
         will not get fields that belong to a group is not a member of.
         You should probaly use get_all_visible_fields or get_all_writable_fields
         '''
-        contactgroupids = [ g.id for g in self.get_allgroups_withfields() ]
+        contactgroupids = [g.id for g in self.get_allgroups_withfields()]
         #print("contactgroupids=", contactgroupids)
-        return ContactField.objects.filter(contact_group_id__in = contactgroupids).order_by('sort_weight')
+        return ContactField.objects.filter(contact_group_id__in=contactgroupids).order_by('sort_weight')
 
     def get_all_visible_fields(self, user_id):
         '''
@@ -582,7 +582,7 @@ class Contact(NgwModel):
 
     def generate_login(self):
         words = self.name.split(" ")
-        login = [w[0].lower() for w in words[:-1] ] + [ words[-1].lower() ]
+        login = [w[0].lower() for w in words[:-1]] + [words[-1].lower()]
         login = "".join(login)
         login = decoratedstr.remove_decoration(login)
         def get_logincfv_by_login(ref_uid, login):
@@ -604,7 +604,7 @@ class Contact(NgwModel):
 
     @staticmethod
     def generate_password():
-        random_password = get_random_string( 8, 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ0123456789!@#$%&*(-_=+)')
+        random_password = get_random_string(8, 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ0123456789!@#$%&*(-_=+)')
         return random_password
 
 
@@ -723,7 +723,7 @@ class ContactGroup(NgwModel):
         """
         return [gig.father_id \
             for gig in GroupInGroup.objects.filter(subgroup_id=self.id).extra(where=[
-                'perm_c_can_see_cg(%s, group_in_group.father_id)' % cid ])]
+                'perm_c_can_see_cg(%s, group_in_group.father_id)' % cid])]
 
     def get_direct_supergroups(self):
         return ContactGroup.objects.filter(direct_gig_subgroups__subgroup_id=self.id)
@@ -762,7 +762,7 @@ class ContactGroup(NgwModel):
         return [gig.father_id \
             for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(where=[
                 'flags & %s <> 0' % flag,
-                'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid ])]
+                'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid])]
 
     def get_manager_groups(self):
         return ContactGroup.objects \
@@ -943,11 +943,11 @@ class ContactGroup(NgwModel):
             return []
 
         # listdir() returns some data in utf-8, we want everything in unicode:
-        files = [ force_text(file, errors='replace')
-            for file in files ]
+        files = [force_text(file, errors='replace')
+            for file in files]
 
         # hide files starting with a dot:
-        iles = [ file for file in files if file[0]!='.' ]
+        files = [file for file in files if file[0] != '.']
 
         files.sort()
         return files
@@ -957,10 +957,10 @@ class ContactGroup(NgwModel):
         return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, )
 
     def get_filters(self):
-        return [ cls(self.id) for cls in self.get_filters_classes() ]
+        return [cls(self.id) for cls in self.get_filters_classes()]
 
     def get_filter_by_name(self, name):
-        return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
+        return [f for f in self.get_filters() if f.__class__.internal_name == name][0]
 
     def get_birthday_members(self):
         #select * from contact_field_value where contact_field_id=6 and value like '%-11-%';
@@ -1129,7 +1129,7 @@ class ContactGroup(NgwModel):
 
         if added_contacts:
             msgpart_contacts = ', '.join([c.name for c in added_contacts])
-            if len(added_contacts)==1:
+            if len(added_contacts) == 1:
                 msg = _('Contact %(contacts)s has been added in %(group)s with status %(status)s.')
             else:
                 msg = _('Contact %(contacts)s have been added in %(group)s with status %(status)s.')
@@ -1139,7 +1139,7 @@ class ContactGroup(NgwModel):
                 'status': group_member_mode})
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
-            if len(changed_contacts)==1:
+            if len(changed_contacts) == 1:
                 msg = _('Contact %(contacts)s already was in %(group)s. Status has been changed to %(status)s.')
             else:
                 msg = _('Contacts %(contact)s already were in %(group)s. Status has been changed to %(status)s.')
@@ -1235,10 +1235,10 @@ class ContactField(NgwModel):
         return (FieldFilterNull, FieldFilterNotNull,)
 
     def get_filters(self):
-        return [ cls(self.id) for cls in self.get_filters_classes() ]
+        return [cls(self.id) for cls in self.get_filters_classes()]
 
     def get_filter_by_name(self, name):
-        return [ f for f in self.get_filters() if f.__class__.internal_name==name][0]
+        return [f for f in self.get_filters() if f.__class__.internal_name == name][0]
 
     @staticmethod
     def renumber():
@@ -1272,16 +1272,16 @@ class FilterHelper(object):
         # kargs is a dictionnary of parameters to apply to where
         # unicode parameters are escaped
         # integers are expanded inline
-        params_where = { }
-        params_sql = { }
+        params_where = {}
+        params_sql = {}
         for k, v in six.iteritems(kargs):
             #print(k, "=", v)
             auto_param_name = 'autoparam_' + force_text(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
             if isinstance(v, six.text_type):
-                params_where[ k ] = '%(' + auto_param_name + k + ')s'
-                params_sql[ auto_param_name+k ] = v
+                params_where[k] = '%(' + auto_param_name + k + ')s'
+                params_sql[auto_param_name+k] = v
             elif isinstance(v, int):
-                params_where[ k ] = v
+                params_where[k] = v
             else:
                 raise Exception('Unsupported type ' + force_text(type(v)))
         where = where % params_where
@@ -1316,7 +1316,7 @@ class Filter(FilterHelper):
 class NameFilterStartsWith(Filter):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return '(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', { 'value_name1': '^' + value, 'value_name2': ' '+value }
+        return '(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', {'value_name1': '^' + value, 'value_name2': ' '+value}
     def to_html(self, value):
         return string_concat('<b>Name</b> ', self.__class__.human_name, ' "', value, '"')
 
@@ -1351,7 +1351,7 @@ class FieldFilterOp1(FieldFilter):
 class FieldFilterStartsWith(FieldFilterOp1):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', { 'field_id':self.field_id, 'value1': '^'+value, 'value2': ' '+value}
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', {'field_id':self.field_id, 'value1': '^'+value, 'value2': ' '+value}
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterStartsWith.internal_name = 'startswith'
@@ -1360,7 +1360,7 @@ FieldFilterStartsWith.human_name = _('has a word starting with')
 
 class FieldFilterEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value}
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterEQ.internal_name = 'eq'
@@ -1369,7 +1369,7 @@ FieldFilterEQ.human_name = '='
 
 class FieldFilterNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterNEQ.internal_name = 'neq'
@@ -1378,7 +1378,7 @@ FieldFilterNEQ.human_name = '≠'
 
 class FieldFilterLE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterLE.internal_name = 'le'
@@ -1387,7 +1387,7 @@ FieldFilterLE.human_name = '≤'
 
 class FieldFilterGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterGE.internal_name = 'ge'
@@ -1396,7 +1396,7 @@ FieldFilterGE.human_name = '≥'
 
 class FieldFilterLIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterLIKE.internal_name = 'like'
@@ -1405,7 +1405,7 @@ FieldFilterLIKE.human_name = 'SQL LIKE'
 
 class FieldFilterILIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterILIKE.internal_name = 'ilike'
@@ -1414,7 +1414,7 @@ FieldFilterILIKE.human_name = 'SQL ILIKE'
 
 class FieldFilterNull(FieldFilterOp0):
     def get_sql_where_params(self):
-        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', {'field_id':self.field_id}
     def get_param_types(self):
         return ()
 FieldFilterNull.internal_name = 'null'
@@ -1423,7 +1423,7 @@ FieldFilterNull.human_name = _('is undefined')
 
 class FieldFilterNotNull(FieldFilterOp0):
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', { 'field_id':self.field_id }
+        return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )', {'field_id':self.field_id}
     def get_param_types(self):
         return ()
 FieldFilterNotNull.internal_name = 'notnull'
@@ -1432,7 +1432,7 @@ FieldFilterNotNull.human_name = _('is defined')
 
 class FieldFilterIEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int = %(value)i', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterIEQ.internal_name = 'ieq'
@@ -1441,7 +1441,7 @@ FieldFilterIEQ.human_name = '='
 
 class FieldFilterINE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <> %(value)i', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterINE.internal_name = 'ineq'
@@ -1450,7 +1450,7 @@ FieldFilterINE.human_name = '≠'
 
 class FieldFilterILT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int < %(value)i', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterILT.internal_name = 'ilt'
@@ -1459,7 +1459,7 @@ FieldFilterILT.human_name = '<'
 
 class FieldFilterIGT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int > %(value)i', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterIGT.internal_name = 'igt'
@@ -1468,7 +1468,7 @@ FieldFilterIGT.human_name = '>'
 
 class FieldFilterILE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int <= %(value)i', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterILE.internal_name = 'ile'
@@ -1477,7 +1477,7 @@ FieldFilterILE.human_name = '≤'
 
 class FieldFilterIGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', { 'field_id':self.field_id, 'value':int(value) }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i )::int >= %(value)i', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterIGE.internal_name = 'ige'
@@ -1486,7 +1486,7 @@ FieldFilterIGE.human_name = '≥'
 
 class FieldFilterAGE_GE(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
+        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND NOW() - value::DATE > \'%(value)i years\'::INTERVAL )', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterAGE_GE.internal_name = 'agege'
@@ -1495,7 +1495,7 @@ FieldFilterAGE_GE.human_name = _('Age (years) ≥')
 
 class FieldFilterVALID_GT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', { 'field_id':self.field_id, 'value':int(value) }
+        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE - NOW() > \'%(value)i years\'::INTERVAL )', {'field_id':self.field_id, 'value':int(value)}
     def get_param_types(self):
         return (int,)
 FieldFilterVALID_GT.internal_name = 'validitygt'
@@ -1504,7 +1504,7 @@ FieldFilterVALID_GT.human_name = _('date until event ≥')
 
 class FieldFilterFUTURE(FieldFilterOp0):
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', { 'field_id': self.field_id }
+        return 'EXISTS (SELECT * FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value::DATE > NOW() )', {'field_id': self.field_id}
     def get_param_types(self):
         return ()
 FieldFilterFUTURE.internal_name = 'future'
@@ -1513,7 +1513,7 @@ FieldFilterFUTURE.human_name = _('In the future')
 
 class FieldFilterChoiceEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', { 'field_id':self.field_id, 'value':value }
+        return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', {'field_id':self.field_id, 'value':value}
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
@@ -1527,7 +1527,7 @@ FieldFilterChoiceEQ.human_name = '='
 
 class FieldFilterChoiceNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', { 'field_id':self.field_id, 'value':value }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', {'field_id':self.field_id, 'value':value}
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
@@ -1541,7 +1541,7 @@ FieldFilterChoiceNEQ.human_name = '≠'
 
 class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
+        return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', {'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value}
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
@@ -1555,7 +1555,7 @@ FieldFilterMultiChoiceHAS.human_name = _('contains')
 
 class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
     def get_sql_where_params(self, value):
-        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', { 'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value }
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND ( value=%(value)s OR value LIKE %(valuestart)s OR value LIKE %(valuemiddle)s OR value LIKE %(valueend)s ) )', {'field_id':self.field_id, 'value':value, 'valuestart':value+",%", 'valuemiddle':"%,"+value+",%", 'valueend':"%,"+value}
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
@@ -1673,7 +1673,7 @@ GroupFilterNotDeclinedInvitation.human_name = _('has not declined invitation in 
 class AllEventsNotReactedSince(Filter):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (CIGFLAG_MEMBER | CIGFLAG_DECLINED), { 'date':value }
+        return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (CIGFLAG_MEMBER | CIGFLAG_DECLINED), {'date':value}
     def to_html(self, value):
         return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
@@ -1683,7 +1683,7 @@ AllEventsNotReactedSince.human_name = _('has not reacted to any invitation since
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
     def to_html(self, value):
         return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
@@ -1693,7 +1693,7 @@ AllEventsReactionYearRatioLess.human_name = _('1 year invitation reaction percen
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', { 'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d')) }
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
     def to_html(self, value):
         return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
@@ -1839,7 +1839,7 @@ class ContactInGroup(NgwModel):
         return force_str('ContactInGroup<%s,%s>' % (self.contact_id, self.group_id))
 
     def __str__(self):
-        return _('contact %(contactname)s in group %(groupname)s') % { 'contactname': self.contact.name, 'groupname': self.group.unicode_with_date() }
+        return _('contact %(contactname)s in group %(groupname)s') % {'contactname': self.contact.name, 'groupname': self.group.unicode_with_date()}
 
     @classmethod
     def get_class_navcomponent(cls):

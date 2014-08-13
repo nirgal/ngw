@@ -213,12 +213,12 @@ def logs(request):
     context['objtype'] = Log
     context['query'] = Log.objects.all()
     context['cols'] = [
-        ( _('Date UTC'), None, 'small_date', 'dt'),
-        ( _('User'), None, 'contact', 'contact__name'),
-        ( _('Action'), None, 'action_txt', 'action'),
-        ( _('Target'), None, 'target_repr', 'target_repr'),
-        ( _('Property'), None, 'property_repr', 'property_repr'),
-        ( _('Change'), None, 'change', 'change'),
+        (_('Date UTC'), None, 'small_date', 'dt'),
+        (_('User'), None, 'contact', 'contact__name'),
+        (_('Action'), None, 'action_txt', 'action'),
+        (_('Target'), None, 'target_repr', 'target_repr'),
+        (_('Property'), None, 'property_repr', 'property_repr'),
+        (_('Change'), None, 'change', 'change'),
     ]
     return render_query('list_log.html', context, request)
 
@@ -468,9 +468,9 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
     for prop in fields:
         if prop == 'name':
             if format == 'html':
-                cols.append( (_('Name'), None, 'name_with_relative_link', 'name') )
+                cols.append((_('Name'), None, 'name_with_relative_link', 'name'))
             else:
-                cols.append( (_('Name'), None, 'name', 'name') )
+                cols.append((_('Name'), None, 'name', 'name'))
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
@@ -481,8 +481,8 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
 
             cg = ContactGroup.objects.get(pk=groupid)
 
-            #cols.append( (cg.name, None, membership_to_text_factory(groupid), None) )
-            cols.append( (cg.name, None, membership_extended_widget_factory(request, cg), None) )
+            #cols.append((cg.name, None, membership_to_text_factory(groupid), None))
+            cols.append((cg.name, None, membership_extended_widget_factory(request, cg), None))
             #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
 
         elif prop.startswith(DISP_FIELD_PREFIX):
@@ -498,9 +498,9 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
             # then here is the last place where col[1] is ever used
 
             if format == 'html':
-                cols.append( (cf.name, cf.format_value_html, prop, prop) )
+                cols.append((cf.name, cf.format_value_html, prop, prop))
             else:
-                cols.append( (cf.name, cf.format_value_unicode, prop, prop) )
+                cols.append((cf.name, cf.format_value_unicode, prop, prop))
         else:
             raise ValueError('Invalid field '+prop)
 
@@ -508,13 +508,13 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
         assert base_url
         q.add_group_withnote(current_cg.id)
         if format == 'html':
-            cols.append( (_('Status'), None, membership_extended_widget_factory(request, current_cg), None) )
-            #cols.append( ('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
-            #cols.append( ('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
-            #cols.append( ('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
+            cols.append((_('Status'), None, membership_extended_widget_factory(request, current_cg), None))
+            #cols.append(('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
+            #cols.append(('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
+            #cols.append(('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
         else:
-            cols.append( (_('Status'), None, lambda c: membership_to_text(c, current_cg.id), None) )
-            cols.append( (_('Note'), None, 'group_%s_note' % current_cg.id, None) )
+            cols.append((_('Status'), None, lambda c: membership_to_text(c, current_cg.id), None))
+            cols.append((_('Note'), None, 'group_%s_note' % current_cg.id, None))
     return q, cols
 
 
@@ -559,12 +559,12 @@ def get_display_columns(user):
             continue
         result.append(fname)
     if not result:
-        result = [ DISP_NAME ]
+        result = [DISP_NAME]
     return result
 
 
 def get_available_columns(user_id):
-    result = [ (DISP_NAME, 'Name') ]
+    result = [(DISP_NAME, 'Name')]
     for cf in ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight'):
         result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
     for cg in ContactGroup.objects.extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % user_id]).order_by('-date', 'name'):
@@ -712,8 +712,8 @@ class ContactEditForm(forms.Form):
             # Here we have all the writable fields, including the one from
             # other groups that the user can see
         elif contactgroup:
-            contactgroupids = [ g.id for g in contactgroup.get_self_and_supergroups() ]
-            cfields = ContactField.objects.filter(contact_group_id__in = contactgroupids).extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight')
+            contactgroupids = [g.id for g in contactgroup.get_self_and_supergroups()]
+            cfields = ContactField.objects.filter(contact_group_id__in=contactgroupids).extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight')
             # Here we have the fields from contact_group and all its super
             # groups, IF user can write to them
         else: # FIXME
@@ -860,7 +860,7 @@ def contact_edit(request, gid=None, cid=None):
                         initialdata[force_text(cf.id)] = cf.db_value_to_formfield_value(cf.default)
 
             if cg:
-                initialdata['groups'] = [ cg.id ]
+                initialdata['groups'] = [cg.id]
                 form = ContactEditForm(request.user.id, cid=cid, initial=initialdata, contactgroup=cg)
             else:
                 form = ContactEditForm(request.user.id, cid=cid)
@@ -1055,7 +1055,7 @@ def contact_filters_list(request, cid=None):
     filters = []
     if filter_list_str:
         filter_list = contactsearch.parse_filter_list_str(filter_list_str)
-        filters = [ filtername for filtername, filter_str in filter_list ]
+        filters = [filtername for filtername, filter_str in filter_list]
     context = {}
     context['title'] = _('User custom filters')
     context['contact'] = contact
@@ -1093,7 +1093,7 @@ def contact_filters_edit(request, cid=None, fid=None):
         if form.is_valid():
             #print(repr(filter_list))
             #print(repr(filter_list_str))
-            filter_list[int(fid)]=(form.clean()['name'], filterstr)
+            filter_list[int(fid)] = (form.clean()['name'], filterstr)
             #print(repr(filter_list))
             filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
             #print(repr(filter_list_str))
@@ -1101,7 +1101,7 @@ def contact_filters_edit(request, cid=None, fid=None):
             messages.add_message(request, messages.SUCCESS, _('Filter has been renamed.'))
             return HttpResponseRedirect(reverse('ngw.core.views.contact_detail', args=(cid,)))
     else:
-        form = FilterEditForm(initial={ 'name': filtername })
+        form = FilterEditForm(initial={'name': filtername})
     context = {}
     context['title'] = _('User custom filter renaming')
     context['contact'] = contact
@@ -1147,8 +1147,8 @@ class DefaultGroupForm(forms.Form):
     def __init__(self, contact, *args, **kargs):
         super(DefaultGroupForm, self).__init__(*args, **kargs)
         available_groups = contact.get_allgroups_member().filter(date__isnull=True)
-        choices = [ ('', _('Create new personnal group'))] + [ (cg.id, cg.name) for cg in available_groups
-            if not cg.date and perms.c_can_see_cg(contact.id, cg.id) ]
+        choices = [('', _('Create new personnal group'))] + [(cg.id, cg.name) for cg in available_groups
+            if not cg.date and perms.c_can_see_cg(contact.id, cg.id)]
         self.fields['default_group'] = forms.ChoiceField(
             label=_('Default group'), choices=choices, required=False)
 
@@ -1166,8 +1166,8 @@ def contact_default_group(request, cid=None):
             default_group = form.cleaned_data['default_group']
             if not default_group:
                 cg = ContactGroup(
-                    name = _('Group of %s') % contact.name,
-                    description = _('This is the default group of %s') % contact.name,
+                    name=_('Group of %s') % contact.name,
+                    description=_('This is the default group of %s') % contact.name,
                     )
                 cg.save()
                 cg.check_static_folder_created()
@@ -1175,14 +1175,14 @@ def contact_default_group(request, cid=None):
                 cig = ContactInGroup(
                     contact_id=cid,
                     group_id=cg.id,
-                    flags = CIGFLAG_MEMBER|ADMIN_CIGFLAGS,
+                    flags=CIGFLAG_MEMBER|ADMIN_CIGFLAGS,
                     )
                 cig.save()
-                messages.add_message(request, messages.SUCCESS, _('Personnal group created.') )
+                messages.add_message(request, messages.SUCCESS, _('Personnal group created.'))
                 default_group = str(cg.id)
 
             contact.set_fieldvalue(request, FIELD_DEFAULT_GROUP, default_group)
-            messages.add_message(request, messages.SUCCESS, _('Default group has been changed sucessfully.') )
+            messages.add_message(request, messages.SUCCESS, _('Default group has been changed sucessfully.'))
             return HttpResponseRedirect(contact.get_absolute_url())
     else:
         default_group = contact.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
@@ -1238,7 +1238,7 @@ def get_UContactGroup(userid):
     LIST_PREVIEW_LEN = 5
     def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
         'Utility function to truncate text longer that LIST_PREVIEW_LEN'
-        if len(lst)>maxlen:
+        if len(lst) > maxlen:
             return lst[:maxlen] + ['…']
         return lst
     class UContactGroup(ContactGroup):
@@ -1271,14 +1271,14 @@ def contactgroup_list(request):
     UContactGroup = get_UContactGroup(request.user.id)
     q = UContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     cols = [
-        ( _('Name'), None, 'name', 'name' ),
-        ( _('Description'), None, 'description_not_too_long', 'description' ),
-        #( _('Contact fields'), None, 'rendered_fields', 'field_group' ),
-        ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
-        ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
-        #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
-        ( _('Members'), None, 'visible_member_count', None ),
-        #( _('System\u00a0locked'), None, 'system', 'system' ),
+        (_('Name'), None, 'name', 'name'),
+        (_('Description'), None, 'description_not_too_long', 'description'),
+        #(_('Contact fields'), None, 'rendered_fields', 'field_group'),
+        (_('Super groups'), None, 'visible_direct_supergroups_5', None),
+        (_('Sub groups'), None, 'visible_direct_subgroups_5', None),
+        #(_('Budget\u00a0code'), None, 'budget_code', 'budget_code'),
+        (_('Members'), None, 'visible_member_count', None),
+        #(_('System\u00a0locked'), None, 'system', 'system'),
     ]
     context = {}
     context['title'] = _('Select a contact group')
@@ -1450,9 +1450,9 @@ def event_list(request):
     q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
 
     cols = [
-        ( _('Date'), None, 'html_date', 'date' ),
-        ( _('Name'), None, 'name', 'name' ),
-        ( _('Description'), None, 'description', 'description' ),
+        (_('Date'), None, 'html_date', 'date'),
+        (_('Name'), None, 'name', 'name'),
+        (_('Description'), None, 'description', 'description'),
     ]
 
     month_events = {}
@@ -1581,7 +1581,7 @@ def contactgroup_members(request, gid, output_format=''):
                 emails.append((contact.id, contact, c_emails[0])) # only the first email
             else:
                 noemails.append(contact)
-        emails.sort(key=lambda x:remove_decoration(x[1].name.lower()))
+        emails.sort(key=lambda x: remove_decoration(x[1].name.lower()))
 
         context['title'] = _('Emails for %s') % cg.name
         context['strfilter'] = strfilter
@@ -1776,7 +1776,7 @@ class ContactGroupForm(forms.Form):
 
     def __init__(self, for_user, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        visible_groups_choices = [ (g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name') ]
+        visible_groups_choices = [(g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name')]
         self.fields['direct_supergroups'].choices = visible_groups_choices
         for flag in 'oveEcCfFnNuUxX':
             field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
@@ -1818,7 +1818,7 @@ def contactgroup_edit(request, id):
             old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(request.user.id))
             new_direct_supergroups_id = set([int(i) for i in data['direct_supergroups']])
             if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
-                new_direct_supergroups_id = { GROUP_EVERYBODY }
+                new_direct_supergroups_id = {GROUP_EVERYBODY}
 
             supergroup_added = new_direct_supergroups_id - old_direct_supergroups_ids
             supergroup_removed = old_direct_supergroups_ids - new_direct_supergroups_id
@@ -1928,9 +1928,9 @@ def on_contactgroup_delete(cg):
     for subcg in cg.get_direct_subgroups():
         sub_super = set(subcg.get_direct_supergroups_ids())
         #print(repr(subcg), "had these fathers:", sub_super)
-        sub_super = sub_super | supergroups_ids - { cg.id }
+        sub_super = sub_super | supergroups_ids - {cg.id}
         if not sub_super:
-            sub_super = { GROUP_EVERYBODY }
+            sub_super = {GROUP_EVERYBODY}
         #print(repr(subcg), "new fathers:", sub_super)
         subcg.set_direct_supergroups_ids(sub_super)
         #print(repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids())
@@ -1960,7 +1960,7 @@ def contactgroup_add_contacts_to(request):
             if not perms.c_can_change_members_cg(request.user.id, target_gid):
                 raise PermissionDenied
             target_group = get_object_or_404(ContactGroup, pk=target_gid)
-            modes=''
+            modes = ''
             for flag, propname in TRANS_CIGFLAG_CODE2TXT.items():
                 field_name = 'membership_' + propname
                 if request.REQUEST.get(field_name, False):
@@ -2083,22 +2083,22 @@ class ContactInGroupForm(forms.Form):
 
     def __init__(self, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        self.fields['invited'].widget.attrs = { 'onchange': '''
+        self.fields['invited'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.declined.checked=false;
                 this.form.member.checked=false;
             }'''}
-        self.fields['declined'].widget.attrs = { 'onchange': '''
+        self.fields['declined'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.invited.checked=false;
                 this.form.member.checked=false;
             }'''}
-        self.fields['member'].widget.attrs = { 'onchange': '''
+        self.fields['member'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.invited.checked=false;
                 this.form.declined.checked=false;
             }'''}
-        self.fields['operator'].widget.attrs = { 'onchange': '''
+        self.fields['operator'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.viewer.checked=true;
                 this.form.see_group.checked=true;
@@ -2114,7 +2114,7 @@ class ContactInGroupForm(forms.Form):
                 this.form.view_msgs.checked=true;
                 this.form.write_msgs.checked=true;
             }'''}
-        self.fields['viewer'].widget.attrs = { 'onchange': '''
+        self.fields['viewer'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
                 this.form.see_members.checked=true;
@@ -2125,7 +2125,7 @@ class ContactInGroupForm(forms.Form):
             } else {
                 this.form.operator.checked=false;
             }'''}
-        self.fields['see_group'].widget.attrs = { 'onchange': '''
+        self.fields['see_group'].widget.attrs = {'onchange': '''
             if (!this.checked) {
                 this.form.operator.checked=false;
                 this.form.viewer.checked=false;
@@ -2141,13 +2141,13 @@ class ContactInGroupForm(forms.Form):
                 this.form.view_msgs.checked=false;
                 this.form.write_msgs.checked=false;
             }'''}
-        self.fields['change_group'].widget.attrs = { 'onchange': '''
+        self.fields['change_group'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
             } else {
                 this.form.operator.checked=false;
             }'''}
-        self.fields['see_members'].widget.attrs = { 'onchange': '''
+        self.fields['see_members'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
             } else {
@@ -2155,14 +2155,14 @@ class ContactInGroupForm(forms.Form):
                 this.form.viewer.checked=false;
                 this.form.change_members.checked=false;
             }'''}
-        self.fields['change_members'].widget.attrs = { 'onchange': '''
+        self.fields['change_members'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
                 this.form.see_members.checked=true;
             } else {
                 this.form.operator.checked=false;
             }'''}
-        self.fields['view_fields'].widget.attrs = { 'onchange': '''
+        self.fields['view_fields'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
             } else {
@@ -2170,14 +2170,14 @@ class ContactInGroupForm(forms.Form):
                 this.form.viewer.checked=false;
                 this.form.write_fields.checked=false;
             }'''}
-        self.fields['write_fields'].widget.attrs = { 'onchange': '''
+        self.fields['write_fields'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
                 this.form.view_fields.checked=true;
             } else {
                 this.form.operator.checked=false;
             }'''}
-        self.fields['view_news'].widget.attrs = { 'onchange': '''
+        self.fields['view_news'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
             } else {
@@ -2185,14 +2185,14 @@ class ContactInGroupForm(forms.Form):
                 this.form.viewer.checked=false;
                 this.form.write_news.checked=false;
             }'''}
-        self.fields['write_news'].widget.attrs = { 'onchange': '''
+        self.fields['write_news'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
                 this.form.view_news.checked=true;
             } else {
                 this.form.operator.checked=false;
             }'''}
-        self.fields['view_files'].widget.attrs = { 'onchange': '''
+        self.fields['view_files'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
             } else {
@@ -2200,14 +2200,14 @@ class ContactInGroupForm(forms.Form):
                 this.form.viewer.checked=false;
                 this.form.write_files.checked=false;
             }'''}
-        self.fields['write_files'].widget.attrs = { 'onchange': '''
+        self.fields['write_files'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
                 this.form.view_files.checked=true;
             } else {
                 this.form.operator.checked=false;
             }'''}
-        self.fields['view_msgs'].widget.attrs = { 'onchange': '''
+        self.fields['view_msgs'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
             } else {
@@ -2215,7 +2215,7 @@ class ContactInGroupForm(forms.Form):
                 this.form.viewer.checked=false;
                 this.form.write_msgs.checked=false;
             }'''}
-        self.fields['write_msgs'].widget.attrs = { 'onchange': '''
+        self.fields['write_msgs'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.see_group.checked=true;
                 this.form.view_msgs.checked=true;
@@ -2227,7 +2227,7 @@ class ContactInGroupForm(forms.Form):
         data = self.cleaned_data
         if   (data['invited'] and data['declined']) \
           or (data['declined'] and data['member']) \
-          or (data['invited'] and data['member']) :
+          or (data['invited'] and data['member']):
             raise forms.ValidationError('Invalid flags combinaison')
         return data
 
@@ -2248,7 +2248,7 @@ def contactingroup_edit(request, gid, cid):
     context = {}
     context['title'] = _('Contact %(contact)s in group %(group)s') % {
         'contact': force_text(contact),
-        'group': cg.unicode_with_date() }
+        'group': cg.unicode_with_date()}
     context['cg'] = cg
     context['cg_perms'] = cg.get_contact_perms(request.user.id)
     context['contact'] = contact
@@ -2297,7 +2297,7 @@ def contactingroup_edit(request, gid, cid):
     if automember_groups:
         inherited_info += 'Automatically member because member of subgroup(s):' + '<br>'
         for sub_cg in visible_automember_groups:
-            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
+            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url()}
         if invisible_automember_groups:
             inherited_info += '<li>Hidden group(s)...'
         inherited_info += '<br>'
@@ -2308,7 +2308,7 @@ def contactingroup_edit(request, gid, cid):
     if autoinvited_groups:
         inherited_info += 'Automatically invited because invited in subgroup(s):<br>'
         for sub_cg in visible_autoinvited_groups:
-            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % { 'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url() }
+            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url()}
         if invisible_autoinvited_groups:
             inherited_info += '<li>Hidden group(s)...'
 
@@ -2599,15 +2599,15 @@ Ci-joint votre message original.
 @login_required()
 @require_group(GROUP_USER_NGW)
 def field_list(request):
-    fields = ContactField.objects.order_by('sort_weight').extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id ])
+    fields = ContactField.objects.order_by('sort_weight').extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id])
     context = {}
     context['query'] = fields
     context['cols'] = [
-        ( _('Name'), None, 'name', 'name'),
-        ( _('Type'), None, 'type_as_html', 'type'),
-        ( _('Only for'), None, 'contact_group', 'contact_group__name'),
-        ( _('System locked'), None, 'system', 'system'),
-        #( _('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
+        (_('Name'), None, 'name', 'name'),
+        (_('Type'), None, 'type_as_html', 'type'),
+        (_('Only for'), None, 'contact_group', 'contact_group__name'),
+        (_('System locked'), None, 'system', 'system'),
+        #(_('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     context['title'] = _('Select an optionnal field')
     context['objtype'] = ContactField
@@ -2655,14 +2655,14 @@ class FieldEditForm(forms.Form):
         forms.Form.__init__(self, *args, **kargs)
 
         contacttypes = ContactGroup.objects.filter(field_group=True)
-        self.fields['contact_group'].widget.choices = [ (g.id, g.name) for g in contacttypes ]
+        self.fields['contact_group'].widget.choices = [(g.id, g.name) for g in contacttypes]
 
-        self.fields['type'].widget.choices = [ (cls.db_type_id, cls.human_type_id)
-            for cls in itervalues(ContactField.types_classes) ] # TODO: Sort
-        js_test_type_has_choice = ' || '.join([ "this.value=='" + cls.db_type_id + "'"
+        self.fields['type'].widget.choices = [(cls.db_type_id, cls.human_type_id)
+            for cls in itervalues(ContactField.types_classes)] # TODO: Sort
+        js_test_type_has_choice = ' || '.join(["this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
-            if cls.has_choice ])
-        self.fields['type'].widget.attrs = { 'onchange': mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choicegroup'].disabled = 0; } else { document.forms['objchange']['choicegroup'].value = ''; document.forms['objchange']['choicegroup'].disabled = 1; }") }
+            if cls.has_choice])
+        self.fields['type'].widget.attrs = {'onchange': mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choicegroup'].disabled = 0; } else { document.forms['objchange']['choicegroup'].value = ''; document.forms['objchange']['choicegroup'].disabled = 1; }")}
 
         self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
 
@@ -2681,7 +2681,7 @@ class FieldEditForm(forms.Form):
 
         self.fields['default_value'].widget.attrs['disabled'] = 1
 
-        self.fields['move_after'].widget.choices = [ (5, _('Name')) ] + [ (field.sort_weight + 5, field.name) for field in ContactField.objects.order_by('sort_weight') ]
+        self.fields['move_after'].widget.choices = [(5, _('Name'))] + [(field.sort_weight + 5, field.name) for field in ContactField.objects.order_by('sort_weight')]
 
         if cf and cf.system:
             self.fields['contact_group'].widget.attrs['disabled'] = 1
@@ -2727,12 +2727,12 @@ def field_edit(request, id):
         if form.is_valid():
             data = form.clean()
             if not id:
-                cf = ContactField(name = data['name'],
-                                  hint = data['hint'],
-                                  contact_group_id = int(data['contact_group']),
-                                  type = data['type'],
-                                  choice_group_id = data['choicegroup'] and int(data['choicegroup']) or None,
-                                  sort_weight = int(data['move_after']))
+                cf = ContactField(name=data['name'],
+                                  hint=data['hint'],
+                                  contact_group_id=int(data['contact_group']),
+                                  type=data['type'],
+                                  choice_group_id=data['choicegroup'] and int(data['choicegroup']) or None,
+                                  sort_weight=int(data['move_after']))
                 cf.save()
             else:
                 if not cf.system and (cf.type != data['type'] or force_text(cf.choice_group_id) != data['choicegroup']):
@@ -2747,7 +2747,7 @@ def field_edit(request, id):
 
                     if deletion_details:
                         if request.POST.get('confirm', None):
-                            for cfv in [ dd[1] for dd in deletion_details ]:
+                            for cfv in [dd[1] for dd in deletion_details]:
                                 cfv.delete()
                         else:
                             context = {}
@@ -2755,7 +2755,7 @@ def field_edit(request, id):
                             context['id'] = id
                             context['cf'] = cf
                             context['deletion_details'] = deletion_details
-                            for k in ( 'name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
+                            for k in ('name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
                                 context[k] = data[k]
                             context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
                             return render_to_response('type_change.html', context, RequestContext(request))
@@ -2836,8 +2836,8 @@ def choicegroup_list(request):
     context = {}
     context['query'] = ChoiceGroup.objects.all()
     context['cols'] = [
-        ( _('Name'), None, 'name', 'name'),
-        ( _('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
+        (_('Name'), None, 'name', 'name'),
+        (_('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
     context['title'] = _('Select a choice group')
     context['objtype'] = ChoiceGroup

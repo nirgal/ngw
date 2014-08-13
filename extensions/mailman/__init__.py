@@ -9,7 +9,7 @@ if __name__ != '__main__':
     logging.debug('Mailman synchronisation extension for NGW loading.')
 
 if __name__ == '__main__':
-    sys.path += [ '/usr/lib/' ]
+    sys.path += ['/usr/lib/']
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
 from ngw.extensions import hooks
 
@@ -70,7 +70,7 @@ def synchronise_group(cg, mailcontent):
         name_base = c.name
         if name_base == email_base:
             name_base = ''
-        mailman_names = [ name for name, email in mailman_members if email == email_base ]
+        mailman_names = [name for name, email in mailman_members if email == email_base]
         if not mailman_names:
             result.append((format_mailadd(c.name, email_base) + ' from database is not registered in mailman!',
                            None,
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    if len(args)!=2:
+    if len(args) != 2:
         print('Need exactly 2 arguments\n', file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)

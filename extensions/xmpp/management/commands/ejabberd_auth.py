@@ -10,8 +10,8 @@ from django.conf import settings
 from django.utils.encoding import force_text
 from django.utils import six
 from django.contrib.auth.hashers import check_password, make_password
-from ngw.core.models import ( ContactFieldValue,
-    FIELD_LOGIN, FIELD_PASSWORD )
+from ngw.core.models import (ContactFieldValue,
+    FIELD_LOGIN, FIELD_PASSWORD)
 
 print('In ejabberd auth', file=sys.stderr)
 

@@ -11,12 +11,12 @@ if __name__ != '__main__':
     print('XMPP synchronisation extension for NGW loading.', file=sys.stderr)
 
 if __name__ == '__main__':
-    sys.path += [ '/usr/lib/' ]
+    sys.path += ['/usr/lib/']
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
 from django.conf import settings
 from django.db import connections
-from ngw.core.models import ( ContactFieldValue, ContactGroup,
-    FIELD_LOGIN )
+from ngw.core.models import (ContactFieldValue, ContactGroup,
+    FIELD_LOGIN)
 from ngw.extensions import hooks
 
 def get_cursor():
@@ -32,7 +32,7 @@ def cross_subscribe(login1, login2):
     login2 = login2.lower()
 
     def _subscribe1(login1, login2):
-        params = { 'username': login1, 'jid': login2+'@'+settings.XMPP_DOMAIN, 'nick': login2 }
+        params = {'username': login1, 'jid': login2+'@'+settings.XMPP_DOMAIN, 'nick': login2}
         sql = "INSERT INTO rosterusers (username, jid, nick, subscription, ask, askmessage, server) SELECT %(username)s, %(jid)s, %(nick)s, 'B', 'N', '', 'N' WHERE NOT EXISTS (SELECT * FROM rosterusers WHERE username=%(username)s AND jid=%(jid)s)"
         cursor.execute(sql, params)
         sql = "UPDATE rosterusers SET subscription='B', ask='N', server='N', type='item' WHERE username=%(username)s AND jid=%(jid)s"
@@ -43,7 +43,7 @@ def cross_subscribe(login1, login2):
 
 def clean_rostergroup(login):
     cursor = get_cursor()
-    params = { 'username': login }
+    params = {'username': login}
     sql = 'SELECT min(grp) FROM rostergroups WHERE username=%(username)s'
     cursor.execute(sql, params)
     row = cursor.fetchone()
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         cross_subscribe(l1, l2)
 
     if options.suball:
-        subscribe_everyone(baseusername=options.suball, allusers = user_set, exclude = options.exclude)
+        subscribe_everyone(baseusername=options.suball, allusers=user_set, exclude=options.exclude)
 
     # clean up roster group
     for u in user_set:

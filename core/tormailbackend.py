@@ -127,7 +127,7 @@ class TorEmailBackend(EmailBackend):
             # Nothing to do if the connection is already open.
             return False
         try:
-            assert self.port==465, 'Sorry we only support smtps connections right now'
+            assert self.port == 465, 'Sorry we only support smtps connections right now'
 
             if b'.onion' in self.host:
                 self.connection = SMTP_SSL_TOR(self.host, self.port,

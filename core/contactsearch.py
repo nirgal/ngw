@@ -15,7 +15,7 @@ from ngw.core.models import (
     GROUP_USER_NGW,
     ContactField, ContactGroup, ChoiceGroup,
     EmptyBoundFilter, AndBoundFilter, OrBoundFilter,
-    FIELD_FILTERS )
+    FIELD_FILTERS)
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
 from ngw.core import perms
 from ngw.core.viewdecorators import *
@@ -42,7 +42,7 @@ class FilterLexer(object):
             self.str = str
 
         def __repr__(self):
-            types = { 0: 'WORD', 1: 'STRING', 2: 'INT', 3: 'LPARENTHESIS', 4: 'RPARENTHESIS', 5: 'COMMA' }
+            types = {0: 'WORD', 1: 'STRING', 2: 'INT', 3: 'LPARENTHESIS', 4: 'RPARENTHESIS', 5: 'COMMA'}
             return force_str('Lexem<' + types[self.type] + ',' + self.str + '>')
             
     def __init__(self, str):
@@ -179,7 +179,7 @@ def _filter_parse_expression(lexer, user_id):
             raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         field_filter_name = lexem.str
 
-        params = [ ]
+        params = []
 
         while True:
             lexem = next(lexer)
@@ -222,7 +222,7 @@ def _filter_parse_expression(lexer, user_id):
             raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         group_filter_name = lexem.str
 
-        params = [ ]
+        params = []
 
         while True:
             lexem = next(lexer)
@@ -254,7 +254,7 @@ def _filter_parse_expression(lexer, user_id):
             raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         name_filter_name = lexem.str
 
-        params = [ ]
+        params = []
 
         while True:
             lexem = next(lexer)
@@ -282,7 +282,7 @@ def _filter_parse_expression(lexer, user_id):
             raise FilterSyntaxError("Unexpected %s. Expected word." % force_text(repr(lexem)))
         allevents_filter_name = lexem.str
 
-        params = [ ]
+        params = []
 
         while True:
             lexem = next(lexer)
@@ -334,33 +334,33 @@ class JsonHttpResponse(HttpResponse):
     HttpResponse subclass that json encode content, with default content_type
     '''
     def __init__(self, content, content_type='application/json', *args, **kwargs):
-        super(JsonHttpResponse,self).__init__(json.dumps(content), content_type, *args, **kwargs)
+        super(JsonHttpResponse, self).__init__(json.dumps(content), content_type, *args, **kwargs)
 
 
 @login_required()
 @require_group(GROUP_USER_NGW)
 def ajax_get_columns(request, column_type):
     if column_type == 'fields':
-        fields = ContactField.objects.order_by('sort_weight').extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id ])
-        choices =  [ { 'id': 'name', 'text': force_text(_('Name')) } ]
+        fields = ContactField.objects.order_by('sort_weight').extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id])
+        choices = [{'id': 'name', 'text': force_text(_('Name'))}]
         for field in fields:
-            choices.append({ 'id': force_text(field.id), 'text': field.name})
+            choices.append({'id': force_text(field.id), 'text': field.name})
 
     elif column_type == 'groups':
         groups = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('name')
         choices = []
         for group in groups:
-            choices.append({ 'id': force_text(group.id), 'text': group.name})
+            choices.append({'id': force_text(group.id), 'text': group.name})
 
     elif column_type == 'events':
         groups = ContactGroup.objects.exclude(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
         choices = []
-        choices.append({ 'id': 'allevents', 'text': force_text(_('All events'))})
+        choices.append({'id': 'allevents', 'text': force_text(_('All events'))})
         for group in groups:
-            choices.append({ 'id': force_text(group.id), 'text': group.unicode_with_date()})
+            choices.append({'id': force_text(group.id), 'text': group.unicode_with_date()})
 
     elif column_type == 'custom':
-        choices = [{ 'id': 'user', 'text': request.user.name }]
+        choices = [{'id': 'user', 'text': request.user.name}]
 
     else:
         raise Http404
@@ -410,7 +410,7 @@ def ajax_get_filters(request, column_type, column_id):
             filter_list = parse_filter_list_str(filter_list_str)
             for i, filterpair in enumerate(filter_list):
                 filtername, filterstr = filterpair
-                choices.append({'id': force_text(i), 'text': filtername })
+                choices.append({'id': force_text(i), 'text': filtername})
 
     else:
         column, submit_prefix = get_column(column_type, column_id)
@@ -419,7 +419,7 @@ def ajax_get_filters(request, column_type, column_id):
 
         choices = []
         for filter in filters:
-            choices.append({ 'id': filter.internal_name, 'text': force_text(filter.human_name)})
+            choices.append({'id': filter.internal_name, 'text': force_text(filter.human_name)})
     return JsonHttpResponse({'params' : [choices]})
 
 
@@ -453,7 +453,7 @@ def ajax_get_filters_params(request, column_type, column_id, filter_id):
         elif isinstance(param_type, ChoiceGroup):
             choices = []
             for key, value in param_type.ordered_choices:
-                choices.append({ 'id': key, 'text': value })
+                choices.append({'id': key, 'text': value})
             jsparams.append(choices)
         else:
             assert False, "Unsupported filter parameter of type " + force_text(param_type)
@@ -480,7 +480,7 @@ def parse_filter_list_str(txt):
         assert(list[idx][-1] == '"')
         list[idx] = list[idx][1:-1]
     assert(len(list)%2 == 0)
-    return [ (list[2*i], list[2*i+1]) for i in range(len(list)//2) ]
+    return [(list[2*i], list[2*i+1]) for i in range(len(list)//2)]
 
 
 @login_required()

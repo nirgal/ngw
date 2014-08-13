@@ -6,7 +6,7 @@ from functools import wraps
 from django.utils.decorators import available_attrs
 from django.contrib.auth.decorators import login_required
 
-__all__ = [ 'login_required', 'require_group' ]
+__all__ = ['login_required', 'require_group']
 
 def require_group(required_group):
     '''

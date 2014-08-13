@@ -22,7 +22,7 @@ import sys
 __hooks_contact_field_changed__ = {}
 def add_hook_contact_field_changed(field_id, func):
     field_hooks = __hooks_contact_field_changed__.get(field_id, [])
-    __hooks_contact_field_changed__[field_id] = field_hooks + [ func ]
+    __hooks_contact_field_changed__[field_id] = field_hooks + [func]
     
 def on_contact_field_changed(field_id):
     " decorator for extension functions that wants to be notified of a specific field changes"
@@ -44,7 +44,7 @@ def contact_field_changed(request, field_id, contact):
 __hooks_membership_changed__ = {}
 def add_hook_membership_changed(group_id, func):
     membership_hooks = __hooks_membership_changed__.get(group_id, [])
-    __hooks_membership_changed__[group_id] = membership_hooks + [ func ]
+    __hooks_membership_changed__[group_id] = membership_hooks + [func]
 
 def on_membership_changed(group_id):
     " decorator for extension functions that wants to be notified of a specific group membership change"

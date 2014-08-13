@@ -28,7 +28,7 @@ class ChoiceAdminInLine(admin.TabularInline):
     model = Choice
 class ChoiceGroupAdmin(admin.ModelAdmin):
     list_display = 'name', 'choices'
-    inlines = [ ChoiceAdminInLine ]
+    inlines = [ChoiceAdminInLine]
 admin.site.register(ChoiceGroup, ChoiceGroupAdmin)
 
 

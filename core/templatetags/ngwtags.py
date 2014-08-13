@@ -71,7 +71,7 @@ def ngw_display(obj, coldesc):
 
     if inspect.isfunction(coldesc[1]) or inspect.ismethod(coldesc[1]):
         #print("ismethod/isfunction")
-        result =  coldesc[1](result)
+        result = coldesc[1](result)
         #print(result)
         return result
 
@@ -86,7 +86,7 @@ def ngw_display(obj, coldesc):
 
 @register.filter
 def group_visible_by(contact_groups_query, user_id):
-    return contact_groups_query.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % user_id ])
+    return contact_groups_query.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % user_id])
 
 @register.filter
 def group_with_link(contact_group):

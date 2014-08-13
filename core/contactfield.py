@@ -7,8 +7,8 @@ from django.utils import http
 from django.utils import html
 from django.utils import formats
 from django.conf import settings
-from ngw.core.models import ( ContactField, ChoiceGroup, Choice,
-    register_contact_field_type )
+from ngw.core.models import (ContactField, ChoiceGroup, Choice,
+    register_contact_field_type)
 from ngw.core.models import (NameFilterStartsWith, FieldFilterStartsWith,
     FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE,
     FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,
@@ -114,7 +114,7 @@ class DateContactField(ContactField):
             return False
         return True
     def get_filters_classes(self):
-        return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE,  FieldFilterNull, FieldFilterNotNull,)
+        return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(DateContactField, 'DATE', 'Date', has_choice=False)
 
 class DateTimeContactField(ContactField):
@@ -224,15 +224,15 @@ class MultipleChoiceContactField(ContactField):
         txt_choice_list = []
         for cid in value.split(','):
             if cid == '':
-                txt_choice_list.append( "default" ) # this should never occur
+                txt_choice_list.append("default") # this should never occur
                 continue
             try:
                 c = Choice.objects.get(choice_group_id=chg.id, key=cid)
             except Choice.DoesNotExist:
                 print('Choice', cid, 'in', chg, 'was lost.')
-                txt_choice_list.append( "error" )
+                txt_choice_list.append("error")
             else:
-                txt_choice_list.append( c.value )
+                txt_choice_list.append(c.value)
         return ', '.join(txt_choice_list)
     def get_form_fields(self):
         return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
@@ -275,11 +275,11 @@ class ContactNameMetaField(object):
 
     @classmethod
     def get_filters(cls):
-        return [ filter() for filter in cls.get_filters_classes() ]
+        return [filter() for filter in cls.get_filters_classes()]
 
     @classmethod
     def get_filter_by_name(cls, name):
-        return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
+        return [f for f in cls.get_filters() if f.__class__.internal_name == name][0]
 
 
 class AllEventsMetaField(object):
@@ -289,9 +289,9 @@ class AllEventsMetaField(object):
 
     @classmethod
     def get_filters(cls):
-        return [ filter() for filter in cls.get_filters_classes() ]
+        return [filter() for filter in cls.get_filters_classes()]
 
     @classmethod
     def get_filter_by_name(cls, name):
-        return [ f for f in cls.get_filters() if f.__class__.internal_name==name][0]
+        return [f for f in cls.get_filters() if f.__class__.internal_name == name][0]
 

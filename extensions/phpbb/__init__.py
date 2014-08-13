@@ -20,8 +20,8 @@ if __name__ == '__main__':
     sys.path.append('/usr/lib')
 from django.db import connections
 from ngw.extensions import hooks
-from ngw.core.models import ( Config, Contact, ContactGroup, ContactFieldValue,
-    GROUP_USER_PHPBB, FIELD_LOGIN, FIELD_PHPBB_USERID )
+from ngw.core.models import (Config, Contact, ContactGroup, ContactFieldValue,
+    GROUP_USER_PHPBB, FIELD_LOGIN, FIELD_PHPBB_USERID)
 from ngw.core import contactfield # Need polymorphic upgrades
 
 DEFAULT_USER_PERMISSIONS = '00000000006xv1ssxs'
@@ -40,7 +40,7 @@ def get_phpbb_acl_dictionary():
     strdict = Config.objects.get(pk='phpbb acl dictionary').text
     if not strdict:
         return []
-    return [ [ int(i) for i in pair.split(',')] for pair in strdict.split(';') ]
+    return [[int(i) for i in pair.split(',')] for pair in strdict.split(';')]
 
 
 def get_config(key):
@@ -58,7 +58,7 @@ def set_config(key, value):
 
 def print_and_call(*args):
     print("Subprocess call:", args, file=sys.stderr)
-    args = [ arg.encode('utf8') for arg in args ]
+    args = [arg.encode('utf8') for arg in args]
     subprocess.call(args)
 
 
@@ -112,7 +112,7 @@ def sync_user_base(u):
     phpbb_username = cursor.fetchone()[0] # might crash if databases sync was lost
     if phpbb_username != f_login:
         print("Changing PHPBB user name from", phpbb_username, "to", f_login, file=sys.stderr)
-        sql = "UPDATE phpbb_users SET (username, username_clean) = ( '%(sql_login)s', '%(sql_login)s' ) WHERE user_id=%(user_id)d" % { 'user_id': phpbb_user_id, 'sql_login': f_login.replace("'", "''") }
+        sql = "UPDATE phpbb_users SET (username, username_clean) = ( '%(sql_login)s', '%(sql_login)s' ) WHERE user_id=%(user_id)d" % {'user_id': phpbb_user_id, 'sql_login': f_login.replace("'", "''")}
         print(sql, file=sys.stderr)
         cursor.execute(sql)
         phpbb_changed = True
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     
     (options, args) = parser.parse_args()
 
-    if len(args)!=1:
+    if len(args) != 1:
         print("Need exactly one argument\n", file=sys.stderr)
         parser.print_help(file=sys.stderr)
         sys.exit(1)

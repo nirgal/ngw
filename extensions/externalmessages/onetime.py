@@ -145,9 +145,9 @@ def do_sync():
         for response_text in jresponse:
             logger.info('Received answer from %s.', msg.cig.contact)
             answer_msg = ContactMsg(cig_id=msg.cig_id,
-                send_date = datetime.datetime.utcnow(),
-                text = response_text,
-                is_answer = True,
-                sync_info = json.dumps({'otid': sync_info['otid']}),
+                send_date=datetime.datetime.utcnow(),
+                text=response_text,
+                is_answer=True,
+                sync_info=json.dumps({'otid': sync_info['otid']}),
                 )
             answer_msg.save()
