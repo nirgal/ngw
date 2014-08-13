@@ -919,7 +919,7 @@ def contact_pass(request, gid=None, cid=None):
             # record the value
             password = form.clean()['new_password']
             contact.set_password(password, request=request)
-            messages.add_message(request, messages.SUCCESS, 'Password has been changed sucessfully!')
+            messages.add_message(request, messages.SUCCESS, _('Password has been changed sucessfully!'))
             if gid:
                 cg = get_object_or_404(ContactGroup, pk=gid)
                 return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + force_text(cid) + '/')
@@ -2278,7 +2278,9 @@ def contactingroup_edit(request, gid, cid):
             cig.flags = newflags
             cig.note = data['note']
             # TODO: use set_member_1 for logs
-            messages.add_message(request, messages.SUCCESS, 'Member %s of group %s has been changed sucessfully!' % (contact.name, cg.name))
+            messages.add_message(
+                request, messages.SUCCESS,
+                _('Member %(contact)s of group %(group)s has been changed sucessfully!') % {'contact':contact.name, 'group':cg.name})
             Contact.check_login_created(request)
             cig.save()
             hooks.membership_changed(request, contact, cg)
@@ -2360,7 +2362,7 @@ def contactingroup_delete(request, gid, cid):
         o = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
     except ContactInGroup.DoesNotExist:
         return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
-    #messages.add_message(request, messages.SUCCESS, '%s has been removed for group %s.' % (cig.contact.name, cig.group.name))
+    #messages.add_message(request, messages.SUCCESS, _('%s has been removed for group %s.') % (cig.contact.name, cig.group.name))
     base_nav = cg.get_smart_navbar() \
                   .add_component(('members', _('members')))
     return generic_delete(request, o, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
