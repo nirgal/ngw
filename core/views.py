@@ -625,6 +625,7 @@ def contact_list(request):
     context['query'] = q
     context['cols'] = cols
     context['filter'] = strfilter
+    context['filter_html'] = filter.to_html()
     context['fields'] = strfields
     context['fields_form'] = FieldSelectForm(request.user, initial={'selected_fields': fields})
     context['no_confirm_form_discard'] = True
@@ -1586,6 +1587,7 @@ def contactgroup_members(request, gid, output_format=''):
         context['title'] = _('Emails for %s') % cg.name
         context['strfilter'] = strfilter
         context['filter'] = filter
+        context['filter_html'] = filter.to_html()
         context['cg'] = cg
         context['cg_perms'] = cg.get_contact_perms(request.user.id)
         context['emails'] = emails
@@ -1630,6 +1632,7 @@ def contactgroup_members(request, gid, output_format=''):
     ####
     context['objtype'] = ContactGroup
     context['filter'] = strfilter
+    context['filter_html'] = filter.to_html()
     context['fields'] = strfields
     ####
     context['nav'] = cg.get_smart_navbar() \

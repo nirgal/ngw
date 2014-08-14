@@ -229,12 +229,8 @@ function submit_fields() {
 {% if filter %}
     <h1>{% trans "Current filter" %}</h1>
     <div id="curent_filter" class="padded">
-    {{filter_html}} {# Unsued, content is loaded bellow #}
+    {{filter_html|safe}}
     </div>
-    <script>
-    filter=document.getElementById('filter').value;
-    ajax_load_innerhtml('curent_filter', '/contacts/search/filter_to_html?'+filter);
-    </script>
 {% endif %}
 
 <div id=advanced_search {% if not filter %}style="display:none;"{% endif %}>
