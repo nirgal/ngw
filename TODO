@@ -6,14 +6,12 @@ Favorite groups.
 Default supergroup(s).
 
 Make a MultiWidget for flags, including javascript pre-checks/clears
-
 Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 - in javascript checkbox
 - in set_member_1
 
-Migrate to class based views
-
-Move save() from views to forms
+Migrate to class based views:
+Latest version of django offer view classes, with "get" "post" method. We could use that.
 
 Sticky groups:
 - When you join a 'sticky' group though inheritance, group membership should be permanent.
@@ -23,13 +21,14 @@ Invite groups (?):
 
 Check date is not null when creating an event
 
-Implement slicing in ContactQuerySet
+Check how slicing is optimized in ContactQuerySet
 
 Fix ejabberd cross subscribe overrides:
-Use "ejabberdctl add-rosteritem ..." rather than messing with ejabberd tables
+Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
 
 Support Image contactfields
 
+We should track unread messages:
 Add table ContactMessageReadBy(msg_id, contact_id)
 
 Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
@@ -49,4 +48,3 @@ With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
 
 Contact search:
 - Automatically select the first option in choices
-- urls.py: route "custom" field_type to a specify view

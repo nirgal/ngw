@@ -398,44 +398,33 @@ def get_column(column_type, column_id):
 @login_required()
 @require_group(GROUP_USER_NGW)
 def ajax_get_filters(request, column_type, column_id):
-    if column_type == 'custom':
-        # right now, custom only support 'user'
-        # in the future, we might have global and/or group specific stored filters
-        if column_id != 'user':
-            raise Http404
+    column, submit_prefix = get_column(column_type, column_id)
 
-        filter_list = request.user.get_customfilters()
-        choices = []
-        for i, filterpair in enumerate(filter_list):
-            filtername, filterstr = filterpair
-            choices.append({'id': force_text(i), 'text': filtername})
+    filters = column.get_filters()
 
-    else:
-        column, submit_prefix = get_column(column_type, column_id)
+    choices = []
+    for filter in filters:
+        choices.append({'id': filter.internal_name, 'text': force_text(filter.human_name)})
+    return JsonHttpResponse({'params' : [choices]})
 
-        filters = column.get_filters()
 
-        choices = []
-        for filter in filters:
-            choices.append({'id': filter.internal_name, 'text': force_text(filter.human_name)})
+@login_required()
+@require_group(GROUP_USER_NGW)
+def ajax_get_customfilters(request):
+    '''
+    This is a special version of ajax_get_filters for saved filters
+    '''
+    filter_list = request.user.get_customfilters()
+    choices = []
+    for i, filterpair in enumerate(filter_list):
+        filtername, filterstr = filterpair
+        choices.append({'id': force_text(i), 'text': filtername})
     return JsonHttpResponse({'params' : [choices]})
 
 
 @login_required()
 @require_group(GROUP_USER_NGW)
 def ajax_get_filters_params(request, column_type, column_id, filter_id):
-    if column_type == 'custom':
-        # right now, custom only support 'user'
-        # in the future, we might have global and/or group specific stored filters
-        if column_id != 'user':
-            raise Http404
-
-        filter_list = request.user.get_customfilters()
-        filter_id = int(filter_id)
-        customname, filter = filter_list[filter_id]
-        assert filter[-1] == ')', "Custom filter %s should end with a ')'" % customname
-        return JsonHttpResponse({'submit_prefix': filter[:-1], 'params' : []})
-
     column, submit_prefix = get_column(column_type, column_id)
     filter = column.get_filter_by_name(filter_id)
     parameter_types = filter.get_param_types()
@@ -456,3 +445,16 @@ def ajax_get_filters_params(request, column_type, column_id, filter_id):
         submit_prefix += ','
     submit_prefix += filter_id
     return JsonHttpResponse({'submit_prefix': submit_prefix, 'params' : jsparams})
+
+
+@login_required()
+@require_group(GROUP_USER_NGW)
+def ajax_get_customfilters_params(request, filter_id):
+    '''
+    This is a special version of ajax_get_filters_params for saved filters
+    '''
+    filter_list = request.user.get_customfilters()
+    filter_id = int(filter_id)
+    customname, filter = filter_list[filter_id]
+    assert filter[-1] == ')', "Custom filter %s should end with a ')'" % customname
+    return JsonHttpResponse({'submit_prefix': filter[:-1], 'params' : []})
