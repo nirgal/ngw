@@ -71,7 +71,6 @@ urlpatterns = patterns('',
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', 'ngw.core.contactsearch.ajax_get_columns'),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', 'ngw.core.contactsearch.ajax_get_filters'),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)/(?P<filter_id>[^/]+)$', 'ngw.core.contactsearch.ajax_get_filters_params'),
-    url(r'^contacts/search/filter_to_html$', 'ngw.core.contactsearch.contactsearch_filter_to_html'),
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contact_make_login_mailing'),
 
     url(r'^contacts/(?P<cid>\d+)/$', 'ngw.core.views.contact_detail'),

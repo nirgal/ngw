@@ -481,21 +481,3 @@ def parse_filter_list_str(txt):
         list[idx] = list[idx][1:-1]
     assert(len(list)%2 == 0)
     return [(list[2*i], list[2*i+1]) for i in range(len(list)//2)]
-
-
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactsearch_filter_to_html(request):
-    '''
-    Convert a filter string into a nice indented html block
-    with fieldid replaced by field names and so on.
-    Security is checked by filter parser.
-    '''
-    strfilter = request.META['QUERY_STRING']
-    if strfilter:
-        strfilter = six.moves.urllib.parse.unquote(strfilter)
-        strfilter = force_text(strfilter)
-    else:
-        strfilter = ''
-    filter = parse_filterstring(strfilter, request.user.id)
-    return HttpResponse(filter.to_html())
