@@ -43,7 +43,7 @@ class FilterLexer(object):
 
         def __repr__(self):
             types = {0: 'WORD', 1: 'STRING', 2: 'INT', 3: 'LPARENTHESIS', 4: 'RPARENTHESIS', 5: 'COMMA'}
-            return force_str('Lexem<' + types[self.type] + ',' + self.str + '>')
+            return force_str('<Lexem %s %s>' % (types[self.type], self.str))
             
     def __init__(self, str):
         self.buffer = str

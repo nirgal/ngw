@@ -359,7 +359,7 @@ class Contact(NgwModel):
         verbose_name_plural = _('contacts')
 
     def __repr__(self):
-        return force_str('Contact <%s>' % self.name)
+        return force_str('<Contact %s>' % self.name)
 
     def __str__(self):
         return self.name
@@ -692,7 +692,7 @@ class ContactGroup(NgwModel):
         return self.name
 
     def __repr__(self):
-        return force_str('ContactGroup <%s %s>', (self.id, self.name))
+        return force_str('<ContactGroup %s %s>' % (self.id, self.name))
 
     def get_smart_navbar(self):
         nav = Navbar()
@@ -1188,7 +1188,7 @@ class ContactField(NgwModel):
         return 'contactfields'
 
     def __repr__(self):
-        return force_str('ContactField <%s,%s,%s>' % (force_text(self.id), self.name, self.type))
+        return force_str('<ContactField %s %s %s>' % (self.id, self.name, self.type))
 
     def __str__(self):
         return self.name
@@ -1728,7 +1728,7 @@ class BoundFilter(BaseBoundFilter):
 
     def __repr__(self):
         return force_str(
-            'BoundFilter <' + \
+            '<BoundFilter ' + \
             ','.join([force_str(repr(self.filter))] + [force_str(repr(arg)) for arg in self.args]) \
             + '>')
 
@@ -1785,7 +1785,7 @@ class ContactFieldValue(NgwModel):
 
     def __repr__(self):
         cf = self.contact_field
-        return force_str('ContactFieldValue <%s,%s,%s>' % (force_text(self.contact), force_text(cf), force_text(self)))
+        return force_str('<ContactFieldValue %s %s %s>' % (self.contact, cf, self))
 
     def __str__(self):
         cf = self.contact_field
@@ -1806,7 +1806,7 @@ class GroupInGroup(NgwModel):
         verbose_name_plural = _('groups in group')
 
     def __repr__(self):
-        return force_str('GroupInGroup <%s %s>' % (self.subgroup_id, self.father_id))
+        return force_str('<GroupInGroup %s %s>' % (self.subgroup_id, self.father_id))
 
 
 class GroupManageGroup(NgwModel):
@@ -1820,7 +1820,7 @@ class GroupManageGroup(NgwModel):
         verbose_name_plural = _('groups managing group')
 
     def __repr__(self):
-        return force_str('GroupManageGroup <%s %s>' % (self.subgroup_id, self.father_id))
+        return force_str('<GroupManageGroup %s %s>' % (self.subgroup_id, self.father_id))
 
 
 @python_2_unicode_compatible
@@ -1836,7 +1836,7 @@ class ContactInGroup(NgwModel):
         verbose_name_plural = _('contacts in group')
 
     def __repr__(self):
-        return force_str('ContactInGroup<%s,%s>' % (self.contact_id, self.group_id))
+        return force_str('<ContactInGroup %s %s>' % (self.contact_id, self.group_id))
 
     def __str__(self):
         return _('contact %(contactname)s in group %(groupname)s') % {'contactname': self.contact.name, 'groupname': self.group.unicode_with_date()}
