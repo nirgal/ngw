@@ -28,7 +28,19 @@ function show_membership_extrainfo(gcid) {
 
 BASE_ID = 'filter_breadcrumb_';
 var partial_filter = [];
+var active_breadcrumb_ajax = null;
 
+
+function add_loading() {
+    $('#add_filter').append('<span id=' + BASE_ID + '_loading>{% filter escapejs %}{% trans "loading" %}{% endfilter %}...</span>');
+}
+
+function clear_loading() {
+    // remove all the 'loading...':
+    $('#' + BASE_ID + '_loading').each(function() {
+        $(this).remove();
+    });
+}
 
 function add_filter_breadcrumb(data) {
     /*
@@ -46,10 +58,7 @@ function add_filter_breadcrumb(data) {
     - the select widget will use ajax to fetch next item
     */
 
-    // remove all the 'loading...':
-    $('#' + BASE_ID + '_loading').each(function() {
-        $(this).remove();
-    });
+    clear_loading();
 
     id = partial_filter.length;
     params = data.params
@@ -116,12 +125,22 @@ function filter_breadcrumb_changed(select) {
     }
     //alert('url: ' + url);
 
-    $('#add_filter').append('<span id=' + BASE_ID + '_loading>{% filter escapejs %}{% trans "loading" %}{% endfilter %}...</span>');
+    clear_loading();
+    add_loading();
 
-    $.ajax({
+    if (active_breadcrumb_ajax) {
+        active_breadcrumb_ajax.abort();
+        active_breadcrumb_ajax = null;
+    }
+    active_breadcrumb_ajax = $.ajax({
         url: url,
-        success: add_filter_breadcrumb,
+        success: function(data) {
+            active_breadcrumb_ajax = null;
+            add_filter_breadcrumb(data);
+        },
         error: function (jqXHR, textStatus, errorThrown) {
+            if (textStatus == 'abort')
+                return;
             msg = "{% filter escapejs %}{% trans "Error while fetching "%}{% endfilter %} " + url + ":\n";
             msg += textStatus + ': ' + errorThrown;
             alert(msg);
