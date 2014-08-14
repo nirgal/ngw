@@ -46,7 +46,10 @@ function add_filter_breadcrumb(data) {
     - the select widget will use ajax to fetch next item
     */
 
-    $('#' + BASE_ID + '_loading').remove();
+    // remove all the 'loading...':
+    $('#' + BASE_ID + '_loading').each(function() {
+        $(this).remove();
+    });
 
     id = partial_filter.length;
     params = data.params
