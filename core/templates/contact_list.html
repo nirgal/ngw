@@ -32,7 +32,7 @@ var active_breadcrumb_ajax = null;
 
 
 function add_loading() {
-    $('#add_filter').append('<span id=' + BASE_ID + '_loading>{% filter escapejs %}{% trans "loading" %}{% endfilter %}...</span>');
+    $('#add_filter').append('<span id=' + BASE_ID + '_loading> {% filter escapejs %}{% trans "loading" %}{% endfilter %}...</span>');
 }
 
 function clear_loading() {
@@ -66,12 +66,11 @@ function add_filter_breadcrumb(data) {
         param = data.params[iparam];
         html = '';
         if (typeof(param) == 'object') {
-            //html += "{% filter escapejs %}{% trans "Type of filter" %}{% endfilter %} : ";
             html += "<select id='" + BASE_ID + id + "'";
             if (!data.submit_prefix)
                 html += " onchange='filter_breadcrumb_changed(this);' onkeyup='filter_breadcrumb_changed(this);'";
             html += " class=string>";
-            html += "<option value=''>{% trans "Select" %}</option>";
+            //html += "<option value=''>{% trans "Select" %}</option>";
             for (i in param) {
                 choice = param[i];
                 html += "<option value=" + escape_quote(choice.id) + ">" + choice.text + "</option>";
@@ -84,6 +83,11 @@ function add_filter_breadcrumb(data) {
         }
 
         $('#add_filter').append(' '+html);
+
+        if (typeof(param) == 'object' && !data.submit_prefix) {
+            elem = document.getElementById(BASE_ID + id);
+            filter_breadcrumb_changed(elem);
+        }
         id++;
     }
     if (data.submit_prefix) {
@@ -141,6 +145,8 @@ function filter_breadcrumb_changed(select) {
         error: function (jqXHR, textStatus, errorThrown) {
             if (textStatus == 'abort')
                 return;
+            if (textStatus == 'OK')
+                return; // This is a hack. We get that when we leave the page while ajax is running
             msg = "{% filter escapejs %}{% trans "Error while fetching "%}{% endfilter %} " + url + ":\n";
             msg += textStatus + ': ' + errorThrown;
             alert(msg);
