@@ -669,6 +669,26 @@ class Contact(NgwModel):
         cfv.value = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         cfv.save()
 
+    def get_customfilters(self):
+        '''
+        Returns a list of tuples ( filtername, filter_string )
+        '''
+        field_value = self.get_fieldvalue_by_id(FIELD_FILTERS)
+        if not field_value:
+            return []
+
+        list = field_value.split(',')
+        for idx in range(len(list)-1, 0, -1):
+            if list[idx-1][-1] != '"' or list[idx][0] != '"':
+                #print("merging elements ", idx-1, "and", idx, "of", repr(list))
+                list[idx-1] += ',' + list[idx]
+                del list[idx]
+        for idx in range(len(list)):
+            assert list[idx][0] == '"'
+            assert list[idx][-1] == '"'
+            list[idx] = list[idx][1:-1]
+        assert len(list)%2 == 0
+        return [(list[2*i], list[2*i+1]) for i in range(len(list)//2)]
 
 @python_2_unicode_compatible
 class ContactGroup(NgwModel):

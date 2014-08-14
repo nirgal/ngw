@@ -1033,11 +1033,7 @@ def contact_filters_add(request, cid=None):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
     filter_str = request.GET['filterstr']
-    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
-    if filter_list_str:
-        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
-    else:
-        filter_list = []
+    filter_list = contact.get_customfilters()
     filter_list.append((_('No name'), filter_str))
     filter_list_str = ','.join(['"' + force_text(name) + '","' + force_text(filterstr) + '"' for name, filterstr in filter_list])
     contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
@@ -1052,11 +1048,8 @@ def contact_filters_list(request, cid=None):
     if cid != request.user.id and not perms.c_can_view_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
-    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
-    filters = []
-    if filter_list_str:
-        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
-        filters = [filtername for filtername, filter_str in filter_list]
+    filter_list = contact.get_customfilters()
+    filters = [filtername for filtername, filter_str in filter_list]
     context = {}
     context['title'] = _('User custom filters')
     context['contact'] = contact
@@ -1079,13 +1072,9 @@ def contact_filters_edit(request, cid=None, fid=None):
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
-    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
-    if not filter_list_str:
-        return HttpResponse(_('ERROR: no custom filter for that user'))
-    else:
-        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
+    filter_list = contact.get_customfilters()
     try:
-        filtername, filterstr = filter_list[int(fid)]
+        filtername, filterstr = filter_list[fid]
     except (IndexError, ValueError):
         return HttpResponse(_("ERROR: Can't find filter #%s") % fid)
 
@@ -1131,11 +1120,7 @@ def contact_filters_delete(request, cid=None, fid=None):
     if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
         raise PermissionDenied
     contact = get_object_or_404(Contact, pk=cid)
-    filter_list_str = contact.get_fieldvalue_by_id(FIELD_FILTERS)
-    if not filter_list_str:
-        return HttpResponse(_('ERROR: no custom filter for that user'))
-    else:
-        filter_list = contactsearch.parse_filter_list_str(filter_list_str)
+    filter_list = contact.get_customfilters()
     del filter_list[fid]
     filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
     contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)

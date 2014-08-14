@@ -404,13 +404,11 @@ def ajax_get_filters(request, column_type, column_id):
         if column_id != 'user':
             raise Http404
 
-        filter_list_str = request.user.get_fieldvalue_by_id(FIELD_FILTERS)
+        filter_list = request.user.get_customfilters()
         choices = []
-        if filter_list_str:
-            filter_list = parse_filter_list_str(filter_list_str)
-            for i, filterpair in enumerate(filter_list):
-                filtername, filterstr = filterpair
-                choices.append({'id': force_text(i), 'text': filtername})
+        for i, filterpair in enumerate(filter_list):
+            filtername, filterstr = filterpair
+            choices.append({'id': force_text(i), 'text': filtername})
 
     else:
         column, submit_prefix = get_column(column_type, column_id)
@@ -432,10 +430,7 @@ def ajax_get_filters_params(request, column_type, column_id, filter_id):
         if column_id != 'user':
             raise Http404
 
-        filter_list_str = request.user.get_fieldvalue_by_id(FIELD_FILTERS)
-        if not filter_list_str:
-            raise Http404
-        filter_list = parse_filter_list_str(filter_list_str)
+        filter_list = request.user.get_customfilters()
         filter_id = int(filter_id)
         customname, filter = filter_list[filter_id]
         assert filter[-1] == ')', "Custom filter %s should end with a ')'" % customname
@@ -461,23 +456,3 @@ def ajax_get_filters_params(request, column_type, column_id, filter_id):
         submit_prefix += ','
     submit_prefix += filter_id
     return JsonHttpResponse({'submit_prefix': submit_prefix, 'params' : jsparams})
-
-
-#TODO: Move into models.py
-def parse_filter_list_str(txt):
-    '''
-    This takes a filter list stored in the database and returns a list of tupples
-    ( filtername, filter_string )
-    '''
-    list = txt.split(',')
-    for idx in range(len(list)-1, 0, -1):
-        if list[idx-1][-1] != '"' or list[idx][0] != '"':
-            #print("merging elements ", idx-1, "and", idx, "of", repr(list))
-            list[idx-1] += ',' + list[idx]
-            del list[idx]
-    for idx in range(len(list)):
-        assert(list[idx][0] == '"')
-        assert(list[idx][-1] == '"')
-        list[idx] = list[idx][1:-1]
-    assert(len(list)%2 == 0)
-    return [(list[2*i], list[2*i+1]) for i in range(len(list)//2)]
