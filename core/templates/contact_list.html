@@ -89,10 +89,14 @@ function add_filter_breadcrumb(data) {
             filter_breadcrumb_changed(elem);
         }
         id++;
-    }
+
     if (data.submit_prefix) {
         submit_prefix = data.submit_prefix.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/&/g, '&amp;');
         html = "<input id='" + BASE_ID + id + "' type=submit value='{% filter escapejs %}{% trans "Add" %}{% endfilter %}' onclick=\"filter_breadcrumbs_submit(\'" + submit_prefix + "\', " + partial_filter.length + ", " + params.length + ");\">";
+        $('#add_filter').append(' '+html);
+        id++;
+
+        html = "<input id='" + BASE_ID + id + "' type=reset value='{% filter escapejs %}{% trans "Cancel" %}{% endfilter %}' onclick='cancel_advanced_search();'>";
         $('#add_filter').append(' '+html);
     }
 }
@@ -175,10 +179,19 @@ function filter_breadcrumbs_submit(submit_prefix, first_param, nb_param) {
     $('#mainform').submit();
 }
 
-/* Function called on click on "Advanced search" */
+/* Function called on click on "Advanced search" or "Add a condition" */
 function advanced_search() {
     $('#advanced_search').show();
+    $('#search_submitrow').hide();
     $('#basic_search').hide();
+}
+
+function cancel_advanced_search() {
+    $('#advanced_search').hide();
+    if ($('#mainform #filter').val())
+        $('#search_submitrow').show();
+    else
+        $('#basic_search').show();
 }
 
 /* Function called on click on "Reset Filter" */
@@ -239,16 +252,6 @@ function submit_fields() {
     </div>
 {% endif %}
 
-<div id=advanced_search {% if not filter %}style="display:none;"{% endif %}>
-    <h1>{% trans "Add condition" %}</h1>
-    <div id=add_filter class="padded">
-    </div>
-
-    <div class="submit-row">
-    <a class="button" href="javascript:reset_filter();">{% trans "Reset filter" %}</a>
-    <a class="button" href="javascript:save_filter();">{% trans "Save filter" %}</a>
-    </div>
-</div>
 <div id=basic_search {% if filter %}style="display:none;"{% endif %}>
     <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['mainform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['mainform'].submit(); return false;">
         <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search" style="vertical-align:middle;">
@@ -258,6 +261,18 @@ function submit_fields() {
     {% if not filter %}
     <script>document.forms['quickfilter_displayedform'].filter.focus();</script>
     {% endif %}
+</div>
+
+<div id=advanced_search style="display:none;">
+    <h1>{% trans "Add condition" %}</h1>
+    <div id=add_filter class="padded">
+    </div>
+</div>
+
+<div id=search_submitrow {% if not filter %}style="display:none;"{% endif %}>
+    <a href="javascript:advanced_search();">{% trans "Add condition" %}</a>
+    - <a href="javascript:reset_filter();">{% trans "Remove filter" %}</a>
+    - <a href="javascript:save_filter();">{% trans "Save filter" %}</a>
 </div>
 </div>
 

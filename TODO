@@ -47,7 +47,8 @@ Type change deletion check is buggy.
 With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
 
 Contact search:
-- Re-style the 'Avanced search' / 'Save filter' / 'Reset filter'
 - Wrap in a form so that Enter key works
+- Clean form in form problem
+- Don't triger updates when key-up did not resulted in a change
 
-Add 'vim:...' to html files for \t spaces choices
+Add 'vim:...' modlines to html files for \t spaces choices
