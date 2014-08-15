@@ -64,7 +64,7 @@ urlpatterns = patterns('',
     url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
     url(r'^logout$', 'ngw.core.views.logout'),
 
-    url(r'^logs$', 'ngw.core.views.logs'),
+    url(r'^logs$', 'ngw.core.views.logs.log_list'),
 
     url(r'^contacts/$', 'ngw.core.views.contact_list'),
     url(r'^contacts/add$', 'ngw.core.views.contact_edit', {'gid':None, 'cid':None}),
