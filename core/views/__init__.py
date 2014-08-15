@@ -500,7 +500,7 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
             if format == 'html':
                 cols.append((cf.name, cf.format_value_html, prop, prop))
             else:
-                cols.append((cf.name, cf.format_value_unicode, prop, prop))
+                cols.append((cf.name, cf.format_value_text, prop, prop))
         else:
             raise ValueError('Invalid field '+prop)
 

@@ -1232,11 +1232,11 @@ class ContactField(NgwModel):
     def type_as_html(self):
         return self.str_type_base()
 
-    def format_value_unicode(self, value):
+    def format_value_text(self, value):
         return value
 
     def format_value_html(self, value):
-        return self.format_value_unicode(value)
+        return self.format_value_text(value)
 
     def get_form_fields(self):
         raise NotImplementedError()
@@ -1809,7 +1809,7 @@ class ContactFieldValue(NgwModel):
 
     def __str__(self):
         cf = self.contact_field
-        return cf.format_value_unicode(self.value)
+        return cf.format_value_text(self.value)
 
     def as_html(self):
         cf = self.contact_field

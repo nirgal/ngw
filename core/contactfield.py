@@ -190,7 +190,7 @@ class ChoiceContactField(ContactField):
         proxy = True
     def type_as_html(self):
         return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
-    def format_value_unicode(self, value):
+    def format_value_text(self, value):
         chg = self.choice_group
         if chg == None:
             return 'Error'
@@ -215,7 +215,7 @@ class MultipleChoiceContactField(ContactField):
         proxy = True
     def type_as_html(self):
         return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
-    def format_value_unicode(self, value):
+    def format_value_text(self, value):
         try:
             chg = ChoiceGroup.objects.get(pk=self.choice_group_id)
         except ChoiceGroup.DoesNotExist:
@@ -254,7 +254,7 @@ register_contact_field_type(MultipleChoiceContactField, 'MULTIPLECHOICE', 'Multi
 class PasswordContactField(ContactField):
     class Meta:
         proxy = True
-    def format_value_unicode(self, value):
+    def format_value_text(self, value):
         return '********'
     def get_form_fields(self):
         return None
