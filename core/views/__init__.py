@@ -17,7 +17,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text, smart_text
 from django.utils.six import iteritems, itervalues
 from django.utils import formats
-from django.utils.decorators import (method_decorator, available_attrs)
+from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -36,6 +36,7 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.decorators import *
+from ngw.core.views.generic import (render_query, generic_delete)
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -111,87 +112,6 @@ def test(request):
     }
     messages.add_message(request, messages.INFO, 'This is a test')
     return render_to_response('test.html', context, RequestContext(request))
-
-
-########################################################################
-#
-# Generic views
-#
-########################################################################
-
-def render_query(template_name, context, request, defaultsort=''):
-    '''
-    This function renders the query, paginated
-    '''
-    q = context['query']
-    cols = context['cols']
-
-    # get sort column name
-    order = request.REQUEST.get('_order', '')
-    try:
-        intorder = int(order)
-    except ValueError:
-        if defaultsort:
-            order = ''
-            intorder = None
-            q = q.order_by(defaultsort)
-        else:
-            order = '0'
-            intorder = 0
-    if intorder is not None:
-        sort_col = cols[abs(intorder)][3]
-        if not order or order[0] != '-':
-            q = q.order_by(sort_col)
-        else:
-            q = q.order_by('-'+sort_col)
-
-    paginator = Paginator(q, Config.get_object_query_page_length())
-    page = request.REQUEST.get('_page', 1)
-    try:
-        q = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        q = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        q = paginator.page(paginator.num_pages)
-
-    context['query'] = q
-    context['cols'] = cols
-    context['order'] = order
-
-    context['paginator'] = paginator
-    context['page_obj'] = q
-
-    if 'baseurl' not in context:
-        context['baseurl'] = '?'
-    return render_to_response(template_name, context, RequestContext(request))
-
-
-# Helper function that is never call directly, hence the lack of authentification check
-def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
-    title = _('Please confirm deletetion')
-
-    confirm = request.GET.get('confirm', '')
-    if confirm:
-        if ondelete_function:
-            ondelete_function(o)
-        name = force_text(o)
-        log = Log()
-        log.contact_id = request.user.id
-        log.action = LOG_ACTION_DEL
-        pk_names = (o._meta.pk.attname,) # default django pk name
-        log.target = force_text(o.__class__.__name__)+' '+' '.join([force_text(o.__getattribute__(fieldname)) for fieldname in pk_names])
-        log.target_repr = o.get_class_verbose_name()+' '+name
-        o.delete()
-        log.save()
-        messages.add_message(request, messages.SUCCESS, _('%s has been deleted sucessfully!') % name)
-        return HttpResponseRedirect(next_url)
-    else:
-        nav = base_nav or Navbar(o.get_class_navcomponent())
-        nav.add_component(o.get_navcomponent()) \
-           .add_component(('delete', _('delete')))
-        return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
 
 
 
