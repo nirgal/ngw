@@ -33,7 +33,7 @@ from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 from ngw.core.mailmerge import ngw_mailmerge
-from ngw.core import contactsearch
+from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.decorators import *
 
@@ -594,7 +594,7 @@ def contact_list(request):
         raise PermissionDenied
 
     strfilter = request.REQUEST.get('filter', '')
-    filter = contactsearch.parse_filterstring(strfilter, request.user.id)
+    filter = parse_filterstring(strfilter, request.user.id)
     baseurl = '?filter='+strfilter
 
     strfields = request.REQUEST.get('fields', None)
@@ -1098,7 +1098,7 @@ def contact_filters_edit(request, cid=None, fid=None):
     context['form'] = form
     context['filtername'] = filtername
     try:
-        filter_html = contactsearch.parse_filterstring(filterstr, request.user.id).to_html()
+        filter_html = parse_filterstring(filterstr, request.user.id).to_html()
     except PermissionDenied:
         filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
     except ContactField.DoesNotExist:
@@ -1487,7 +1487,7 @@ def contactgroup_members(request, gid, output_format=''):
         raise PermissionDenied
 
     strfilter = request.REQUEST.get('filter', '')
-    filter = contactsearch.parse_filterstring(strfilter, request.user.id)
+    filter = parse_filterstring(strfilter, request.user.id)
     baseurl = '?filter='+strfilter
 
     strfields = request.REQUEST.get('fields', None)
@@ -1981,7 +1981,7 @@ def contactgroup_add_contacts_to(request):
     cg = get_object_or_404(ContactGroup, pk=gid)
 
     strfilter = request.REQUEST.get('filter', '')
-    filter = contactsearch.parse_filterstring(strfilter, request.user.id)
+    filter = parse_filterstring(strfilter, request.user.id)
 
     q, cols = contact_make_query_with_fields(request, [], format='html') #, current_cg=cg)
 
