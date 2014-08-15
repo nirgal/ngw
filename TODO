@@ -52,3 +52,6 @@ Contact search:
 - Don't triger updates when key-up did not resulted in a change
 
 Add 'vim:...' modlines to html files for \t spaces choices
+
+Emails:
+- Use my program doesn't handle selected contacts anymore
