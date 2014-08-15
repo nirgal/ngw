@@ -89,6 +89,7 @@ function add_filter_breadcrumb(data) {
             filter_breadcrumb_changed(elem);
         }
         id++;
+    }
 
     if (data.submit_prefix) {
         submit_prefix = data.submit_prefix.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/&/g, '&amp;');
