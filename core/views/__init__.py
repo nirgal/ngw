@@ -35,7 +35,7 @@ from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core import contactsearch
 from ngw.core import perms
-from ngw.core.viewdecorators import *
+from ngw.core.views.decorators import *
 
 from django.db.models.query import RawQuerySet, sql
 

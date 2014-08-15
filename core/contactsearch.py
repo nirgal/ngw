@@ -18,7 +18,7 @@ from ngw.core.models import (
     FIELD_FILTERS)
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
 from ngw.core import perms
-from ngw.core.viewdecorators import *
+from ngw.core.views.decorators import *
 
 
 class LexicalError(Exception if six.PY3 else StandardError):
