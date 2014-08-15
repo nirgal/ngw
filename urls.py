@@ -101,11 +101,11 @@ urlpatterns = patterns('',
     url(r'^contactfields/(?P<id>\d+)/movedown$', 'ngw.core.views.field_move_down'),
     url(r'^contactfields/(?P<id>\d+)/delete$', 'ngw.core.views.field_delete'),
 
-    url(r'^choicegroups/$', 'ngw.core.views.choicegroup_list'),
-    url(r'^choicegroups/add$', 'ngw.core.views.choicegroup_edit', {'id': None}),
+    url(r'^choicegroups/$', 'ngw.core.views.choices.choicegroup_list'),
+    url(r'^choicegroups/add$', 'ngw.core.views.choices.choicegroup_edit', {'id': None}),
     url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='edit')),
-    url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choicegroup_edit'),
-    url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choicegroup_delete'),
+    url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choices.choicegroup_edit'),
+    url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choices.choicegroup_delete'),
 
     url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', 'ngw.core.views.media_group_file'),
 
