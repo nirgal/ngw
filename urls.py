@@ -11,6 +11,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 admin.autodiscover()
 
+from ngw.core.views.misc import LogoutView, HomeView, TestView
 #from ngw.core.views import ContactGroupList
 
 groups_urlpatterns = patterns('',
@@ -50,9 +51,9 @@ js_info_dict = {
     }
 
 urlpatterns = patterns('',
-    url(r'^$', 'ngw.core.views.misc.home'),
+    url(r'^$', HomeView.as_view()),
     
-    url(r'^test$', 'ngw.core.views.misc.test'),
+    url(r'^test$', TestView.as_view()),
 
     url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
     url(r'^jsi18n/(?P<packages>\S+?)/$', 'django.views.i18n.javascript_catalog'),
@@ -62,7 +63,7 @@ urlpatterns = patterns('',
     url(r'^hook_change_password$', 'ngw.core.views.contacts.hook_change_password'),
 
     url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
-    url(r'^logout$', 'ngw.core.views.misc.logout'),
+    url(r'^logout$', LogoutView.as_view()),
 
     url(r'^logs$', 'ngw.core.views.logs.log_list'),
 

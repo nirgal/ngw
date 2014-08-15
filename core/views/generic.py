@@ -2,17 +2,32 @@
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
+from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.generic import View #TemplateView, ListView
+from django.views.generic.base import TemplateResponseMixin, ContextMixin
 from django.contrib import messages
-from ngw.core.models import (Config, Log, LOG_ACTION_DEL)
+from ngw.core.models import GROUP_USER_NGW, Config, Log, LOG_ACTION_DEL
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import *
 
+
+class ProtectedView(View):
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, *args, **kwargs):
+        return super(ProtectedView, self).dispatch(*args, **kwargs)
+
+
+class TemplateProtectedView(TemplateResponseMixin, ContextMixin, ProtectedView):
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
 
 
 def render_query(template_name, context, request, defaultsort=''):
