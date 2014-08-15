@@ -34,7 +34,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membershipinline$', 'ngw.core.views.contactingroup_edit_inline'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/remove$', 'ngw.core.views.contactingroup_delete'),
     url(r'^add_contacts_to$', 'ngw.core.views.contactgroup_add_contacts_to'),
-    url(r'^(?P<gid>\d+)/files(?P<path>.+)$', 'ngw.core.views.contactgroup_files'),
+    url(r'^(?P<gid>\d+)/files(?P<path>.+)$', 'ngw.core.views.files.contactgroup_files'),
     url(r'^(?P<gid>\d+)/messages$', 'ngw.core.views.contactgroup_messages'),
     url(r'^(?P<gid>\d+)/news/$', 'ngw.core.views.news.contactgroup_news'),
     url(r'^(?P<gid>\d+)/news/add$', 'ngw.core.views.news.contactgroup_news_edit', {'nid':None}),
@@ -107,7 +107,7 @@ urlpatterns = patterns('',
     url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choices.choicegroup_edit'),
     url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choices.choicegroup_delete'),
 
-    url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', 'ngw.core.views.media_group_file'),
+    url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', 'ngw.core.views.files.media_group_file'),
 
     url(r'^pks/lookup$', 'ngw.core.gpg.lookup'),
 
