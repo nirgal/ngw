@@ -90,4 +90,4 @@ def group_visible_by(contact_groups_query, user_id):
 
 @register.filter
 def group_with_link(contact_group):
-    return mark_safe('<a href="'+contact_group.get_absolute_url()+'">'+html.escape(contact_group.unicode_with_date())+'</a>')
+    return mark_safe('<a href="'+contact_group.get_absolute_url()+'">'+html.escape(contact_group.name_with_date())+'</a>')

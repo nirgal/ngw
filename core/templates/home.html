@@ -35,7 +35,7 @@
         <h2>{% trans "You are operator of theses groups" %}:</h2>
         <ul class=padded>
     {% endif %}
-    <li><a href="{{g.get_absolute_url}}">{{ g.unicode_with_date }}</a><br>
+    <li><a href="{{g.get_absolute_url}}">{{ g.name_with_date }}</a><br>
     {% if forloop.last %}
         </ul>
         </div>

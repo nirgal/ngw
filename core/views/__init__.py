@@ -318,7 +318,7 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'invited': flags & CIGFLAG_INVITED,
         'declined': flags & CIGFLAG_DECLINED,
         'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
-        'title': contact_with_extra_fields.name+' in group '+contact_group.unicode_with_date(),
+        'title': contact_with_extra_fields.name+' in group '+contact_group.name_with_date(),
         'next_url': request.get_full_path(),
         }, RequestContext(request))
 
@@ -568,7 +568,7 @@ def get_available_columns(user_id):
     for cf in ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight'):
         result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
     for cg in ContactGroup.objects.extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % user_id]).order_by('-date', 'name'):
-        result.append((DISP_GROUP_PREFIX+force_text(cg.id), cg.unicode_with_date()))
+        result.append((DISP_GROUP_PREFIX+force_text(cg.id), cg.name_with_date()))
     return result
 
 
@@ -659,7 +659,7 @@ def contact_detail(request, gid=None, cid=None):
     context = {}
     context['title'] = _('Details for %s') % force_text(c)
     if gid:
-        #context['title'] += ' in group '+cg.unicode_with_date()
+        #context['title'] += ' in group '+cg.name_with_date()
         context['cg'] = cg
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('members', _('members')))
@@ -1232,9 +1232,9 @@ def get_UContactGroup(userid):
         class Meta(ContactGroup.Meta):
             proxy = True
         def visible_direct_supergroups_5(self):
-            return ', '.join(_truncate_list([sg.unicode_with_date() for sg in self.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
+            return ', '.join(_truncate_list([sg.name_with_date() for sg in self.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
         def visible_direct_subgroups_5(self):
-            return ', '.join(_truncate_list([sg.unicode_with_date() for sg in self.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
+            return ', '.join(_truncate_list([sg.name_with_date() for sg in self.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
         def rendered_fields(self):
             if self.field_group:
                 fields = self.contactfield_set.all()
@@ -1607,7 +1607,7 @@ def contactgroup_members(request, gid, output_format=''):
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
 
-    context['title'] = _('Contacts of group %s') % cg.unicode_with_date()
+    context['title'] = _('Contacts of group %s') % cg.name_with_date()
     context['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
     context['display'] = display
     context['query'] = q
@@ -1672,7 +1672,7 @@ def contactgroup_messages(request, gid):
     cg = get_object_or_404(ContactGroup, pk=gid)
     messages = ContactMsg.objects.filter(cig__group_id=gid).order_by('-send_date')
     context = {}
-    context['title'] = _('Messages for %s') % cg.unicode_with_date()
+    context['title'] = _('Messages for %s') % cg.name_with_date()
     context['cg'] = cg
     context['cg_perms'] = cg.get_contact_perms(request.user.id)
     context['nav'] = cg.get_smart_navbar() \
@@ -1764,7 +1764,7 @@ class ContactGroupForm(forms.Form):
 
     def __init__(self, for_user, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
-        visible_groups_choices = [(g.id, g.unicode_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name')]
+        visible_groups_choices = [(g.id, g.name_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name')]
         self.fields['direct_supergroups'].choices = visible_groups_choices
         for flag in 'oveEcCfFnNuUxX':
             field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
@@ -1781,7 +1781,7 @@ def contactgroup_edit(request, id):
         cg = get_object_or_404(ContactGroup, pk=id)
         if not perms.c_can_change_cg(request.user.id, id):
             raise PermissionDenied
-        title = _('Editing %s') % cg.unicode_with_date()
+        title = _('Editing %s') % cg.name_with_date()
     else:
         title = _('Adding a new %s') % objtype.get_class_verbose_name()
 
@@ -1846,7 +1846,7 @@ def contactgroup_edit(request, id):
                     else:
                         gmg.delete()
 
-            messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.unicode_with_date())
+            messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.name_with_date())
 
             cg.check_static_folder_created()
             Contact.check_login_created(request) # subgroups change
@@ -2236,7 +2236,7 @@ def contactingroup_edit(request, gid, cid):
     context = {}
     context['title'] = _('Contact %(contact)s in group %(group)s') % {
         'contact': force_text(contact),
-        'group': cg.unicode_with_date()}
+        'group': cg.name_with_date()}
     context['cg'] = cg
     context['cg_perms'] = cg.get_contact_perms(request.user.id)
     context['contact'] = contact
@@ -2287,7 +2287,7 @@ def contactingroup_edit(request, gid, cid):
     if automember_groups:
         inherited_info += 'Automatically member because member of subgroup(s):' + '<br>'
         for sub_cg in visible_automember_groups:
-            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url()}
+            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()}
         if invisible_automember_groups:
             inherited_info += '<li>Hidden group(s)...'
         inherited_info += '<br>'
@@ -2298,7 +2298,7 @@ def contactingroup_edit(request, gid, cid):
     if autoinvited_groups:
         inherited_info += 'Automatically invited because invited in subgroup(s):<br>'
         for sub_cg in visible_autoinvited_groups:
-            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.unicode_with_date(), 'url': sub_cg.get_absolute_url()}
+            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()}
         if invisible_autoinvited_groups:
             inherited_info += '<li>Hidden group(s)...'
 

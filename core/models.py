@@ -898,7 +898,7 @@ class ContactGroup(NgwModel):
         else:
             return ''
 
-    def unicode_with_date(self):
+    def name_with_date(self):
         """ Returns the name of the group, and the date if there's one"""
         result = self.name
         if self.date:
@@ -1068,7 +1068,7 @@ class ContactGroup(NgwModel):
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_ADD
             log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
-            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
             log.save()
             result = LOG_ACTION_ADD
 
@@ -1091,7 +1091,7 @@ class ContactGroup(NgwModel):
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
                     log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
-                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
                     log.property = TRANS_CIGFLAG_CODE2TXT[flag]
                     log.property_repr = log.property.replace('_', ' ').capitalize()
                     log.change = 'new value is true'
@@ -1112,7 +1112,7 @@ class ContactGroup(NgwModel):
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
                     log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
-                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
                     log.property = TRANS_CIGFLAG_CODE2TXT[flag]
                     log.property_repr = log.property.replace('_', ' ').capitalize()
                     log.change = 'new value is false'
@@ -1124,7 +1124,7 @@ class ContactGroup(NgwModel):
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_DEL
             log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
-            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.unicode_with_date()
+            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
             result = LOG_ACTION_CHANGE
         else:
             cig.save()
@@ -1155,7 +1155,7 @@ class ContactGroup(NgwModel):
                 msg = _('Contact %(contacts)s have been added in %(group)s with status %(status)s.')
             messages.add_message(request, messages.SUCCESS, msg % {
                 'contacts': msgpart_contacts,
-                'group': self.unicode_with_date(),
+                'group': self.name_with_date(),
                 'status': group_member_mode})
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
@@ -1165,7 +1165,7 @@ class ContactGroup(NgwModel):
                 msg = _('Contacts %(contact)s already were in %(group)s. Status has been changed to %(status)s.')
             messages.add_message(request, messages.SUCCESS, msg % {
                 'contacts': msgpart_contacts,
-                'group': self.unicode_with_date(),
+                'group': self.name_with_date(),
                 'status': group_member_mode})
 
 
@@ -1598,7 +1598,7 @@ class GroupFilterIsMember(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
+        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name = 'memberof'
@@ -1615,7 +1615,7 @@ class GroupFilterIsNotMember(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
+        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsNotMember.internal_name = 'notmemberof'
@@ -1632,7 +1632,7 @@ class GroupFilterIsInvited(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
+        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name = 'ginvited'
@@ -1649,7 +1649,7 @@ class GroupFilterIsNotInvited(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
+        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterIsNotInvited.internal_name = 'gnotinvited'
@@ -1666,7 +1666,7 @@ class GroupFilterDeclinedInvitation(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
+        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterDeclinedInvitation.internal_name = "gdeclined"
@@ -1683,7 +1683,7 @@ class GroupFilterNotDeclinedInvitation(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.unicode_with_date(), '</b>')
+        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
     def get_param_types(self):
         return ()
 GroupFilterNotDeclinedInvitation.internal_name = 'gnotdeclined'
@@ -1859,7 +1859,7 @@ class ContactInGroup(NgwModel):
         return force_str('<ContactInGroup %s %s>' % (self.contact_id, self.group_id))
 
     def __str__(self):
-        return _('contact %(contactname)s in group %(groupname)s') % {'contactname': self.contact.name, 'groupname': self.group.unicode_with_date()}
+        return _('contact %(contactname)s in group %(groupname)s') % {'contactname': self.contact.name, 'groupname': self.group.name_with_date()}
 
     @classmethod
     def get_class_navcomponent(cls):

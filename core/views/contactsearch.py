@@ -44,7 +44,7 @@ def ajax_get_columns(request, column_type):
         choices = []
         choices.append({'id': 'allevents', 'text': force_text(_('All events'))})
         for group in groups:
-            choices.append({'id': force_text(group.id), 'text': group.unicode_with_date()})
+            choices.append({'id': force_text(group.id), 'text': group.name_with_date()})
 
     elif column_type == 'custom':
         choices = [{'id': 'user', 'text': request.user.name}]

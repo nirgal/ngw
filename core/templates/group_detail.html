@@ -47,7 +47,7 @@
                     {% trans "People in sub-groups automatically are members / invited." %}
                     <br>
             {% endif %}
-                    ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a>
+                    ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.name_with_date }}</a>
                     {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
                     {% if forloop.first %}( {% trans "including" %} {%else%}, {% endif %}
                     {{ ssg|group_with_link }}
@@ -62,10 +62,10 @@
     
     {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
         {% if forloop.first %}
-            <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg.unicode_with_date }}</h1>
+            <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg.name_with_date }}</h1>
             <div class=box>
         {% endif %}
-                ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.unicode_with_date }}</a><br>
+                ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.name_with_date }}</a><br>
         {% if forloop.last %}
             </div>
         {% endif %}
