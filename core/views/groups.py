@@ -33,7 +33,7 @@ from ngw.core.nav import Navbar
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
-from ngw.core.views import (
+from ngw.core.views.contacts import (
     get_display_columns, FieldSelectForm, contact_make_query_with_fields)
 from ngw.core.views.decorators import *
 from ngw.core.views.generic import (render_query, generic_delete)
