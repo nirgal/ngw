@@ -47,6 +47,4 @@ Type change deletion check is buggy.
 
 With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
 
-Contact search:
-- Clean form in form problem
-- Don't triger updates when key-up did not resulted in a change
+We need to remove form from membershipwidget (group column) if we want to have a change_list, that selectable objects and action to perform on them.

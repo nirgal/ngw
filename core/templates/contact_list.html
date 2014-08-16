@@ -116,6 +116,10 @@ function filter_breadcrumb_changed(select) {
     iid = iid.substring(BASE_ID.length);
     iid = parseInt(iid);
 
+    val = $('#'+select.id).val();
+    if (partial_filter[iid] == val)
+        return; // unchanged
+
     /* Remove all the html after the activated input */
     for (i=iid+1; i<8; ++i) {
         itemAfter = $('#' + BASE_ID + i);
@@ -127,9 +131,8 @@ function filter_breadcrumb_changed(select) {
     while (partial_filter.length > iid)
         partial_filter.pop();
 
-    val = $('#'+select.id).val();
     if (!val)
-        return; // "please select" was selected: ignore it
+        return; // empty choice list
     //alert('val:' + val);
 
     partial_filter.push(val);
