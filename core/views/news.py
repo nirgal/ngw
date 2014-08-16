@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+'''
+ContactGroupNews managing views
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from datetime import datetime
@@ -12,7 +15,7 @@ from django import forms
 from django.contrib import messages
 from ngw.core.models import (GROUP_USER_NGW, ContactGroup, ContactGroupNews)
 from ngw.core import perms
-from ngw.core.views.decorators import *
+from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete
 
 

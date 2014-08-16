@@ -1,7 +1,10 @@
 # -*- encoding: utf-8 -*-
+'''
+ContactGroup managing views
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
-from datetime import *
+from datetime import date, datetime, timedelta
 from decoratedstr import remove_decoration
 import json
 from django.core.exceptions import PermissionDenied
@@ -35,8 +38,8 @@ from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.contacts import (
     get_display_columns, FieldSelectForm, contact_make_query_with_fields)
-from ngw.core.views.decorators import *
-from ngw.core.views.generic import (render_query, generic_delete)
+from ngw.core.views.decorators import login_required, require_group
+from ngw.core.views.generic import render_query, generic_delete
 
 #######################################################################
 #

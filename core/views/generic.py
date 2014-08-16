@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+'''
+Base view class; View helpers
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
@@ -14,7 +17,7 @@ from django.views.generic.base import TemplateResponseMixin, ContextMixin
 from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, Config, Log, LOG_ACTION_DEL
 from ngw.core.nav import Navbar
-from ngw.core.views.decorators import *
+from ngw.core.views.decorators import login_required, require_group
 
 
 class ProtectedView(View):

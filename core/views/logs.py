@@ -1,11 +1,14 @@
 # -*- encoding: utf-8 -*-
+'''
+Log managing views
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
 from ngw.core.models import GROUP_USER_NGW, Log
 from ngw.core.nav import Navbar
-from ngw.core.views.decorators import *
+from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import render_query
 
 

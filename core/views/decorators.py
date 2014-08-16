@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+'''
+decorators for checking views access rights
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 

@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+'''
+ContactField managing views
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from django.core.exceptions import PermissionDenied
@@ -14,7 +17,7 @@ from django.core.urlresolvers import reverse
 from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
-from ngw.core.views.decorators import *
+from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import (render_query, generic_delete)
 
 @login_required()

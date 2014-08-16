@@ -1,8 +1,11 @@
 # -*- encoding: utf-8 -*-
+'''
+Contact managing views
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 import os
-from datetime import *
+from datetime import date
 import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -32,7 +35,7 @@ from ngw.core.nav import Navbar
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
-from ngw.core.views.decorators import *
+from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import (render_query, generic_delete)
 
 from django.db.models.query import RawQuerySet, sql

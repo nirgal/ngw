@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+'''
+ajax views for building contact filter
+'''
 
 from __future__ import division, print_function, unicode_literals
 
@@ -12,7 +15,7 @@ from ngw.core.models import (
     GROUP_USER_NGW,
     ContactField, ContactGroup, ChoiceGroup)
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
-from ngw.core.views.decorators import *
+from ngw.core.views.decorators import login_required, require_group
 
 
 

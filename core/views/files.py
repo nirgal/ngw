@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+'''
+files managing views
+'''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 import os
@@ -13,7 +16,7 @@ from django.views import static
 from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ContactGroup
 from ngw.core import perms
-from ngw.core.views.decorators import *
+from ngw.core.views.decorators import login_required, require_group
 
 class UploadFileForm(forms.Form):
     file_to_upload = forms.FileField(label=_('File to upload'))
