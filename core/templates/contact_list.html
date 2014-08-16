@@ -29,6 +29,9 @@ function show_membership_extrainfo(gcid) {
 BASE_ID = 'filter_breadcrumb_';
 var partial_filter = [];
 var active_breadcrumb_ajax = null;
+var filter_submit_prefix = null;
+var filter_first_param = null;
+var filter_nb_param = null;
 
 
 function add_loading() {
@@ -92,13 +95,18 @@ function add_filter_breadcrumb(data) {
     }
 
     if (data.submit_prefix) {
-        submit_prefix = data.submit_prefix.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/&/g, '&amp;');
-        html = "<input id='" + BASE_ID + id + "' type=submit value='{% filter escapejs %}{% trans "Add" %}{% endfilter %}' onclick=\"filter_breadcrumbs_submit(\'" + submit_prefix + "\', " + partial_filter.length + ", " + params.length + ");\">";
+        filter_submit_prefix = data.submit_prefix;
+        filter_first_param = partial_filter.length;
+        filter_nb_param = params.length;
+
+        html = "<input id='" + BASE_ID + id + "' type=submit value='{% filter escapejs %}{% trans "Add" %}{% endfilter %}'>";
         $('#add_filter').append(' '+html);
         id++;
 
         html = "<input id='" + BASE_ID + id + "' type=reset value='{% filter escapejs %}{% trans "Cancel" %}{% endfilter %}' onclick='cancel_advanced_search();'>";
         $('#add_filter').append(' '+html);
+    } else {
+        filter_submit_prefix = null;
     }
 }
 
@@ -159,9 +167,9 @@ function filter_breadcrumb_changed(select) {
     });
 }
 
-function filter_breadcrumbs_submit(submit_prefix, first_param, nb_param) {
-    newfilterstr = submit_prefix; // + " + " + first_param + " + " + nb_param;
-    for (i=first_param; i<first_param+nb_param; ++i) {
+function filter_breadcrumbs_submit() {
+    newfilterstr = filter_submit_prefix;
+    for (i=filter_first_param; i<filter_first_param+filter_nb_param; ++i) {
         input = $('#' + BASE_ID + i);
         param = input.val();
         if (input.hasClass('string'))
@@ -175,9 +183,10 @@ function filter_breadcrumbs_submit(submit_prefix, first_param, nb_param) {
     operator = $('#' + BASE_ID + 'combine').val();
     newfilterstr = operator + "({% filter escapejs %}{{ filter|safe }}{% endfilter %}," + newfilterstr + ')';
     {% endif %}
-    //alert(newfilterstr);
-    $('#mainform #filter').val(newfilterstr);
-    $('#mainform').submit();
+    //$('#mainform #filter').val(newfilterstr);
+    //$('#mainform').submit();
+    document.forms['mainform'].filter.value=newfilterstr;
+    document.forms['mainform'].submit();
 }
 
 /* Function called on click on "Advanced search" or "Add a condition" */
@@ -230,6 +239,7 @@ function submit_fields() {
         savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
     }
     document.forms['mainform'].submit();
+    return true;
 }
 </script>
 {% endblock %}
@@ -266,8 +276,10 @@ function submit_fields() {
 
 <div id=advanced_search style="display:none;">
     <h1>{% trans "Add condition" %}</h1>
+    <form action="#" onsubmit='javascript:filter_breadcrumbs_submit(); return false;'>
     <div id=add_filter class="padded">
     </div>
+    </form>
 </div>
 
 <div id=search_submitrow {% if not filter %}style="display:none;"{% endif %}>
