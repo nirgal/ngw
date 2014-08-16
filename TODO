@@ -54,6 +54,3 @@ Contact search:
 
 Add modelines to html template files:
 {# vim: set et ts=2 ft=django: #}
-
-Emails:
-- Use my program doesn't handle selected contacts anymore

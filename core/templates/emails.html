@@ -28,8 +28,8 @@ function refreshSendTo() {
         link += input.value;
     }
     /*alert(link);
-    alert(document.getElementById("default").href);*/
-    document.getElementById("default").href = link;
+    alert(document.getElementById("mailtolink").href);*/
+    document.getElementById("mailtolink").href = link;
 }
 
 function onFocusTextArea() {
@@ -91,7 +91,7 @@ function onFocusTextArea() {
 
 {% block submitbar %}
 <div class=submit-row>
-      <a href="mailto:?bcc={% for cid,contact,email in emails %}{% if forloop.counter0 %},{% endif %}{{ email }}{% endfor %}" class="button default">{% trans "Use my program" %}</a>
+      <a id="mailtolink" href="mailto:?bcc={% for cid,contact,email in emails %}{% if forloop.counter0 %},{% endif %}{{ email }}{% endfor %}" class="button default">{% trans "Use my program" %}</a>
       <input type=submit value="{% trans "Send from server" %}">
 </div>
 {% endblock %}
