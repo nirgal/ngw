@@ -51,6 +51,3 @@ Contact search:
 - Wrap in a form so that Enter key works
 - Clean form in form problem
 - Don't triger updates when key-up did not resulted in a change
-
-Add modelines to html template files:
-{# vim: set et ts=2 ft=django: #}
