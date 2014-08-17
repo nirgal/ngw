@@ -106,70 +106,33 @@ def contactgroup_list(request):
     return render_query('list.html', context, request)
 
 
-##class ProtectedListView(MultipleObjectTemplateResponseMixin, BaseListView):
-#class ProtectedListView(ListView):
-#    @method_decorator(login_required)
-#    @method_decorator(require_group(GROUP_USER_NGW))
-#    def dispatch(self, *args, **kwargs):
-#        return super(ProtectedListView, self).dispatch(*args, **kwargs)
-#
-#class ContactGroupList(ProtectedListView):
-#    template_name = 'list.html'
-#    context_object_name = 'query'
-#    page_kwarg = '_page'
-#    cols = [
-#        ( _('Name'), None, 'name', 'name' ),
-#        ( _('Description'), None, 'description_not_too_long', 'description' ),
-#        #( _('Contact fields'), None, 'rendered_fields', 'field_group' ),
-#        ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
-#        ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
-#        #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
-#        #( _('Members'), None, 'visible_member_count', None ),
-#        #( _('System\u00a0locked'), None, 'system', 'system' ),
-#    ]
-#
-#    def get_queryset(self):
-#        UContactGroup = get_UContactGroup(self.request.user.id)
-#
-#        query = UContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
-#
-#        # Handle sorts
-#        defaultsort = ''
-#        order = self.request.REQUEST.get('_order', '')
-#        try:
-#            intorder = int(order)
-#        except ValueError:
-#            if defaultsort:
-#                order = ''
-#                intorder = None
-#                query = query.order_by(defaultsort)
-#            else:
-#                order = '0'
-#                intorder = 0
-#        if intorder is not None:
-#            sort_col = self.cols[abs(intorder)][3]
-#            if not order or order[0] != '-':
-#                query = query.order_by(sort_col)
-#            else:
-#                query = query.order_by('-'+sort_col)
-#
-#        self.order = order
-#
-#        return query
-#
-#    def get_paginate_by(self, queryset):
-#       return Config.get_object_query_page_length()
-#
-#    def get_context_data(self, **kwargs):
-#        context = super(ContactGroupList, self).get_context_data(**kwargs)
-#        context['title'] = _('Select a contact group')
-#        context['cols'] = self.cols
-#        context['objtype'] = ContactGroup
-#        context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-#        context['baseurl'] = '?'
-#        context['order'] = self.order
-#
-#        return context
+from ngw.core.views.generic import ProtectedNgwListView
+class ContactGroupList(ProtectedNgwListView):
+    cols = [
+        ( _('Name'), None, 'name', 'name' ),
+        ( _('Description'), None, 'description_not_too_long', 'description' ),
+        #( _('Contact fields'), None, 'rendered_fields', 'field_group' ),
+        ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
+        ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
+        #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
+        #( _('Members'), None, 'visible_member_count', None ),
+        #( _('System\u00a0locked'), None, 'system', 'system' ),
+    ]
+
+    def get_root_queryset(self):
+        UContactGroup = get_UContactGroup(self.request.user.id)
+
+        return UContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['title'] = _('Select a contact group')
+        context['objtype'] = ContactGroup
+        context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
+
+        context.update(kwargs)
+        return super(ContactGroupList, self).get_context_data(**context)
 
 
 class WeekDate:

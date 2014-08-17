@@ -5,43 +5,61 @@ ChoiceGroup & Choice managing views
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.six import iteritems
+from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.core.urlresolvers import reverse
 from django import forms
 from django.contrib import messages
-from ngw.core.models import (GROUP_USER_NGW, ChoiceGroup)
+from ngw.core.models import GROUP_USER_NGW, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import render_query, generic_delete
+from ngw.core.views.generic import generic_delete
+from ngw.core.views.generic import NgwListView
 
 
 #######################################################################
 #
-# Choice groups
+# Choice groups list
 #
 #######################################################################
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def choicegroup_list(request):
-    if not request.user.is_admin():
-        raise PermissionDenied
-    context = {}
-    context['query'] = ChoiceGroup.objects.all()
-    context['cols'] = [
+
+class ChoiceListView(NgwListView):
+    root_queryset = ChoiceGroup.objects.all()
+    cols = [
         (_('Name'), None, 'name', 'name'),
         (_('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
-    context['title'] = _('Select a choice group')
-    context['objtype'] = ChoiceGroup
-    context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
-    return render_query('list.html', context, request)
+
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, *args, **kwargs):
+        if not self.request.user.is_admin():
+            raise PermissionDenied
+        return super(ChoiceListView, self).dispatch(*args, **kwargs)
+
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['title'] = _('Select a choice group')
+        context['objtype'] = ChoiceGroup
+        context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
+
+        context.update(kwargs)
+        return super(ChoiceListView, self).get_context_data(**context)
+
+
+#######################################################################
+#
+# Choice groups edit / add
+#
+#######################################################################
 
 
 class ChoicesWidget(forms.MultiWidget):
@@ -222,6 +240,13 @@ def choicegroup_edit(request, id=None):
     else:
         context['nav'].add_component(('add', _('add')))
     return render_to_response('edit.html', context, RequestContext(request))
+
+
+#######################################################################
+#
+# Choice groups delete
+#
+#######################################################################
 
 
 @login_required()

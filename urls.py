@@ -11,8 +11,10 @@ from django.conf.urls.static import static
 from django.contrib import admin
 admin.autodiscover()
 
-from ngw.core.views.misc import LogoutView, HomeView, TestView
-#from ngw.core.views import ContactGroupList
+from ngw.core.views.misc import HomeView, LogoutView, TestView
+from ngw.core.views.groups import ContactGroupList
+from ngw.core.views.choices import ChoiceListView
+from ngw.core.views.logs import LogListView
 
 groups_urlpatterns = patterns('',
     url(r'^add$', 'ngw.core.views.groups.contactgroup_edit', {'id': None}),
@@ -65,7 +67,7 @@ urlpatterns = patterns('',
     url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
     url(r'^logout$', LogoutView.as_view()),
 
-    url(r'^logs$', 'ngw.core.views.logs.log_list'),
+    url(r'^logs$', LogListView.as_view()),
 
     url(r'^contacts/$', 'ngw.core.views.contacts.contact_list'),
     url(r'^contacts/add$', 'ngw.core.views.contacts.contact_edit', {'gid':None, 'cid':None}),
@@ -88,8 +90,7 @@ urlpatterns = patterns('',
     url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/delete$', 'ngw.core.views.contacts.contact_filters_delete'),
     url(r'^contacts/(?P<cid>\d+)/default_group$', 'ngw.core.views.contacts.contact_default_group'),
 
-    #url(r'^contactgroups2/$', ContactGroupList.as_view()),
-    url(r'^contactgroups/$', 'ngw.core.views.groups.contactgroup_list'),
+    url(r'^contactgroups/$', ContactGroupList.as_view()),
     url(r'^contactgroups/', include(groups_urlpatterns)),
     url(r'^events/$', 'ngw.core.views.groups.event_list'),
     url(r'^events/', include(groups_urlpatterns)),
@@ -102,7 +103,7 @@ urlpatterns = patterns('',
     url(r'^contactfields/(?P<id>\d+)/movedown$', 'ngw.core.views.fields.field_move_down'),
     url(r'^contactfields/(?P<id>\d+)/delete$', 'ngw.core.views.fields.field_delete'),
 
-    url(r'^choicegroups/$', 'ngw.core.views.choices.choicegroup_list'),
+    url(r'^choicegroups/$', ChoiceListView.as_view()),
     url(r'^choicegroups/add$', 'ngw.core.views.choices.choicegroup_edit', {'id': None}),
     url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='edit')),
     url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choices.choicegroup_edit'),

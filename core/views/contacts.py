@@ -460,6 +460,7 @@ def contact_list(request):
     return render_query('contact_list.html', context, request)
 
 
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_detail(request, gid=None, cid=None):
