@@ -8,7 +8,7 @@ import os
 from datetime import date
 import crack
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.http import (
     CompatibleStreamingHttpResponse, HttpResponse, HttpResponseRedirect)
 from django.utils.safestring import mark_safe
@@ -16,6 +16,7 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.six import iteritems
+from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -36,7 +37,8 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import (render_query, generic_delete)
+from ngw.core.views.generic import render_query, generic_delete, NgwListView
+from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -54,6 +56,13 @@ FTYPE_RIB = 'RIB'
 FTYPE_CHOICE = 'CHOICE'
 FTYPE_MULTIPLECHOICE = 'MULTIPLECHOICE'
 FTYPE_PASSWORD = 'PASSWORD'
+
+
+#######################################################################
+#
+# Contact list
+#
+#######################################################################
 
 
 def membership_to_text(contact_with_extra_fields, group_id):
@@ -275,17 +284,11 @@ class ContactQuerySet(RawQuerySet):
             yield x
 
 
-def contact_make_query_with_fields(request, fields, current_cg=None, base_url=None, format='html'):
+def contact_make_query_with_fields(request, fields, current_cg=None, format='html'):
     '''
     Creates an iterable objects with all the required fields (including groups).
     returns a tupple (query, columns)
     Permissions are checked for the fields. Forbidden field/groups are skiped.
-
-    base_url is almost the "calling" url, but with only these parameters:
-     . filter
-     . fields
-     . display
-    It does *not* contain pagination parameters nor format.
     '''
 
     q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
@@ -308,9 +311,13 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
 
             cg = ContactGroup.objects.get(pk=groupid)
 
-            #cols.append((cg.name, None, membership_to_text_factory(groupid), None))
-            cols.append((cg.name, None, membership_extended_widget_factory(request, cg), None))
-            #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
+            if format == 'html':
+                #cols.append((cg.name, None, membership_to_text_factory(groupid), None))
+                cols.append((cg.name, None, membership_extended_widget_factory(request, cg), None))
+                #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
+            else:
+                cols.append((cg.name, None, lambda c: membership_to_text(c, cg.id), None))
+                cols.append((_('Note'), None, 'group_%s_note' % cg.id, None))
 
         elif prop.startswith(DISP_FIELD_PREFIX):
             fieldid = prop[len(DISP_FIELD_PREFIX):]
@@ -332,7 +339,6 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
             raise ValueError('Invalid field '+prop)
 
     if current_cg is not None:
-        assert base_url
         q.add_group_withnote(current_cg.id)
         if format == 'html':
             cols.append((_('Status'), None, membership_extended_widget_factory(request, current_cg), None))
@@ -345,7 +351,7 @@ def contact_make_query_with_fields(request, fields, current_cg=None, base_url=No
     return q, cols
 
 
-def get_display_columns(user):
+def get_default_columns(user):
     # check the field still exists
     result = []
     default_fields = user.get_fieldvalue_by_id(FIELD_COLUMNS)
@@ -391,6 +397,9 @@ def get_display_columns(user):
 
 
 def get_available_columns(user_id):
+    '''
+    Return all available columns on contact list, based on user permission. Used in column selection.
+    '''
     result = [(DISP_NAME, 'Name')]
     for cf in ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight'):
         result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
@@ -406,59 +415,138 @@ class FieldSelectForm(forms.Form):
     - groups whose members can be viewed
     '''
     def __init__(self, user, *args, **kargs):
-        #TODO: param user -> fine tuned fields selection
-        forms.Form.__init__(self, *args, **kargs)
+        super(forms.Form, self).__init__(*args, **kargs)
         self.fields['selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_columns(user.id))
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_list(request):
+
+class ContactListView(NgwListView):
     '''
     That view list all the contacts. See also contactgroup_members()
     '''
-    if not perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
-        raise PermissionDenied
+    template_name = 'contact_list.html'
+    format = 'html' # see contact_make_query_with_fields
 
-    strfilter = request.REQUEST.get('filter', '')
-    filter = parse_filterstring(strfilter, request.user.id)
-    baseurl = '?filter='+strfilter
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, *args, **kwargs):
+        user_id = self.request.user.id
+        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
+            raise PermissionDenied
+        return super(ContactListView, self).dispatch(*args, **kwargs)
 
-    strfields = request.REQUEST.get('fields', None)
-    if strfields:
-        fields = strfields.split(',')
-        baseurl += '&fields='+strfields
-    else:
-        fields = get_display_columns(request.user)
-        strfields = ','.join(fields)
 
-    if request.REQUEST.get('savecolumns'):
-        request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
+    def get_root_queryset(self):
+        request = self.request
+        strfilter = request.REQUEST.get('filter', '')
+        filter = parse_filterstring(strfilter, request.user.id)
+        baseurl = '?filter='+strfilter
 
-    #print('contact_list:', fields)
-    q, cols = contact_make_query_with_fields(request, fields, format='html')
-    q = filter.apply_filter_to_query(q)
+        strfields = request.REQUEST.get('fields', None)
+        if strfields:
+            fields = strfields.split(',')
+            baseurl += '&fields='+strfields
+        else:
+            fields = get_default_columns(request.user)
+            strfields = ','.join(fields)
+        #print('contact_list:', fields)
 
-    # TODO:
-    # We need to select only members who are in a group whose members the
-    # request.user can see:
-    #q.qry_where.append('')
+        if request.REQUEST.get('savecolumns'):
+            request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
 
-    context = {}
-    context['title'] = _('Contact list')
-    context['baseurl'] = baseurl
-    context['objtype'] = Contact
-    context['nav'] = Navbar(Contact.get_class_navcomponent())
-    context['query'] = q
-    context['cols'] = cols
-    context['filter'] = strfilter
-    context['filter_html'] = filter.to_html()
-    context['fields'] = strfields
-    context['fields_form'] = FieldSelectForm(request.user, initial={'selected_fields': fields})
-    context['no_confirm_form_discard'] = True
+        view_params = self.kwargs
+        if 'gid' in view_params:
+            cg = get_object_or_404(ContactGroup, pk=view_params['gid'])
+        else:
+            cg = None
 
-    return render_query('contact_list.html', context, request)
+        if self.format == 'csv':
+            query_format = 'text'
+        else:
+            query_format = 'html'
+        q, cols = contact_make_query_with_fields(request, fields, current_cg=cg, format=query_format)
 
+        q = filter.apply_filter_to_query(q)
+
+        # TODO:
+        # We need to select only members who are in a group whose members the
+        # request.user can see:
+        #q.qry_where.append('')
+
+        self.cols = cols
+        self.filter = strfilter
+        self.filter_html = filter.to_html()
+        self.strfields = strfields
+        self.fields = fields
+        self.baseurl = baseurl
+        self.cg = cg
+        return q
+
+
+    def render_to_response(self, *args, **kwargs):
+        if self.format in ('html', 'emails'):
+            return super(ContactListView, self).render_to_response(*args, **kwargs)
+
+        if self.format == 'csv':
+            result = ''
+            def _quote_csv(u):
+                return '"' + u.replace('"', '\\"') + '"'
+            for i, col in enumerate(self.cols):
+                if i: # not first column
+                    result += ','
+                result += _quote_csv(col[0])
+            result += '\n'
+            for row in self.get_queryset():
+                for i, col in enumerate(self.cols):
+                    if i: # not first column
+                        result += ','
+                    v = ngw_display(row, col)
+                    if v == None:
+                        continue
+                    result += _quote_csv(v)
+                result += '\n'
+            return HttpResponse(result, mimetype='text/csv; charset=utf-8')
+
+        if self.format == 'vcards':
+            #TODO: field permission validation
+            #FIXME: This works but is really inefficient (try it on a large group!)
+            result = ''
+            for contact in self.get_queryset():
+                result += contact.vcard()
+            return HttpResponse(result, mimetype='text/x-vcard')
+
+        raise ImproperlyConfigured(
+            "ContactListView.format must be either html, csv, vcard or emails ")
+
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['title'] = _('Contact list')
+        context['objtype'] = Contact
+        context['nav'] = Navbar(Contact.get_class_navcomponent())
+
+        #TODO: Make a MixIn that will handle the group part
+        if self.cg:
+            context['cg'] = self.cg
+            context['cg_perms'] = self.cg.get_contact_perms(self.request.user.id)
+
+        context['cols'] = self.cols
+        context['filter'] = self.filter
+        context['filter_html'] = self.filter_html
+        context['fields'] = self.strfields
+        context['baseurl'] = self.baseurl
+        context['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
+        context['no_confirm_form_discard'] = True
+
+        context.update(kwargs)
+        return super(ContactListView, self).get_context_data(**context)
+
+
+#######################################################################
+#
+# Contact details
+#
+#######################################################################
 
 
 @login_required()
@@ -504,6 +592,13 @@ def contact_detail(request, gid=None, cid=None):
     return render_to_response('contact_detail.html', context, RequestContext(request))
 
 
+#######################################################################
+#
+# Contact vcard
+#
+#######################################################################
+
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_vcard(request, gid=None, cid=None):
@@ -525,6 +620,13 @@ def contact_vcard(request, gid=None, cid=None):
     contact = get_object_or_404(Contact, pk=cid)
     return HttpResponse(contact.vcard(), mimetype='text/x-vcard')
 
+
+
+#######################################################################
+#
+# Contact edit /add
+#
+#######################################################################
 
 
 class ContactEditForm(forms.Form):
@@ -715,6 +817,13 @@ def contact_edit(request, gid=None, cid=None):
     return render_to_response('edit.html', context, RequestContext(request))
 
 
+#######################################################################
+#
+# Contact change password
+#
+#######################################################################
+
+
 class ContactPasswordForm(forms.Form):
     new_password = forms.CharField(widget=forms.PasswordInput())
     confirm_password = forms.CharField(widget=forms.PasswordInput())
@@ -753,7 +862,7 @@ def contact_pass(request, gid=None, cid=None):
                 cg = get_object_or_404(ContactGroup, pk=gid)
                 return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + force_text(cid) + '/')
             else:
-                return HttpResponseRedirect(reverse('ngw.core.views.contacts.contact_detail', args=(cid,)))
+                return HttpResponseRedirect(reverse('contact_detail', args=(cid,)))
     else: # GET
         form = ContactPasswordForm()
     context['form'] = form
@@ -773,6 +882,13 @@ def contact_pass(request, gid=None, cid=None):
     return render_to_response('password.html', context, RequestContext(request))
 
 
+#######################################################################
+#
+# Contact change password hook
+#
+#######################################################################
+
+
 @login_required()
 @require_group(GROUP_USER) # not GROUP_USER_NGW
 def hook_change_password(request):
@@ -782,6 +898,13 @@ def hook_change_password(request):
     #TODO: check strength
     request.user.set_password(newpassword_plain, request=request)
     return HttpResponse('OK')
+
+
+#######################################################################
+#
+# Contact change password with pdf
+#
+#######################################################################
 
 
 @login_required()
@@ -834,6 +957,13 @@ def contact_pass_letter(request, gid=None, cid=None):
     return render_to_response('password_letter.html', context, RequestContext(request))
 
 
+#######################################################################
+#
+# Contact delete
+#
+#######################################################################
+
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_delete(request, gid=None, cid=None):
@@ -848,9 +978,16 @@ def contact_delete(request, gid=None, cid=None):
                      .add_component(('members', _('members')))
         next_url = cg.get_absolute_url() + 'members/'
     else:
-        next_url = reverse('ngw.core.views.contacts.contact_list')
+        next_url = reverse('contact_list')
         base_nav = None
     return generic_delete(request, o, next_url, base_nav=base_nav)
+
+
+#######################################################################
+#
+# Add contact filter
+#
+#######################################################################
 
 
 @login_required()
@@ -866,7 +1003,14 @@ def contact_filters_add(request, cid=None):
     filter_list_str = ','.join(['"' + force_text(name) + '","' + force_text(filterstr) + '"' for name, filterstr in filter_list])
     contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
     messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
-    return HttpResponseRedirect(reverse('ngw.core.views.contacts.contact_filters_edit', args=(cid, len(filter_list)-1)))
+    return HttpResponseRedirect(reverse('filter_edit', args=(cid, len(filter_list)-1)))
+
+
+#######################################################################
+#
+# List contact filters
+#
+#######################################################################
 
 
 @login_required()
@@ -886,6 +1030,13 @@ def contact_filters_list(request, cid=None):
                      .add_component(contact.get_navcomponent()) \
                      .add_component(('filters', _('custom filters')))
     return render_to_response('customfilters_user.html', context, RequestContext(request))
+
+
+#######################################################################
+#
+# Rename contact filter
+#
+#######################################################################
 
 
 class FilterEditForm(forms.Form):
@@ -917,7 +1068,7 @@ def contact_filters_edit(request, cid=None, fid=None):
             #print(repr(filter_list_str))
             contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
             messages.add_message(request, messages.SUCCESS, _('Filter has been renamed.'))
-            return HttpResponseRedirect(reverse('ngw.core.views.contacts.contact_detail', args=(cid,)))
+            return HttpResponseRedirect(reverse('contact_detail', args=(cid,)))
     else:
         form = FilterEditForm(initial={'name': filtername})
     context = {}
@@ -939,6 +1090,14 @@ def contact_filters_edit(request, cid=None, fid=None):
 
     return render_to_response('customfilter_user.html', context, RequestContext(request))
 
+
+#######################################################################
+#
+# Delete contact filter
+#
+#######################################################################
+
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contact_filters_delete(request, cid=None, fid=None):
@@ -956,6 +1115,12 @@ def contact_filters_delete(request, cid=None, fid=None):
     return HttpResponseRedirect(contact.get_absolute_url())
 
 
+#######################################################################
+#
+# Set default group of contact
+#
+#######################################################################
+
 
 class DefaultGroupForm(forms.Form):
     def __init__(self, contact, *args, **kargs):
@@ -965,6 +1130,7 @@ class DefaultGroupForm(forms.Form):
             if not cg.date and perms.c_can_see_cg(contact.id, cg.id)]
         self.fields['default_group'] = forms.ChoiceField(
             label=_('Default group'), choices=choices, required=False)
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -1009,6 +1175,13 @@ def contact_default_group(request, cid=None):
                      .add_component(contact.get_navcomponent()) \
                      .add_component(('default_group', _('default group')))
     return render_to_response('contact_default_group.html', context, RequestContext(request))
+
+
+#######################################################################
+#
+# Make batch pdf for password generation
+#
+#######################################################################
 
 
 #@login_required()

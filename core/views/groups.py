@@ -15,13 +15,11 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils import formats
-#from django.utils.decorators import method_decorator
+from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-#from django.views.generic import TemplateView, ListView
-#from django.views.generic.list import (MultipleObjectTemplateResponseMixin, BaseListView)
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
@@ -37,13 +35,15 @@ from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.contacts import (
-    get_display_columns, FieldSelectForm, contact_make_query_with_fields)
+    get_default_columns, FieldSelectForm, contact_make_query_with_fields)
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import render_query, generic_delete
+from ngw.core.views.generic import render_query, generic_delete, ProtectedNgwListView, NgwListView
+from ngw.core.views.contacts import ContactListView
+
 
 #######################################################################
 #
-# Contact groups
+# Groups list
 #
 #######################################################################
 
@@ -76,38 +76,15 @@ def get_UContactGroup(userid):
             else:
                 return 'No'
         def visible_member_count(self):
+            # This is totally ineficient
             if perms.c_can_see_members_cg(userid, self.id):
                 return self.get_members_count()
             else:
                 return 'Not available'
     return UContactGroup
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_list(request):
-    UContactGroup = get_UContactGroup(request.user.id)
-    q = UContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
-    cols = [
-        (_('Name'), None, 'name', 'name'),
-        (_('Description'), None, 'description_not_too_long', 'description'),
-        #(_('Contact fields'), None, 'rendered_fields', 'field_group'),
-        (_('Super groups'), None, 'visible_direct_supergroups_5', None),
-        (_('Sub groups'), None, 'visible_direct_subgroups_5', None),
-        #(_('Budget\u00a0code'), None, 'budget_code', 'budget_code'),
-        #(_('Members'), None, 'visible_member_count', None),
-        #(_('System\u00a0locked'), None, 'system', 'system'),
-    ]
-    context = {}
-    context['title'] = _('Select a contact group')
-    context['query'] = q
-    context['cols'] = cols
-    context['objtype'] = ContactGroup
-    context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
-    return render_query('list.html', context, request)
 
-
-from ngw.core.views.generic import ProtectedNgwListView
-class ContactGroupList(ProtectedNgwListView):
+class ContactGroupListView(ProtectedNgwListView):
     cols = [
         ( _('Name'), None, 'name', 'name' ),
         ( _('Description'), None, 'description_not_too_long', 'description' ),
@@ -132,8 +109,14 @@ class ContactGroupList(ProtectedNgwListView):
         context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
 
         context.update(kwargs)
-        return super(ContactGroupList, self).get_context_data(**context)
+        return super(ContactGroupListView, self).get_context_data(**context)
 
+
+#######################################################################
+#
+# Event list
+#
+#######################################################################
 
 class WeekDate:
     def __init__(self, date, events):
@@ -253,6 +236,12 @@ def event_list(request):
     return render_to_response('event_list.html', context, RequestContext(request))
 
 
+#######################################################################
+#
+# Group index (redirect)
+#
+#######################################################################
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_index(request, gid):
@@ -273,89 +262,104 @@ def contactgroup_index(request, gid):
     raise PermissionDenied
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_members(request, gid, output_format=''):
-    gid = gid and int(gid) or None
-    if not perms.c_can_see_members_cg(request.user.id, gid):
-        raise PermissionDenied
+#######################################################################
+#
+# Member list / email / csv / vcard
+#
+#######################################################################
 
-    strfilter = request.REQUEST.get('filter', '')
-    filter = parse_filterstring(strfilter, request.user.id)
-    baseurl = '?filter='+strfilter
+class GroupMemberListView(ContactListView):
+    template_name = 'group_detail.html'
 
-    strfields = request.REQUEST.get('fields', None)
-    if strfields:
-        fields = strfields.split(',')
-        baseurl += '&fields='+strfields
-    else:
-        fields = get_display_columns(request.user)
-        strfields = ','.join(fields)
-        # baseurl doesn't need to have default fields
-        # They'll still be default next time
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, *args, **kwargs):
+        user_id = self.request.user.id
+        if not perms.c_can_see_members_cg(user_id, self.kwargs['gid']):
+            raise PermissionDenied
+        # FIXME: Should call super, but it is too restrictive :/
+        return NgwListView.dispatch(self, *args, **kwargs)
 
-    if request.REQUEST.get('savecolumns'):
-        request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
 
-    cg = get_object_or_404(ContactGroup, pk=gid)
+    def get_root_queryset(self):
+        q = super(GroupMemberListView, self).get_root_queryset()
 
-    display = request.REQUEST.get('display', None)
-    if display is None:
-        display = cg.get_default_display()
-    baseurl += '&display='+display
+        cg = self.cg
 
-    context = {}
-    context['fields_form'] = FieldSelectForm(request.user, initial={'selected_fields': fields})
-    if output_format == 'csv':
-        query_format = 'text'
-    else:
-        query_format = 'html'
-    q, cols = contact_make_query_with_fields(request, fields, current_cg=cg, base_url=baseurl, format=query_format)
+        display = self.request.REQUEST.get('display', None)
+        if display is None:
+            display = cg.get_default_display()
+        self.display = display
 
-    wanted_flags = 0
-    if 'm' in display:
-        wanted_flags |= CIGFLAG_MEMBER
-    if 'i' in display:
-        wanted_flags |= CIGFLAG_INVITED
-    if 'd' in display:
-        wanted_flags |= CIGFLAG_DECLINED
-    if 'a' in display:
-        wanted_flags |= ADMIN_CIGFLAGS
+        wanted_flags = 0
+        if 'm' in display:
+            wanted_flags |= CIGFLAG_MEMBER
+        if 'i' in display:
+            wanted_flags |= CIGFLAG_INVITED
+        if 'd' in display:
+            wanted_flags |= CIGFLAG_DECLINED
+        if 'a' in display:
+            wanted_flags |= ADMIN_CIGFLAGS
 
-    if not wanted_flags:
-        # Show nothing
-        q = q.filter('FALSE')
-    elif not 'g' in display:
-        # Not interested in inheritance:
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
-            % (cg.id, wanted_flags))
-    else:
-        # We want inherited people
-        or_conditions = []
-        # The local flags
-        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
-            % (cg.id, wanted_flags))
-        # The inherited memberships/invited/declined
-        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
-            % (cg.id, wanted_flags & (CIGFLAG_MEMBER|CIGFLAG_INVITED|CIGFLAG_DECLINED)))
-        # The inherited admins
-        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
-            % (cg.id, wanted_flags & ADMIN_CIGFLAGS))
+        if not wanted_flags:
+            # Show nothing
+            q = q.filter('FALSE')
+        elif not 'g' in display:
+            # Not interested in inheritance:
+            q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+                % (cg.id, wanted_flags))
+        else:
+            # We want inherited people
+            or_conditions = []
+            # The local flags
+            or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+                % (cg.id, wanted_flags))
+            # The inherited memberships/invited/declined
+            or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
+                % (cg.id, wanted_flags & (CIGFLAG_MEMBER|CIGFLAG_INVITED|CIGFLAG_DECLINED)))
+            # The inherited admins
+            or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
+                % (cg.id, wanted_flags & ADMIN_CIGFLAGS))
 
-        q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
+            q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
 
-    q = filter.apply_filter_to_query(q)
+        self.baseurl += '&display=' + self.display
+        return q
 
-    if output_format == 'vcards':
-        #FIXME: This works but is really inefficient (try it on a large group!)
-        result = ''
-        for contact in q:
-            result += contact.vcard()
-        return HttpResponse(result, mimetype='text/x-vcard')
-    elif output_format == 'emails':
+
+    def get_context_data(self, **kwargs):
+        cg = self.cg
+        context = {}
+        context['title'] = _('Contacts of group %s') % cg.name_with_date()
+
+        context['nav'] = cg.get_smart_navbar() \
+                           .add_component(('members', _('members')))
+        context['active_submenu'] = 'members'
+
+        context['display'] = self.display
+
+        context.update(kwargs)
+        return super(GroupMemberListView, self).get_context_data(**context)
+
+
+class CsvGroupMemberListView(GroupMemberListView):
+    format = 'csv'
+
+
+class VcardGroupMemberListView(GroupMemberListView):
+    format = 'vcards'
+
+
+class EmailGroupMemberListView(GroupMemberListView):
+    format = 'emails'
+    template_name = 'emails.html'
+
+    def get_context_data(self, **kwargs):
+        #TODO: field permission validation
+        cg = self.cg
         emails = []
         noemails = []
-        for contact in q:
+        for contact in self.get_queryset():
             c_emails = contact.get_fieldvalues_by_type('EMAIL')
             if c_emails:
                 emails.append((contact.id, contact, c_emails[0])) # only the first email
@@ -363,80 +367,27 @@ def contactgroup_members(request, gid, output_format=''):
                 noemails.append(contact)
         emails.sort(key=lambda x: remove_decoration(x[1].name.lower()))
 
+        context = {}
         context['title'] = _('Emails for %s') % cg.name
-        context['strfilter'] = strfilter
-        context['filter'] = filter
-        context['filter_html'] = filter.to_html()
-        context['cg'] = cg
-        context['cg_perms'] = cg.get_contact_perms(request.user.id)
         context['emails'] = emails
         context['noemails'] = noemails
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('members', _('members'))) \
                          .add_component(('emails', _('emails')))
-        context['display_member'] = 'm' in display
-        context['display_invited'] = 'i' in display
-        context['display_declined'] = 'd' in display
-        context['display_subgroups'] = 'g' in display
-        context['display_admins'] = 'a' in display
         context['active_submenu'] = 'members'
-        return render_to_response('emails.html', context, RequestContext(request))
-    elif output_format == 'csv':
-        result = ''
-        def _quote_csv(u):
-            return '"' + u.replace('"', '\\"') + '"'
-        for i, col in enumerate(cols):
-            if i: # not first column
-                result += ','
-            result += _quote_csv(col[0])
-        result += '\n'
-        for row in q:
-            for i, col in enumerate(cols):
-                if i: # not first column
-                    result += ','
-                v = ngw_display(row, col)
-                if v == None:
-                    continue
-                result += _quote_csv(v)
-            result += '\n'
-        return HttpResponse(result, mimetype='text/csv; charset=utf-8')
 
-    context['title'] = _('Contacts of group %s') % cg.name_with_date()
-    context['baseurl'] = baseurl # contains filter, display, fields. NO output, no order
-    context['display'] = display
-    context['query'] = q
-    context['cols'] = cols
-    context['cg'] = cg
-    context['cg_perms'] = cg.get_contact_perms(request.user.id)
-    ####
-    context['objtype'] = ContactGroup
-    context['filter'] = strfilter
-    context['filter_html'] = filter.to_html()
-    context['fields'] = strfields
-    ####
-    context['nav'] = cg.get_smart_navbar() \
-                     .add_component(('members', _('members')))
-    context['display_member'] = 'm' in display
-    context['display_invited'] = 'i' in display
-    context['display_declined'] = 'd' in display
-    context['display_subgroups'] = 'g' in display
-    context['display_admins'] = 'a' in display
-    context['active_submenu'] = 'members'
-    context['no_confirm_form_discard'] = True
-
-    response = render_query('group_detail.html', context, request)
-    #from django.db import connection
-    #import pprint
-    #pprint.PrettyPrinter(indent=4).pprint(connection.queries)
-    return response
+        context.update(kwargs)
+        return super(EmailGroupMemberListView, self).get_context_data(**context)
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_emails(request, gid):
-    gid = gid and int(gid) or None
-    if request.method == 'POST':
-        if not perms.c_can_see_members_cg(request.user.id, gid):
+    def post(self, request, *args, **kwargs):
+        # Note that dispatch is already checking GROUP_USER_NGW membership
+        # and c_can_see_members_cg
+        view_params = self.kwargs
+        gid =  view_params['gid']
+        cg = get_object_or_404(ContactGroup, pk=view_params['gid'])
+
+        if not perms.c_can_write_msgs_cg(request.user.id, gid):
             raise PermissionDenied
         message = request.POST.get('message', '')
         language = translation.get_language()
@@ -452,9 +403,14 @@ def contactgroup_emails(request, gid):
             contact_msg.sync_info = json.dumps({'language': language})
             contact_msg.save()
             messages.add_message(request, messages.INFO, _('Messages stored.'))
+        return HttpResponseRedirect(cg.get_absolute_url())
 
-    return contactgroup_members(request, gid, output_format='emails')
 
+#######################################################################
+#
+# Group messages
+#
+#######################################################################
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -476,6 +432,12 @@ def contactgroup_messages(request, gid):
 
     return render_to_response('group_messages.html', context, RequestContext(request))
 
+
+#######################################################################
+#
+# Group edit
+#
+#######################################################################
 
 class ContactGroupForm(forms.Form):
     name = forms.CharField(label=_('Name'),
@@ -702,6 +664,12 @@ def contactgroup_edit(request, id):
     return render_to_response('edit.html', context, RequestContext(request))
 
 
+#######################################################################
+#
+# Group delete
+#
+#######################################################################
+
 def on_contactgroup_delete(cg):
     """
     All subgroups will now have their fathers' fathers as direct fathers
@@ -726,12 +694,21 @@ def contactgroup_delete(request, id):
     if not perms.c_can_change_cg(request.user.id, id):
         raise PermissionDenied
     o = get_object_or_404(ContactGroup, pk=id)
-    next_url = reverse('ngw.core.views.groups.contactgroup_list')
+    if o.date:
+        next_url = reverse('event_list')
+    else:
+        next_url = reverse('group_list')
     if o.system:
         messages.add_message(request, messages.ERROR, _('Group %s is locked and CANNOT be deleted.') % o.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, o, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
+
+#######################################################################
+#
+# Add to another group
+#
+#######################################################################
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -832,7 +809,7 @@ def contactgroup_add_contacts_to(request):
 
 #######################################################################
 #
-# Contact In Group
+# Contact In Group: Membership edition
 #
 #######################################################################
 
@@ -1105,6 +1082,12 @@ def contactingroup_edit(request, gid, cid):
     return render_to_response('contact_in_group.html', context, RequestContext(request))
 
 
+#######################################################################
+#
+# Contact In Group: Membership inline edition
+#
+#######################################################################
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_edit_inline(request, gid, cid):
@@ -1132,6 +1115,13 @@ def contactingroup_edit_inline(request, gid, cid):
     return HttpResponseRedirect(request.POST['next_url'])
 
 
+#######################################################################
+#
+# Contact In Group: Membership deletion (remove from group)
+#
+#######################################################################
+
+
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactingroup_delete(request, gid, cid):
@@ -1152,6 +1142,11 @@ def contactingroup_delete(request, gid, cid):
 
 
 
+#######################################################################
+#
+# Mailman synchronisation
+#
+#######################################################################
 
 class MailmanSyncForm(forms.Form):
     mail = forms.CharField(widget=forms.Textarea)

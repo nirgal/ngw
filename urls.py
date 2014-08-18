@@ -12,20 +12,21 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.groups import ContactGroupList
+from ngw.core.views.contacts import ContactListView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView
 from ngw.core.views.choices import ChoiceListView
 from ngw.core.views.logs import LogListView
 
+# These patterns are valid with both /contactgroups and /events prefixes
 groups_urlpatterns = patterns('',
     url(r'^add$', 'ngw.core.views.groups.contactgroup_edit', {'id': None}),
     url(r'^(?P<gid>\d+)/$', 'ngw.core.views.groups.contactgroup_index'),
     url(r'^(?P<id>\d+)/edit$', 'ngw.core.views.groups.contactgroup_edit'),
     url(r'^(?P<id>\d+)/delete$', 'ngw.core.views.groups.contactgroup_delete'),
-    url(r'^(?P<gid>\d+)/members/$', 'ngw.core.views.groups.contactgroup_members'),
-    url(r'^(?P<gid>\d+)/members/vcards$', 'ngw.core.views.groups.contactgroup_members', {'output_format': 'vcards'}),
-    url(r'^(?P<gid>\d+)/members/emails$', 'ngw.core.views.groups.contactgroup_emails'),
-    #url(r'^(?P<gid>\d+)/members/emails$',  'ngw.core.views.groups.contactgroup_members', {'output_format': 'emails'}),
-    url(r'^(?P<gid>\d+)/members/csv$', 'ngw.core.views.groups.contactgroup_members', {'output_format': 'csv'}),
+    url(r'^(?P<gid>\d+)/members/$', GroupMemberListView.as_view(), name='group_members'),
+    url(r'^(?P<gid>\d+)/members/vcards$', VcardGroupMemberListView.as_view()),
+    url(r'^(?P<gid>\d+)/members/emails$', EmailGroupMemberListView.as_view()),
+    url(r'^(?P<gid>\d+)/members/csv$', CsvGroupMemberListView.as_view()),
     url(r'^(?P<gid>\d+)/members/add$', 'ngw.core.views.contacts.contact_edit', {'cid':None}),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$', 'ngw.core.views.contacts.contact_vcard'),
@@ -65,11 +66,11 @@ urlpatterns = patterns('',
     url(r'^hook_change_password$', 'ngw.core.views.contacts.hook_change_password'),
 
     url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
-    url(r'^logout$', LogoutView.as_view()),
+    url(r'^logout$', LogoutView.as_view(), name='logout'),
 
-    url(r'^logs$', LogListView.as_view()),
+    url(r'^logs$', LogListView.as_view(), name='log_list'),
 
-    url(r'^contacts/$', 'ngw.core.views.contacts.contact_list'),
+    url(r'^contacts/$', ContactListView.as_view(), name='contact_list'),
     url(r'^contacts/add$', 'ngw.core.views.contacts.contact_edit', {'gid':None, 'cid':None}),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', 'ngw.core.views.contactsearch.ajax_get_columns'),
     url(r'^contacts/ajaxsearch/custom/user$', 'ngw.core.views.contactsearch.ajax_get_customfilters'),
@@ -78,21 +79,21 @@ urlpatterns = patterns('',
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)/(?P<filter_id>[^/]+)$', 'ngw.core.views.contactsearch.ajax_get_filters_params'),
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contacts.contact_make_login_mailing'),
 
-    url(r'^contacts/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail'),
+    url(r'^contacts/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail', name='contact_detail'),
     url(r'^contacts/(?P<cid>\d+)/edit$', 'ngw.core.views.contacts.contact_edit'),
-    url(r'^contacts/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass', {'gid': None}),
+    url(r'^contacts/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass', {'gid': None}, name='contact_pass'),
     url(r'^contacts/(?P<cid>\d+)/pass_letter$', 'ngw.core.views.contacts.contact_pass_letter', {'gid': None}),
     url(r'^contacts/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete', {'gid': None}),
     url(r'^contacts/(?P<cid>\d+)/vcard$', 'ngw.core.views.contacts.contact_vcard'),
-    url(r'^contacts/(?P<cid>\d+)/filters/$', 'ngw.core.views.contacts.contact_filters_list'),
-    url(r'^contacts/(?P<cid>\d+)/filters/add$', 'ngw.core.views.contacts.contact_filters_add'),
-    url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/$', 'ngw.core.views.contacts.contact_filters_edit'),
-    url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/delete$', 'ngw.core.views.contacts.contact_filters_delete'),
+    url(r'^contacts/(?P<cid>\d+)/filters/$', 'ngw.core.views.contacts.contact_filters_list', name='filter_list'),
+    url(r'^contacts/(?P<cid>\d+)/filters/add$', 'ngw.core.views.contacts.contact_filters_add', name='filter_list'),
+    url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/$', 'ngw.core.views.contacts.contact_filters_edit', name='filter_edit'),
+    url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/delete$', 'ngw.core.views.contacts.contact_filters_delete', name='filter_delete'),
     url(r'^contacts/(?P<cid>\d+)/default_group$', 'ngw.core.views.contacts.contact_default_group'),
 
-    url(r'^contactgroups/$', ContactGroupList.as_view()),
+    url(r'^contactgroups/$', ContactGroupListView.as_view(), name='group_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),
-    url(r'^events/$', 'ngw.core.views.groups.event_list'),
+    url(r'^events/$', 'ngw.core.views.groups.event_list', name='event_list'),
     url(r'^events/', include(groups_urlpatterns)),
 
     url(r'^contactfields/$', 'ngw.core.views.fields.field_list'),
@@ -103,11 +104,11 @@ urlpatterns = patterns('',
     url(r'^contactfields/(?P<id>\d+)/movedown$', 'ngw.core.views.fields.field_move_down'),
     url(r'^contactfields/(?P<id>\d+)/delete$', 'ngw.core.views.fields.field_delete'),
 
-    url(r'^choicegroups/$', ChoiceListView.as_view()),
-    url(r'^choicegroups/add$', 'ngw.core.views.choices.choicegroup_edit', {'id': None}),
-    url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='edit')),
-    url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choices.choicegroup_edit'),
-    url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choices.choicegroup_delete'),
+    url(r'^choicegroups/$', ChoiceListView.as_view(), name='choice_list'),
+    url(r'^choicegroups/add$', 'ngw.core.views.choices.choicegroup_edit', {'id': None}, name='choice_add'),
+    url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='edit'), ),
+    url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choices.choicegroup_edit', name='choice_edit'),
+    url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choices.choicegroup_delete', name='choice_delete'),
 
     url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', 'ngw.core.views.files.media_group_file'),
 

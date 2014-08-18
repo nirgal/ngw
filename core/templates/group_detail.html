@@ -29,11 +29,11 @@
     }
     </script>
     <form>{% trans "Show" %}:
-    <input type=checkbox name="display_member" id="id_display_member" {% if display_member %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">{% trans "Members" %}</label>
-    <input type=checkbox name="display_invited" id="id_display_invited" {% if display_invited %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">{% trans "Invited people" %}</label>
-    <input type=checkbox name="display_declined" id="id_display_declined" {% if display_declined %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">{% trans "Declined invitations" %}</label>
-    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if display_subgroups %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">{% trans "Include subgroups" %}</label>
-    <input type=checkbox name="display_admins" id="id_display_admins" {% if display_admins %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_admins">{% trans "Admins" %}</label>
+    <input type=checkbox name="display_member" id="id_display_member" {% if "m" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">{% trans "Members" %}</label>
+    <input type=checkbox name="display_invited" id="id_display_invited" {% if "i" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">{% trans "Invited people" %}</label>
+    <input type=checkbox name="display_declined" id="id_display_declined" {% if "d" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_declined">{% trans "Declined invitations" %}</label>
+    <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if "g" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">{% trans "Include subgroups" %}</label>
+    <input type=checkbox name="display_admins" id="id_display_admins" {% if "a" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_admins">{% trans "Admins" %}</label>
     </form>
 {% endblock %}
 

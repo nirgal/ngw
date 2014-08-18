@@ -10,7 +10,7 @@ Optionnal parameters:
 
 <div class="module" id="changelist">
 <div class="results">
-<form id="changelist-form" action="" method="post">{% csrf_token %}
+{#<form id="changelist-form" action="" method="post">{% csrf_token %} THIS IS BUGGY: form in form because of membership inline edition #}
 <table id=result_list>
 {% for row in query %}
     {% if not forloop.counter0 %}
@@ -57,7 +57,7 @@ Optionnal parameters:
     {% blocktrans count count=paginator.count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
 </p>
 {% endif %}
-</form>
+{#</form>#}
 </div>
 </div>
 {# vim: set et ts=4 ft=htmldjango: #}

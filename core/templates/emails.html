@@ -51,15 +51,15 @@ function onFocusTextArea() {
 
     <h3>{% trans "Memberships" %}</h3>
     <p>
-    {% trans "Include members" %}: {% if display_member %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
+    {% trans "Include members" %}: {% if "m" in display %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    {% trans "Include invited" %}: {% if display_invited %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
+    {% trans "Include invited" %}: {% if "i" in display %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    {% trans "Include declined invitations" %}: {% if display_declined %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
+    {% trans "Include declined invitations" %}: {% if "d" in display %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    {% trans "Include subgroups" %}: {% if display_subgroups %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
+    {% trans "Include subgroups" %}: {% if "g" in display %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     -
-    {% trans "Include admins" %}: {% if display_admins %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
+    {% trans "Include admins" %}: {% if "a" in display %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
     </p>
 
     {% if strfilter %}

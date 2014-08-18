@@ -222,7 +222,7 @@ def choicegroup_edit(request, id=None):
             elif request.POST.get('_addanother', None):
                 return HttpResponseRedirect(cg.get_class_absolute_url()+'add')
             else:
-                return HttpResponseRedirect(reverse('ngw.core.views.choices.choicegroup_list'))
+                return HttpResponseRedirect(reverse('choice_list'))
     else:
         form = ChoiceGroupForm(cg)
 
@@ -256,4 +256,4 @@ def choicegroup_delete(request, id):
         raise PermissionDenied
     id = id and int(id) or None
     o = get_object_or_404(ChoiceGroup, pk=id)
-    return generic_delete(request, o, reverse('ngw.core.views.choices.choicegroup_list'))
+    return generic_delete(request, o, reverse('choice_list'))
