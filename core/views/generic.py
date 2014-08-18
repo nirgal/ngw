@@ -33,9 +33,14 @@ class TemplateProtectedView(TemplateResponseMixin, ContextMixin, ProtectedView):
         return self.render_to_response(context)
 
 class NgwListView(ListView):
+    '''
+    This function renders the query, paginated.
+    http query parameter _order is used to sort on a column
+    '''
     template_name = 'list.html'
     context_object_name = 'query'
     page_kwarg = '_page'
+    default_sort = None
 
     def get_root_queryset(self):
         return self.root_queryset
@@ -52,10 +57,10 @@ class NgwListView(ListView):
         try:
             intorder = int(order)
         except ValueError:
-            if defaultsort:
+            if self.default_sort:
                 order = ''
                 intorder = None
-                query = query.order_by(defaultsort)
+                query = query.order_by(self.default_sort)
             else:
                 order = '0'
                 intorder = 0
@@ -78,60 +83,13 @@ class NgwListView(ListView):
         context.update(kwargs)
         return super(NgwListView, self).get_context_data(**context)
 
+
 class ProtectedNgwListView(NgwListView):
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
     def dispatch(self, *args, **kwargs):
         return super(ProtectedNgwListView, self).dispatch(*args, **kwargs)
 
-
-def render_query(template_name, context, request, defaultsort=''):
-    '''
-    This function renders the query, paginated
-    '''
-    q = context['query']
-    cols = context['cols']
-
-    # get sort column name
-    order = request.REQUEST.get('_order', '')
-    try:
-        intorder = int(order)
-    except ValueError:
-        if defaultsort:
-            order = ''
-            intorder = None
-            q = q.order_by(defaultsort)
-        else:
-            order = '0'
-            intorder = 0
-    if intorder is not None:
-        sort_col = cols[abs(intorder)][3]
-        if not order or order[0] != '-':
-            q = q.order_by(sort_col)
-        else:
-            q = q.order_by('-'+sort_col)
-
-    paginator = Paginator(q, Config.get_object_query_page_length())
-    page = request.REQUEST.get('_page', 1)
-    try:
-        q = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        q = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        q = paginator.page(paginator.num_pages)
-
-    context['query'] = q
-    context['cols'] = cols
-    context['order'] = order
-
-    context['paginator'] = paginator
-    context['page_obj'] = q
-
-    if 'baseurl' not in context:
-        context['baseurl'] = '?'
-    return render_to_response(template_name, context, RequestContext(request))
 
 
 ##class ProtectedListView(MultipleObjectTemplateResponseMixin, BaseListView):

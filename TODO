@@ -12,7 +12,7 @@ Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 
 Migrate to class based views:
 Latest version of django offer view classes, with "get" "post" method. We could use that.
-See core/views/misc.py & generic.py
+See *ListView classes
 
 Sticky groups:
 - When you join a 'sticky' group though inheritance, group membership should be permanent.

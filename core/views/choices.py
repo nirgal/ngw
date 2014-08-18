@@ -19,8 +19,7 @@ from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete
-from ngw.core.views.generic import NgwListView
+from ngw.core.views.generic import generic_delete, NgwListView
 
 
 #######################################################################

@@ -37,7 +37,7 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import render_query, generic_delete, NgwListView
+from ngw.core.views.generic import generic_delete, NgwListView
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 
 from django.db.models.query import RawQuerySet, sql

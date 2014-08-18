@@ -37,7 +37,7 @@ from ngw.core import perms
 from ngw.core.views.contacts import (
     get_default_columns, FieldSelectForm, contact_make_query_with_fields)
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import render_query, generic_delete, ProtectedNgwListView, NgwListView
+from ngw.core.views.generic import generic_delete, ProtectedNgwListView, NgwListView
 from ngw.core.views.contacts import ContactListView
 
 

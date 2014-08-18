@@ -18,26 +18,29 @@ from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import (render_query, generic_delete)
+from ngw.core.views.generic import generic_delete, ProtectedNgwListView
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def field_list(request):
-    fields = ContactField.objects.order_by('sort_weight').extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id])
-    context = {}
-    context['query'] = fields
-    context['cols'] = [
+
+class FieldListView(ProtectedNgwListView):
+    cols = [
         (_('Name'), None, 'name', 'name'),
         (_('Type'), None, 'type_as_html', 'type'),
         (_('Only for'), None, 'contact_group', 'contact_group__name'),
         (_('System locked'), None, 'system', 'system'),
         #(_('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
-    context['title'] = _('Select an optionnal field')
-    context['objtype'] = ContactField
-    context['nav'] = Navbar(ContactField.get_class_navcomponent())
-    return render_query('list.html', context, request, defaultsort='sort_weight')
+    default_sort = 'sort_weight'
 
+    def get_root_queryset(self):
+        return ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % self.request.user.id])
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['title'] = _('Select an optionnal field')
+        context['objtype'] = ContactField
+        context['nav'] = Navbar(ContactField.get_class_navcomponent())
+        context.update(kwargs)
+        return super(FieldListView, self).get_context_data(**context)
 
 @login_required()
 @require_group(GROUP_USER_NGW)
@@ -49,7 +52,7 @@ def field_move_up(request, id):
     cf.sort_weight -= 15
     cf.save()
     ContactField.renumber()
-    return HttpResponseRedirect(reverse('ngw.core.views.fields.field_list'))
+    return HttpResponseRedirect(reverse('field_list'))
 
 
 @login_required()
@@ -62,7 +65,7 @@ def field_move_down(request, id):
     cf.sort_weight += 15
     cf.save()
     ContactField.renumber()
-    return HttpResponseRedirect(reverse('ngw.core.views.fields.field_list'))
+    return HttpResponseRedirect(reverse('field_list'))
 
 
 class FieldEditForm(forms.Form):
@@ -208,7 +211,7 @@ def field_edit(request, id):
             elif request.POST.get('_addanother', None):
                 return HttpResponseRedirect(cf.get_class_absolute_url()+'add')
             else:
-                return HttpResponseRedirect(reverse('ngw.core.views.fields.field_list'))
+                return HttpResponseRedirect(reverse('field_list'))
         # else validation error
     else:
         if id: # modify
@@ -240,7 +243,7 @@ def field_delete(request, id):
         raise PermissionDenied
     o = get_object_or_404(ContactField, pk=id)
     id = id and int(id) or None
-    next_url = reverse('ngw.core.views.fields.field_list')
+    next_url = reverse('field_list')
     if o.system:
         messages.add_message(request, messages.ERROR, _('Field %s is locked and CANNOT be deleted.') % o.name)
         return HttpResponseRedirect(next_url)
