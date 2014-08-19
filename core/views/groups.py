@@ -20,6 +20,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
+from django.views.generic import TemplateView
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
@@ -183,57 +184,56 @@ class YearMonthCal:
         return datetime(self.year, self.month, 1)
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def event_list(request):
-    dt = request.REQUEST.get('dt', None)
-    year = month = None
-    if dt is not None:
-        try:
-            year, month = dt.split('-')
-            year = int(year)
-            month = int(month)
-        except ValueError:
-            year = month = None
-        else:
-            if year < 2000 or year > 2100 \
-             or month < 1 or month > 12:
+class EventListView(NgwUserMixin, TemplateView):
+    '''
+    Calendar with all the user-visible events of selected month
+    '''
+
+    template_name = 'event_list.html'
+
+    def get_context_data(self, **kwargs):
+        request = self.request
+
+        dt = request.REQUEST.get('dt', None)
+        year = month = None
+        if dt is not None:
+            try:
+                year, month = dt.split('-')
+                year = int(year)
+                month = int(month)
+            except ValueError:
                 year = month = None
+            else:
+                if year < 2000 or year > 2100 \
+                 or month < 1 or month > 12:
+                    year = month = None
 
-    if year is None or month is None:
-        now = datetime.utcnow()
-        month = now.month
-        year = now.year
+        if year is None or month is None:
+            now = datetime.utcnow()
+            month = now.month
+            year = now.year
 
-    min_date = datetime(year, month, 1) - timedelta(days=6)
-    min_date = min_date.strftime('%Y-%m-%d')
-    max_date = datetime(year, month, 1) + timedelta(days=31+6)
-    max_date = max_date.strftime('%Y-%m-%d')
+        min_date = datetime(year, month, 1) - timedelta(days=6)
+        min_date = min_date.strftime('%Y-%m-%d')
+        max_date = datetime(year, month, 1) + timedelta(days=31+6)
+        max_date = max_date.strftime('%Y-%m-%d')
 
-    q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
+        q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
 
-    cols = [
-        (_('Date'), None, 'html_date', 'date'),
-        (_('Name'), None, 'name', 'name'),
-        (_('Description'), None, 'description', 'description'),
-    ]
+        month_events = {}
+        for cg in q:
+            if cg.date not in month_events:
+                month_events[cg.date] = []
+            month_events[cg.date].append(cg)
 
-    month_events = {}
-    for cg in q:
-        if cg.date not in month_events:
-            month_events[cg.date] = []
-        month_events[cg.date].append(cg)
+        context = {}
+        context['title'] = _('Events')
+        context['nav'] = Navbar(('events', _('events')))
+        context['year_month'] = YearMonthCal(year, month, month_events)
+        context['today'] = date.today()
 
-    context = {}
-    context['title'] = _('Events')
-    context['query'] = q
-    context['cols'] = cols
-    context['objtype'] = ContactGroup
-    context['nav'] = Navbar().add_component(('events', _('events')))
-    context['year_month'] = YearMonthCal(year, month, month_events)
-    context['today'] = date.today()
-
-    return render_to_response('event_list.html', context, RequestContext(request))
+        context.update(kwargs)
+        return super(EventListView, self).get_context_data(**context)
 
 
 #######################################################################

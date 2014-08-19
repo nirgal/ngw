@@ -13,7 +13,7 @@ admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView
 from ngw.core.views.fields import FieldListView
 from ngw.core.views.choices import ChoiceListView
 from ngw.core.views.logs import LogListView
@@ -94,7 +94,7 @@ urlpatterns = patterns('',
 
     url(r'^contactgroups/$', ContactGroupListView.as_view(), name='group_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),
-    url(r'^events/$', 'ngw.core.views.groups.event_list', name='event_list'),
+    url(r'^events/$', EventListView.as_view(), name='event_list'),
     url(r'^events/', include(groups_urlpatterns)),
 
     url(r'^contactfields/$', FieldListView.as_view(), name='field_list'),
