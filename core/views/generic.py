@@ -12,7 +12,7 @@ from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.views.generic import View, ListView
+from django.views.generic import View, TemplateView, ListView
 from django.views.generic.base import TemplateResponseMixin, ContextMixin
 from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, Config, Log, LOG_ACTION_DEL
@@ -20,17 +20,16 @@ from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 
 
-class ProtectedView(View):
+class NgwUserMixin(object):
+    '''
+    This simple mixin check the user is authenticated and member of GROUP_USER_NGW
+    '''
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
     def dispatch(self, *args, **kwargs):
-        return super(ProtectedView, self).dispatch(*args, **kwargs)
+        return super(NgwUserMixin, self).dispatch(*args, **kwargs)
 
 
-class TemplateProtectedView(TemplateResponseMixin, ContextMixin, ProtectedView):
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
 
 class NgwListView(ListView):
     '''
@@ -84,20 +83,6 @@ class NgwListView(ListView):
         return super(NgwListView, self).get_context_data(**context)
 
 
-class ProtectedNgwListView(NgwListView):
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, *args, **kwargs):
-        return super(ProtectedNgwListView, self).dispatch(*args, **kwargs)
-
-
-
-##class ProtectedListView(MultipleObjectTemplateResponseMixin, BaseListView):
-#class ProtectedListView(ListView):
-#    @method_decorator(login_required)
-#    @method_decorator(require_group(GROUP_USER_NGW))
-#    def dispatch(self, *args, **kwargs):
-#        return super(ProtectedListView, self).dispatch(*args, **kwargs)
 
 # Helper function that is never call directly, hence the lack of authentification check
 def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):

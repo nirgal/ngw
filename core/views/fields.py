@@ -18,10 +18,10 @@ from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, ProtectedNgwListView
+from ngw.core.views.generic import generic_delete, NgwUserMixin, NgwListView
 
 
-class FieldListView(ProtectedNgwListView):
+class FieldListView(NgwUserMixin, NgwListView):
     cols = [
         (_('Name'), None, 'name', 'name'),
         (_('Type'), None, 'type_as_html', 'type'),
@@ -41,6 +41,7 @@ class FieldListView(ProtectedNgwListView):
         context['nav'] = Navbar(ContactField.get_class_navcomponent())
         context.update(kwargs)
         return super(FieldListView, self).get_context_data(**context)
+
 
 @login_required()
 @require_group(GROUP_USER_NGW)

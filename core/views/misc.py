@@ -14,7 +14,7 @@ from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
 from ngw.core.models import CIGFLAG_OPERATOR, Contact, ContactGroup, ContactGroupNews
 from ngw.core.nav import Navbar
-from ngw.core.views.generic import TemplateProtectedView
+from ngw.core.views.generic import NgwUserMixin
 
 __all__ = ['LogoutView', 'HomeView', 'TestView']
 
@@ -38,7 +38,7 @@ class LogoutView(TemplateView):
         return super(LogoutView, self).get_context_data(**context)
 
 
-class HomeView(TemplateProtectedView):
+class HomeView(NgwUserMixin, TemplateView):
     '''
     Home page view
     '''
@@ -77,7 +77,7 @@ class HomeView(TemplateProtectedView):
         return super(HomeView, self).get_context_data(**context)
 
 
-class TestView(TemplateProtectedView):
+class TestView(NgwUserMixin, TemplateView):
     '''
     Test page view (debug)
     '''
