@@ -420,21 +420,13 @@ class FieldSelectForm(forms.Form):
 
 
 
-class ContactListView(NgwListView):
+class BaseContactListView(NgwListView):
     '''
-    That view list all the contacts. See also contactgroup_members()
+    Base view for contact list.
+    That view should NOT be called directly since there is no user check.
     '''
     template_name = 'contact_list.html'
     format = 'html' # see contact_make_query_with_fields
-
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, *args, **kwargs):
-        user_id = self.request.user.id
-        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
-            raise PermissionDenied
-        return super(ContactListView, self).dispatch(*args, **kwargs)
-
 
     def get_root_queryset(self):
         request = self.request
@@ -485,7 +477,7 @@ class ContactListView(NgwListView):
 
     def render_to_response(self, *args, **kwargs):
         if self.format in ('html', 'emails'):
-            return super(ContactListView, self).render_to_response(*args, **kwargs)
+            return super(BaseContactListView, self).render_to_response(*args, **kwargs)
 
         if self.format == 'csv':
             result = ''
@@ -516,7 +508,7 @@ class ContactListView(NgwListView):
             return HttpResponse(result, mimetype='text/x-vcard')
 
         raise ImproperlyConfigured(
-            "ContactListView.format must be either html, csv, vcard or emails ")
+            "BaseContactListView.format must be either html, csv, vcard or emails ")
 
 
     def get_context_data(self, **kwargs):
@@ -525,12 +517,11 @@ class ContactListView(NgwListView):
         context['objtype'] = Contact
         context['nav'] = Navbar(Contact.get_class_navcomponent())
 
-        #TODO: Make a MixIn that will handle the group part
+        #TODO: Make a Mixin that will handle the group part
         if self.cg:
             context['cg'] = self.cg
             context['cg_perms'] = self.cg.get_contact_perms(self.request.user.id)
 
-        context['cols'] = self.cols
         context['filter'] = self.filter
         context['filter_html'] = self.filter_html
         context['fields'] = self.strfields
@@ -539,7 +530,20 @@ class ContactListView(NgwListView):
         context['no_confirm_form_discard'] = True
 
         context.update(kwargs)
-        return super(ContactListView, self).get_context_data(**context)
+        return super(BaseContactListView, self).get_context_data(**context)
+
+
+class ContactListView(BaseContactListView):
+    '''
+    This is just like the base contact list, but with user access check.
+    '''
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, *args, **kwargs):
+        user_id = self.request.user.id
+        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
+            raise PermissionDenied
+        return super(ContactListView, self).dispatch(*args, **kwargs)
 
 
 #######################################################################

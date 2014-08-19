@@ -38,7 +38,7 @@ from ngw.core.views.contacts import (
     get_default_columns, FieldSelectForm, contact_make_query_with_fields)
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete, ProtectedNgwListView, NgwListView
-from ngw.core.views.contacts import ContactListView
+from ngw.core.views.contacts import BaseContactListView
 
 
 #######################################################################
@@ -268,17 +268,16 @@ def contactgroup_index(request, gid):
 #
 #######################################################################
 
-class GroupMemberListView(ContactListView):
+class GroupMemberListView(BaseContactListView):
     template_name = 'group_detail.html'
 
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, *args, **kwargs):
-        user_id = self.request.user.id
+    def dispatch(self, request, *args, **kwargs):
+        user_id = request.user.id
         if not perms.c_can_see_members_cg(user_id, self.kwargs['gid']):
             raise PermissionDenied
-        # FIXME: Should call super, but it is too restrictive :/
-        return NgwListView.dispatch(self, *args, **kwargs)
+        return super(GroupMemberListView, self).dispatch(request, *args, **kwargs)
 
 
     def get_root_queryset(self):
