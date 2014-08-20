@@ -539,11 +539,11 @@ class ContactListView(BaseContactListView):
     '''
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, *args, **kwargs):
-        user_id = self.request.user.id
+    def dispatch(self, request, *args, **kwargs):
+        user_id = request.user.id
         if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
             raise PermissionDenied
-        return super(ContactListView, self).dispatch(*args, **kwargs)
+        return super(ContactListView, self).dispatch(request, *args, **kwargs)
 
 
 #######################################################################

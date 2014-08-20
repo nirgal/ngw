@@ -38,10 +38,10 @@ class ChoiceListView(NgwListView):
 
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, *args, **kwargs):
-        if not self.request.user.is_admin():
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_admin():
             raise PermissionDenied
-        return super(ChoiceListView, self).dispatch(*args, **kwargs)
+        return super(ChoiceListView, self).dispatch(request, *args, **kwargs)
 
 
     def get_context_data(self, **kwargs):
