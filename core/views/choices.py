@@ -196,7 +196,6 @@ class ChoiceEditMixin(ModelFormMixin):
     form_class = ChoiceGroupForm
     model = ChoiceGroup
     pk_url_kwarg = 'id'
-    context_object_name = 'o'
 
     def form_valid(self, form):
         request = self.request

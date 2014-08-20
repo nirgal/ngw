@@ -653,7 +653,7 @@ def contactgroup_edit(request, id):
     context['objtype'] = objtype
     context['form'] = form
     if id:
-        context['o'] = cg
+        context['object'] = cg
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('edit', _('edit')))
     else:
@@ -692,15 +692,15 @@ def contactgroup_delete(request, id):
     id = id and int(id) or None
     if not perms.c_can_change_cg(request.user.id, id):
         raise PermissionDenied
-    o = get_object_or_404(ContactGroup, pk=id)
-    if o.date:
+    obj = get_object_or_404(ContactGroup, pk=id)
+    if obj.date:
         next_url = reverse('event_list')
     else:
         next_url = reverse('group_list')
-    if o.system:
-        messages.add_message(request, messages.ERROR, _('Group %s is locked and CANNOT be deleted.') % o.name)
+    if obj.system:
+        messages.add_message(request, messages.ERROR, _('Group %s is locked and CANNOT be deleted.') % obj.name)
         return HttpResponseRedirect(next_url)
-    return generic_delete(request, o, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
+    return generic_delete(request, obj, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
 
 
 #######################################################################
@@ -1130,13 +1130,13 @@ def contactingroup_delete(request, gid, cid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
     try:
-        o = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
+        obj = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
     except ContactInGroup.DoesNotExist:
         return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
     #messages.add_message(request, messages.SUCCESS, _('%s has been removed for group %s.') % (cig.contact.name, cig.group.name))
     base_nav = cg.get_smart_navbar() \
                   .add_component(('members', _('members')))
-    return generic_delete(request, o, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
+    return generic_delete(request, obj, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
     # TODO: realnav bar is 'remove', not 'delete'
 
 

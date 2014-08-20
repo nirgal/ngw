@@ -227,7 +227,7 @@ def field_edit(request, id):
     context['id'] = id
     context['objtype'] = objtype
     if id:
-        context['o'] = cf
+        context['object'] = cf
     context['nav'] = Navbar(ContactField.get_class_navcomponent())
     if id:
         context['nav'].add_component(cf.get_navcomponent()) \
@@ -242,10 +242,10 @@ def field_edit(request, id):
 def field_delete(request, id):
     if not request.user.is_admin():
         raise PermissionDenied
-    o = get_object_or_404(ContactField, pk=id)
+    obj = get_object_or_404(ContactField, pk=id)
     id = id and int(id) or None
     next_url = reverse('field_list')
-    if o.system:
-        messages.add_message(request, messages.ERROR, _('Field %s is locked and CANNOT be deleted.') % o.name)
+    if obj.system:
+        messages.add_message(request, messages.ERROR, _('Field %s is locked and CANNOT be deleted.') % obj.name)
         return HttpResponseRedirect(next_url)
-    return generic_delete(request, o, next_url)
+    return generic_delete(request, obj, next_url)

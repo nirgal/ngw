@@ -95,29 +95,29 @@ class NgwListView(ListView):
 
 
 # Helper function that is never call directly, hence the lack of authentification check
-def generic_delete(request, o, next_url, base_nav=None, ondelete_function=None):
+def generic_delete(request, obj, next_url, base_nav=None, ondelete_function=None):
     title = _('Please confirm deletetion')
 
     confirm = request.GET.get('confirm', '')
     if confirm:
         if ondelete_function:
-            ondelete_function(o)
-        name = force_text(o)
+            ondelete_function(obj)
+        name = force_text(obj)
         log = Log()
         log.contact_id = request.user.id
         log.action = LOG_ACTION_DEL
-        pk_names = (o._meta.pk.attname,) # default django pk name
-        log.target = force_text(o.__class__.__name__) + ' ' + ' '.join([force_text(o.__getattribute__(fieldname)) for fieldname in pk_names])
-        log.target_repr = o.get_class_verbose_name() + ' '+name
-        o.delete()
+        pk_names = (obj._meta.pk.attname,) # default django pk name
+        log.target = force_text(obj.__class__.__name__) + ' ' + ' '.join([force_text(obj.__getattribute__(fieldname)) for fieldname in pk_names])
+        log.target_repr = obj.get_class_verbose_name() + ' '+name
+        obj.delete()
         log.save()
         messages.add_message(request, messages.SUCCESS, _('%s has been deleted sucessfully!') % name)
         return HttpResponseRedirect(next_url)
     else:
-        nav = base_nav or Navbar(o.get_class_navcomponent())
-        nav.add_component(o.get_navcomponent()) \
+        nav = base_nav or Navbar(obj.get_class_navcomponent())
+        nav.add_component(obj.get_navcomponent()) \
            .add_component(('delete', _('delete')))
-        return render_to_response('delete.html', {'title':title, 'o': o, 'nav': nav}, RequestContext(request))
+        return render_to_response('delete.html', {'title':title, 'object': obj, 'nav': nav}, RequestContext(request))
 
 
 

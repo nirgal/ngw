@@ -125,7 +125,7 @@ def contactgroup_news_edit(request, gid, nid):
     context['cg_perms'] = cg.get_contact_perms(request.user.id)
     context['form'] = form
     if nid:
-        context['o'] = news
+        context['object'] = news
         context['id'] = nid
     context['nav'] = cg.get_smart_navbar() \
                      .add_component(('news', ('news')))
@@ -153,5 +153,5 @@ def contactgroup_news_delete(request, gid, nid):
     if not perms.c_can_change_news_cg(request.user.id, gid):
         raise PermissionDenied
     cg = get_object_or_404(ContactGroup, pk=gid)
-    o = get_object_or_404(ContactGroupNews, pk=nid)
-    return generic_delete(request, o, cg.get_absolute_url() + 'news/')
+    obj = get_object_or_404(ContactGroupNews, pk=nid)
+    return generic_delete(request, obj, cg.get_absolute_url() + 'news/')

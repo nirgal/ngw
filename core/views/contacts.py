@@ -816,7 +816,7 @@ def contact_edit(request, gid=None, cid=None):
     else:
         context['nav'].add_component(('add', _('add')))
     if cid:
-        context['o'] = contact
+        context['object'] = contact
 
     return render_to_response('edit.html', context, RequestContext(request))
 
@@ -975,7 +975,7 @@ def contact_delete(request, gid=None, cid=None):
     cid = cid and int(cid) or None
     if not request.user.is_admin():
         raise PermissionDenied
-    o = get_object_or_404(Contact, pk=cid)
+    obj = get_object_or_404(Contact, pk=cid)
     if gid:
         cg = get_object_or_404(ContactGroup, pk=gid)
         base_nav = cg.get_smart_navbar() \
@@ -984,7 +984,7 @@ def contact_delete(request, gid=None, cid=None):
     else:
         next_url = reverse('contact_list')
         base_nav = None
-    return generic_delete(request, o, next_url, base_nav=base_nav)
+    return generic_delete(request, obj, next_url, base_nav=base_nav)
 
 
 #######################################################################
