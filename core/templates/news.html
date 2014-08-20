@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n staticfiles %}
+{% load i18n staticfiles ngwtags %}
 
 {% block submenu %}
 {% include "group_submenu.html" %}
@@ -24,6 +24,30 @@
     {% trans "There are no news for that group." %}
     </div>
     {% endfor %}
+
+    {% if paginator %}
+    <p class="paginator padded" style="border-top: none;">
+        {% ifnotequal paginator.num_pages 1 %}
+            {% blocktrans count npages=paginator.num_pages %}{{ npages }} page{% plural %}{{ npages }} pages{% endblocktrans %}
+            -
+            {% for i in page_obj.number|pagenumber_iterator:paginator.num_pages %}
+                {% ifnotequal page_obj.number i %}
+                <a href={{baseurl}}&amp;_order={{order}}&amp;_page={{i}}>
+                {% else %}
+                <span class="this-page">
+                {% endifnotequal %}
+                {{i}}
+                {% ifnotequal page_obj.number i %}
+                </a>
+                {% else %}
+                </span>
+                {% endifnotequal %}&nbsp;
+            {% endfor %}
+            -
+        {% endifnotequal %}
+        {% blocktrans count count=paginator.count %}{{ count }} result{% plural %}{{ count }} results{% endblocktrans %}
+    </p>
+    {% endif %}
 
     {% block submitbar %}
     {% if cg_perms.N %}
