@@ -15,7 +15,7 @@ from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView
 from ngw.core.views.fields import FieldListView
-from ngw.core.views.choices import ChoiceListView
+from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
 from ngw.core.views.logs import LogListView
 
 # These patterns are valid with both /contactgroups and /events prefixes
@@ -106,9 +106,9 @@ urlpatterns = patterns('',
     url(r'^contactfields/(?P<id>\d+)/delete$', 'ngw.core.views.fields.field_delete'),
 
     url(r'^choicegroups/$', ChoiceListView.as_view(), name='choice_list'),
-    url(r'^choicegroups/add$', 'ngw.core.views.choices.choicegroup_edit', {'id': None}, name='choice_add'),
+    url(r'^choicegroups/add$', ChoiceCreateView.as_view(), name='choice_add'),
     url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='edit'), ),
-    url(r'^choicegroups/(?P<id>\d+)/edit$', 'ngw.core.views.choices.choicegroup_edit', name='choice_edit'),
+    url(r'^choicegroups/(?P<id>\d+)/edit$', ChoiceEditView.as_view(), name='choice_edit'),
     url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choices.choicegroup_delete', name='choice_delete'),
 
     url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', 'ngw.core.views.files.media_group_file'),
