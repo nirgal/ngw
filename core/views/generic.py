@@ -15,7 +15,7 @@ from django.template import RequestContext
 from django.views.generic import View, TemplateView, ListView
 from django.views.generic.base import TemplateResponseMixin, ContextMixin
 from django.contrib import messages
-from ngw.core.models import GROUP_USER_NGW, Config, Log, LOG_ACTION_DEL
+from ngw.core.models import GROUP_ADMIN, GROUP_USER_NGW, Config, Log, LOG_ACTION_DEL
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 
@@ -28,6 +28,16 @@ class NgwUserMixin(object):
     @method_decorator(require_group(GROUP_USER_NGW))
     def dispatch(self, *args, **kwargs):
         return super(NgwUserMixin, self).dispatch(*args, **kwargs)
+
+
+class NgwAdminMixin(object):
+    '''
+    This simple mixin check the user is authenticated and member of GROUP_ADMIN
+    '''
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_ADMIN))
+    def dispatch(self, *args, **kwargs):
+        return super(NgwAdminMixin, self).dispatch(*args, **kwargs)
 
 
 

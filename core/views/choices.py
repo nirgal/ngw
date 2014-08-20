@@ -9,11 +9,8 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_text
 from django.utils.six import iteritems
-from django.utils.decorators import method_decorator
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
@@ -21,7 +18,7 @@ from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwListView
+from ngw.core.views.generic import generic_delete, NgwAdminMixin, NgwListView
 
 
 #######################################################################
@@ -31,20 +28,12 @@ from ngw.core.views.generic import generic_delete, NgwListView
 #######################################################################
 
 
-class ChoiceListView(NgwListView):
+class ChoiceListView(NgwAdminMixin, NgwListView):
     root_queryset = ChoiceGroup.objects.all()
     cols = [
         (_('Name'), None, 'name', 'name'),
         (_('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
-
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_admin():
-            raise PermissionDenied
-        return super(ChoiceListView, self).dispatch(request, *args, **kwargs)
-
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -209,14 +198,6 @@ class ChoiceEditMixin(ModelFormMixin):
     pk_url_kwarg = 'id'
     context_object_name = 'o'
 
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_admin():
-            raise PermissionDenied
-        return super(ChoiceEditMixin, self).dispatch(request, *args, **kwargs)
-
-
     def form_valid(self, form):
         request = self.request
         form.save(self.object, request)
@@ -231,7 +212,7 @@ class ChoiceEditMixin(ModelFormMixin):
     def get_context_data(self, **kwargs):
         context = {}
         if self.object:
-            title = _('Editing %s') % force_text(self.object)
+            title = _('Editing %s') % self.object
             id = self.object.id
         else:
             title = _('Adding a new %s') % ChoiceGroup.get_class_verbose_name()
@@ -250,10 +231,10 @@ class ChoiceEditMixin(ModelFormMixin):
         return super(ChoiceEditMixin, self).get_context_data(**context)
 
 
-class ChoiceEditView(ChoiceEditMixin, UpdateView):
+class ChoiceEditView(NgwAdminMixin, ChoiceEditMixin, UpdateView):
     pass
 
-class ChoiceCreateView(ChoiceEditMixin, CreateView):
+class ChoiceCreateView(NgwAdminMixin, ChoiceEditMixin, CreateView):
     pass
 
 #######################################################################

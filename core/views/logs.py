@@ -4,17 +4,14 @@ Log managing views
 '''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
-from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
-from ngw.core.models import GROUP_USER_NGW, Log
+from ngw.core.models import Log
 from ngw.core.nav import Navbar
-from ngw.core.views.decorators import login_required, require_group
-from django.utils.decorators import method_decorator
-from ngw.core.views.generic import NgwListView
+from ngw.core.views.generic import NgwAdminMixin, NgwListView
 
 __all__ = ['LogListView']
 
-class LogListView(NgwListView):
+class LogListView(NgwAdminMixin, NgwListView):
     '''
     Display full log list (history).
     '''
@@ -28,13 +25,6 @@ class LogListView(NgwListView):
         (_('Property'), None, 'property_repr', 'property_repr'),
         (_('Change'), None, 'change', 'change'),
     ]
-
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        if not user.is_admin():
-            raise PermissionDenied
-        return super(LogListView, self).dispatch(request, *args, **kwargs)
 
 
     def get_context_data(self, **kwargs):
