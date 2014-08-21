@@ -11,7 +11,7 @@
 {% for msg in contact_messages %}
 <div class=module>
     <p>
-    {% if msg.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{msg.cig.contact.name}}<br>
+    {% if msg.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{msg.contact.name}}<br>
     {% trans "Date" %}: {{msg.send_date}}<br>
     <br>
     {{ msg.text|linebreaksbr }}

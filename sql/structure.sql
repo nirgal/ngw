@@ -183,7 +183,8 @@ CREATE TABLE log (
 
 CREATE TABLE contact_message (
     id serial NOT NULL PRIMARY KEY,
-    cig_id integer NOT NULL REFERENCES contact_in_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
+    contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
+    group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     send_date timestamp with time zone NOT NULL,
     read_date timestamp with time zone,
     is_answer boolean DEFAULT false NOT NULL,

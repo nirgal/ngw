@@ -394,8 +394,7 @@ class EmailGroupMemberListView(GroupMemberListView):
                 continue
             contact_id = param[len('contact_'):]
             contact = get_object_or_404(Contact, pk=contact_id)
-            cig = ContactInGroup.objects.get(contact_id=contact_id, group_id=gid)
-            contact_msg = ContactMsg(cig=cig)
+            contact_msg = ContactMsg(contact=contact, group=cg)
             contact_msg.send_date = datetime.utcnow()
             contact_msg.text = message
             contact_msg.sync_info = json.dumps({'language': language})
@@ -519,7 +518,7 @@ class MessageListView(NgwUserMixin, ListView):
 
     def get_queryset(self):
         return ContactMsg.objects \
-            .filter(cig__group_id=self.contactgroup.id) \
+            .filter(group_id=self.contactgroup.id) \
             .order_by('-send_date')
 
     def get_paginate_by(self, queryset):

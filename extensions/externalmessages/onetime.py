@@ -54,9 +54,9 @@ def do_sync():
             if not ot_conn:
                 ot_conn = http_client.HTTPSConnection('onetime.info')
 
-            logger.info('Storing message for %s.', msg.cig.contact)
+            logger.info('Storing message for %s.', msg.contact)
 
-            dt = msg.cig.group.date
+            dt = msg.group.date
             if dt:
                 days = (dt - now()).days
             else:
@@ -94,7 +94,7 @@ def do_sync():
             if 'language' in sync_info:
                 logging.warning('Switch to language: %s' % sync_info['language'])
                 language_activate(sync_info['language'])
-            c_mails = msg.cig.contact.get_fieldvalues_by_type('EMAIL')
+            c_mails = msg.contact.get_fieldvalues_by_type('EMAIL')
             if c_mails:
                 logger.info('Sending email notification to %s.', c_mails[0])
                 masssmail_args.append((ugettext(NOTIFICATION_SUBJECT), ugettext(NOTIFICATION_TEXT) % sync_info['otid'], None, (c_mails[0],)))
@@ -143,8 +143,10 @@ def do_sync():
         jresponse = json.loads(force_str(sresponse))
         logger.debug(jresponse)
         for response_text in jresponse:
-            logger.info('Received answer from %s.', msg.cig.contact)
-            answer_msg = ContactMsg(cig_id=msg.cig_id,
+            logger.info('Received answer from %s.', msg.contact)
+            answer_msg = ContactMsg(
+                group_id=msg.group_id,
+                contact_id=msg.contact_id,
                 send_date=datetime.datetime.utcnow(),
                 text=response_text,
                 is_answer=True,

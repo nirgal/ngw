@@ -1896,7 +1896,8 @@ class ContactGroupNews(NgwModel):
 
 class ContactMsg(NgwModel):
     id = models.AutoField(primary_key=True)
-    cig = models.ForeignKey(ContactInGroup)
+    contact = models.ForeignKey(Contact)
+    group = models.ForeignKey(ContactGroup)
     send_date = models.DateTimeField()
     read_date = models.DateTimeField(null=True, blank=True)
     is_answer = models.BooleanField(default=False)
