@@ -36,8 +36,7 @@ from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
-from ngw.core.views.contacts import (
-    BaseContactListView, contact_make_query_with_fields)
+from ngw.core.views.contacts import BaseContactListView, BaseCsvContactListView, BaseVcardContactListView
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete, NgwUserMixin, NgwListView
 
@@ -342,16 +341,15 @@ class GroupMemberListView(BaseContactListView):
         return super(GroupMemberListView, self).get_context_data(**context)
 
 
-class CsvGroupMemberListView(GroupMemberListView):
-    format = 'csv'
+class CsvGroupMemberListView(GroupMemberListView, BaseCsvContactListView):
+    pass
 
 
-class VcardGroupMemberListView(GroupMemberListView):
-    format = 'vcards'
+class VcardGroupMemberListView(GroupMemberListView, BaseVcardContactListView):
+    pass
 
 
 class EmailGroupMemberListView(GroupMemberListView):
-    format = 'emails'
     template_name = 'emails.html'
 
     def get_context_data(self, **kwargs):

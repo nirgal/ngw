@@ -32,7 +32,7 @@ Support Image contactfields
 We should track unread messages:
 Add table ContactMessageReadBy(msg_id, contact_id)
 
-Global search widget (top right) should send to /contacts/ ? But what about add_to buttons and so on ?
+Global search widget (top right) should send to /contacts/ ? But what about the add_to button ?
 
 Files handling:
 - Improve display (mimetype, size, ...)

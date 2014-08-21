@@ -8,7 +8,7 @@ import os
 from datetime import date
 import crack
 from django.conf import settings
-from django.core.exceptions import PermissionDenied, ImproperlyConfigured
+from django.core.exceptions import PermissionDenied
 from django.http import (
     CompatibleStreamingHttpResponse, HttpResponse, HttpResponseRedirect)
 from django.utils.safestring import mark_safe
@@ -426,7 +426,10 @@ class BaseContactListView(NgwListView):
     That view should NOT be called directly since there is no user check.
     '''
     template_name = 'contact_list.html'
-    format = 'html' # see contact_make_query_with_fields
+
+    # contact_make_query_with_fields and Csv views
+    # can be text
+    query_format = 'html'
 
     def get_root_queryset(self):
         request = self.request
@@ -452,11 +455,7 @@ class BaseContactListView(NgwListView):
         else:
             cg = None
 
-        if self.format == 'csv':
-            query_format = 'text'
-        else:
-            query_format = 'html'
-        q, cols = contact_make_query_with_fields(request, fields, current_cg=cg, format=query_format)
+        q, cols = contact_make_query_with_fields(request, fields, current_cg=cg, format=self.query_format)
 
         q = filter.apply_filter_to_query(q)
 
@@ -473,42 +472,6 @@ class BaseContactListView(NgwListView):
         self.baseurl = baseurl
         self.cg = cg
         return q
-
-
-    def render_to_response(self, *args, **kwargs):
-        if self.format in ('html', 'emails'):
-            return super(BaseContactListView, self).render_to_response(*args, **kwargs)
-
-        if self.format == 'csv':
-            result = ''
-            def _quote_csv(u):
-                return '"' + u.replace('"', '\\"') + '"'
-            for i, col in enumerate(self.cols):
-                if i: # not first column
-                    result += ','
-                result += _quote_csv(col[0])
-            result += '\n'
-            for row in self.get_queryset():
-                for i, col in enumerate(self.cols):
-                    if i: # not first column
-                        result += ','
-                    v = ngw_display(row, col)
-                    if v == None:
-                        continue
-                    result += _quote_csv(v)
-                result += '\n'
-            return HttpResponse(result, mimetype='text/csv; charset=utf-8')
-
-        if self.format == 'vcards':
-            #TODO: field permission validation
-            #FIXME: This works but is really inefficient (try it on a large group!)
-            result = ''
-            for contact in self.get_queryset():
-                result += contact.vcard()
-            return HttpResponse(result, mimetype='text/x-vcard')
-
-        raise ImproperlyConfigured(
-            "BaseContactListView.format must be either html, csv, vcard or emails ")
 
 
     def get_context_data(self, **kwargs):
@@ -545,6 +508,73 @@ class ContactListView(BaseContactListView):
             raise PermissionDenied
         return super(ContactListView, self).dispatch(request, *args, **kwargs)
 
+
+#######################################################################
+#
+# Export contact list
+#
+#######################################################################
+
+class BaseCsvContactListView(BaseContactListView):
+    query_format = 'text'
+
+    def render_to_response(self, *args, **kwargs):
+        result = ''
+        def _quote_csv(u):
+            return '"' + u.replace('"', '\\"') + '"'
+        for i, col in enumerate(self.cols):
+            if i: # not first column
+                result += ','
+            result += _quote_csv(col[0])
+        result += '\n'
+        for row in self.get_queryset():
+            for i, col in enumerate(self.cols):
+                if i: # not first column
+                    result += ','
+                v = ngw_display(row, col)
+                if v == None:
+                    continue
+                result += _quote_csv(v)
+            result += '\n'
+        return HttpResponse(result, mimetype='text/csv; charset=utf-8')
+
+
+class CsvContactListView(BaseCsvContactListView):
+    '''
+    This is just like the base CSV contact list, but with user access check.
+    '''
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, request, *args, **kwargs):
+        user_id = request.user.id
+        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
+            raise PermissionDenied
+        return super(CsvContactListView, self).dispatch(request, *args, **kwargs)
+
+
+class BaseVcardContactListView(BaseContactListView):
+    query_format = 'text'
+
+    def render_to_response(self, *args, **kwargs):
+        #TODO: field permission validation
+        #FIXME: This works but is really inefficient (try it on a large group!)
+        result = ''
+        for contact in self.get_queryset():
+            result += contact.vcard()
+        return HttpResponse(result, mimetype='text/x-vcard')
+
+
+class VcardContactListView(BaseVcardContactListView):
+    '''
+    This is just like the base CSV contact list, but with user access check.
+    '''
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, request, *args, **kwargs):
+        user_id = request.user.id
+        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
+            raise PermissionDenied
+        return super(VcardContactListView, self).dispatch(request, *args, **kwargs)
 
 #######################################################################
 #

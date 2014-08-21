@@ -12,7 +12,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView
+from ngw.core.views.contacts import ContactListView, CsvContactListView, VcardContactListView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView, MessageListView
 from ngw.core.views.news import NewsListView
 from ngw.core.views.fields import FieldListView
@@ -79,6 +79,8 @@ urlpatterns = patterns('',
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', 'ngw.core.views.contactsearch.ajax_get_filters'),
     url(r'^contacts/ajaxsearch/custom/user/(?P<filter_id>[^/]+)$', 'ngw.core.views.contactsearch.ajax_get_customfilters_params'),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)/(?P<filter_id>[^/]+)$', 'ngw.core.views.contactsearch.ajax_get_filters_params'),
+    url(r'^contacts/csv$', CsvContactListView.as_view()),
+    url(r'^contacts/vcard$', VcardContactListView.as_view()),
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contacts.contact_make_login_mailing'),
 
     url(r'^contacts/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail', name='contact_detail'),
