@@ -13,6 +13,7 @@ from django.utils.timezone import now
 from django.utils.encoding import force_str
 from django.core.mail import send_mass_mail
 from ngw.core.models import ContactMsg
+import ngw.core.contactfield
 
 _ = lambda x: x
 
