@@ -20,26 +20,26 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
+from django.views.generic.base import ContextMixin
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
-    FIELD_COLUMNS, FIELD_DEFAULT_GROUP,
+    FIELD_DEFAULT_GROUP,
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ADMIN_CIGFLAGS,
     TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT,
-    Contact, ContactMsg, ContactGroup, ContactInGroup, GroupInGroup, GroupManageGroup,
+    Config, Contact, ContactMsg, ContactGroup, ContactInGroup, GroupInGroup,
+    GroupManageGroup,
     hooks)
 from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
-from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.contacts import (
-    get_default_columns, FieldSelectForm, contact_make_query_with_fields)
+    BaseContactListView, contact_make_query_with_fields)
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete, NgwUserMixin, NgwListView
-from ngw.core.views.contacts import BaseContactListView
 
 
 #######################################################################
@@ -236,6 +236,7 @@ class EventListView(NgwUserMixin, TemplateView):
         return super(EventListView, self).get_context_data(**context)
 
 
+
 #######################################################################
 #
 # Group index (redirect)
@@ -411,25 +412,68 @@ class EmailGroupMemberListView(GroupMemberListView):
 #
 #######################################################################
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_messages(request, gid):
-    gid = gid and int(gid) or None
-    if not perms.c_can_view_msgs_cg(request.user.id, gid):
-        raise PermissionDenied
 
-    cg = get_object_or_404(ContactGroup, pk=gid)
-    messages = ContactMsg.objects.filter(cig__group_id=gid).order_by('-send_date')
-    context = {}
-    context['title'] = _('Messages for %s') % cg.name_with_date()
-    context['cg'] = cg
-    context['cg_perms'] = cg.get_contact_perms(request.user.id)
-    context['nav'] = cg.get_smart_navbar() \
-                     .add_component(('messages', _('messages')))
-    context['contact_messages'] = messages
-    context['active_submenu'] = 'messages'
+#class IngroupMixin(ContextMixin):
+#    '''
+#    Views using that mixin must define a "gid" url pattern.
+#    Mixin will setup a self.contactgroup and set up context.
+#    '''
+#    def dispatch(self, request, *args, **kwargs): # FIXME dispatch is view only stuff
+#        group_id = self.kwargs.get('gid', None)
+#        try:
+#            group_id = int(group_id)
+#        except (ValueError, TypeError):
+#            raise Http404
+#        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
+#        self.contactgroup = contactgroup
+#        return super(IngroupMixin, self).get(request, *args, **kwargs)
+#
+#    def get_context_data(self, **kwargs):
+#        cg = self.contactgroup
+#        context['cg'] = cg
+#        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
+#        return super(IngroupMixin, self).get_context_data(**context)
 
-    return render_to_response('group_messages.html', context, RequestContext(request))
+
+class MessageListView(NgwUserMixin, ListView):
+    template_name = 'group_messages.html'
+    context_object_name = 'contact_messages'
+    page_kwarg = '_page'
+
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, request, *args, **kwargs):
+        group_id = self.kwargs.get('gid', None)
+        try:
+            group_id = int(group_id)
+        except (ValueError, TypeError):
+            raise Http404
+        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
+        if not perms.c_can_view_msgs_cg(request.user.id, group_id):
+            raise PermissionDenied
+        self.contactgroup = contactgroup
+        return super(MessageListView, self).get(request, *args, **kwargs)
+
+
+    def get_queryset(self):
+        return ContactMsg.objects \
+            .filter(cig__group_id=self.contactgroup.id) \
+            .order_by('-send_date')
+
+    def get_paginate_by(self, queryset):
+       return Config.get_object_query_page_length()
+
+    def get_context_data(self, **kwargs):
+        cg = self.contactgroup
+        context = {}
+        context['title'] = _('Messages for %s') % cg.name_with_date()
+        context['cg'] = cg
+        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('messages', _('messages')))
+        context['active_submenu'] = 'messages'
+        context.update(kwargs)
+        return super(MessageListView, self).get_context_data(**context)
 
 
 #######################################################################

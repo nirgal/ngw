@@ -63,7 +63,7 @@ class NewsListView(ListView):
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('news', _('news')))
         context['active_submenu'] = 'news'
-        context['baseurl'] = '?'
+        context['baseurl'] = '?' # for paginator
         context.update(kwargs)
         return super(NewsListView, self).get_context_data(**context)
 
