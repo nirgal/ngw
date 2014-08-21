@@ -13,7 +13,7 @@ admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, MessageListView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView, MessageListView
 from ngw.core.views.news import NewsListView
 from ngw.core.views.fields import FieldListView
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
@@ -39,7 +39,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membership$', 'ngw.core.views.groups.contactingroup_edit'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membershipinline$', 'ngw.core.views.groups.contactingroup_edit_inline'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/remove$', 'ngw.core.views.groups.contactingroup_delete'),
-    url(r'^add_contacts_to$', 'ngw.core.views.groups.contactgroup_add_contacts_to'),
+    url(r'^(?P<gid>\d+)/members/add_contacts_to$', GroupAddManyView.as_view()),
     url(r'^(?P<gid>\d+)/files(?P<path>.+)$', 'ngw.core.views.files.contactgroup_files'),
     url(r'^(?P<gid>\d+)/messages$', MessageListView.as_view(), name='message_list'),
     url(r'^(?P<gid>\d+)/news/$', NewsListView.as_view(), name='news_list'),

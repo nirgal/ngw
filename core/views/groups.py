@@ -372,8 +372,8 @@ class EmailGroupMemberListView(GroupMemberListView):
         context['emails'] = emails
         context['noemails'] = noemails
         context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('members', _('members'))) \
-                         .add_component(('emails', _('emails')))
+            .add_component(('members', _('members'))) \
+            .add_component(('emails', _('emails')))
         context['active_submenu'] = 'members'
 
         context.update(kwargs)
@@ -404,6 +404,70 @@ class EmailGroupMemberListView(GroupMemberListView):
             contact_msg.save()
             messages.add_message(request, messages.INFO, _('Messages stored.'))
         return HttpResponseRedirect(cg.get_absolute_url())
+
+
+#######################################################################
+#
+# Add to another group
+#
+#######################################################################
+
+
+class GroupAddManyView(GroupMemberListView):
+    template_name = 'group_add_contacts_to.html'
+
+    def get_context_data(self, **kwargs):
+        cg = self.cg
+        context = {}
+        context['title'] = _('Add contacts to a group')
+        context['nav'] = cg.get_smart_navbar() \
+            .add_component(('members', _('members'))) \
+            .add_component(('add_contacts_to', _('add contacts to')))
+        context['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % self.request.user.id]).order_by('-date', 'name')
+        context['active_submenu'] = 'members'
+        context.update(kwargs)
+        return super(GroupAddManyView, self).get_context_data(**context)
+
+
+    def post(self, request, *args, **kwargs):
+        # Note that dispatch is already checking GROUP_USER_NGW membership
+        # and c_can_see_members_cg
+        view_params = self.kwargs
+        gid =  view_params['gid']
+        cg = get_object_or_404(ContactGroup, pk=view_params['gid'])
+
+        target_gid = request.POST['group']
+        if not target_gid:
+            messages.add_message(request, messages.ERROR, _('You must select a target group'))
+            return self.get(self, request, *args, **kwargs)
+
+        if not perms.c_can_change_members_cg(request.user.id, target_gid):
+            raise PermissionDenied
+        target_group = get_object_or_404(ContactGroup, pk=target_gid)
+
+        modes = ''
+        for flag, propname in TRANS_CIGFLAG_CODE2TXT.items():
+            field_name = 'membership_' + propname
+            if request.REQUEST.get(field_name, False):
+                modes += '+' + flag
+                intflag = TRANS_CIGFLAG_CODE2INT[flag]
+                if intflag & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(request.user.id, target_gid):
+                    # Only operator can grant permissions
+                    raise PermissionDenied
+        if not modes:
+            raise ValueError(_('You must select at least one mode'))
+
+        contacts = []
+        for param in request.POST:
+            if not param.startswith('contact_'):
+                continue
+            contact_id = param[len('contact_'):]
+            #TODO: Check contact_id can be seen by user
+            contact = get_object_or_404(Contact, pk=contact_id)
+            contacts.append(contact)
+        target_group.set_member_n(request, contacts, modes)
+
+        return HttpResponseRedirect(target_group.get_absolute_url())
 
 
 #######################################################################
@@ -745,109 +809,6 @@ def contactgroup_delete(request, id):
         messages.add_message(request, messages.ERROR, _('Group %s is locked and CANNOT be deleted.') % obj.name)
         return HttpResponseRedirect(next_url)
     return generic_delete(request, obj, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
-
-
-#######################################################################
-#
-# Add to another group
-#
-#######################################################################
-
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_add_contacts_to(request):
-    if request.method == 'POST':
-        target_gid = request.POST['group']
-        if target_gid:
-            if not perms.c_can_change_members_cg(request.user.id, target_gid):
-                raise PermissionDenied
-            target_group = get_object_or_404(ContactGroup, pk=target_gid)
-            modes = ''
-            for flag, propname in TRANS_CIGFLAG_CODE2TXT.items():
-                field_name = 'membership_' + propname
-                if request.REQUEST.get(field_name, False):
-                    modes += '+' + flag
-                    intflag = TRANS_CIGFLAG_CODE2INT[flag]
-                    if intflag & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(request.user.id, target_gid):
-                        # Only operator can grant permissions
-                        raise PermissionDenied
-            if not modes:
-                raise ValueError(_('You must select at least one mode'))
-
-            contacts = []
-            for param in request.POST:
-                if not param.startswith('contact_'):
-                    continue
-                contact_id = param[len('contact_'):]
-                #TODO: Check contact_id can be seen by user
-                contact = get_object_or_404(Contact, pk=contact_id)
-                contacts.append(contact)
-            target_group.set_member_n(request, contacts, modes)
-
-            return HttpResponseRedirect(target_group.get_absolute_url())
-        else:
-            messages.add_message(request, messages.ERROR, _('You must select a target group'))
-
-    gid = request.REQUEST.get('gid', '')
-    assert gid
-    if not perms.c_can_see_members_cg(request.user.id, gid):
-        raise PermissionDenied
-    cg = get_object_or_404(ContactGroup, pk=gid)
-
-    strfilter = request.REQUEST.get('filter', '')
-    filter = parse_filterstring(strfilter, request.user.id)
-
-    q, cols = contact_make_query_with_fields(request, [], format='html') #, current_cg=cg)
-
-    q = q.order_by('name')
-
-    display = request.REQUEST.get('display', None)
-    if display is None:
-        display = cg.get_default_display()
-
-    wanted_flags = 0
-    if 'm' in display:
-        wanted_flags |= CIGFLAG_MEMBER
-    if 'i' in display:
-        wanted_flags |= CIGFLAG_INVITED
-    if 'd' in display:
-        wanted_flags |= CIGFLAG_DECLINED
-    if 'a' in display:
-        wanted_flags |= ADMIN_CIGFLAGS
-
-    if not wanted_flags:
-        # Show nothing
-        q = q.filter('FALSE')
-    elif not 'g' in display:
-        # Not interested in inheritance:
-        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
-            % (cg.id, wanted_flags))
-    else:
-        # We want inherited people
-        or_conditions = []
-        # The local flags
-        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
-            % (cg.id, wanted_flags))
-        # The inherited memberships/invited/declined
-        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
-            % (cg.id, wanted_flags & (CIGFLAG_MEMBER|CIGFLAG_INVITED|CIGFLAG_DECLINED)))
-        # The inherited admins
-        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
-            % (cg.id, wanted_flags & ADMIN_CIGFLAGS))
-
-        q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
-
-    q = filter.apply_filter_to_query(q)
-
-    context = {}
-    context['title'] = _('Add contacts to a group')
-    context['nav'] = cg.get_smart_navbar() \
-                     .add_component(('add_contacts_to', _('add contacts to')))
-    context['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
-    context['query'] = q
-    context['active_submenu'] = 'members'
-    return render_to_response('group_add_contacts_to.html', context, RequestContext(request))
-
 
 
 #######################################################################
