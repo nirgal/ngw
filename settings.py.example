@@ -37,7 +37,6 @@ INSTALLED_APPS = (
     'session_security',
     'ngw.core',
 #    'ngw.extensions.phpbb',
-#    'ngw.extensions.mailman',
 #    'ngw.extensions.xmpp',
     'django.contrib.admin', # for static files, but disabled in urls.py
     # Uncomment the next line to enable admin documentation:

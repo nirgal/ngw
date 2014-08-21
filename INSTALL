@@ -93,12 +93,6 @@ See extentions/phpbb3/README
 You can have one group automatically grant access to a local ejabberd.
 See extentions/xmpp/README
 
-* mailman synchronisation
-
-There is a small helper to list people to suscribe/unsusbribe to a mailman
-server.
-Code is currently mostly in core/
-
 * gpg support
 
 mkdir /var/lib/ngw

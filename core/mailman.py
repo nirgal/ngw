@@ -1,17 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 import sys
 import os
 import logging
-if __name__ != '__main__':
-    logging.debug('Mailman synchronisation extension for NGW loading.')
-
-if __name__ == '__main__':
-    sys.path += ['/usr/lib/']
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
-from ngw.extensions import hooks
 
 def normalize_name(name):
     '''
@@ -66,7 +59,7 @@ def synchronise_group(cg, mailcontent):
     unsubscribe_list = []
     subscribe_list = []
     for c in cg.get_all_members():
-        email_base = c.get_fieldvalue_by_id(7)
+        email_base = c.get_fieldvalue_by_id(7) # FIXME
         name_base = c.name
         if name_base == email_base:
             name_base = ''
@@ -90,13 +83,18 @@ def synchronise_group(cg, mailcontent):
                        None))
     return result
 
+
 if __name__ == '__main__':
+    sys.path += ['/usr/lib/']
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
+
     from ngw.core.models import ContactGroup
     from optparse import OptionParser
+    from django.utils.encoding import force_text
     parser = OptionParser(usage='%prog [options] filename dump|normalize|check')
     parser.add_option('-g', '--group', action='store', dest='groupid', type='int', help='specify groupid')
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
 
     if len(args) != 2:
         print('Need exactly 2 arguments\n', file=sys.stderr)
@@ -105,8 +103,8 @@ if __name__ == '__main__':
     
     action = args[1]
 
-    filecontent = file(args[0]).read()
-    filecontent = unicode(filecontent, 'utf-8')
+    filecontent = open(args[0]).read()
+    filecontent = force_text(filecontent)
 
     if action == 'dump':
         mailman_members = parse_who_result(filecontent)
@@ -154,6 +152,3 @@ if __name__ == '__main__':
 
     else:
         print('unknow action', action, file=sys.stderr)
-
-if __name__ != '__main__':
-    logging.debug('mailman synchronisation extension for NGW loaded.')
