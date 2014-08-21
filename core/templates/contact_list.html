@@ -321,7 +321,7 @@ add_filter_breadcrumb({
 
 {% block presubmitbar %}
 <h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>
-<div id="select_fields" class=module style="display:none;">
+<div id="select_fields" class="module padded" style="display:none;">
     {{ field_form.media|safe }}
     <form id=field_selection_widget action="#" onsubmit="submit_fields(); return false;"> {# Form id is needed by SelectFilter widget #}
     <table class=objchange>
@@ -338,7 +338,7 @@ add_filter_breadcrumb({
 
 
 {% block submitbar %}
-<div class="submit-row">
+<div class="submit-row" id=submitbar>
   <a class=button href="javascript:show_column_selection();" id=default>{% trans "Select displayed columns" %}</a>
 </div>
 {% endblock %}
