@@ -415,7 +415,7 @@ class FieldSelectForm(forms.Form):
     - groups whose members can be viewed
     '''
     def __init__(self, user, *args, **kargs):
-        super(forms.Form, self).__init__(*args, **kargs)
+        super(FieldSelectForm, self).__init__(*args, **kargs)
         self.fields['selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_columns(user.id))
 
 
@@ -637,7 +637,7 @@ class ContactEditForm(forms.Form):
     def __init__(self, user_id, cid=None, contactgroup=None, *args, **kargs):
         # Note that user_id is the id of the contact making the query, not the
         # one beeing edited
-        forms.Form.__init__(self, *args, **kargs)
+        super(ContactEditForm, self).__init__(*args, **kargs)
 
         if perms.c_can_write_fields_cg(user_id, GROUP_EVERYBODY):
             self.fields['name'] = forms.CharField(label=_('Name'))

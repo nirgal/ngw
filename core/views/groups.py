@@ -562,7 +562,7 @@ class ContactGroupForm(forms.Form):
         widget=FilterMultipleSelectWidget('groups', False))
 
     def __init__(self, for_user, *args, **kargs):
-        forms.Form.__init__(self, *args, **kargs)
+        super(ContactGroupForm, self).__init__(*args, **kargs)
         visible_groups_choices = [(g.id, g.name_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name')]
         self.fields['direct_supergroups'].choices = visible_groups_choices
         for flag in 'oveEcCfFnNuUxX':
@@ -884,7 +884,7 @@ class ContactInGroupForm(forms.Form):
     note = forms.CharField(required=False)
 
     def __init__(self, *args, **kargs):
-        forms.Form.__init__(self, *args, **kargs)
+        super(ContactInGroupForm, self).__init__(*args, **kargs)
         self.fields['invited'].widget.attrs = {'onchange': '''
             if (this.checked) {
                 this.form.declined.checked=false;
