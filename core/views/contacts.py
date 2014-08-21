@@ -518,6 +518,9 @@ class ContactListView(BaseContactListView):
 class BaseCsvContactListView(BaseContactListView):
     query_format = 'text'
 
+    def get_paginate_by(self, queryset):
+        return None
+
     def render_to_response(self, *args, **kwargs):
         result = ''
         def _quote_csv(u):
@@ -554,6 +557,9 @@ class CsvContactListView(BaseCsvContactListView):
 
 class BaseVcardContactListView(BaseContactListView):
     query_format = 'text'
+
+    def get_paginate_by(self, queryset):
+        return None
 
     def render_to_response(self, *args, **kwargs):
         #TODO: field permission validation
