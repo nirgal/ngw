@@ -870,7 +870,7 @@ class ContactPasswordForm(forms.Form):
 
     def clean(self):
         if self.cleaned_data.get('new_password', '') != self.cleaned_data.get('confirm_password', ''):
-            raise forms.ValidationError('The passwords must match!')
+            raise forms.ValidationError(_('The passwords must match!'))
 
         try:
             crack.FascistCheck(self.cleaned_data.get('new_password', ''))
