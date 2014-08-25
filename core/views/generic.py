@@ -118,6 +118,3 @@ def generic_delete(request, obj, next_url, base_nav=None, ondelete_function=None
         nav.add_component(obj.get_navcomponent()) \
            .add_component(('delete', _('delete')))
         return render_to_response('delete.html', {'title':title, 'object': obj, 'nav': nav}, RequestContext(request))
-
-
-
