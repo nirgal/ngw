@@ -191,7 +191,14 @@ function filter_breadcrumbs_submit() {
 
     {% if filter %}
     operator = $('#' + BASE_ID + 'combine').val();
-    newfilterstr = operator + "({% filter escapejs %}{{ filter|safe }}{% endfilter %}," + newfilterstr + ')';
+    oldfilter = "{% filter escapejs %}{{ filter|safe }}{% endfilter %}";
+    if (oldfilter.indexOf(operator+'(') === 0) {
+        // we are combining with the same combination: merge
+        newfilterstr = oldfilter.substring(0, oldfilter.length - 1) // remove ending ')'
+                  + ',' + newfilterstr + ')';
+    } else {
+        newfilterstr = operator + '(' + oldfilter + ',' + newfilterstr + ')';
+    }
     {% endif %}
     //$('#mainform #filter').val(newfilterstr);
     //$('#mainform').submit();
