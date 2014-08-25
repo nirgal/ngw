@@ -1069,7 +1069,7 @@ def contact_filters_list(request, cid=None):
     context['nav'] = Navbar(Contact.get_class_navcomponent()) \
                      .add_component(contact.get_navcomponent()) \
                      .add_component(('filters', _('custom filters')))
-    return render_to_response('customfilters_user.html', context, RequestContext(request))
+    return render_to_response('filter_list.html', context, RequestContext(request))
 
 
 #######################################################################
@@ -1128,7 +1128,7 @@ def contact_filters_edit(request, cid=None, fid=None):
                      .add_component(('filters', _('custom filters'))) \
                      .add_component((force_text(fid), filtername))
 
-    return render_to_response('customfilter_user.html', context, RequestContext(request))
+    return render_to_response('filter_form.html', context, RequestContext(request))
 
 
 #######################################################################
