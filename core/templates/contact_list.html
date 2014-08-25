@@ -25,6 +25,13 @@ function show_membership_extrainfo(gcid) {
 }
 
 
+function quick_search_submit() {
+    $('#quickfilter_displayedform').removeAttr('data-dirty'); // ignore the fact user filled in search widget
+    document.forms['mainform'].filter.value='nfilter(startswith,' + escape_quote(document.forms['quickfilter_displayedform'].filter.value) + ')';
+    document.forms['mainform'].submit();
+    return false;
+}
+
 
 BASE_ID = 'filter_breadcrumb_';
 var partial_filter = [];
@@ -189,6 +196,7 @@ function filter_breadcrumbs_submit() {
     //$('#mainform #filter').val(newfilterstr);
     //$('#mainform').submit();
     document.forms['mainform'].filter.value=newfilterstr;
+    $('#' + BASE_ID +'1').closest('form').removeAttr('data-dirty'); // ignore the fact user filled in search widget
     document.forms['mainform'].submit();
 }
 
@@ -244,6 +252,10 @@ function submit_fields() {
     document.forms['mainform'].submit();
     return true;
 }
+
+
+
+
 </script>
 {% endblock %}
 
@@ -267,7 +279,7 @@ function submit_fields() {
 {% endif %}
 
 <div id=basic_search {% if filter %}style="display:none;"{% endif %}>
-    <form id="quickfilter_displayedform" action="#" onsubmit="javascript:document.forms['mainform'].filter.value='nfilter(startswith,'+escape_quote(document.forms['quickfilter_displayedform'].filter.value)+')'; document.forms['mainform'].submit(); return false;">
+    <form id="quickfilter_displayedform" action="#" onsubmit="quick_search_submit(); return false;">
         <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search" style="vertical-align:middle;">
         <input name=filter id=defaultfocus style="width:auto;">
         &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:advanced_search();">{% trans "Advanced search" %}</a>
