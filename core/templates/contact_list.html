@@ -25,6 +25,7 @@ function show_membership_extrainfo(gcid) {
 }
 
 
+/* Function called in "Quick search" on submit */
 function quick_search_submit() {
     $('#quickfilter_displayedform').removeAttr('data-dirty'); // ignore the fact user filled in search widget
     document.forms['mainform'].filter.value='nfilter(startswith,' + escape_quote(document.forms['quickfilter_displayedform'].filter.value) + ')';
@@ -41,10 +42,12 @@ var filter_first_param = null;
 var filter_nb_param = null;
 
 
+/* Function called in "Advanced search" when ajax is loading */
 function add_loading() {
     $('#add_filter').append('<span id=' + BASE_ID + '_loading> {% filter escapejs %}{% trans "loading" %}{% endfilter %}...</span>');
 }
 
+/* Function called in "Advanced search" when ajax finished loading */
 function clear_loading() {
     // remove all the 'loading...':
     $('#' + BASE_ID + '_loading').each(function() {
@@ -52,6 +55,8 @@ function clear_loading() {
     });
 }
 
+
+/* Function called in "Advanced search" when ajax returns filter next component */
 function add_filter_breadcrumb(data) {
     /*
     data is an object that can have 2 properties:
@@ -117,6 +122,8 @@ function add_filter_breadcrumb(data) {
     }
 }
 
+
+/* Function called in "Advanced search" on select/option change */
 function filter_breadcrumb_changed(select) {
     /* Get index in partial_filter */
     iid = select.id;
@@ -177,6 +184,7 @@ function filter_breadcrumb_changed(select) {
     });
 }
 
+/* Function called in "Advanced search" on submition */
 function filter_breadcrumbs_submit() {
     newfilterstr = filter_submit_prefix;
     for (i=filter_first_param; i<filter_first_param+filter_nb_param; ++i) {
@@ -189,22 +197,21 @@ function filter_breadcrumbs_submit() {
     }
     newfilterstr += ')';
 
-    {% if filter %}
     operator = $('#' + BASE_ID + 'combine').val();
-    oldfilter = "{% filter escapejs %}{{ filter|safe }}{% endfilter %}";
-    if (oldfilter.indexOf(operator+'(') === 0) {
-        // we are combining with the same combination: merge
-        newfilterstr = oldfilter.substring(0, oldfilter.length - 1) // remove ending ')'
-                  + ',' + newfilterstr + ')';
-    } else {
-        newfilterstr = operator + '(' + oldfilter + ',' + newfilterstr + ')';
+    if (operator) {
+        oldfilter = $('#mainform #filter').val();
+        if (oldfilter.indexOf(operator+'(') === 0) {
+            // we are combining with the same combination: merge
+            newfilterstr = oldfilter.substring(0, oldfilter.length - 1) // remove ending ')'
+                      + ',' + newfilterstr + ')';
+        } else {
+            newfilterstr = operator + '(' + oldfilter + ',' + newfilterstr + ')';
+        }
     }
-    {% endif %}
-    //$('#mainform #filter').val(newfilterstr);
-    //$('#mainform').submit();
-    document.forms['mainform'].filter.value=newfilterstr;
+    $('#mainform #filter').val(newfilterstr);
     $('#' + BASE_ID +'1').closest('form').removeAttr('data-dirty'); // ignore the fact user filled in search widget
-    document.forms['mainform'].submit();
+    $('#mainform').submit();
+    return false;
 }
 
 /* Function called on click on "Advanced search" or "Add a condition" */
@@ -257,11 +264,8 @@ function submit_fields() {
         savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
     }
     document.forms['mainform'].submit();
-    return true;
+    return false;
 }
-
-
-
 
 </script>
 {% endblock %}
@@ -277,7 +281,7 @@ function submit_fields() {
 </form>
 
 <div id=filterbox class="module padded">
-{% block extrafilter %}{% endblock %}
+{% block extrafilter %}{% endblock %} {# group 'display' filter hack in here #}
 {% if filter %}
     <h1>{% trans "Current filter" %}</h1>
     <div id="curent_filter" class="padded">
@@ -286,7 +290,7 @@ function submit_fields() {
 {% endif %}
 
 <div id=basic_search {% if filter %}style="display:none;"{% endif %}>
-    <form id="quickfilter_displayedform" action="#" onsubmit="quick_search_submit(); return false;">
+    <form id="quickfilter_displayedform" onsubmit="return quick_search_submit()">
         <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search" style="vertical-align:middle;">
         <input name=filter id=defaultfocus style="width:auto;">
         &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:advanced_search();">{% trans "Advanced search" %}</a>
@@ -298,7 +302,7 @@ function submit_fields() {
 
 <div id=advanced_search style="display:none;">
     <h1>{% trans "Add condition" %}</h1>
-    <form action="#" onsubmit='javascript:filter_breadcrumbs_submit(); return false;'>
+    <form onsubmit='return filter_breadcrumbs_submit();'>
     <div id=add_filter class="padded">
     </div>
     </form>
@@ -342,7 +346,7 @@ add_filter_breadcrumb({
 <h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>
 <div id="select_fields" class="module padded" style="display:none;">
     {{ field_form.media|safe }}
-    <form id=field_selection_widget action="#" onsubmit="submit_fields(); return false;"> {# Form id is needed by SelectFilter widget #}
+    <form id=field_selection_widget onsubmit="return submit_fields();"> {# Form id is needed by SelectFilter widget #}
     <table class=objchange>
         {{fields_form.as_table}}
     </table>
