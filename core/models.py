@@ -1767,29 +1767,49 @@ class EmptyBoundFilter(BaseBoundFilter):
 
 
 class AndBoundFilter(BaseBoundFilter):
-    def __init__(self, f1, f2):
+    def __init__(self, *subfilters):
         super(AndBoundFilter, self).__init__()
-        self.f1 = f1
-        self.f2 = f2
+        self.subfilters = subfilters
     def get_sql_query_where(self, query, *args, **kargs):
-        query, where1 = self.f1.get_sql_query_where(query)
-        query, where2 = self.f2.get_sql_query_where(query)
-        return query, '((' + where1 + ') AND (' + where2 + '))'
+        wheres = []
+        for subfilter in self.subfilters:
+            query, newwhere = subfilter.get_sql_query_where(query)
+            wheres.append(newwhere)
+        wherestr = '((' + ') AND ('.join(where for where in wheres) + '))'
+        return query, wherestr
     def to_html(self, indent_level=0):
-        return string_concat(self.f1.to_html(indent_level+1), '<br>', self.indent(indent_level), _('AND'), '<br>', self.f2.to_html(indent_level+1))
+        html = ''
+        for subfilter in self.subfilters:
+            if html:
+                html = string_concat(html, '<br>')
+                html = string_concat(html, self.indent(indent_level))
+                html = string_concat(html, _('AND'))
+                html = string_concat(html, '<br>')
+            html = string_concat(html, subfilter.to_html(indent_level+1))
+        return html
 
 
 class OrBoundFilter(BaseBoundFilter):
-    def __init__(self, f1, f2):
+    def __init__(self, *subfilters):
         super(OrBoundFilter, self).__init__()
-        self.f1 = f1
-        self.f2 = f2
+        self.subfilters = subfilters
     def get_sql_query_where(self, query, *args, **kargs):
-        query, where1 = self.f1.get_sql_query_where(query)
-        query, where2 = self.f2.get_sql_query_where(query)
-        return query, '((' + where1 + ') OR (' + where2 + '))'
+        wheres = []
+        for subfilter in self.subfilters:
+            query, newwhere = subfilter.get_sql_query_where(query)
+            wheres.append(newwhere)
+        wherestr = '((' + ') OR ('.join(where for where in wheres) + '))'
+        return query, wherestr
     def to_html(self, indent_level=0):
-        return string_concat(self.f1.to_html(indent_level+1), '<br>', self.indent(indent_level), _('OR'), '<br>', self.f2.to_html(indent_level+1))
+        html = ''
+        for subfilter in self.subfilters:
+            if html:
+                html = string_concat(html, '<br>')
+                html = string_concat(html, self.indent(indent_level))
+                html = string_concat(html, _('OR'))
+                html = string_concat(html, '<br>')
+            html = string_concat(html, subfilter.to_html(indent_level+1))
+        return html
 
 
 @python_2_unicode_compatible

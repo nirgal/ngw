@@ -117,40 +117,42 @@ def _filter_parse_expression(lexer, user_id):
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
             raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
-        subfilter1 = _filter_parse_expression(lexer, user_id)
+        subfilters = []
 
-        lexem = next(lexer)
-        if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
+        while True:
+            subfilters.append(_filter_parse_expression(lexer, user_id))
 
-        subfilter2 = _filter_parse_expression(lexer, user_id)
+            lexem = next(lexer)
+            if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
+                break
 
-        lexem = next(lexer)
-        if lexem.type != FilterLexer.Lexem.Type.RPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected ')'." % force_text(repr(lexem)))
+            if lexem.type == FilterLexer.Lexem.Type.COMMA:
+                continue
 
-        return AndBoundFilter(subfilter1, subfilter2)
+            raise FilterSyntaxError("Unexpected %s. Expected ',' or ')'." % force_text(repr(lexem)))
 
+        return AndBoundFilter(*subfilters)
 
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'or':
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
             raise FilterSyntaxError("Unexpected %s. Expected '('." % force_text(repr(lexem)))
 
-        subfilter1 = _filter_parse_expression(lexer, user_id)
+        subfilters = []
 
-        lexem = next(lexer)
-        if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise FilterSyntaxError("Unexpected %s. Expected ','." % force_text(repr(lexem)))
+        while True:
+            subfilters.append(_filter_parse_expression(lexer, user_id))
 
-        subfilter2 = _filter_parse_expression(lexer, user_id)
+            lexem = next(lexer)
+            if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
+                break
 
-        lexem = next(lexer)
-        if lexem.type != FilterLexer.Lexem.Type.RPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected ')'." % force_text(repr(lexem)))
+            if lexem.type == FilterLexer.Lexem.Type.COMMA:
+                continue
 
-        return OrBoundFilter(subfilter1, subfilter2)
+            raise FilterSyntaxError("Unexpected %s. Expected ',' or ')'." % force_text(repr(lexem)))
 
+        return OrBoundFilter(*subfilters)
 
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'ffilter':
         lexem = next(lexer)
