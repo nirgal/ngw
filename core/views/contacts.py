@@ -154,7 +154,9 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'invited': flags & CIGFLAG_INVITED,
         'declined': flags & CIGFLAG_DECLINED,
         'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
-        'title': contact_with_extra_fields.name+' in group '+contact_group.name_with_date(),
+        'title': _('%(contactname)s in group %(groupname)s') % {
+            'contactname':contact_with_extra_fields.name,
+            'groupname': contact_group.name_with_date()},
         'next_url': request.get_full_path(),
         }, RequestContext(request))
 
