@@ -44,5 +44,3 @@ Event selection widget (Do not load everything at once, like for column selectio
 Type change deletion check is buggy.
 
 With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
-
-We need to remove form from membershipwidget (group column) if we want to have a change_list, that selectable objects and action to perform on them.
