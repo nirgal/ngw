@@ -3,17 +3,6 @@
 
 {% block extrahead %}{{ block.super }}
 <style>
-/*
-.membershipextra {
-    position:absolute;
-    display:none;
-    background-color: white;
-    border:1px solid black;
-    padding: 1ex;
-    right:0px;
-    z-index: 2;
-}*/
-
 /* credit: http://www.csslab.cl/2008/01/30/ventana-modal-solo-con-css/ */
 .membership_edit_overlay {
     position: fixed;
@@ -311,7 +300,7 @@ function inline_edit_membership_close() {
 
 
 
-{% block prequerylist %}
+{% block filter %}
 <div id=membership_edit style="display:none">
     <div class="membership_edit_overlay" onclick='inline_edit_membership_close();'></div>
     <div class="membership_edit_modal">
@@ -337,8 +326,7 @@ function inline_edit_membership_close() {
     <input type=hidden id=display name=display value="{{display}}">
 </form>
 
-<div id=filterbox class="module padded">
-{% block extrafilter %}{% endblock %} {# group 'display' filter hack in here #}
+<div id=toolbar style="border-bottom:1px solid #eee">
 {% if filter %}
     <h1>{% trans "Current filter" %}</h1>
     <div id="curent_filter" class="padded">

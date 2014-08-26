@@ -15,7 +15,7 @@
     {{ block.super }}
 {% endblock %}
 
-{% block extrafilter %}
+{% block filter %}
     <script>
     function submit_display(form) {
         display="";
@@ -28,6 +28,7 @@
         document.forms['mainform'].submit();
     }
     </script>
+    <div class=padded>
     <form>{% trans "Show" %}:
     <input type=checkbox name="display_member" id="id_display_member" {% if "m" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_member">{% trans "Members" %}</label>
     <input type=checkbox name="display_invited" id="id_display_invited" {% if "i" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_invited">{% trans "Invited people" %}</label>
@@ -35,6 +36,8 @@
     <input type=checkbox name="display_subgroups" id="id_display_subgroups" {% if "g" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_subgroups">{% trans "Include subgroups" %}</label>
     <input type=checkbox name="display_admins" id="id_display_admins" {% if "a" in display %}checked {% endif %}onchange="submit_display(this.form);"><label for="id_display_admins">{% trans "Admins" %}</label>
     </form>
+    </div>
+    {{ block.super }}
 {% endblock %}
 
 {% block presubmitbar %}

@@ -10,6 +10,7 @@
     
     {% block prequerylist %}{% endblock %}
     <div class="module" id="changelist">
+    {% block filter %}{% endblock %}
     {% include "query.html" %}
     </div>
 
