@@ -1,6 +1,9 @@
+<a href="javascript:inline_edit_membership('{{title|escapejs}}', '{{cig_url|escapejs}}', {% if invited %}'invited'{% endif %}{% if member %}'member'{% endif %}{% if declined %}'declined_invitation'{% endif %});">{{membership_str}}</a>
+
+{% comment %}
 {% load i18n staticfiles %}
 <div style="position:relative">{# See https://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-element #}
-<a href="javascript:show_membership_extrainfo('{{gid}}_{{cid}}')">{{membership_str}}</a>
+{#<a href="javascript:show_membership_extrainfo('{{gid}}_{{cid}}')">{{membership_str}}</a>#}
 {% if note %}<br>{{note}}{% endif %}
 <div class=membershipextra id="membership_{{gid}}_{{cid}}">
     <a href="javascript:show_membership_extrainfo(null)"><img src="{% static "ngw/close.png" %}" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px; border-left:1px solid #ccc; border-bottom:1px solid #ccc;"></a>
@@ -18,4 +21,5 @@
     </form>
 </div>
 </div>
+{% endcomment %}
 {# vim: set et ts=4 ft=htmldjango: #}
