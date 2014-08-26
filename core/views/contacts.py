@@ -497,7 +497,6 @@ class BaseContactListView(NgwListView):
         context['fields'] = self.strfields
         context['baseurl'] = self.baseurl
         context['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
-        context['no_confirm_form_discard'] = True
 
         context.update(kwargs)
         return super(BaseContactListView, self).get_context_data(**context)
