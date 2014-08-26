@@ -49,16 +49,6 @@
 </style>
 
 <script>
-shown_membership_extrainfo_gcid=null;
-function show_membership_extrainfo(gcid) {
-    if (shown_membership_extrainfo_gcid)
-        document.getElementById('membership_'+shown_membership_extrainfo_gcid).style.display='none';
-    if (gcid)
-        document.getElementById('membership_'+gcid).style.display='block';
-    shown_membership_extrainfo_gcid = gcid;
-}
-
-
 /* Function called in "Quick search" on submit */
 function quick_search_submit() {
     $('#quickfilter_displayedform').removeAttr('data-dirty'); // ignore the fact user filled in search widget

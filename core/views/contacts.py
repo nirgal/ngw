@@ -144,20 +144,25 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
     flags = getattr(contact_with_extra_fields, 'group_%s_flags' % contact_group.id)
     if flags is None:
         flags = 0
+    if flags & CIGFLAG_MEMBER:
+        membership = 'member'
+    elif flags & CIGFLAG_INVITED:
+        membership = 'invited'
+    elif flags & CIGFLAG_DECLINED:
+        membership = 'declined_invitation'
+    else:
+        membership = ''
 
     return loader.render_to_string('membership_widget.html', {
         'cid': contact_with_extra_fields.id,
         'gid': contact_group.id,
         'membership_str': membership_to_text(contact_with_extra_fields, contact_group.id),
         'note': getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id),
-        'member': flags & CIGFLAG_MEMBER,
-        'invited': flags & CIGFLAG_INVITED,
-        'declined': flags & CIGFLAG_DECLINED,
+        'membership': membership,
         'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
         'title': _('%(contactname)s in group %(groupname)s') % {
             'contactname':contact_with_extra_fields.name,
             'groupname': contact_group.name_with_date()},
-        'next_url': request.get_full_path(),
         }, RequestContext(request))
 
 

@@ -1,25 +1,3 @@
-<a href="javascript:inline_edit_membership('{{title|escapejs}}', '{{cig_url|escapejs}}', {% if invited %}'invited'{% endif %}{% if member %}'member'{% endif %}{% if declined %}'declined_invitation'{% endif %});">{{membership_str}}</a>
-
-{% comment %}
-{% load i18n staticfiles %}
-<div style="position:relative">{# See https://stackoverflow.com/questions/5148041/does-firefox-support-position-relative-on-table-element #}
-{#<a href="javascript:show_membership_extrainfo('{{gid}}_{{cid}}')">{{membership_str}}</a>#}
+<a href="javascript:inline_edit_membership('{{title|escapejs}}', '{{cig_url|escapejs}}', '{{ membership }}');">{{membership_str}}</a>
 {% if note %}<br>{{note}}{% endif %}
-<div class=membershipextra id="membership_{{gid}}_{{cid}}">
-    <a href="javascript:show_membership_extrainfo(null)"><img src="{% static "ngw/close.png" %}" alt=close width=10 height=10 style="position:absolute; top:0px; right:0px; border-left:1px solid #ccc; border-bottom:1px solid #ccc;"></a>
-    {{title}}<br>
-    <form action="{{cig_url}}/membershipinline" method=post>
-        {% csrf_token %}
-        <input type=hidden name="next_url" value="{{next_url}}">
-        <span style="white-space: nowrap">
-        <input type=radio name=membership value=invited id="contact_{{cid}}_invited" {% if invited %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_invited">{% trans "Invited" %}</label>
-        <input type=radio name=membership value=member id="contact_{{cid}}_member" {% if member %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_member">{% trans "Member" %}</label>
-        <input type=radio name=membership value=declined_invitation id="contact_{{cid}}_declined_invitation" {% if declined %}checked{% endif %} onclick="this.form.submit()"><label for="contact_{{cid}}_declined_invitation"> {% trans "Declined invitation" %}</label>
-        </span>
-        <br>
-        <a href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:show_membership_extrainfo(null)">{% trans "Close" %}</a>
-    </form>
-</div>
-</div>
-{% endcomment %}
 {# vim: set et ts=4 ft=htmldjango: #}
