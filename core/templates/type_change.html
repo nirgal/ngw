@@ -12,7 +12,7 @@
     <input type=hidden name=type value="{{type}}">
     <input type=hidden name=choicegroup value="{{choicegroup}}">
     <input type=hidden name=move_after value="{{move_after}}">
-    {% blocktrans with fieldtype=cf.get_class_verbose_name fieldname=cf.name %}You are about to change the {{ fieldtype }} {{ fieldname }}. However, some existing data is not compatible with the new type you selected. The only choice is to delete these records.{% endblocktrans %}
+    {% blocktrans with fieldtype=cf.get_class_verbose_name fieldname=cf.name %}You are about to change the {{ fieldtype }} {{ fieldname }}. However, some existing data is not compatible with the new type you selected. The only choice is to delete these records.{% endblocktrans %}
     <p>{% trans "The following data will be deleted" %}:
     <p>{% for key,value in deletion_details %}
         {{ key }}: {{ value }}<br>
