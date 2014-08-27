@@ -5,10 +5,10 @@ ContactGroup managing views
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from datetime import date, datetime, timedelta
-from decoratedstr import remove_decoration
 import json
+from decoratedstr import remove_decoration
 from django.core.exceptions import PermissionDenied
-from django.http import (HttpResponse, HttpResponseRedirect)
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils import translation
@@ -20,7 +20,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import TemplateView, ListView
+from django.views.generic import View, TemplateView, ListView
 from django.views.generic.base import ContextMixin
 from django.contrib import messages
 from ngw.core.models import (
@@ -36,6 +36,7 @@ from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
+from ngw.core.response import JsonHttpResponse
 from ngw.core.views.contacts import BaseContactListView, BaseCsvContactListView, BaseVcardContactListView
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete, NgwUserMixin, NgwListView
@@ -258,7 +259,7 @@ def contactgroup_index(request, gid):
     if perms.c_can_see_files_cg(request.user.id, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
     if perms.c_can_view_msgs_cg(request.user.id, gid):
-        return HttpResponseRedirect(cg.get_absolute_url() + 'messages')
+        return HttpResponseRedirect(cg.get_absolute_url() + 'messages/')
     raise PermissionDenied
 
 
@@ -513,7 +514,7 @@ class MessageListView(NgwUserMixin, ListView):
         if not perms.c_can_view_msgs_cg(request.user.id, group_id):
             raise PermissionDenied
         self.contactgroup = contactgroup
-        return super(MessageListView, self).get(request, *args, **kwargs)
+        return super(MessageListView, self).dispatch(request, *args, **kwargs)
 
 
     def get_queryset(self):
@@ -536,6 +537,33 @@ class MessageListView(NgwUserMixin, ListView):
         context.update(kwargs)
         return super(MessageListView, self).get_context_data(**context)
 
+
+class MessageToggleReadView(NgwUserMixin, View):
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, request, *args, **kwargs):
+        group_id = self.kwargs.get('gid', None)
+        try:
+            group_id = int(group_id)
+        except (ValueError, TypeError):
+            raise Http404
+        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
+        if not perms.c_can_write_msgs_cg(request.user.id, group_id):
+            raise PermissionDenied
+        self.contactgroup = contactgroup
+        return super(MessageToggleReadView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        message_id = self.kwargs.get('mid', None)
+        try:
+            message_id = int(message_id)
+        except (ValueError, TypeError):
+            raise Http404
+        message = get_object_or_404(ContactMsg, pk=message_id)
+        if message.group_id != self.contactgroup.id:
+            return HttpResponse('Bad group')
+
+        return JsonHttpResponse({'test': 'ok'})
 
 #######################################################################
 #
@@ -1191,4 +1219,3 @@ Ci-joint votre message original.
 
     context['form'] = form
     return render_to_response('group_mailman.html', context, RequestContext(request))
-

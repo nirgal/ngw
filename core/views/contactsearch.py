@@ -6,25 +6,17 @@ ajax views for building contact filter
 from __future__ import division, print_function, unicode_literals
 
 from collections import OrderedDict
-import json
 from django.utils import six
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
-from django.http import HttpResponse, Http404
+from django.http import Http404
 from ngw.core.models import (
     GROUP_USER_NGW,
     ContactField, ContactGroup, ChoiceGroup)
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
+from ngw.core.response import JsonHttpResponse
 from ngw.core.views.decorators import login_required, require_group
 
-
-
-class JsonHttpResponse(HttpResponse):
-    '''
-    HttpResponse subclass that json encode content, with default content_type
-    '''
-    def __init__(self, content, content_type='application/json', *args, **kwargs):
-        super(JsonHttpResponse, self).__init__(json.dumps(content), content_type, *args, **kwargs)
 
 
 @login_required()

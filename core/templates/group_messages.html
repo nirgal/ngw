@@ -9,13 +9,14 @@
 <div id="content-main">
 
 {% for msg in contact_messages %}
-<div class=module>
-    <p>
+<div class="module padded" id="message-{{ msg.id }}">
     {% if msg.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{msg.contact.name}}<br>
     {% trans "Date" %}: {{msg.send_date}}<br>
+    {% if msg.is_answer %}
+        {% if msg.read_date %}{% trans "Read" %}{% else %}{% trans "Unread" %}{% endif %}<br>
+    {% endif %}
     <br>
     {{ msg.text|linebreaksbr }}
-    </p>
 </div>
 {% empty %}
 <div class=fullpagebox>
