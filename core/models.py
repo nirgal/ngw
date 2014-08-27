@@ -1929,3 +1929,19 @@ class ContactMsg(NgwModel):
         db_table = 'contact_message'
         verbose_name = _('message')
         verbose_name_plural = _('messages')
+
+    def nice_date(self):
+        return formats.date_format(self.send_date, 'DATETIME_FORMAT')
+
+    def get_link_nice_date(self):
+        return self.group.get_absolute_url() + 'messages/' + force_text(self.id)
+
+    def direction(self):
+        if self.is_answer:
+            return _('Received')
+        return _('Sent')
+
+    def nice_read(self):
+        if self.read_date:
+            return _('Read')
+        return _('Unread')

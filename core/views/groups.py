@@ -20,8 +20,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import View, TemplateView, ListView
-from django.views.generic.base import ContextMixin
+from django.views.generic import TemplateView
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
@@ -36,7 +35,6 @@ from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
-from ngw.core.response import JsonHttpResponse
 from ngw.core.views.contacts import BaseContactListView, BaseCsvContactListView, BaseVcardContactListView
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete, NgwUserMixin, NgwListView
@@ -400,7 +398,7 @@ class EmailGroupMemberListView(GroupMemberListView):
             contact_msg.text = message
             contact_msg.sync_info = json.dumps({'language': language})
             contact_msg.save()
-            messages.add_message(request, messages.INFO, _('Messages stored.'))
+            messages.add_message(request, messages.SUCCESS, _('Message stored.'))
         return HttpResponseRedirect(cg.get_absolute_url())
 
 
@@ -467,103 +465,6 @@ class GroupAddManyView(GroupMemberListView):
 
         return HttpResponseRedirect(target_group.get_absolute_url())
 
-
-#######################################################################
-#
-# Group messages
-#
-#######################################################################
-
-
-#class IngroupMixin(ContextMixin):
-#    '''
-#    Views using that mixin must define a "gid" url pattern.
-#    Mixin will setup a self.contactgroup and set up context.
-#    '''
-#    def dispatch(self, request, *args, **kwargs): # FIXME dispatch is view only stuff
-#        group_id = self.kwargs.get('gid', None)
-#        try:
-#            group_id = int(group_id)
-#        except (ValueError, TypeError):
-#            raise Http404
-#        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
-#        self.contactgroup = contactgroup
-#        return super(IngroupMixin, self).get(request, *args, **kwargs)
-#
-#    def get_context_data(self, **kwargs):
-#        cg = self.contactgroup
-#        context['cg'] = cg
-#        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
-#        return super(IngroupMixin, self).get_context_data(**context)
-
-
-class MessageListView(NgwUserMixin, ListView):
-    template_name = 'group_messages.html'
-    context_object_name = 'contact_messages'
-    page_kwarg = '_page'
-
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        group_id = self.kwargs.get('gid', None)
-        try:
-            group_id = int(group_id)
-        except (ValueError, TypeError):
-            raise Http404
-        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
-        if not perms.c_can_view_msgs_cg(request.user.id, group_id):
-            raise PermissionDenied
-        self.contactgroup = contactgroup
-        return super(MessageListView, self).dispatch(request, *args, **kwargs)
-
-
-    def get_queryset(self):
-        return ContactMsg.objects \
-            .filter(group_id=self.contactgroup.id) \
-            .order_by('-send_date')
-
-    def get_paginate_by(self, queryset):
-       return Config.get_object_query_page_length()
-
-    def get_context_data(self, **kwargs):
-        cg = self.contactgroup
-        context = {}
-        context['title'] = _('Messages for %s') % cg.name_with_date()
-        context['cg'] = cg
-        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('messages', _('messages')))
-        context['active_submenu'] = 'messages'
-        context.update(kwargs)
-        return super(MessageListView, self).get_context_data(**context)
-
-
-class MessageToggleReadView(NgwUserMixin, View):
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        group_id = self.kwargs.get('gid', None)
-        try:
-            group_id = int(group_id)
-        except (ValueError, TypeError):
-            raise Http404
-        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
-        if not perms.c_can_write_msgs_cg(request.user.id, group_id):
-            raise PermissionDenied
-        self.contactgroup = contactgroup
-        return super(MessageToggleReadView, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        message_id = self.kwargs.get('mid', None)
-        try:
-            message_id = int(message_id)
-        except (ValueError, TypeError):
-            raise Http404
-        message = get_object_or_404(ContactMsg, pk=message_id)
-        if message.group_id != self.contactgroup.id:
-            return HttpResponse('Bad group')
-
-        return JsonHttpResponse({'test': 'ok'})
 
 #######################################################################
 #

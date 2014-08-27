@@ -13,7 +13,8 @@ admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, CsvContactListView, VcardContactListView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView, MessageListView, MessageToggleReadView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView
+from ngw.core.views.messages import MessageListView, MessageDetailView
 from ngw.core.views.news import NewsListView
 from ngw.core.views.fields import FieldListView
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
@@ -42,7 +43,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/add_contacts_to$', GroupAddManyView.as_view()),
     url(r'^(?P<gid>\d+)/files(?P<path>.+)$', 'ngw.core.views.files.contactgroup_files'),
     url(r'^(?P<gid>\d+)/messages/$', MessageListView.as_view(), name='message_list'),
-    url(r'^(?P<gid>\d+)/messages/(?P<mid>\d+)/toggle_read$', MessageToggleReadView.as_view(), name='message_toggle_read'),
+    url(r'^(?P<gid>\d+)/messages/(?P<mid>\d+)$', MessageDetailView.as_view(), name='message_detail'),
     url(r'^(?P<gid>\d+)/news/$', NewsListView.as_view(), name='news_list'),
     url(r'^(?P<gid>\d+)/news/add$', 'ngw.core.views.news.contactgroup_news_edit', {'nid':None}),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='edit')),

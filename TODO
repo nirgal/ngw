@@ -44,3 +44,5 @@ Event selection widget (Do not load everything at once, like for column selectio
 Type change deletion check is buggy.
 
 With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
+
+Add duration to events (end date)

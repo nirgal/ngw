@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n ngwtags %}
+
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<div class="module padded">
+    {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{object.contact.name}}<br>
+    {% trans "Date" %}: {{object.send_date}}<br>
+    {% if object.is_answer %}
+        {% if object.read_date %}{% trans "Read" %}{% else %}{% trans "Unread" %}{% endif %}<br>
+    {% endif %}
+    <br>
+    {{ object.text|linebreaksbr }}
+</div>
+
+{% if cg_perms.X and object.is_answer %}
+<div class="submit-row">
+<form method=post>
+{% csrf_token %}
+<input type=submit name=unread value="{% trans "Flag as unread" %}">
+</form>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}
