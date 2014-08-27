@@ -59,7 +59,7 @@ def do_sync():
 
             dt = msg.group.date
             if dt:
-                days = (dt - now()).days
+                days = (dt - now().date()).days
             else:
                 days = 21
             ot_conn.request('POST', '/', urllib.parse.urlencode({
