@@ -311,7 +311,7 @@ function inline_edit_membership_close() {
     <span style="white-space: nowrap">
     <input type=radio name=membership value=invited id="membership_edit_invited" onclick="this.form.submit()"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
     <input type=radio name=membership value=member id="membership_edit_member" onclick="this.form.submit()"><label for="membership_edit_member"> {% trans "Member" %}</label>
-    <input type=radio name=membership value=declined_invitation id="membership_edit_declined" onclick="this.form.submit()"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
+    <input type=radio name=membership value=declined id="membership_edit_declined" onclick="this.form.submit()"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
     </span>
     <br>
     <a id='membership_edit_more' href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:inline_edit_membership_close();">{% trans "Close" %}</a>

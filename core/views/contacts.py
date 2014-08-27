@@ -149,7 +149,7 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
     elif flags & CIGFLAG_INVITED:
         membership = 'invited'
     elif flags & CIGFLAG_DECLINED:
-        membership = 'declined_invitation'
+        membership = 'declined'
     else:
         membership = ''
 

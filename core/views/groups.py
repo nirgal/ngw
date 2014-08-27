@@ -1107,10 +1107,10 @@ def contactingroup_edit_inline(request, gid, cid):
         flags = '+i'
     elif newmembership == 'member':
         flags = '+m'
-    elif newmembership == 'declined_invitation':
+    elif newmembership == 'declined':
         flags = '+d'
     else:
-        raise Exception('invalid membership '+request.POST['membership'])
+        raise Exception('invalid membership %s' % newmembership)
     cg.set_member_1(request, contact, flags)
     hooks.membership_changed(request, contact, cg)
     return HttpResponseRedirect(request.POST['next_url'])
