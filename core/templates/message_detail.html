@@ -13,9 +13,10 @@
     (
     <a href="{{cig_url}}membership">{% trans "membership" %}</a>
     )<br>
-    {% trans "Date" %}: {{object.send_date}}<br>
-    {% if object.is_answer %}
-        {% if object.read_date %}{% trans "Read" %}{% else %}{% trans "Unread" %}{% endif %}<br>
+    {% if object.is_answer %}{% trans "Received" %}{% else %}{% trans "Sent" %}{% endif %}: {{object.send_date}} UTC<br>
+    {% trans "Subject" %}: {{object.subject}}<br>
+    {% if not object.is_answer and object.read_date %}
+        {% trans "Read by recipent" %}: {{ object.read_date }} UTC<br>
     {% endif %}
     <br>
     {{ object.text|linebreaksbr }}
