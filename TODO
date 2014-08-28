@@ -46,3 +46,5 @@ Type change deletion check is buggy.
 With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
 
 Add duration to events (end date)
+
+Calendar: Don't show message count if no access to messages
