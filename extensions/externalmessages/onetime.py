@@ -17,7 +17,6 @@ import ngw.core.contactfield
 
 _ = lambda x: x
 
-NOTIFICATION_SUBJECT = _('You have a message')
 NOTIFICATION_TEXT = _('''Hello
 
 You can read your message at https://onetime.info/%s
@@ -101,7 +100,7 @@ def do_sync():
             c_mails = msg.contact.get_fieldvalues_by_type('EMAIL')
             if c_mails:
                 logger.info('Sending email notification to %s.', c_mails[0])
-                masssmail_args.append((ugettext(NOTIFICATION_SUBJECT), ugettext(NOTIFICATION_TEXT) % sync_info['otid'], None, (c_mails[0],)))
+                masssmail_args.append((msg.subject, ugettext(NOTIFICATION_TEXT) % sync_info['otid'], None, (c_mails[0],)))
     #logger.debug(masssmail_args)
     if masssmail_args and send_mass_mail(masssmail_args):
         for msg in messages:
