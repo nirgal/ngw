@@ -23,7 +23,9 @@ NOTIFICATION_TEXT = _('''Hello
 You can read your message at https://onetime.info/%s
 
 Warning, that message will be displayed exactly once, and then be deleted. Have
-a pen ready before clicking the link. :)''')
+a pen ready before clicking the link. :)
+
+Do not replay to that email. Use the link above.''')
 
 logger = logging.getLogger('msgsync')
 
