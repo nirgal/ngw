@@ -133,7 +133,7 @@ def membership_to_text(contact_with_extra_fields, group_id):
             result = translation.string_concat(result, membership)
         return result
     else:
-        return _('No')
+        return _('Nil')
 
 def membership_to_text_factory(group_id):
     return lambda contact_with_extra_fields: \
