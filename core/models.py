@@ -1169,6 +1169,12 @@ class ContactGroup(NgwModel):
                 'status': group_member_mode})
 
 
+    def count_messages(self):
+        return ContactMsg.objects.filter(group_id=self.id).count()
+
+    def count_unread_messages(self):
+        return ContactMsg.objects.filter(group_id=self.id, read_date__isnull=True, is_answer=True).count()
+
 
 ########################################
 # Contact Fields
@@ -1942,6 +1948,8 @@ class ContactMsg(NgwModel):
         return _('Sent')
 
     def nice_read(self):
-        if self.read_date:
-            return _('Read')
-        return _('Unread')
+        if self.is_answer:
+            if self.read_date:
+                return _('Read')
+            return _('Unread')
+        return ''
