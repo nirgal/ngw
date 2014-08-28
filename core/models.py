@@ -1953,4 +1953,7 @@ class ContactMsg(NgwModel):
             if self.read_date:
                 return _('Read')
             return _('Unread')
+        # so this is a sent message
+        if self.read_date:
+            return _('Read')
         return ''
