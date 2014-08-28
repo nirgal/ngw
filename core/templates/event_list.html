@@ -72,6 +72,7 @@
     {% if forloop.counter0 %}<br>
     {% endif %}
     • <a href="{{event.get_absolute_url}}" title="{{event.description}}">{{ event }}</a>
+      {% if event.count_unread_messages %}<span style='color:red;'>✉</span>{% endif %}
     {% endfor %}
     {% endfor %}
     {% endfor %}
