@@ -120,7 +120,7 @@ class MessageDetailView(NgwUserMixin, DetailView):
             # attempt to read an object from another group
             raise PermissionDenied
         if self.object.is_answer:
-            if perms.c_can_write_msgs_cg(request.user.id, self.contactgroup.id):
+            if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
                 self.object.read_date = now()
                 self.object.save()
             else:
