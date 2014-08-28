@@ -59,6 +59,7 @@ class MessageListView(NgwUserMixin, NgwListView):
         (_('Direction'), None, 'direction', 'is_answer'),
         (_('Read'), None, 'nice_read', None),
         (_('Contact'), None, 'contact', 'contact__name'),
+        (_('Subject'), None, 'subject', 'subject'),
         #(_('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     template_name = 'message_list.html'

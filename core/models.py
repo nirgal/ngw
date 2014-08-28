@@ -1928,7 +1928,7 @@ class ContactMsg(NgwModel):
     read_date = models.DateTimeField(null=True, blank=True)
     read_by = models.ForeignKey(Contact, null=True, related_name='msgreader')
     is_answer = models.BooleanField(default=False)
-    #subject
+    subject = models.CharField(max_length=64)
     text = models.TextField()
     sync_info = models.TextField(blank=True) # json data for external storage
 

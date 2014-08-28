@@ -189,6 +189,7 @@ CREATE TABLE contact_message (
     read_date timestamp with time zone,
     read_by_id integer REFERENCES contact(id) MATCH SIMPLE ON UPDATE CASCADE ON DELETE SET NULL,
     is_answer boolean DEFAULT false NOT NULL,
+    subject varchar(64) NOT NULL DEFAULT 'no title',
     text text,
     sync_info text
 );

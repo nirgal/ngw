@@ -386,6 +386,7 @@ class EmailGroupMemberListView(GroupMemberListView):
 
         if not perms.c_can_write_msgs_cg(request.user.id, gid):
             raise PermissionDenied
+        subject = request.POST.get('subject', _('No title'))
         message = request.POST.get('message', '')
         language = translation.get_language()
         for param in request.POST:
@@ -395,6 +396,7 @@ class EmailGroupMemberListView(GroupMemberListView):
             contact = get_object_or_404(Contact, pk=contact_id)
             contact_msg = ContactMsg(contact=contact, group=cg)
             contact_msg.send_date = datetime.utcnow()
+            contact_msg.subject = subject
             contact_msg.text = message
             contact_msg.sync_info = json.dumps({'language': language})
             contact_msg.save()

@@ -65,6 +65,7 @@ def do_sync():
             else:
                 days = 21
             ot_conn.request('POST', '/', urllib.parse.urlencode({
+                'subject': msg.subject.encode(settings.DEFAULT_CHARSET),
                 'message': msg.text.encode(settings.DEFAULT_CHARSET),
                 'once': True,
                 'expiration': days,
@@ -145,12 +146,16 @@ def do_sync():
         sresponse = response.read()
         jresponse = json.loads(force_str(sresponse))
         logger.debug(jresponse)
-        for response_text in jresponse:
+        if 'read_date' in jresponse and not msg.read_date:
+            msg.read_date = jresponse.get('read_date', None)
+            msg.save()
+        for response_text in jresponse['answers']:
             logger.info('Received answer from %s.', msg.contact)
             answer_msg = ContactMsg(
                 group_id=msg.group_id,
                 contact_id=msg.contact_id,
                 send_date=datetime.datetime.utcnow(),
+                subject=jresponse['subject'],
                 text=response_text,
                 is_answer=True,
                 sync_info=json.dumps({'otid': sync_info['otid']}),

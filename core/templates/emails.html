@@ -86,6 +86,8 @@ function onFocusTextArea() {
     {% endif %}
 
     <p>
+    {% trans "Subject" %}: <input name=subject maxlength="64" size=64>
+    <p>
     <textarea name=message id=messagetxt style="width:100%" rows=20 onfocus='onFocusTextArea()'>{% trans "Enter your message here." %}</textarea>
 </div>
 
