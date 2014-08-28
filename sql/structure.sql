@@ -187,6 +187,7 @@ CREATE TABLE contact_message (
     group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     send_date timestamp with time zone NOT NULL,
     read_date timestamp with time zone,
+    read_by_id integer REFERENCES contact(id) MATCH SIMPLE ON UPDATE CASCADE ON DELETE SET NULL,
     is_answer boolean DEFAULT false NOT NULL,
     text text,
     sync_info text

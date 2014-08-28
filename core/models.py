@@ -1926,6 +1926,7 @@ class ContactMsg(NgwModel):
     group = models.ForeignKey(ContactGroup)
     send_date = models.DateTimeField()
     read_date = models.DateTimeField(null=True, blank=True)
+    read_by = models.ForeignKey(Contact, null=True, related_name='msgreader')
     is_answer = models.BooleanField(default=False)
     #subject
     text = models.TextField()

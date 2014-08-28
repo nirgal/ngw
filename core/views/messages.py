@@ -122,6 +122,7 @@ class MessageDetailView(NgwUserMixin, DetailView):
         if self.object.is_answer:
             if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
                 self.object.read_date = now()
+                self.object.read_by = request.user
                 self.object.save()
             else:
                 messages.add_message(request, messages.WARNING,
@@ -141,6 +142,7 @@ class MessageDetailView(NgwUserMixin, DetailView):
         self.object = self.get_object()
         if request.POST.get('unread', None):
             self.object.read_date = None
+            self.object.read_by = None
             self.object.save()
             return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/?&_order=-0')
         raise Http404
