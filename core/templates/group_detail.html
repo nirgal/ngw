@@ -43,6 +43,7 @@
 {% block presubmitbar %}
     {{ block.super }}
     {% ifnotequal cg.id 1 %}
+    {% if "g" in display %}
         {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
             {% if forloop.first %}
                 <h1 class=boxheader>{% trans "Sub groups" %}</h1>
@@ -61,8 +62,10 @@
                 </div>
             {% endif %}
         {% endfor %}
+    {% endif %}
     {% endifnotequal %}
     
+    {% if "a" in display %}
     {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
         {% if forloop.first %}
             <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg.name_with_date }}</h1>
@@ -73,6 +76,7 @@
             </div>
         {% endif %}
     {% endfor %}
+    {% endif %}
 
     {% for p in cg.get_birthday_members %}
         {% if forloop.first %}
