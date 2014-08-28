@@ -122,7 +122,7 @@ class MessageDetailView(NgwUserMixin, DetailView):
         if self.object.is_answer:
             if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
                 self.object.read_date = now()
-                self.object.read_by = request.user
+                self.object.read_by = self.request.user
                 self.object.save()
             else:
                 messages.add_message(request, messages.WARNING,
