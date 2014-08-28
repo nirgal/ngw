@@ -257,7 +257,7 @@ def contactgroup_index(request, gid):
     if perms.c_can_see_files_cg(request.user.id, gid):
         return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
     if perms.c_can_view_msgs_cg(request.user.id, gid):
-        return HttpResponseRedirect(cg.get_absolute_url() + 'messages/')
+        return HttpResponseRedirect(cg.get_absolute_url() + 'messages/?&_order=-0')
     raise PermissionDenied
 
 
