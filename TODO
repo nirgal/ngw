@@ -9,6 +9,7 @@ Make a MultiWidget for flags, including javascript pre-checks/clears
 Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 - in javascript checkbox
 - in set_member_1
+Fix perms: can_read_msg => can see members (?)
 
 Migrate to class based views:
 Latest version of django offer view classes, with "get" "post" method. We could use that.

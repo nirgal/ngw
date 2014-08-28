@@ -8,7 +8,11 @@
 {% block content %}
 <div id="content-main">
 <div class="module padded">
-    {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}: {{object.contact.name}}<br>
+    {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}:
+    <a href="{{cig_url}}">{{object.contact.name}}</a>
+    (
+    <a href="{{cig_url}}membership">{% trans "membership" %}</a>
+    )<br>
     {% trans "Date" %}: {{object.send_date}}<br>
     {% if object.is_answer %}
         {% if object.read_date %}{% trans "Read" %}{% else %}{% trans "Unread" %}{% endif %}<br>

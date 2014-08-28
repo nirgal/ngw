@@ -8,7 +8,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.utils.translation import ugettext_lazy as _
-#from django.utils.encoding import force_text
+from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
@@ -129,11 +129,21 @@ class MessageDetailView(NgwUserMixin, DetailView):
                     _("You don't have the permission to flag that message as read."))
         cg = self.contactgroup
         context = {}
-        context['title'] = _('Message in %s') % cg.name_with_date() #TODO
+        if self.object.is_answer:
+            context['title'] = _('Message from %(contactname)s in group %(groupname)s') % {
+                'contactname': self.object.contact.name,
+                'groupname': cg.name_with_date(),
+            }
+        else:
+            context['title'] = _('Message to %(contactname)s in group %(groupname)s') % {
+                'contactname': self.object.contact.name,
+                'groupname': cg.name_with_date(),
+            }
         context['cg'] = cg
         context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('messages', _('messages')))
+        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + force_text(self.object.contact_id) + '/'
         context['active_submenu'] = 'messages'
         context.update(kwargs)
         return super(MessageDetailView, self).get_context_data(**context)
