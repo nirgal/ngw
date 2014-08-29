@@ -49,7 +49,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='edit')),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', 'ngw.core.views.news.contactgroup_news_edit'),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.news.contactgroup_news_delete'),
-    url(r'^(?P<id>\d+)/mailman$', 'ngw.core.views.groups.contactgroup_mailman'),
+    url(r'^(?P<id>\d+)/mailman$', 'ngw.core.views.mailman.synchronize'),
 )
 
 

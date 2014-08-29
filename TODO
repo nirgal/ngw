@@ -51,5 +51,3 @@ Add duration to events (end date)
 Calendar: Don't show message count if no access to messages
 
 Disallow sending message for an event today or in the past.
-
-Add reply button in message
