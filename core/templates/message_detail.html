@@ -12,7 +12,6 @@
     {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}:
     <a href="{{cig_url}}/">{{object.contact.name}}</a>
     (
-    {#<a href="{{cig_url}}membership">#}
     <a href="javascript:inline_edit_membership('{{membership_title|escapejs}}', '{{cig_url|escapejs}}', '{{ membership }}');">
     {{ membership_str }}
     </a>
