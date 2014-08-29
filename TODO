@@ -30,9 +30,6 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 
 Support Image contactfields
 
-We should track unread messages:
-Add table ContactMessageReadBy(msg_id, contact_id)
-
 Global search widget (top right) should send to /contacts/ ? But what about the add_to button ?
 
 Files handling:
@@ -41,6 +38,8 @@ Files handling:
 - Improve previews (tumbler package with d-bus commands and ajax integration?)
 
 Event selection widget (Do not load everything at once, like for column selection)
+
+Remove the "you are leaving that page" warning on column choice change.
 
 Type change deletion check is buggy.
 
