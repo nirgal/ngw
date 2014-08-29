@@ -11,7 +11,7 @@ from django.utils.six.moves import urllib, http_client
 from django.utils.translation import ugettext, activate as language_activate
 from django.utils.timezone import now
 from django.utils.encoding import force_str
-from django.core.mail import send_mass_mail
+from django.core import mail
 from ngw.core.models import ContactMsg
 import ngw.core.contactfield
 
@@ -90,25 +90,38 @@ def do_sync():
             msg.save()
     
     # step 2 : Send email notification
-    masssmail_args = []
+    smtp_connection = None
     for msg in messages:
         sync_info = json.loads(msg.sync_info)
-        if 'email_sent' not in sync_info:
-            if 'language' in sync_info:
-                logging.warning('Switch to language: %s' % sync_info['language'])
-                language_activate(sync_info['language'])
-            c_mails = msg.contact.get_fieldvalues_by_type('EMAIL')
-            if c_mails:
-                logger.info('Sending email notification to %s.', c_mails[0])
-                masssmail_args.append((msg.subject, ugettext(NOTIFICATION_TEXT) % sync_info['otid'], None, (c_mails[0],)))
-    #logger.debug(masssmail_args)
-    if masssmail_args and send_mass_mail(masssmail_args):
-        for msg in messages:
-            sync_info = json.loads(msg.sync_info)
-            if 'email_sent' not in sync_info:
-                sync_info['email_sent'] = True
-                msg.sync_info = json.dumps(sync_info)
-                msg.save()
+        if 'email_sent' in sync_info:
+            continue # already sent
+
+        if 'language' in sync_info:
+            logging.warning('Switch to language: %s' % sync_info['language'])
+            language_activate(sync_info['language'])
+
+        c_mails = msg.contact.get_fieldvalues_by_type('EMAIL')
+        if not c_mails:
+            logging.warning('%s does not has an email address.', msg.contact.name)
+            continue
+        mail_addr = c_mails[0]
+
+        if smtp_connection is None:
+            logger.debug('Opening SMTP connection')
+            smtp_connection = mail.get_connection()
+
+        logger.info('Sending email notification to %s.', mail_addr)
+
+        message = EmailMessage(
+            subject=msg.subject,
+            body=ugettext(NOTIFICATION_TEXT) % sync_info['otid'],
+            to=recipient,
+            connection=smtp_connection)
+        message.send()
+
+        sync_info['email_sent'] = True
+        msg.sync_info = json.dumps(sync_info)
+        msg.save()
         
 
     # step 3 : Fetch answers
