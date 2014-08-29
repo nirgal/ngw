@@ -26,3 +26,17 @@ function escape_quote(str) {
     return "'" + str.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
 }
 
+//------------------------------
+// Inline membership edition
+
+function inline_edit_membership(title, cig_url, membership) {
+    $('#membership_edit h3').html(title);
+    $('#membership_edit form').attr('action', cig_url + '/membershipinline');
+    $('#membership_edit_more').attr('href', cig_url + '/membership');
+    $('#membership_edit_form input:radio[name=membership]').val([membership]);
+    $('#membership_edit').show();
+}
+
+function inline_edit_membership_close() {
+    $('#membership_edit').hide();
+}

@@ -2,40 +2,6 @@
 {% load i18n staticfiles %}
 
 {% block extrahead %}{{ block.super }}
-<style>
-/* credit: http://www.csslab.cl/2008/01/30/ventana-modal-solo-con-css/ */
-.membership_edit_overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    z-index:1001;
-    opacity:.75;
-    -moz-opacity: 0.75;
-    filter: alpha(opacity=75);
-}
-
-.membership_edit_modal {
-    position: fixed;
-    top: 25%;
-    left: 25%;
-    width: 50%;
-    padding: 2ex;
-    background: #fff;
-    color: #333;
-    z-index:1002;
-    overflow: auto;
-    text-align: center;
-}
-/*.membership_edit_modal h3 {
-    text-align: left;
-}*/
-.membership_edit_modal input[type=radio] {
-    margin-left: 2ex;
-}
-</style>
 
 <script>
 /* Function called in "Quick search" on submit */
@@ -280,45 +246,13 @@ function submit_fields() {
     return false;
 }
 
-//------------------------------
-// Inline membership edition
-
-var cntdeb = 0;
-function inline_edit_membership(title, cig_url, membership) {
-    $('#membership_edit h3').html(title);
-    $('#membership_edit form').attr('action', cig_url + '/membershipinline');
-    $('#membership_edit_more').attr('href', cig_url + '/membership');
-    $('#membership_edit_form input:radio[name=membership]').val([membership]);
-    $('#membership_edit').show();
-}
-
-function inline_edit_membership_close() {
-    $('#membership_edit').hide();
-}
 </script>
 {% endblock %}
 
 
 
 {% block filter %}
-<div id=membership_edit style="display:none">
-    <div class="membership_edit_overlay" onclick='inline_edit_membership_close();'></div>
-    <div class="membership_edit_modal">
-    <h3>{#xxx in group xxx#}</h3>
-    <form id=membership_edit_form method=post>
-    {% csrf_token %}
-    <input type=hidden name="next_url" value="{{request.get_full_path}}">
-    <span style="white-space: nowrap">
-    <input type=radio name=membership value=invited id="membership_edit_invited" onclick="this.form.submit()"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
-    <input type=radio name=membership value=member id="membership_edit_member" onclick="this.form.submit()"><label for="membership_edit_member"> {% trans "Member" %}</label>
-    <input type=radio name=membership value=declined id="membership_edit_declined" onclick="this.form.submit()"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
-    </span>
-    <br>
-    <a id='membership_edit_more' href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:inline_edit_membership_close();">{% trans "Close" %}</a>
-    </form>
-    </div>
-</div>
-
+{% include "membership_inlineform.html" %}
 <form id="mainform">
     <div style="text-align:left; display:none;">{% trans "Internal representation of the filter" %}:</div>
     <input type=hidden id=filter name=filter value="{{filter}}">

@@ -1,0 +1,19 @@
+{% load i18n %}
+<div id=membership_edit style="display:none">
+    <div class="membership_edit_overlay" onclick='inline_edit_membership_close();'></div>
+    <div class="membership_edit_modal">
+    <h3>{#xxx in group xxx#}</h3>
+    <form id=membership_edit_form method=post>
+    {% csrf_token %}
+    <input type=hidden name="next_url" value="{{request.get_full_path}}">
+    <span style="white-space: nowrap">
+    <input type=radio name=membership value=invited id="membership_edit_invited" onclick="this.form.submit()"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
+    <input type=radio name=membership value=member id="membership_edit_member" onclick="this.form.submit()"><label for="membership_edit_member"> {% trans "Member" %}</label>
+    <input type=radio name=membership value=declined id="membership_edit_declined" onclick="this.form.submit()"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
+    </span>
+    <br>
+    <a id='membership_edit_more' href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:inline_edit_membership_close();">{% trans "Close" %}</a>
+    </form>
+    </div>
+</div>
+

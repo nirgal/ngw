@@ -145,7 +145,7 @@ class MessageDetailView(NgwUserMixin, DetailView):
         context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('messages', _('messages')))
-        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + force_text(self.object.contact_id) + '/'
+        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + force_text(self.object.contact_id)
         context['active_submenu'] = 'messages'
 
         try:
@@ -169,6 +169,9 @@ class MessageDetailView(NgwUserMixin, DetailView):
             membership_str = _('Nil')
         context['membership'] = membership
         context['membership_str'] = membership_str
+        context['membership_title'] = _('%(contactname)s in group %(groupname)s') % {
+            'contactname': self.object.contact.name,
+            'groupname': cg.name_with_date()}
         context.update(kwargs)
         return super(MessageDetailView, self).get_context_data(**context)
 
