@@ -17,7 +17,8 @@ from django.views.generic.base import ContextMixin
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_USER_NGW,
-    Config, ContactMsg, ContactGroup)
+    CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
+    Config, ContactMsg, ContactGroup, ContactInGroup)
 from ngw.core import perms
 from ngw.core.response import JsonHttpResponse
 from ngw.core.views.decorators import login_required, require_group
@@ -146,6 +147,28 @@ class MessageDetailView(NgwUserMixin, DetailView):
                          .add_component(('messages', _('messages')))
         context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + force_text(self.object.contact_id) + '/'
         context['active_submenu'] = 'messages'
+
+        try:
+            cig = ContactInGroup.objects.get(
+                contact_id = self.object.contact.id,
+                group_id = cg.id)
+            if cig.flags & CIGFLAG_MEMBER:
+                membership = 'member'
+                membership_str = _('Member')
+            elif cig.flags & CIGFLAG_INVITED:
+                membership = 'invited'
+                membership_str = _('Invited')
+            elif cig.flags & CIGFLAG_DECLINED:
+                membership = 'declined'
+                membership_str = _('Declined invitation')
+            else:
+                membership = ''
+                membership_str = _('Nil')
+        except ContactInGroup.DoesNotExist:
+            membership = ''
+            membership_str = _('Nil')
+        context['membership'] = membership
+        context['membership_str'] = membership_str
         context.update(kwargs)
         return super(MessageDetailView, self).get_context_data(**context)
 

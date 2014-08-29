@@ -11,7 +11,9 @@
     {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}:
     <a href="{{cig_url}}">{{object.contact.name}}</a>
     (
-    <a href="{{cig_url}}membership">{% trans "membership" %}</a>
+    <a href="{{cig_url}}membership">
+    {{ membership_str }}
+    </a>
     )<br>
     {% if object.is_answer %}{% trans "Received" %}{% else %}{% trans "Sent" %}{% endif %}: {{object.send_date}} UTC<br>
     {% trans "Subject" %}: {{object.subject}}<br>

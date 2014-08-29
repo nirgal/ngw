@@ -129,7 +129,7 @@ def do_sync():
             'X_REQUESTED_WITH': 'XMLHttpRequest',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
         })
-        response = ot_conn.getresponse()
+        response = ot_conn.getresponse() # TODO: except httplib.BadStatusLine
         if response.status == 404:
             logger.info("Message is gone: %s %s" % (response.status, response.reason))
             # tag the message as deleted, so we stop trying to synchronise again and again
