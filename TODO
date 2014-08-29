@@ -10,6 +10,7 @@ Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 - in javascript checkbox
 - in set_member_1
 Fix perms: can_read_msg => can see members (?)
+Show detailed membership in message_detail, including inherited.
 
 Migrate to class based views:
 Latest version of django offer view classes, with "get" "post" method. We could use that.
@@ -50,3 +51,5 @@ Add duration to events (end date)
 Calendar: Don't show message count if no access to messages
 
 Disallow sending message for an event today or in the past.
+
+Add reply button in message
