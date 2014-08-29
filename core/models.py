@@ -9,6 +9,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 import subprocess
 import logging
+import json
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
@@ -1946,6 +1947,13 @@ class ContactMsg(NgwModel):
     def direction(self):
         if self.is_answer:
             return _('Received')
+        if not self.sync_info:
+            return _('Queued')
+        sync_info = json.loads(self.sync_info)
+        if 'oitd' not in sync_info:
+            return _('Queued')
+        if 'email_sent' not in sync_info:
+            return _('Notification not sent')
         return _('Sent')
 
     def nice_read(self):
@@ -1957,3 +1965,4 @@ class ContactMsg(NgwModel):
         if self.read_date:
             return _('Read')
         return ''
+

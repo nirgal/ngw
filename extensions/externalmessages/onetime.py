@@ -97,12 +97,12 @@ def do_sync():
             continue # already sent
 
         if 'language' in sync_info:
-            logging.warning('Switch to language: %s' % sync_info['language'])
+            logger.warning('Switch to language: %s' % sync_info['language'])
             language_activate(sync_info['language'])
 
         c_mails = msg.contact.get_fieldvalues_by_type('EMAIL')
         if not c_mails:
-            logging.warning('%s does not has an email address.', msg.contact.name)
+            logger.warning('%s does not has an email address.', msg.contact.name)
             continue
         mail_addr = c_mails[0]
 
