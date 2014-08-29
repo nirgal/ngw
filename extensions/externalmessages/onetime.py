@@ -112,10 +112,10 @@ def do_sync():
 
         logger.info('Sending email notification to %s.', mail_addr)
 
-        message = EmailMessage(
+        message = mail.EmailMessage(
             subject=msg.subject,
             body=ugettext(NOTIFICATION_TEXT) % sync_info['otid'],
-            to=recipient,
+            to=(mail_addr,),
             connection=smtp_connection)
         message.send()
 
