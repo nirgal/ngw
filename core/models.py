@@ -1950,7 +1950,7 @@ class ContactMsg(NgwModel):
         if not self.sync_info:
             return _('Queued')
         sync_info = json.loads(self.sync_info)
-        if 'oitd' not in sync_info:
+        if 'otid' not in sync_info:
             return _('Queued')
         if 'email_sent' not in sync_info:
             return _('Notification not sent')
