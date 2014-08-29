@@ -17,6 +17,7 @@ from django.views.generic.base import ContextMixin
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_USER_NGW,
+    FIELD_EMAIL,
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     Config, ContactMsg, ContactGroup, ContactInGroup)
 from ngw.core import perms
@@ -172,6 +173,13 @@ class MessageDetailView(NgwUserMixin, DetailView):
         context['membership_title'] = _('%(contactname)s in group %(groupname)s') % {
             'contactname': self.object.contact.name,
             'groupname': cg.name_with_date()}
+        if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
+            email = self.object.contact.get_fieldvalue_by_id(FIELD_EMAIL)
+            if email:
+                context['reply_url'] = "../members/emails?display=midag&filter=ffilter(%(fieldid)s,eq,'%(email)s')" % {
+                    'fieldid': FIELD_EMAIL,
+                    'email': email,
+                }
         context.update(kwargs)
         return super(MessageDetailView, self).get_context_data(**context)
 

@@ -30,6 +30,9 @@
 <div class="submit-row">
 <form method=post>
 {% csrf_token %}
+{% if reply_url %}
+<a class='button' href="{{reply_url}}">Reply</a>
+{% endif %}
 <input type=submit name=unread value="{% trans "Flag as unread" %}">
 </form>
 </div>
