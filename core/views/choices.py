@@ -65,6 +65,7 @@ class ChoicesWidget(forms.MultiWidget):
             widgets.append(forms.TextInput(attrs=attrs_key))
         super(ChoicesWidget, self).__init__(widgets, attrs)
         self.ndisplay = ndisplay
+
     def decompress(self, value):
         if value:
             return value.split(',')
@@ -82,10 +83,12 @@ class ChoicesField(forms.MultiValueField):
             fields.append(forms.CharField())
         super(ChoicesField, self).__init__(fields, *args, **kwargs)
         self.ndisplay = ndisplay
+
     def compress(self, data_list):
         if data_list:
             return ','.join(data_list)
         return None
+
     def clean(self, value):
         # check there is no duplicate keys
         # necessary since keys are the id used in <select>
@@ -129,8 +132,10 @@ class ChoiceGroupForm(forms.Form):
             self.initial['possible_values'].append('')
             self.initial['possible_values'].append('')
             ndisplay += 1
-        self.fields['possible_values'] = ChoicesField(required=False, widget=ChoicesWidget(ndisplay=ndisplay), ndisplay=ndisplay)
-
+        self.fields['possible_values'] = ChoicesField(
+            required=False,
+            widget=ChoicesWidget(ndisplay=ndisplay),
+            ndisplay=ndisplay)
 
     def save(self, choicegroup, request):
         if choicegroup:
@@ -190,7 +195,6 @@ class ChoiceGroupForm(forms.Form):
         return choicegroup
 
 
-
 class ChoiceEditMixin(ModelFormMixin):
     template_name = 'edit.html'
     form_class = ChoiceGroupForm
@@ -233,8 +237,10 @@ class ChoiceEditMixin(ModelFormMixin):
 class ChoiceEditView(NgwAdminMixin, ChoiceEditMixin, UpdateView):
     pass
 
+
 class ChoiceCreateView(NgwAdminMixin, ChoiceEditMixin, CreateView):
     pass
+
 
 #######################################################################
 #

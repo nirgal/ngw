@@ -8,8 +8,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
 from django.utils.decorators import method_decorator
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404
 from django.views.generic import FormView
 from django import forms
 from ngw.core.models import (
@@ -18,7 +17,7 @@ from ngw.core.models import (
 from ngw.core import perms
 from ngw.core.mailman import synchronise_group
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import NgwUserMixin
+#from ngw.core.views.generic import NgwUserMixin
 
 #######################################################################
 #
@@ -27,12 +26,18 @@ from ngw.core.views.generic import NgwUserMixin
 #######################################################################
 
 class MailmanSyncForm(forms.Form):
+    '''
+    Simple form with a textarea
+    '''
     mail = forms.CharField(widget=forms.Textarea)
 
 
 class MailmanSyncView(FormView):
+    '''
+    View to synchronize a group with an external mailman address
+    '''
     form_class = MailmanSyncForm
-    initial = { 'mail': '''
+    initial = {'mail': '''
 Les résultats de vos commandes courriels sont fournies ci-dessous.
 Ci-joint votre message original.
 

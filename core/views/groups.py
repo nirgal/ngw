@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 import json
 from decoratedstr import remove_decoration
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils import translation
@@ -29,12 +29,11 @@ from ngw.core.models import (
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ADMIN_CIGFLAGS,
     TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT,
-    Config, Contact, ContactMsg, ContactGroup, ContactInGroup, GroupInGroup,
+    Contact, ContactMsg, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
     hooks)
 from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
-from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView, BaseCsvContactListView, BaseVcardContactListView
 from ngw.core.views.decorators import login_required, require_group
@@ -58,6 +57,7 @@ def get_UContactGroup(userid):
         if len(lst) > maxlen:
             return lst[:maxlen] + ['…']
         return lst
+
     class UContactGroup(ContactGroup):
         'User specific ContactGroup proxy'
         class Meta(ContactGroup.Meta):
@@ -563,7 +563,6 @@ class ContactGroupForm(forms.Form):
             self.fields[field_name].choices = visible_groups_choices
 
 
-
 @login_required()
 @require_group(GROUP_USER_NGW)
 def contactgroup_edit(request, id):
@@ -972,7 +971,9 @@ def contactingroup_edit(request, gid, cid):
             # TODO: use set_member_1 for logs
             messages.add_message(
                 request, messages.SUCCESS,
-                _('Member %(contact)s of group %(group)s has been changed sucessfully!') % {'contact':contact.name, 'group':cg.name})
+                _('Member %(contact)s of group %(group)s has been changed sucessfully!') % {
+                    'contact': contact.name,
+                    'group': cg.name})
             Contact.check_login_created(request)
             cig.save()
             hooks.membership_changed(request, contact, cg)

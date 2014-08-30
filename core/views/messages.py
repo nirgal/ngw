@@ -6,26 +6,24 @@ Messages managing views
 from __future__ import division, absolute_import, print_function, unicode_literals
 
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
-from django.views.generic import View, DetailView
-from django.views.generic.base import ContextMixin
+from django.views.generic import DetailView
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_USER_NGW,
     FIELD_EMAIL,
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
-    Config, ContactMsg, ContactGroup, ContactInGroup)
+    ContactMsg, ContactGroup, ContactInGroup)
 from ngw.core import perms
-from ngw.core.response import JsonHttpResponse
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import NgwUserMixin, NgwListView
 
-
+#from django.views.generic.base import ContextMixin
 #class IngroupMixin(ContextMixin):
 #    '''
 #    Views using that mixin must define a "gid" url pattern.
@@ -151,8 +149,8 @@ class MessageDetailView(NgwUserMixin, DetailView):
 
         try:
             cig = ContactInGroup.objects.get(
-                contact_id = self.object.contact.id,
-                group_id = cg.id)
+                contact_id=self.object.contact.id,
+                group_id=cg.id)
             if cig.flags & CIGFLAG_MEMBER:
                 membership = 'member'
                 membership_str = _('Member')
@@ -200,6 +198,7 @@ class MessageDetailView(NgwUserMixin, DetailView):
 #######################################################################
 
 
+#from ngw.core.response import JsonHttpResponse
 #class MessageToggleReadView(NgwUserMixin, View):
 #    @method_decorator(login_required)
 #    @method_decorator(require_group(GROUP_USER_NGW))
