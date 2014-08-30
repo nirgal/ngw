@@ -18,10 +18,10 @@ from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwUserMixin, NgwListView
+from ngw.core.views.generic import generic_delete, NgwAdminAcl, NgwListView
 
 
-class FieldListView(NgwUserMixin, NgwListView):
+class FieldListView(NgwAdminAcl, NgwListView):
     cols = [
         (_('Name'), None, 'name', 'name'),
         (_('Type'), None, 'type_as_html', 'type'),

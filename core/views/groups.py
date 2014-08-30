@@ -16,7 +16,6 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils import formats
-from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
@@ -37,7 +36,7 @@ from ngw.core.nav import Navbar
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView, BaseCsvContactListView, BaseVcardContactListView
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwUserMixin, NgwListView
+from ngw.core.views.generic import generic_delete, NgwUserAcl, InGroupAcl, NgwListView
 
 
 #######################################################################
@@ -84,7 +83,7 @@ def get_UContactGroup(userid):
     return UContactGroup
 
 
-class ContactGroupListView(NgwUserMixin, NgwListView):
+class ContactGroupListView(NgwUserAcl, NgwListView):
     cols = [
         ( _('Name'), None, 'name', 'name' ),
         ( _('Description'), None, 'description_not_too_long', 'description' ),
@@ -183,7 +182,7 @@ class YearMonthCal:
         return datetime(self.year, self.month, 1)
 
 
-class EventListView(NgwUserMixin, TemplateView):
+class EventListView(NgwUserAcl, TemplateView):
     '''
     Calendar with all the user-visible events of selected month
     '''
@@ -268,16 +267,12 @@ def contactgroup_index(request, gid):
 #
 #######################################################################
 
-class GroupMemberListView(BaseContactListView):
+class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_detail.html'
 
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        user_id = request.user.id
-        if not perms.c_can_see_members_cg(user_id, self.kwargs['gid']):
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_see_members_cg(user.id, group.id):
             raise PermissionDenied
-        return super(GroupMemberListView, self).dispatch(request, *args, **kwargs)
 
 
     def get_root_queryset(self):
@@ -510,7 +505,7 @@ class ContactGroupForm(forms.Form):
         help_text=_('Members of these groups will automatically be granted priviledge to know that current group exists.'),
         widget=FilterMultipleSelectWidget('groups', False))
     change_group_groups = forms.MultipleChoiceField(label=_('Editor groups'),
-        required=False, 
+        required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to change/delete the current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
     see_members_groups = forms.MultipleChoiceField(label=_('Members seer groups'),

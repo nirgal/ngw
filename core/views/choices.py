@@ -18,7 +18,7 @@ from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwAdminMixin, NgwListView
+from ngw.core.views.generic import generic_delete, NgwAdminAcl, NgwListView
 
 
 #######################################################################
@@ -28,7 +28,7 @@ from ngw.core.views.generic import generic_delete, NgwAdminMixin, NgwListView
 #######################################################################
 
 
-class ChoiceListView(NgwAdminMixin, NgwListView):
+class ChoiceListView(NgwAdminAcl, NgwListView):
     root_queryset = ChoiceGroup.objects.all()
     cols = [
         (_('Name'), None, 'name', 'name'),
@@ -234,11 +234,11 @@ class ChoiceEditMixin(ModelFormMixin):
         return super(ChoiceEditMixin, self).get_context_data(**context)
 
 
-class ChoiceEditView(NgwAdminMixin, ChoiceEditMixin, UpdateView):
+class ChoiceEditView(NgwAdminAcl, ChoiceEditMixin, UpdateView):
     pass
 
 
-class ChoiceCreateView(NgwAdminMixin, ChoiceEditMixin, CreateView):
+class ChoiceCreateView(NgwAdminAcl, ChoiceEditMixin, CreateView):
     pass
 
 

@@ -16,7 +16,6 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.six import iteritems
-from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -37,7 +36,7 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwListView
+from ngw.core.views.generic import NgwUserAcl, generic_delete, NgwListView
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 
 from django.db.models.query import RawQuerySet, sql
@@ -486,33 +485,22 @@ class BaseContactListView(NgwListView):
         context['title'] = _('Contact list')
         context['objtype'] = Contact
         context['nav'] = Navbar(Contact.get_class_navcomponent())
-
-        #TODO: Make a Mixin that will handle the group part
-        if self.cg:
-            context['cg'] = self.cg
-            context['cg_perms'] = self.cg.get_contact_perms(self.request.user.id)
-
         context['filter'] = self.filter
         context['filter_html'] = self.filter_html
         context['fields'] = self.strfields
         context['baseurl'] = self.baseurl
         context['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
-
         context.update(kwargs)
         return super(BaseContactListView, self).get_context_data(**context)
 
 
-class ContactListView(BaseContactListView):
+class ContactListView(NgwUserAcl, BaseContactListView):
     '''
     This is just like the base contact list, but with user access check.
     '''
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        user_id = request.user.id
-        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
+    def check_perm_user(self, user):
+        if not perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
             raise PermissionDenied
-        return super(ContactListView, self).dispatch(request, *args, **kwargs)
 
 
 #######################################################################
@@ -552,13 +540,9 @@ class CsvContactListView(BaseCsvContactListView):
     '''
     This is just like the base CSV contact list, but with user access check.
     '''
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        user_id = request.user.id
-        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
+    def check_perm_user(self, user):
+        if not perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
             raise PermissionDenied
-        return super(CsvContactListView, self).dispatch(request, *args, **kwargs)
 
 
 class BaseVcardContactListView(BaseContactListView):
@@ -580,13 +564,10 @@ class VcardContactListView(BaseVcardContactListView):
     '''
     This is just like the base CSV contact list, but with user access check.
     '''
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        user_id = request.user.id
-        if not perms.c_can_see_members_cg(user_id, GROUP_EVERYBODY):
+    def check_perm_user(self, user):
+        if not perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
             raise PermissionDenied
-        return super(VcardContactListView, self).dispatch(request, *args, **kwargs)
+
 
 #######################################################################
 #

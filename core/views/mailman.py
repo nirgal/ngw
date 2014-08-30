@@ -7,17 +7,11 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
-from django.utils.decorators import method_decorator
-from django.shortcuts import get_object_or_404
 from django.views.generic import FormView
 from django import forms
-from ngw.core.models import (
-    GROUP_USER_NGW,
-    ContactGroup)
 from ngw.core import perms
 from ngw.core.mailman import synchronise_group
-from ngw.core.views.decorators import login_required, require_group
-#from ngw.core.views.generic import NgwUserMixin
+from ngw.core.views.generic import InGroupAcl
 
 #######################################################################
 #
@@ -32,7 +26,7 @@ class MailmanSyncForm(forms.Form):
     mail = forms.CharField(widget=forms.Textarea)
 
 
-class MailmanSyncView(FormView):
+class MailmanSyncView(InGroupAcl, FormView):
     '''
     View to synchronize a group with an external mailman address
     '''
@@ -50,15 +44,9 @@ Ci-joint votre message original.
     '''}
     template_name = 'group_mailman.html'
 
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        user_id = request.user.id
-        group_id = self.kwargs['gid']
-        self.contactgroup = get_object_or_404(ContactGroup, pk=group_id)
-        if not perms.c_can_see_members_cg(user_id, self.contactgroup.id):
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_see_members_cg(user.id, group.id):
             raise PermissionDenied
-        return super(MailmanSyncView, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         res = synchronise_group(self.contactgroup, form.cleaned_data['mail'])
@@ -72,8 +60,6 @@ Ci-joint votre message original.
         context['title'] = _('Mailman synchronisation')
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('mailman', _('mailman')))
-        context['cg'] = cg
-        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
         context['active_submenu'] = 'mailman'
         context.update(kwargs)
         return super(MailmanSyncView, self).get_context_data(**context)

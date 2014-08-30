@@ -7,11 +7,11 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from django.utils.translation import ugettext_lazy as _
 from ngw.core.models import Log
 from ngw.core.nav import Navbar
-from ngw.core.views.generic import NgwAdminMixin, NgwListView
+from ngw.core.views.generic import NgwAdminAcl, NgwListView
 
 __all__ = ['LogListView']
 
-class LogListView(NgwAdminMixin, NgwListView):
+class LogListView(NgwAdminAcl, NgwListView):
     '''
     Display full log list (history).
     '''

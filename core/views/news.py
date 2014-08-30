@@ -7,18 +7,17 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from datetime import datetime
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.views.generic import ListView
-from django.utils.decorators import method_decorator
 from django import forms
 from django.contrib import messages
 from ngw.core.models import (GROUP_USER_NGW, ContactGroup, ContactGroupNews)
 from ngw.core import perms
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete
+from ngw.core.views.generic import InGroupAcl, generic_delete
 
 
 #######################################################################
@@ -28,25 +27,15 @@ from ngw.core.views.generic import generic_delete
 #######################################################################
 
 
-class NewsListView(ListView):
+class NewsListView(InGroupAcl, ListView):
     template_name = 'news.html'
     context_object_name = 'news'
     paginate_by = 20
     page_kwarg = '_page'
 
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, request, *args, **kwargs):
-        group_id = self.kwargs.get('gid', None)
-        try:
-            group_id = int(group_id)
-        except (ValueError, TypeError):
-            raise Http404
-        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
-        if not perms.c_can_see_news_cg(request.user.id, group_id):
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_see_news_cg(user.id, group.id):
             raise PermissionDenied
-        self.contactgroup = contactgroup
-        return super(NewsListView, self).get(request, *args, **kwargs)
 
     def get_queryset(self):
         return ContactGroupNews.objects.filter(
@@ -57,8 +46,6 @@ class NewsListView(ListView):
         cg = self.contactgroup
         context = {}
         context['title'] = _('News for group %s') % cg.name
-        context['cg'] = cg
-        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
         context['objtype'] = ContactGroupNews
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('news', _('news')))

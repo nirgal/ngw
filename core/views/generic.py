@@ -5,38 +5,96 @@ Base view class; View helpers
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
+from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.views.generic.base import ContextMixin
 from django.views.generic import ListView
 from django.contrib import messages
-from ngw.core.models import GROUP_ADMIN, GROUP_USER_NGW, Config, Log, LOG_ACTION_DEL
+from ngw.core.models import (
+    GROUP_ADMIN, GROUP_USER_NGW,
+    ContactGroup, Config, Log,
+    LOG_ACTION_DEL)
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 
 
-class NgwUserMixin(object):
+#######################################################################
+#
+# Access Control Lists
+#
+#######################################################################
+
+class NgwUserAcl(object):
     '''
     This simple mixin check the user is authenticated and member of GROUP_USER_NGW
     '''
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
-    def dispatch(self, *args, **kwargs):
-        return super(NgwUserMixin, self).dispatch(*args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        self.check_perm_user(request.user)
+        return super(NgwUserAcl, self).dispatch(request, *args, **kwargs)
+
+    def check_perm_user(self, user):
+        '''
+        That function give the opportunity to specialise clas to add extra
+        permission checks.
+        '''
 
 
-class NgwAdminMixin(object):
+class NgwAdminAcl(NgwUserAcl):
     '''
     This simple mixin check the user is authenticated and member of GROUP_ADMIN
     '''
-    @method_decorator(login_required)
-    @method_decorator(require_group(GROUP_ADMIN))
-    def dispatch(self, *args, **kwargs):
-        return super(NgwAdminMixin, self).dispatch(*args, **kwargs)
+    def check_perm_user(self, user):
+        super(NgwAdminAcl, self).check_perm_user(user)
+        if not user.is_member_of(GROUP_ADMIN):
+            raise PermissionDenied
 
+
+class InGroupAcl(ContextMixin):
+    '''
+    This mixin integrates GROUP_USER_NGW membership checks
+    Views using that mixin must define a "gid" url pattern.
+    Mixin will setup a self.contactgroup and set up context.
+    '''
+    @method_decorator(login_required)
+    @method_decorator(require_group(GROUP_USER_NGW))
+    def dispatch(self, request, *args, **kwargs):
+        group_id = self.kwargs.get('gid', None)
+        try:
+            group_id = int(group_id)
+        except (ValueError, TypeError):
+            raise Http404
+        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
+        self.contactgroup = contactgroup
+        self.check_perm_groupuser(contactgroup, request.user)
+        return super(InGroupAcl, self).dispatch(request, *args, **kwargs)
+
+    def check_perm_groupuser(self, group, user):
+        '''
+        That function give the opportunity to specialise clas to add extra
+        permission checks.
+        '''
+
+    def get_context_data(self, **kwargs):
+        cg = self.contactgroup
+        context = {}
+        context['cg'] = cg
+        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
+        context.update(kwargs)
+        return super(InGroupAcl, self).get_context_data(**context)
+
+
+#######################################################################
+#
+# Basic list view
+#
+#######################################################################
 
 class NgwListView(ListView):
     '''
@@ -88,6 +146,12 @@ class NgwListView(ListView):
         context.update(kwargs)
         return super(NgwListView, self).get_context_data(**context)
 
+
+#######################################################################
+#
+# Generic delete
+#
+#######################################################################
 
 # Helper function that is never call directly, hence the lack of authentification check
 def generic_delete(request, obj, next_url, base_nav=None, ondelete_function=None):
