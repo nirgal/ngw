@@ -14,8 +14,9 @@ admin.autodiscover()
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, CsvContactListView, VcardContactListView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView
-from ngw.core.views.messages import MessageListView, MessageDetailView
 from ngw.core.views.news import NewsListView
+from ngw.core.views.mailman import MailmanSyncView
+from ngw.core.views.messages import MessageListView, MessageDetailView
 from ngw.core.views.fields import FieldListView
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
 from ngw.core.views.logs import LogListView
@@ -49,7 +50,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='edit')),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', 'ngw.core.views.news.contactgroup_news_edit'),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.news.contactgroup_news_delete'),
-    url(r'^(?P<id>\d+)/mailman$', 'ngw.core.views.mailman.synchronize'),
+    url(r'^(?P<gid>\d+)/mailman$', MailmanSyncView.as_view()),
 )
 
 
