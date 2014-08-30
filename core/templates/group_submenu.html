@@ -54,7 +54,9 @@
 {% endif %}
     <div class="submenuitem {% if active_submenu == "messages" %}activesubmenuitem{% endif %}"{% if not cg_perms.o %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
         {% trans "Messages" %}
-        {% if cg.count_unread_messages %}<span style='color:red;'>✉</span>{% endif %}
+        {% with nbmsg=cg.count_unread_messages %}
+        {% if nbmsg %}<span style='color:red;'>{{ nbmsg }}✉</span>{% endif %}
+        {% endwith %}
     </div>
 {% if cg_perms.x %}
     </a>
