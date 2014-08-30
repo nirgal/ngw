@@ -80,6 +80,10 @@ def get_UContactGroup(userid):
                 return self.get_members_count()
             else:
                 return 'Not available'
+
+        def can_see_messages(self):
+            return c_can_view_msgs_cg(userid, self.id)
+
     return UContactGroup
 
 
