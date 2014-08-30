@@ -5,7 +5,6 @@ apache.conf
 apache_error.log
 backup.sh
 backups/
-functions2.sql
 mailing/templates
 !mailing/templates/resetpassword.odt
 mailing/generated
