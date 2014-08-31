@@ -15,6 +15,7 @@ from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, CsvContactListView, VcardContactListView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView
 from ngw.core.views.news import NewsListView
+from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
 from ngw.core.views.messages import MessageListView, MessageDetailView
 from ngw.core.views.fields import FieldListView
@@ -42,7 +43,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membershipinline$', 'ngw.core.views.groups.contactingroup_edit_inline'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/remove$', 'ngw.core.views.groups.contactingroup_delete'),
     url(r'^(?P<gid>\d+)/members/add_contacts_to$', GroupAddManyView.as_view()),
-    url(r'^(?P<gid>\d+)/files(?P<path>.+)$', 'ngw.core.views.files.contactgroup_files'),
+    url(r'^(?P<gid>\d+)/files(?P<path>/.*)$', FileListView.as_view()),
     url(r'^(?P<gid>\d+)/messages/$', MessageListView.as_view(), name='message_list'),
     url(r'^(?P<gid>\d+)/messages/(?P<mid>\d+)$', MessageDetailView.as_view(), name='message_detail'),
     url(r'^(?P<gid>\d+)/news/$', NewsListView.as_view(), name='news_list'),
@@ -117,7 +118,7 @@ urlpatterns = patterns('',
     url(r'^choicegroups/(?P<id>\d+)/edit$', ChoiceEditView.as_view(), name='choice_edit'),
     url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choices.choicegroup_delete', name='choice_delete'),
 
-    url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', 'ngw.core.views.files.media_group_file'),
+    url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', GroupMediaFileView.as_view()),
 
     url(r'^pks/lookup$', 'ngw.core.gpg.lookup'),
 
