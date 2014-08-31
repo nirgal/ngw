@@ -82,7 +82,7 @@ def get_UContactGroup(userid):
                 return 'Not available'
 
         def can_see_messages(self):
-            return c_can_view_msgs_cg(userid, self.id)
+            return perms.c_can_view_msgs_cg(userid, self.id)
 
     return UContactGroup
 
@@ -220,7 +220,8 @@ class EventListView(NgwUserAcl, TemplateView):
         max_date = datetime(year, month, 1) + timedelta(days=31+6)
         max_date = max_date.strftime('%Y-%m-%d')
 
-        q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
+        UContactGroup = get_UContactGroup(self.request.user.id)
+        q = UContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
 
         month_events = {}
         for cg in q:
