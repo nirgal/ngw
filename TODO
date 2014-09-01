@@ -1,9 +1,28 @@
+====================================================================================================
+BUGS
+====================================================================================================
 When adding someone in a group, check supergroups permission to add members.
 Or just allow supergroup inherited...
+TBD
 
-Favorite groups.
+Disallow sending message for an event today or in the past.
 
-Default supergroup(s).
+Remove the "you are leaving that page" warning on column choice change.
+
+Type change deletion check may be buggy.
+
+
+====================================================================================================
+VALIDATED IMPROVEMENTS
+====================================================================================================
+
+Show list of groups with unread messages on homepage.
+
+Top right quick search: Add a drop down select filed by ajax to quick select people
+
+====================================================================================================
+CODE REFACTOR
+====================================================================================================
 
 Make a MultiWidget for flags, including javascript pre-checks/clears
 Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
@@ -12,17 +31,39 @@ Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 Fix perms: can_read_msg => can see members (?)
 Show detailed membership in message_detail, including inherited.
 
-Migrate to class based views:
-Latest version of django offer view classes, with "get" "post" method. We could use that.
-See *ListView classes
-
-Sticky groups:
-- When you join a 'sticky' group though inheritance, group membership should be permanent.
-
-Invite groups (?):
-- Disable invitation buttons when a group doesn't support the feature.
-
-Check date is not null when creating an event
+Complete migration to class based views:
+- groups.contactgroup_edit
+- groups.contactgroup_index
+- groups.contactgroup_edit
+- groups.contactgroup_delete
+- contacts.contact_edit
+- contacts.hook_change_password
+- contacts.contact_detail
+- contacts.contact_vcard
+- contacts.contact_pass
+- contacts.contact_pass_letter
+- contacts.contact_delete
+- contacts.contact_pass_letter
+- contacts.contact_filters_list
+- contacts.contact_filters_add
+- contacts.contact_filters_edit
+- contacts.contact_filters_delete
+- contacts.contact_default_group
+- groups.contactingroup_edit
+- groups.contactingroup_edit_inline
+- groups.contactingroup_delete
+- news.contactgroup_news_edit
+- news.contactgroup_news_delete
+- fields.field_edit
+- fields.field_move_up
+- fields.field_move_down
+- fields.field_delete
+- contactsearch.ajax_get_columns
+- contactsearch.ajax_get_customfilters
+- contactsearch.ajax_get_filters
+- contactsearch.ajax_get_customfilters_params
+- contactsearch.ajax_get_filters_params
+- ngw.core.gpg.lookup
 
 Check how slicing is optimized in ContactQuerySet
 
@@ -31,6 +72,8 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 
 Support Image contactfields
 
+Event selection widget (Do not load everything at once, like for column selection)
+
 Global search widget (top right) should send to /contacts/ ? But what about the add_to button ?
 
 Files handling:
@@ -38,16 +81,23 @@ Files handling:
 - Check cache/no cache
 - Improve previews (tumbler package with d-bus commands and ajax integration?)
 
-Event selection widget (Do not load everything at once, like for column selection)
-
-Remove the "you are leaving that page" warning on column choice change.
-
-Type change deletion check is buggy.
-
-With django 1.6, ContactQuerySet no longer needs to inherit from RawQuerySet.
+With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet: See internal cache in o2o sql compiler.
 
 Add duration to events (end date)
 
-Disallow sending message for an event today or in the past.
 
-Show list of groups with unread messages on homepage.
+====================================================================================================
+UNSORTED
+====================================================================================================
+
+Favorite groups.
+
+Default supergroup(s).
+
+Sticky groups:
+- When you join a 'sticky' group though inheritance, group membership should be permanent.
+
+Invite groups (?):
+- Disable invitation buttons when a group doesn't support the feature.
+
+Check date is not null when creating an event
