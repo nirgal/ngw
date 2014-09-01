@@ -6,13 +6,13 @@ ContactGroupNews managing views
 from __future__ import division, absolute_import, print_function, unicode_literals
 from datetime import datetime
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
-from django.views.generic import ListView
+from django.shortcuts import get_object_or_404
+from django.views.generic import ListView, UpdateView, CreateView
+from django.views.generic.edit import ModelFormMixin
 from django import forms
+from django.forms import widgets
 from django.contrib import messages
 from ngw.core.models import (GROUP_USER_NGW, ContactGroup, ContactGroupNews)
 from ngw.core import perms
@@ -38,9 +38,9 @@ class NewsListView(InGroupAcl, ListView):
             raise PermissionDenied
 
     def get_queryset(self):
-        return ContactGroupNews.objects.filter(
-            contact_group=self.contactgroup.id).order_by(
-            '-date')
+        return ContactGroupNews.objects \
+            .filter(contact_group=self.contactgroup.id) \
+            .order_by('-date')
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
@@ -57,72 +57,78 @@ class NewsListView(InGroupAcl, ListView):
 
 #######################################################################
 #
-# News edit
+# News edit / add
 #
 #######################################################################
 
 
-class NewsEditForm(forms.Form):
-    title = forms.CharField(max_length=50)
-    text = forms.CharField(widget=forms.Textarea)
+class NewsEditForm(forms.ModelForm):
+    class Meta:
+        model = ContactGroupNews
+        fields = ['title', 'text']
+        widgets = {
+            'title': widgets.TextInput(attrs={'max_length': 50}),
+        }
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_news_edit(request, gid, nid):
-    gid = gid and int(gid) or None
-    nid = nid and int(nid) or None
-    if not perms.c_can_change_news_cg(request.user.id, gid):
-        raise PermissionDenied
-    cg = get_object_or_404(ContactGroup, pk=gid)
-    if nid:
-        news = get_object_or_404(ContactGroupNews, pk=nid)
-        if news.contact_group_id != gid:
-            return HttpResponse(_('ERROR: Group mismatch'))
+class NewsEditMixin(ModelFormMixin):
+    template_name = 'edit.html'
+    form_class = NewsEditForm
+    model = ContactGroupNews
+    pk_url_kwarg = 'nid'
 
-    if request.method == 'POST':
-        form = NewsEditForm(request.POST)
-        if form.is_valid():
-            data = form.clean()
-            if not nid:
-                news = ContactGroupNews()
-                news.author_id = request.user.id
-                news.contact_group = cg
-                news.date = datetime.now()
-            news.title = data['title']
-            news.text = data['text']
-            news.save()
-            messages.add_message(request, messages.SUCCESS, _('News %s has been changed sucessfully!') % news)
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_change_news_cg(user.id, group.id):
+            raise PermissionDenied
 
-            if request.POST.get('_continue', None):
-                return HttpResponseRedirect(news.get_absolute_url())
-            elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(reverse('ngw.core.views.news.contactgroup_news_edit', args=(cg.id,))) # 2nd parameter is None
-            else:
-                return HttpResponseRedirect(reverse('news_list', args=(cg.id,)))
-    else:
-        initial = {}
-        if nid:
-            initial['title'] = news.title
-            initial['text'] = news.text
-        form = NewsEditForm(initial=initial)
-    context = {}
-    context['title'] = _('News edition')
-    context['cg'] = cg
-    context['cg_perms'] = cg.get_contact_perms(request.user.id)
-    context['form'] = form
-    if nid:
-        context['object'] = news
-        context['id'] = nid
-    context['nav'] = cg.get_smart_navbar() \
-                     .add_component(('news', ('news')))
-    if nid:
-        context['nav'].add_component(news.get_navcomponent()) \
-                      .add_component(('edit', _('edit')))
-    else:
-        context['nav'].add_component(('add', _('add')))
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            title = _('Editing %s') % self.object
+            id = self.object.id
+        else:
+            title = _('Adding a new %s') % ContactGroupNews.get_class_verbose_name()
+            id = None
+        context['title'] = title
+        context['id'] = id
+        context['objtype'] = ContactGroupNews
+        context['nav'] = self.contactgroup.get_smart_navbar()
+        context['nav'].add_component(('news', ('news')))
+        if self.object:
+            context['nav'].add_component(self.object.get_navcomponent())
+            context['nav'].add_component(('edit', _('edit')))
+        else:
+            context['nav'].add_component(('add', _('add')))
 
-    return render_to_response('edit.html', context, RequestContext(request))
+        context.update(kwargs)
+        return super(NewsEditMixin, self).get_context_data(**context)
+
+    def form_valid(self, form):
+        request = self.request
+        cg = self.contactgroup
+        response = super(NewsEditMixin, self).form_valid(form)
+        messages.add_message(
+            request, messages.SUCCESS,
+            _('News %s has been saved.') % self.object)
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(self.object.get_absolute_url())
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(request.get_full_path())
+        else:
+            return HttpResponseRedirect(cg.get_absolute_url() + 'news/')
+        return response
+
+
+class NewsEditView(InGroupAcl, NewsEditMixin, UpdateView):
+    pass
+
+
+class NewsCreateView(InGroupAcl, NewsEditMixin, CreateView):
+    def form_valid(self, form):
+        form.instance.date = datetime.now()
+        form.instance.author = self.request.user
+        form.instance.contact_group = self.contactgroup
+        return super(NewsCreateView, self).form_valid(form)
 
 
 #######################################################################
