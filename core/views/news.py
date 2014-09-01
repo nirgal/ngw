@@ -50,7 +50,7 @@ class NewsListView(InGroupAcl, ListView):
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('news', _('news')))
         context['active_submenu'] = 'news'
-        context['baseurl'] = '?' # for paginator
+        context['baseurl'] = '?'  # for paginator
         context.update(kwargs)
         return super(NewsListView, self).get_context_data(**context)
 
@@ -87,7 +87,8 @@ class NewsEditMixin(ModelFormMixin):
             title = _('Editing %s') % self.object
             id = self.object.id
         else:
-            title = _('Adding a new %s') % ContactGroupNews.get_class_verbose_name()
+            title = _('Adding a new %s') % \
+                ContactGroupNews.get_class_verbose_name()
             id = None
         context['title'] = title
         context['id'] = id
