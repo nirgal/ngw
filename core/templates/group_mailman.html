@@ -6,9 +6,9 @@
 {% endblock %}
 
 {% block preform %}
-<div class=module>
+<div class="module padded">
 {% blocktrans with requestaddress=cg.mailman_request_address %}
-<p>Send <tt>who listpassword</tt> to <a href="mailto:{{ requestaddress }}">{{ requestaddress }}</a> and copy paste the answer bellow. Replace the example.
+Send <tt>who listpassword</tt> to <a href="mailto:{{ requestaddress }}">{{ requestaddress }}</a> and copy paste the answer bellow. Replace the example.
 <br>Be careful not to forget <b>-request</b> in the email address, since you probably don't want every suscriber to receive the password in their mailbox!
 {% endblocktrans %}
 </div>
