@@ -20,7 +20,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import TemplateView
+from django.views.generic import View, TemplateView
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
@@ -246,24 +246,24 @@ class EventListView(NgwUserAcl, TemplateView):
 #
 #######################################################################
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_index(request, gid):
+class ContactGroupView(InGroupAcl, View):
     '''
     Redirect to members list, if allowed.
     Otherwise, try to find some authorized page.
     '''
-    gid = gid and int(gid) or None
-    cg = get_object_or_404(ContactGroup, pk=gid)
-    if perms.c_can_see_members_cg(request.user.id, gid):
-        return HttpResponseRedirect(cg.get_absolute_url() + 'members/')
-    if perms.c_can_see_news_cg(request.user.id, gid):
-        return HttpResponseRedirect(cg.get_absolute_url() + 'news/')
-    if perms.c_can_see_files_cg(request.user.id, gid):
-        return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
-    if perms.c_can_view_msgs_cg(request.user.id, gid):
-        return HttpResponseRedirect(cg.get_absolute_url() + 'messages/?&_order=-1')
-    raise PermissionDenied
+    def get(self, request, *args, **kwargs):
+        cg = self.contactgroup
+        gid = cg.id
+        uid = request.user.id
+        if perms.c_can_see_members_cg(uid, gid):
+            return HttpResponseRedirect(cg.get_absolute_url() + 'members/')
+        if perms.c_can_see_news_cg(uid, gid):
+            return HttpResponseRedirect(cg.get_absolute_url() + 'news/')
+        if perms.c_can_see_files_cg(uid, gid):
+            return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
+        if perms.c_can_view_msgs_cg(uid, gid):
+            return HttpResponseRedirect(cg.get_absolute_url() + 'messages/?&_order=-1')
+        raise PermissionDenied
 
 
 #######################################################################
