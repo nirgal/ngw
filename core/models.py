@@ -1946,31 +1946,33 @@ class ContactMsg(NgwModel):
 
     get_link_subject = get_absolute_url
 
-    def direction(self):
-        if self.is_answer:
-            return _('Received')
-        if not self.sync_info:
-            return _('Queued')
-        sync_info = json.loads(self.sync_info)
-        if 'otid' not in sync_info:
-            return _('Queued')
-        if 'email_sent' not in sync_info:
-            return _('Notification not sent')
-        return _('Sent')
-
-    def nice_read(self):
-        if self.is_answer:
-            if self.read_date:
-                return _('Read')
-            return _('Unread')
-        # so this is a sent message
-        if self.read_date:
-            return _('Read')
-        return ''
-
     def nice_flags(self):
-        result = self.direction()
-        nice_read = self.nice_read()
-        if nice_read:
-            result = string_concat(result, ', ', self.nice_read())
+        if self.sync_info:
+            sync_info = json.loads(self.sync_info)
+        else:
+            sync_info = {}
+
+        result = ''
+        if self.is_answer:
+            result += '<span title="%s">⬅</span>' % _('Received')
+            if self.read_date:
+                result += '<span style="color:green;" title="%s">✉</span>' % _('Read')
+            else:
+                result += '<span style="color:red;" title="%s">✉</span>' % _('Unread')
+        else:
+            result += '<span title="%s">➡</span>' % _('Sent')
+
+            if 'otid' in sync_info:
+                if 'deleted' not in sync_info:
+                    result += '<span style="color:green;" title="%s">⛁</span>' % _('Stored externally')
+                else:
+                    result += '<span style="color:red;" title="%s">⛁</span>' % _('External storage expired')
+            else:
+                result += '<span style="color:red;" title="%s">⛁</span>' % _('Not stored externally')
+
+            if 'email_sent' in sync_info:
+                if self.read_date:
+                    result += '<span style="color:green;" title="%s">✉</span>' % _('Notification sent and read')
+                else:
+                    result += '<span style="color:red;" title="%s">✉</span>' % _('Notification sent but unread')
         return result

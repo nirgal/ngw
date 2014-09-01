@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-01 12:49+0000\n"
+"POT-Creation-Date: 2014-09-01 13:36+0000\n"
 "PO-Revision-Date: 2014-06-30 12:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
@@ -277,29 +277,41 @@ msgstr "message"
 msgid "messages"
 msgstr "messages"
 
-#: models.py:1951 templates/message_detail.html:19
+#: models.py:1959 templates/message_detail.html:19
 msgid "Received"
 msgstr "Reçu"
 
-#: models.py:1953 models.py:1956
-msgid "Queued"
-msgstr "En attente"
-
-#: models.py:1958
-msgid "Notification not sent"
-msgstr "Notification en attente"
-
-#: models.py:1959 templates/message_detail.html:19
-msgid "Sent"
-msgstr "Envoyé"
-
-#: models.py:1964 models.py:1968
+#: models.py:1961
 msgid "Read"
 msgstr "Lu"
 
-#: models.py:1965
+#: models.py:1963
 msgid "Unread"
 msgstr "Non lu"
+
+#: models.py:1965 templates/message_detail.html:19
+msgid "Sent"
+msgstr "Envoyé"
+
+#: models.py:1969
+msgid "Stored externally"
+msgstr "Stocké en externe"
+
+#: models.py:1971
+msgid "External storage expired"
+msgstr "Stockage externe expiré"
+
+#: models.py:1973
+msgid "Not stored externally"
+msgstr "Non stocké en externe"
+
+#: models.py:1977
+msgid "Notification sent and read"
+msgstr "Notification envoyée et lue"
+
+#: models.py:1979
+msgid "Notification sent but unread"
+msgstr "Notification envoyée mais non lue"
 
 #: nav.py:16
 msgid "home"
@@ -1688,26 +1700,3 @@ msgstr "Nouvelles pour le groupe %s"
 #, python-format
 msgid "News %s has been saved."
 msgstr "La nouvelle %s a été enregistrée."
-
-#~ msgid "Files for group %s"
-#~ msgstr "Fichiers pour le groupe %s"
-
-#~ msgid "Direction"
-#~ msgstr "Direction"
-
-#~ msgid "ERROR: Group mismatch"
-#~ msgstr "ERREUR: Incohérence du groupe"
-
-#~ msgid "News %s has been changed sucessfully!"
-#~ msgstr "La nouvelle %s a été modifiée avec succès!"
-
-#~ msgid "News edition"
-#~ msgstr "Modification de nouvelle"
-
-#~ msgid "There are no messages."
-#~ msgstr "Il n'y a pas de message."
-
-#~ msgid "You have unsaved changes in a form of this page."
-#~ msgstr ""
-#~ "Vous avez des modifications non enregistrées dans un formulaire de cette "
-#~ "page"
