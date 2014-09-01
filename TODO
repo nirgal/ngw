@@ -36,7 +36,6 @@ Fix perms: can_read_msg => can see members (?)
 Show detailed membership in message_detail, including inherited.
 
 Complete migration to class based views:
-- groups.contactgroup_index
 - groups.contactgroup_edit
 - groups.contactgroup_delete
 - contacts.contact_edit
