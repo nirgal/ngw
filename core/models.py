@@ -13,6 +13,7 @@ import json
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection
 from django import forms
@@ -1975,4 +1976,4 @@ class ContactMsg(NgwModel):
                     result += '<span style="color:green;" title="%s">✉</span>' % _('Notification sent and read')
                 else:
                     result += '<span style="color:red;" title="%s">✉</span>' % _('Notification sent but unread')
-        return result
+        return mark_safe(result)
