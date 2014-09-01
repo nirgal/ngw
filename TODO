@@ -24,9 +24,6 @@ Top right quick search: Add a drop down select filed by ajax to quick select peo
 CODE REFACTOR
 ====================================================================================================
 
-Change News.title to varchar
-+ cleanup NewsEditForm
-
 Make a MultiWidget for flags, including javascript pre-checks/clears
 Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
 - in javascript checkbox

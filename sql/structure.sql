@@ -129,7 +129,7 @@ CREATE TABLE contact_group_news (
     author_id integer REFERENCES contact(id) ON UPDATE CASCADE ON DELETE CASCADE,
     contact_group_id integer REFERENCES contact_group(id) ON UPDATE CASCADE ON DELETE CASCADE,
     date timestamp with time zone NOT NULL,
-    title text NOT NULL,
+    title varchar(64) NOT NULL,
     text text NOT NULL
 );
 

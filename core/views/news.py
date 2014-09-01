@@ -12,7 +12,6 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
 from django import forms
-from django.forms import widgets
 from django.contrib import messages
 from ngw.core.models import (GROUP_USER_NGW, ContactGroup, ContactGroupNews)
 from ngw.core import perms
@@ -66,9 +65,6 @@ class NewsEditForm(forms.ModelForm):
     class Meta:
         model = ContactGroupNews
         fields = ['title', 'text']
-        widgets = {
-            'title': widgets.TextInput(attrs={'max_length': 50}),
-        }
 
 
 class NewsEditMixin(ModelFormMixin):

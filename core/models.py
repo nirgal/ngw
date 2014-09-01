@@ -1905,7 +1905,7 @@ class ContactGroupNews(NgwModel):
     author = models.ForeignKey(Contact, null=True, blank=True)
     contact_group = models.ForeignKey(ContactGroup, null=True, blank=True)
     date = models.DateTimeField()
-    title = models.TextField(_('title'))
+    title = models.CharField(_('title'), max_length=64)
     text = models.TextField(_('text'))
 
     class Meta:
