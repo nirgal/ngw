@@ -17,8 +17,10 @@
 <script type="text/javascript">window.__admin_media_prefix__ = "{% filter escapejs %}{% static "admin/" %}{% endfilter %}";</script>
 {% block extrahead %}{% endblock %}
 {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
-{% include 'session_security/all.html' %}
 
+<body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}">
+
+{% include 'session_security/all.html' %}
 
 <!-- Container -->
 <div id="container">
@@ -112,4 +114,6 @@
 
 </div>
 <!-- END Container -->
+
+</body>
 {# vim: set et ts=4 ft=htmldjango: #}

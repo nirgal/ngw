@@ -16,12 +16,18 @@ Optionnal parameters:
         <thead>
         <tr>
         {% for col in cols %}
-            <th scope="col" class="{% if col|get_notnull:3 %}sortable{% endif %}">
+            <th scope="col" class="{% if col|get_notnull:3 %}sortable{% endif %} {% if order|order_absmatch:forloop.counter0 %}sorted {% if order|order_isreverted %}ascending{% else %}descending{% endif %}{% endif %}">
+            {% if order|order_absmatch:forloop.counter0 %}
+            <div class="sortoptions">
+                <a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif %}{{ forloop.counter0 }}" class="toggle {% if order|order_isreverted %}ascending{% else %}descending{% endif %}"></a>
+            </div>
+            {% endif %}
             <div class="text">
-            {% if order|order_absmatch:forloop.counter0 %}<span style="float:right;">{% if order|order_isreverted %}▼{% else %}▲{% endif %}</span>{% endif %}
-            {% if col|get_notnull:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif  %}{{ forloop.counter0 }}">{% endif %}
+            <span>
+            {% if col|get_notnull:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif %}{{ forloop.counter0 }}">{% endif %}
             {{col|get:0}}
             {% if col|get_notnull:3 %}</a>{% endif %}
+            </span>
             </div>
             <div class=clear></div>
         {% endfor %}
