@@ -14,6 +14,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django import forms
 from django.core.urlresolvers import reverse
+from django.views.generic import View
 from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
@@ -43,30 +44,26 @@ class FieldListView(NgwAdminAcl, NgwListView):
         return super(FieldListView, self).get_context_data(**context)
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def field_move_up(request, id):
-    id = id and int(id) or None
-    if not request.user.is_admin():
-        raise PermissionDenied
-    cf = get_object_or_404(ContactField, pk=id)
-    cf.sort_weight -= 15
-    cf.save()
-    ContactField.renumber()
-    return HttpResponseRedirect(reverse('field_list'))
+class FieldMoveUpView(NgwAdminAcl, View):
+    def get(self, request, *args, **kwargs):
+        id = self.kwargs['id']
+        id = id and int(id) or None
+        cf = get_object_or_404(ContactField, pk=id)
+        cf.sort_weight -= 15
+        cf.save()
+        ContactField.renumber()
+        return HttpResponseRedirect(reverse('field_list'))
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def field_move_down(request, id):
-    id = id and int(id) or None
-    if not request.user.is_admin():
-        raise PermissionDenied
-    cf = get_object_or_404(ContactField, pk=id)
-    cf.sort_weight += 15
-    cf.save()
-    ContactField.renumber()
-    return HttpResponseRedirect(reverse('field_list'))
+class FieldMoveDownView(NgwAdminAcl, View):
+    def get(self, request, *args, **kwargs):
+        id = self.kwargs['id']
+        id = id and int(id) or None
+        cf = get_object_or_404(ContactField, pk=id)
+        cf.sort_weight += 15
+        cf.save()
+        ContactField.renumber()
+        return HttpResponseRedirect(reverse('field_list'))
 
 
 class FieldEditForm(forms.Form):

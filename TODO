@@ -57,8 +57,6 @@ Complete migration to class based views:
 - groups.contactingroup_delete
 - news.contactgroup_news_delete
 - fields.field_edit
-- fields.field_move_up
-- fields.field_move_down
 - fields.field_delete
 - contactsearch.ajax_get_columns
 - contactsearch.ajax_get_customfilters
