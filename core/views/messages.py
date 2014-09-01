@@ -29,12 +29,10 @@ from ngw.core.views.generic import InGroupAcl, NgwListView
 
 class MessageListView(InGroupAcl, NgwListView):
     cols = [
+        (_('Flags'), None, 'nice_flags', None),
         (_('Date UTC'), None, 'nice_date', 'send_date'),
-        (_('Direction'), None, 'direction', 'is_answer'),
-        (_('Read'), None, 'nice_read', None),
         (_('Contact'), None, 'contact', 'contact__name'),
         (_('Subject'), None, 'subject', 'subject'),
-        #(_('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     template_name = 'message_list.html'
 
@@ -136,7 +134,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             self.object.read_date = None
             self.object.read_by = None
             self.object.save()
-            return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/?&_order=-0')
+            return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/?&_order=-1')
         raise Http404
 
 

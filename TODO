@@ -16,6 +16,10 @@ Type change deletion check may be buggy.
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
+Add filtering on message list:
+- Send / Received
+- Read / Unread
+
 Show list of groups with unread messages on homepage.
 
 Top right quick search: Add a drop down select filed by ajax to quick select people

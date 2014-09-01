@@ -1941,8 +1941,10 @@ class ContactMsg(NgwModel):
     def nice_date(self):
         return formats.date_format(self.send_date, 'DATETIME_FORMAT')
 
-    def get_link_nice_date(self):
+    def get_absolute_url(self):
         return self.group.get_absolute_url() + 'messages/' + force_text(self.id)
+
+    get_link_subject = get_absolute_url
 
     def direction(self):
         if self.is_answer:
@@ -1966,3 +1968,9 @@ class ContactMsg(NgwModel):
             return _('Read')
         return ''
 
+    def nice_flags(self):
+        result = self.direction()
+        nice_read = self.nice_read()
+        if nice_read:
+            result = string_concat(result, ', ', self.nice_read())
+        return result
