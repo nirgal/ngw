@@ -4,7 +4,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from django.contrib import admin
 from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
     ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
-    ContactFieldValue)
+    ContactFieldValue, ContactMsg)
 
 class ConfigAdmin(admin.ModelAdmin):
     list_display = 'id',
@@ -43,4 +43,9 @@ admin.site.register(ContactField, ContactFieldAdmin)
 class ContactFieldValueAdmin(admin.ModelAdmin):
     list_display = 'contact', 'contact_field', 'value'
 admin.site.register(ContactFieldValue, ContactFieldValueAdmin)
+
+class ContactMsgAdmin(admin.ModelAdmin):
+    list_display = 'nice_flags', 'group', 'send_date', 'contact', 'subject'
+    list_filter = 'is_answer', 'contact'
+admin.site.register(ContactMsg, ContactMsgAdmin)
 
