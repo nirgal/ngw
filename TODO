@@ -58,11 +58,6 @@ Complete migration to class based views:
 - news.contactgroup_news_delete
 - fields.field_edit
 - fields.field_delete
-- contactsearch.ajax_get_columns
-- contactsearch.ajax_get_customfilters
-- contactsearch.ajax_get_filters
-- contactsearch.ajax_get_customfilters_params
-- contactsearch.ajax_get_filters_params
 - ngw.core.gpg.lookup
 
 Check how slicing is optimized in ContactQuerySet

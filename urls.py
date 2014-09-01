@@ -21,6 +21,7 @@ from ngw.core.views.messages import MessageListView, MessageDetailView
 from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
 from ngw.core.views.logs import LogListView
+from ngw.core.views.contactsearch import ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
 
 # These patterns are valid with both /contactgroups and /events prefixes
 groups_urlpatterns = patterns('',
@@ -78,11 +79,11 @@ urlpatterns = patterns('',
 
     url(r'^contacts/$', ContactListView.as_view(), name='contact_list'),
     url(r'^contacts/add$', 'ngw.core.views.contacts.contact_edit', {'gid':None, 'cid':None}),
-    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', 'ngw.core.views.contactsearch.ajax_get_columns'),
-    url(r'^contacts/ajaxsearch/custom/user$', 'ngw.core.views.contactsearch.ajax_get_customfilters'),
-    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', 'ngw.core.views.contactsearch.ajax_get_filters'),
-    url(r'^contacts/ajaxsearch/custom/user/(?P<filter_id>[^/]+)$', 'ngw.core.views.contactsearch.ajax_get_customfilters_params'),
-    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)/(?P<filter_id>[^/]+)$', 'ngw.core.views.contactsearch.ajax_get_filters_params'),
+    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', ContactSearchColumnsView.as_view()),
+    url(r'^contacts/ajaxsearch/custom/user$', ContactSearchCustomFiltersView.as_view()),
+    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', ContactSearchColumnFiltersView.as_view()),
+    url(r'^contacts/ajaxsearch/custom/user/(?P<filter_id>[^/]+)$', ContactSearchCustomFilterParamsView.as_view()),
+    url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)/(?P<filter_id>[^/]+)$', ContactSearchFilterParamsView.as_view()),
     url(r'^contacts/csv$', CsvContactListView.as_view()),
     url(r'^contacts/vcard$', VcardContactListView.as_view()),
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contacts.contact_make_login_mailing'),
