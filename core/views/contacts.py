@@ -441,12 +441,12 @@ class BaseContactListView(NgwListView):
         request = self.request
         strfilter = request.REQUEST.get('filter', '')
         filter = parse_filterstring(strfilter, request.user.id)
-        baseurl = '?filter='+strfilter
+        self.url_params['filter'] = strfilter
 
         strfields = request.REQUEST.get('fields', None)
         if strfields:
             fields = strfields.split(',')
-            baseurl += '&fields='+strfields
+            self.url_params['fields'] = strfields
         else:
             fields = get_default_columns(request.user)
             strfields = ','.join(fields)
@@ -475,7 +475,6 @@ class BaseContactListView(NgwListView):
         self.filter_html = filter.to_html()
         self.strfields = strfields
         self.fields = fields
-        self.baseurl = baseurl
         self.cg = cg
         return q
 
@@ -488,7 +487,6 @@ class BaseContactListView(NgwListView):
         context['filter'] = self.filter
         context['filter_html'] = self.filter_html
         context['fields'] = self.strfields
-        context['baseurl'] = self.baseurl
         context['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
         context.update(kwargs)
         return super(BaseContactListView, self).get_context_data(**context)

@@ -322,7 +322,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 
             q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
 
-        self.baseurl += '&display=' + self.display
+        self.url_params['display'] = self.display
         return q
 
 

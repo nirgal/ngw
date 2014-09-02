@@ -10,6 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
+from django.utils import six
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.views.generic.base import ContextMixin
@@ -106,6 +107,12 @@ class NgwListView(ListView):
     page_kwarg = '_page'
     default_sort = None
 
+    def __init__(self, *args, **kwargs):
+        super(NgwListView, self).__init__(*args, **kwargs)
+        # keep track of parameters that need to be given back after
+        # page/order change:
+        self.url_params = {}
+
     def get_root_queryset(self):
         return self.root_queryset
 
@@ -141,7 +148,10 @@ class NgwListView(ListView):
     def get_context_data(self, **kwargs):
         context = {}
         context['cols'] = self.cols
-        context['baseurl'] = '?'
+        baseurl = '&'.join([ "%s=%s" % (key, value)
+            for key, value in six.iteritems(self.url_params)
+            if value != ''])
+        context['baseurl'] = '?' + baseurl
         context['order'] = self.order
         context.update(kwargs)
         return super(NgwListView, self).get_context_data(**context)

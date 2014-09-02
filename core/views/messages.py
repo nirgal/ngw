@@ -41,9 +41,23 @@ class MessageListView(InGroupAcl, NgwListView):
             raise PermissionDenied
 
     def get_root_queryset(self):
-        return ContactMsg.objects \
+        query = ContactMsg.objects \
             .filter(group_id=self.contactgroup.id) \
             .order_by('-send_date')
+
+        filter_unread = self.request.GET.get('unread', '')
+        if filter_unread != '':
+            self.url_params['unread'] = filter_unread
+            filter_unread = filter_unread == '1'
+            query = query.filter(read_date__isnull=filter_unread)
+
+        filter_answer = self.request.GET.get('answer', '')
+        if filter_answer != '':
+            self.url_params['answer'] = filter_answer
+            filter_answer = filter_answer == '1'
+            query = query.filter(is_answer=filter_answer)
+
+        return query
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
