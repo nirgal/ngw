@@ -9,8 +9,27 @@
 <div id="content-main">
     
     {% block prequerylist %}{% endblock %}
-    <div class="module" id="changelist">
-    {% block filter %}{% endblock %}
+    <div class="module {% if simplefilters %}filtered{% endif %}" id="changelist">
+    {% block search %}{% endblock %}
+    {% block filters %}
+        {% for filter, choices in simplefilters %}
+            {% if forloop.first %}
+            <div id="changelist-filter">
+            <h2>{% trans 'Filter' %}</h2>
+            {% endif %}
+            <h3>{% trans 'By' %} {{ filter.title }}</h3>
+            <ul>
+            {% for choice in choices %}
+                <li {% if choice.selected %}class="selected"{% endif %}>
+                    <a href="{{choice.query_string}}">{{ choice.display }}</a>
+                </li>
+            {% endfor %}
+            </ul>
+            {% if forloop.last %}
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endblock %}
     {% include "query.html" %}
     </div>
 

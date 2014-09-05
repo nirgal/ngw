@@ -11,6 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils import six
+from django.utils.http import urlencode
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.views.generic.base import ContextMixin
@@ -97,6 +98,40 @@ class InGroupAcl(ContextMixin):
 #
 #######################################################################
 
+class BaseListFilter(object):
+    '''
+    This is a basic filter, with a admin-like compatible interface
+    '''
+    def __init__(self, request):
+        param = request.GET.get(self.parameter_name, None)
+        if param == '':
+            param = None
+        self.thevalue = param
+        self.request = request
+
+    def value(self):
+        return self.thevalue
+
+    def choices(self, view):
+        # we preserver the order, but not the page
+        extra_params = {}
+        if view.order:
+            extra_params['_order'] = view.order
+        yield {
+            'selected': self.value() is None,
+            'query_string': view.get_query_string(extra_params, remove=(self.parameter_name,)),
+            'display': _('All'),
+        }
+        for value, display_value in self.lookups(self.request, view):
+            ep = extra_params.copy()
+            ep[self.parameter_name] = value
+            yield {
+                'selected': self.value() == value,
+                'query_string': view.get_query_string(ep),
+                'display': display_value,
+            }
+
+
 class NgwListView(ListView):
     '''
     This function renders the query, paginated.
@@ -106,12 +141,14 @@ class NgwListView(ListView):
     context_object_name = 'query'
     page_kwarg = '_page'
     default_sort = None
+    filter_list = ()
 
     def __init__(self, *args, **kwargs):
         super(NgwListView, self).__init__(*args, **kwargs)
         # keep track of parameters that need to be given back after
         # page/order change:
         self.url_params = {}
+        self.simplefilters = []
 
     def get_root_queryset(self):
         return self.root_queryset
@@ -120,7 +157,15 @@ class NgwListView(ListView):
         return Config.get_object_query_page_length()
 
     def get_queryset(self):
-        query = self.get_root_queryset()
+        queryset = self.get_root_queryset()
+
+        # Handle admin-like filters
+        for filter_class in self.filter_list:
+            filter = filter_class(self.request)
+            self.simplefilters.append(filter)
+            queryset = filter.queryset(self.request, queryset)
+            if filter.value() is not None:
+                self.url_params[filter_class.parameter_name] = filter.value()
 
         # Handle sorts
         order = self.request.REQUEST.get('_order', '')
@@ -130,29 +175,48 @@ class NgwListView(ListView):
             if self.default_sort:
                 order = ''
                 intorder = None
-                query = query.order_by(self.default_sort)
-            else:
+                queryset = queryset.order_by(self.default_sort)
+            elif self.cols[0][3] is not None:
                 order = '0'
                 intorder = 0
+            else:
+                order = ''
+                intorder = None
         if intorder is not None:
             sort_col = self.cols[abs(intorder)][3]
             if not order or order[0] != '-':
-                query = query.order_by(sort_col)
+                queryset = queryset.order_by(sort_col)
             else:
-                query = query.order_by('-'+sort_col)
+                queryset = queryset.order_by('-'+sort_col)
 
         self.order = order
 
-        return query
+        return queryset
+
+    def get_query_string(self, new_params={}, remove=[]):
+        p = self.url_params.copy()
+        for r in remove:
+            for k in list(p):
+                if k.startswith(r):
+                    del p[k]
+        for k, v in new_params.items():
+            if v is None:
+                if k in p:
+                    del p[k]
+            else:
+                p[k] = v
+        return '?%s' % urlencode(sorted(p.items()))
+
 
     def get_context_data(self, **kwargs):
         context = {}
         context['cols'] = self.cols
-        baseurl = '&'.join([ "%s=%s" % (key, value)
-            for key, value in six.iteritems(self.url_params)
-            if value != ''])
-        context['baseurl'] = '?' + baseurl
+        #baseurl = '&'.join([ "%s=%s" % (key, value)
+        #    for key, value in six.iteritems(self.url_params)
+        #    if value != '' and value != None])
+        context['baseurl'] = self.get_query_string()
         context['order'] = self.order
+        context['simplefilters'] = [ (filter,filter.choices(self)) for filter in self.simplefilters ]
         context.update(kwargs)
         return super(NgwListView, self).get_context_data(**context)
 

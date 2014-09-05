@@ -47,5 +47,6 @@ admin.site.register(ContactFieldValue, ContactFieldValueAdmin)
 class ContactMsgAdmin(admin.ModelAdmin):
     list_display = 'nice_flags', 'group', 'send_date', 'contact', 'subject'
     list_filter = 'is_answer', 'contact'
+    search_fields = 'subject', 'text'
 admin.site.register(ContactMsg, ContactMsgAdmin)
 

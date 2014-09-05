@@ -17,7 +17,7 @@ from ngw.core.models import (
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ContactMsg, ContactInGroup)
 from ngw.core import perms
-from ngw.core.views.generic import InGroupAcl, NgwListView
+from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
 
 
 #######################################################################
@@ -25,6 +25,39 @@ from ngw.core.views.generic import InGroupAcl, NgwListView
 # Messages list
 #
 #######################################################################
+
+class MessageDirectionFilter(BaseListFilter):
+    title = _('direction')
+    parameter_name = 'answer'
+    def lookups(self, request, view):
+        return (
+            ('1', _('Received')),
+            ('0', _('Sent')),
+        )
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val is None:
+            return queryset
+        filter_answer = val == '1'
+        return queryset.filter(is_answer=filter_answer)
+
+
+class MessageReadFilter(BaseListFilter):
+    title = _('read status')
+    parameter_name = 'unread'
+    def lookups(self, request, view):
+        return (
+            ('1', _('Unread')),
+            ('0', _('Read')),
+        )
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val is None:
+            return queryset
+        filter_unread = val == '1'
+        return queryset.filter(read_date__isnull=filter_unread)
 
 
 class MessageListView(InGroupAcl, NgwListView):
@@ -35,29 +68,16 @@ class MessageListView(InGroupAcl, NgwListView):
         (_('Subject'), None, 'subject', 'subject'),
     ]
     template_name = 'message_list.html'
+    filter_list = (MessageDirectionFilter, MessageReadFilter)
 
     def check_perm_groupuser(self, group, user):
         if not perms.c_can_view_msgs_cg(user.id, group.id):
             raise PermissionDenied
 
     def get_root_queryset(self):
-        query = ContactMsg.objects \
+        return ContactMsg.objects \
             .filter(group_id=self.contactgroup.id) \
             .order_by('-send_date')
-
-        filter_unread = self.request.GET.get('unread', '')
-        if filter_unread != '':
-            self.url_params['unread'] = filter_unread
-            filter_unread = filter_unread == '1'
-            query = query.filter(read_date__isnull=filter_unread)
-
-        filter_answer = self.request.GET.get('answer', '')
-        if filter_answer != '':
-            self.url_params['answer'] = filter_answer
-            filter_answer = filter_answer == '1'
-            query = query.filter(is_answer=filter_answer)
-
-        return query
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
