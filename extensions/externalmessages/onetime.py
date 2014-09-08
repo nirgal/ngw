@@ -34,16 +34,10 @@ logger = logging.getLogger('msgsync')
 # email_sent: True if notification email was sent
 # deleted: True if remote server returns 404 (deleted on remote end)
 
-def do_sync():
-    #logger.error('ERROR')
-    #logger.warning('WARNING')
-    #logger.info('INFO')
-    #logger.debug('DEBUG')
-
-    ot_conn = None
+def send_to_onetime():
+    "step 1 : Send message to final storage"
     messages = ContactMsg.objects.filter(is_answer=False)
 
-    # step 1 : Send message to final storage
     for msg in messages:
         try:
             sync_info = json.loads(msg.sync_info)
@@ -53,8 +47,7 @@ def do_sync():
         #logger.debug("%s %s", msg.id, sync_info)
 
         if 'otid' not in sync_info:
-            if not ot_conn:
-                ot_conn = http_client.HTTPSConnection('onetime.info')
+            ot_conn = http_client.HTTPSConnection('onetime.info')
 
             logger.info('Storing message for %s.', msg.contact)
 
@@ -89,12 +82,17 @@ def do_sync():
             msg.sync_info = json.dumps(sync_info)
             msg.save()
     
-    # step 2 : Send email notification
+
+def send_notifications():
+    "step 2 : Send email notification"
     smtp_connection = None
+    messages = ContactMsg.objects.filter(is_answer=False)
     for msg in messages:
         sync_info = json.loads(msg.sync_info)
         if 'email_sent' in sync_info:
             continue # already sent
+        if 'otid' not in sync_info:
+            continue # Message is not ready on external storage
 
         if 'language' in sync_info:
             logger.warning('Switch to language: %s' % sync_info['language'])
@@ -124,7 +122,10 @@ def do_sync():
         msg.save()
         
 
-    # step 3 : Fetch answers
+def read_answers():
+    "step 3 : Fetch answers"
+
+    messages = ContactMsg.objects.filter(is_answer=False)
     for msg in messages:
         sync_info = json.loads(msg.sync_info)
         if 'answer_password' not in  sync_info:
@@ -132,8 +133,9 @@ def do_sync():
         if 'deleted' in sync_info:
             # Ignore message that were deleted on remote storage
             continue
-        if not ot_conn:
-            ot_conn = http_client.HTTPSConnection('onetime.info')
+        # We have to open a new connection each time
+        # since we can't handle keep-alive yet
+        ot_conn = http_client.HTTPSConnection('onetime.info')
 
         ot_conn.request('POST', '/'+sync_info['otid']+'/answers', urllib.parse.urlencode({
             'password': sync_info['answer_password']
@@ -173,3 +175,19 @@ def do_sync():
                 sync_info=json.dumps({'otid': sync_info['otid']}),
                 )
             answer_msg.save()
+
+def do_sync():
+    try:
+        send_to_onetime()
+    except BaseException as err:
+        logging.critical(err)
+
+    try:
+        send_notifications()
+    except BaseException as err:
+        logging.critical(err)
+
+    try:
+        read_answers()
+    except BaseException as err:
+        logging.critical(err)
