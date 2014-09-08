@@ -6,6 +6,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 import datetime
 import json
 import logging
+import smtplib
 from django.conf import settings
 from django.utils.six.moves import urllib, http_client
 from django.utils.translation import ugettext, activate as language_activate
@@ -46,41 +47,43 @@ def send_to_onetime():
         
         #logger.debug("%s %s", msg.id, sync_info)
 
-        if 'otid' not in sync_info:
-            ot_conn = http_client.HTTPSConnection('onetime.info')
+        if 'otid' in sync_info:
+            continue # Already sent
 
-            logger.info('Storing message for %s.', msg.contact)
+        ot_conn = http_client.HTTPSConnection('onetime.info')
 
-            dt = msg.group.date
-            if dt:
-                days = (dt - now().date()).days
-            else:
-                days = 21
-            ot_conn.request('POST', '/', urllib.parse.urlencode({
-                'subject': msg.subject.encode(settings.DEFAULT_CHARSET),
-                'message': msg.text.encode(settings.DEFAULT_CHARSET),
-                'once': True,
-                'expiration': days,
-                'allow_answers': 1
-            }), {
-                'Content-type': 'application/x-www-form-urlencoded',
-                'X_REQUESTED_WITH': 'XMLHttpRequest',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-            })
-            response = ot_conn.getresponse()
-            if response.status != 200:
-                logger.error("Temporary storage server error: %s %s" % (response.status, response.reason))
-                logger.error("%s", response.read())
-                continue # Try next message
-            #jresponse = json.load(response)
-            #logger.debug("%s", jresponse)
-            sresponse = response.read()
-            jresponse = json.loads(force_str(sresponse))
+        logger.info('Storing message for %s.', msg.contact)
 
-            sync_info['otid'] = jresponse['url'][1:]
-            sync_info['answer_password'] = jresponse['answer_password']
-            msg.sync_info = json.dumps(sync_info)
-            msg.save()
+        dt = msg.group.date
+        if dt:
+            days = (dt - now().date()).days
+        else:
+            days = 21
+        ot_conn.request('POST', '/', urllib.parse.urlencode({
+            'subject': msg.subject.encode(settings.DEFAULT_CHARSET),
+            'message': msg.text.encode(settings.DEFAULT_CHARSET),
+            'once': True,
+            'expiration': days,
+            'allow_answers': 1
+        }), {
+            'Content-type': 'application/x-www-form-urlencoded',
+            'X_REQUESTED_WITH': 'XMLHttpRequest',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+        })
+        response = ot_conn.getresponse()
+        if response.status != 200:
+            logger.error("Temporary storage server error: %s %s" % (response.status, response.reason))
+            logger.error("%s", response.read())
+            continue # Try next message
+        #jresponse = json.load(response)
+        #logger.debug("%s", jresponse)
+        sresponse = response.read()
+        jresponse = json.loads(force_str(sresponse))
+
+        sync_info['otid'] = jresponse['url'][1:]
+        sync_info['answer_password'] = jresponse['answer_password']
+        msg.sync_info = json.dumps(sync_info)
+        msg.save()
     
 
 def send_notifications():
@@ -115,7 +118,16 @@ def send_notifications():
             body=ugettext(NOTIFICATION_TEXT) % sync_info['otid'],
             to=(mail_addr,),
             connection=smtp_connection)
-        message.send()
+        try:
+            message.send()
+        except smtplib.SMTPException as err:
+            logging.critical('%s' % err)
+            if err.smtp_code // 100 == 4:
+                logging.warning('Temporarary SMTP failure: %s' % err)
+            if err.smtp_code == 450:
+                logging.info('Message rate exceeded: giving up for now')
+                break
+            continue # Try next message
 
         sync_info['email_sent'] = True
         msg.sync_info = json.dumps(sync_info)
