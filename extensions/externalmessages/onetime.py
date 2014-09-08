@@ -193,13 +193,16 @@ def do_sync():
         send_to_onetime()
     except BaseException as err:
         logging.critical(err)
+        logging.critical(traceback.format_exc())
 
     try:
         send_notifications()
     except BaseException as err:
         logging.critical(err)
+        logging.critical(traceback.format_exc())
 
     try:
         read_answers()
     except BaseException as err:
         logging.critical(err)
+        logging.critical(traceback.format_exc())
