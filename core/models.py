@@ -1197,14 +1197,14 @@ class ContactField(NgwModel):
     types_classes = {}
 
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    hint = models.TextField(blank=True)
-    type = models.CharField(max_length=15)
-    contact_group = models.ForeignKey(ContactGroup)
+    name = models.CharField(_('Name'), max_length=255)
+    hint = models.TextField(_('Hint'), blank=True)
+    type = models.CharField(_('Type'), max_length=15, default='TEXT')
+    contact_group = models.ForeignKey(ContactGroup, verbose_name=_('Only for'))
     sort_weight = models.IntegerField()
-    choice_group = models.ForeignKey(ChoiceGroup, null=True, blank=True)
+    choice_group = models.ForeignKey(ChoiceGroup, verbose_name=_('Choice group'), null=True, blank=True)
     system = models.BooleanField(default=False)
-    default = models.TextField(blank=True)
+    default = models.TextField(_('Default value'), blank=True)
     class Meta:
         db_table = 'contact_field'
         verbose_name = _('contact field')

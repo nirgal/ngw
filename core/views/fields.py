@@ -21,6 +21,12 @@ from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete, NgwAdminAcl, NgwListView
 
+###############################################################################
+#
+# List of fields
+#
+###############################################################################
+
 
 class FieldListView(NgwAdminAcl, NgwListView):
     cols = [
@@ -42,6 +48,13 @@ class FieldListView(NgwAdminAcl, NgwListView):
         context['nav'] = Navbar(ContactField.get_class_navcomponent())
         context.update(kwargs)
         return super(FieldListView, self).get_context_data(**context)
+
+
+###############################################################################
+#
+# Fields re-ordering
+#
+###############################################################################
 
 
 class FieldMoveUpView(NgwAdminAcl, View):
@@ -66,18 +79,30 @@ class FieldMoveDownView(NgwAdminAcl, View):
         return HttpResponseRedirect(reverse('field_list'))
 
 
-class FieldEditForm(forms.Form):
-    name = forms.CharField(label=_('Name'))
-    hint = forms.CharField(label=_('Hint'),
-        required=False, widget=forms.Textarea)
-    contact_group = forms.CharField(label=_('Only for'), required=False, widget=forms.Select)
-    type = forms.CharField(label=_('Type'),
-        widget=forms.Select)
-    choicegroup = forms.CharField(label=_('Choice group'), required=False, widget=forms.Select)
-    default_value = forms.CharField(label=_('Default value'), required=False)
-    move_after = forms.IntegerField(label=_('Move after'), widget=forms.Select())
+###############################################################################
+#
+# Field edit
+#
+###############################################################################
 
-    def __init__(self, cf, *args, **kargs):
+
+class FieldEditForm(forms.ModelForm):
+    class Meta:
+        model = ContactField
+        fields = ['name', 'hint', 'contact_group', 'type', 'choice_group',
+            'default']
+        widgets = {
+            'type': forms.Select,
+            'default': forms.widgets.Input,
+        }
+    move_after = forms.IntegerField(label=_('Move after'), widget=forms.Select)
+
+    def __init__(self, *args, **kargs):
+        instance = kargs.get('instance', None)
+        initial = kargs.get('initial', {})
+        if instance:
+            initial['move_after'] = instance.sort_weight-10
+        kargs['initial'] = initial
         super(FieldEditForm, self).__init__(*args, **kargs)
 
         contacttypes = ContactGroup.objects.filter(field_group=True)
@@ -88,9 +113,10 @@ class FieldEditForm(forms.Form):
         js_test_type_has_choice = ' || '.join(["this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
             if cls.has_choice])
-        self.fields['type'].widget.attrs = {'onchange': mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choicegroup'].disabled = 0; } else { document.forms['objchange']['choicegroup'].value = ''; document.forms['objchange']['choicegroup'].disabled = 1; }")}
+        self.fields['type'].widget.attrs = {'onchange':
+            mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choice_group'].disabled = 0; } else { document.forms['objchange']['choice_group'].value = ''; document.forms['objchange']['choice_group'].disabled = 1; }")}
 
-        self.fields['choicegroup'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
+        self.fields['choice_group'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
 
         t = self.data.get('type', '') or self.initial.get('type', '')
         if t:
@@ -98,30 +124,30 @@ class FieldEditForm(forms.Form):
         else:
             cls_contact_field = ContactField.get_contact_field_type_by_dbid('TEXT')
         if cls_contact_field.has_choice:
-            if 'disabled' in self.fields['choicegroup'].widget.attrs:
-                del self.fields['choicegroup'].widget.attrs['disabled']
-            self.fields['choicegroup'].required = True
+            if 'disabled' in self.fields['choice_group'].widget.attrs:
+                del self.fields['choice_group'].widget.attrs['disabled']
+            self.fields['choice_group'].required = True
         else:
-            self.fields['choicegroup'].widget.attrs['disabled'] = 1
-            self.fields['choicegroup'].required = False
+            self.fields['choice_group'].widget.attrs['disabled'] = 1
+            self.fields['choice_group'].required = False
 
-        self.fields['default_value'].widget.attrs['disabled'] = 1
+        self.fields['default'].widget.attrs['disabled'] = 1
 
-        self.fields['move_after'].widget.choices = [(5, _('Name'))] + [(field.sort_weight + 5, field.name) for field in ContactField.objects.order_by('sort_weight')]
+        self.fields['move_after'].widget.choices = [(0, _('Name'))] + [(field.sort_weight, field.name) for field in ContactField.objects.order_by('sort_weight')]
 
-        if cf and cf.system:
+        if instance and instance.system:
             self.fields['contact_group'].widget.attrs['disabled'] = 1
             self.fields['type'].widget.attrs['disabled'] = 1
             self.fields['type'].required = False
-            self.fields['choicegroup'].widget.attrs['disabled'] = 1
+            self.fields['choice_group'].widget.attrs['disabled'] = 1
 
     def clean(self):
         t = self.cleaned_data.get('type', None)
         if t:
             # system fields have type disabled, this is ok
             cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
-            if cls_contact_field.has_choice and not self.cleaned_data.get('choicegroup'):
-                raise forms.ValidationError('You must select a choice group for that type.')
+            if cls_contact_field.has_choice and not self.cleaned_data.get('choice_group'):
+                raise forms.ValidationError(_('You must select a choice group for that type.'))
         return self.cleaned_data
 
 
@@ -132,41 +158,33 @@ def field_edit(request, id):
         raise PermissionDenied
     id = id and int(id) or None
     objtype = ContactField
-    initial = {}
     if id:
         cf = get_object_or_404(ContactField, pk=id)
         title = _('Editing %s') % smart_text(cf)
-        initial['name'] = cf.name
-        initial['hint'] = cf.hint
-        initial['contact_group'] = cf.contact_group_id
-        initial['type'] = cf.type
-        initial['choicegroup'] = cf.choice_group_id
-        initial['default_value'] = cf.default
-        initial['move_after'] = cf.sort_weight-5
     else:
         cf = None
         title = _('Adding a new %s') % objtype.get_class_verbose_name()
 
     if request.method == 'POST':
-        form = FieldEditForm(cf, request.POST, initial=initial)
+        form = FieldEditForm(request.POST, instance=cf)
         #print(request.POST)
         if form.is_valid():
             data = form.clean()
             if not id:
                 cf = ContactField(name=data['name'],
                                   hint=data['hint'],
-                                  contact_group_id=int(data['contact_group']),
+                                  contact_group_id=data['contact_group'].id,
                                   type=data['type'],
-                                  choice_group_id=data['choicegroup'] and int(data['choicegroup']) or None,
-                                  sort_weight=int(data['move_after']))
+                                  choice_group_id=data['choice_group'] and data['choice_group'].id or None,
+                                  sort_weight=int(data['move_after']+5))
                 cf.save()
             else:
-                if not cf.system and (cf.type != data['type'] or force_text(cf.choice_group_id) != data['choicegroup']):
+                if not cf.system and (cf.type != data['type'] or force_text(cf.choice_group_id) != data['choice_group']):
                     deletion_details = []
                     newcls = ContactField.get_contact_field_type_by_dbid(data['type'])
                     choice_group_id = None
-                    if data['choicegroup']:
-                        choice_group_id = int(data['choicegroup'])
+                    if data['choice_group']:
+                        choice_group_id = data['choice_group']
                     for cfv in cf.values.all():
                         if not newcls.validate_unicode_value(cfv.value, choice_group_id):
                             deletion_details.append((cfv.contact, cfv))
@@ -181,7 +199,7 @@ def field_edit(request, id):
                             context['id'] = id
                             context['cf'] = cf
                             context['deletion_details'] = deletion_details
-                            for k in ('name', 'hint', 'contact_group', 'type', 'choicegroup', 'move_after'):
+                            for k in ('name', 'hint', 'contact_group', 'type', 'choice_group', 'move_after'):
                                 context[k] = data[k]
                             context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
                             return render_to_response('type_change.html', context, RequestContext(request))
@@ -193,13 +211,13 @@ def field_edit(request, id):
                 cf.hint = data['hint']
                 if not cf.system:
                     # system fields have some properties disabled
-                    cf.contact_group_id = int(data['contact_group'])
+                    cf.contact_group_id = data['contact_group'].id
                     cf.type = data['type']
-                    if data['choicegroup']:
-                        cf.choice_group_id = int(data['choicegroup'])
+                    if data['choice_group']:
+                        cf.choice_group_id = data['choice_group'].id
                     else:
                         cf.choice_group_id = None
-                cf.sort_weight = int(data['move_after'])
+                cf.sort_weight = int(data['move_after'])+5
                 cf.save()
 
             ContactField.renumber()
@@ -213,9 +231,9 @@ def field_edit(request, id):
         # else validation error
     else:
         if id: # modify
-            form = FieldEditForm(cf, initial=initial)
+            form = FieldEditForm(instance=cf)
         else: # add
-            form = FieldEditForm(None, initial=initial)
+            form = FieldEditForm()
 
 
     context = {}
@@ -232,6 +250,13 @@ def field_edit(request, id):
     else:
         context['nav'].add_component(('add', _('add')))
     return render_to_response('edit.html', context, RequestContext(request))
+
+
+###############################################################################
+#
+# Field delete
+#
+###############################################################################
 
 
 @login_required()

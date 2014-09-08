@@ -9,8 +9,6 @@ Disallow sending message for an event today or in the past.
 
 Remove the "you are leaving that page" warning on column choice change.
 
-Type change deletion check may be buggy.
-
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS

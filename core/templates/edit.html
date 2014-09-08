@@ -11,7 +11,7 @@
 
 <form name=objchange method=post>
 <div class="module aligned">
-    {{ form.non_field_errors }}
+    {#{{ form.non_field_errors }}#}
     {% csrf_token %}
     <table>
     {{ form.as_table }}
