@@ -8,6 +8,7 @@ import os
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import force_text
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import TemplateView
 from django.contrib.auth import logout as auth_logout
@@ -67,11 +68,20 @@ class HomeView(NgwUserAcl, TemplateView):
         except EmptyPage:
             # If page is out of range (e.g. 9999), deliver last page of results.
             news = paginator.page(paginator.num_pages)
+
+        unread_groups = ContactGroup.objects.raw('''
+            SELECT *
+            FROM contact_group
+            JOIN (SELECT group_id, count(*) AS unread_count FROM contact_message WHERE is_answer AND read_date IS NULL GROUP BY group_id) AS msg_info
+            ON contact_group.id=msg_info.group_id
+            AND perm_c_can_view_msgs_cg(%s, group_id)''' % self.request.user.id)
+
         context = {
             'title': _('Lastest news'),
             'nav': Navbar(),
             'operator_groups': operator_groups,
             'news': news,
+            'unread_groups': unread_groups,
         }
         context.update(kwargs)
         return super(HomeView, self).get_context_data(**context)
