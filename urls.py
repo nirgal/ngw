@@ -18,7 +18,7 @@ from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
 from ngw.core.views.messages import MessageListView, MessageDetailView
-from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView
+from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView, FieldEditView, FieldCreateView
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
 from ngw.core.views.logs import LogListView
 from ngw.core.views.contactsearch import ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
@@ -106,9 +106,9 @@ urlpatterns = patterns('',
     url(r'^events/', include(groups_urlpatterns)),
 
     url(r'^contactfields/$', FieldListView.as_view(), name='field_list'),
-    url(r'^contactfields/add$', 'ngw.core.views.fields.field_edit', {'id': None}),
+    url(r'^contactfields/add$', FieldCreateView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/$', RedirectView.as_view(url='edit')),
-    url(r'^contactfields/(?P<id>\d+)/edit$', 'ngw.core.views.fields.field_edit'),
+    url(r'^contactfields/(?P<id>\d+)/edit$', FieldEditView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/moveup$', FieldMoveUpView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/movedown$', FieldMoveDownView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/delete$', 'ngw.core.views.fields.field_delete'),

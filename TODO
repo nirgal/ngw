@@ -48,7 +48,6 @@ Complete migration to class based views:
 - groups.contactingroup_edit_inline
 - groups.contactingroup_delete
 - news.contactgroup_news_delete
-- fields.field_edit
 - fields.field_delete
 - ngw.core.gpg.lookup
 

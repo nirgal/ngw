@@ -8,13 +8,14 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_text, smart_text
+from django.utils.encoding import force_text
 from django.utils import six
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django import forms
 from django.core.urlresolvers import reverse
-from django.views.generic import View
+from django.views.generic import View, UpdateView, CreateView
+from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
@@ -201,37 +202,62 @@ class FieldEditForm(forms.ModelForm):
         return result
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def field_edit(request, id):
-    if not request.user.is_admin():
-        raise PermissionDenied
-    id = id and int(id) or None
-    objtype = ContactField
-    if id:
-        cf = get_object_or_404(ContactField, pk=id)
-        title = _('Editing %s') % smart_text(cf)
-    else:
-        cf = None
-        title = _('Adding a new %s') % objtype.get_class_verbose_name()
+class FieldEditMixin(ModelFormMixin):
+    template_name = 'edit.html'
+    form_class = FieldEditForm
+    model = ContactField
+    pk_url_kwarg = 'id'
 
-    if request.method == 'POST':
-        form = FieldEditForm(request.POST, instance=cf)
+    def form_valid(self, form):
+        request = self.request
+        form.save()
+        cf = self.object
+
+        messages.add_message(request, messages.SUCCESS, _('Field %s has been saved sucessfully.') % cf.name)
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(cf.get_absolute_url()+'edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(cf.get_class_absolute_url()+'add')
+        else:
+            return HttpResponseRedirect(reverse('field_list'))
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            title = _('Editing %s') % self.object
+            id = self.object.id
+        else:
+            title = _('Adding a new %s') % ContactField.get_class_verbose_name()
+            id = None
+        context['title'] = title
+        context['id'] = id
+        context['objtype'] = ChoiceGroup
+        context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
+        if id:
+            context['nav'].add_component(self.object.get_navcomponent()) \
+                          .add_component(('edit', _('edit')))
+        else:
+            context['nav'].add_component(('add', _('add')))
+
+        context.update(kwargs)
+        return super(FieldEditMixin, self).get_context_data(**context)
+
+
+class FieldEditView(NgwAdminAcl, FieldEditMixin, UpdateView):
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
         try:
             if form.is_valid():
-                form.save()
-
-                messages.add_message(request, messages.SUCCESS, _('Field %s has been saved sucessfully.') % cf.name)
-                if request.POST.get('_continue', None):
-                    return HttpResponseRedirect(cf.get_absolute_url()+'edit')
-                elif request.POST.get('_addanother', None):
-                    return HttpResponseRedirect(cf.get_class_absolute_url()+'add')
-                else:
-                    return HttpResponseRedirect(reverse('field_list'))
+                return self.form_valid(form)
+            else:
+                return self.form_invalid(form)
         except FieldEditForm.IncompatibleData as err:
+            cf = form.instance
             context = {}
             context['title'] = _('Type incompatible with existing data')
-            context['id'] = id
+            context['id'] = cf.id
             context['cf'] = cf
             context['deletion_details'] = err.deletion_details
             for k in ('name', 'hint', 'contact_group', 'type', 'move_after'):
@@ -239,29 +265,12 @@ def field_edit(request, id):
             context['contact_group'] = form.cleaned_data['contact_group'].id
             if form.cleaned_data['choice_group']:
                 context['choice_group'] = form.cleaned_data['choice_group'].id
-            context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
+            context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete incompatible data')))
             return render_to_response('type_change.html', context, RequestContext(request))
-        # else validation error
-    else:
-        if id: # modify
-            form = FieldEditForm(instance=cf)
-        else: # add
-            form = FieldEditForm()
 
-    context = {}
-    context['form'] = form
-    context['title'] = title
-    context['id'] = id
-    context['objtype'] = objtype
-    if id:
-        context['object'] = cf
-    context['nav'] = Navbar(ContactField.get_class_navcomponent())
-    if id:
-        context['nav'].add_component(cf.get_navcomponent()) \
-                      .add_component(('edit', _('edit')))
-    else:
-        context['nav'].add_component(('add', _('add')))
-    return render_to_response('edit.html', context, RequestContext(request))
+
+class FieldCreateView(NgwAdminAcl, FieldEditMixin, CreateView):
+    pass
 
 
 ###############################################################################
