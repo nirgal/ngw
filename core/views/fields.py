@@ -9,7 +9,7 @@ from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text, smart_text
-from django.utils.six import itervalues
+from django.utils import six
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django import forms
@@ -95,6 +95,12 @@ class FieldEditForm(forms.ModelForm):
             'type': forms.Select,
             'default': forms.widgets.Input,
         }
+
+    class IncompatibleData(Exception if six.PY3 else StandardError):
+        def __init__(self, deletion_details, *args, **kwargs):
+            super(FieldEditForm.IncompatibleData, self).__init__(*args, **kwargs)
+            self.deletion_details = deletion_details
+
     move_after = forms.IntegerField(label=_('Move after'), widget=forms.Select)
 
     def __init__(self, *args, **kargs):
@@ -105,11 +111,13 @@ class FieldEditForm(forms.ModelForm):
         kargs['initial'] = initial
         super(FieldEditForm, self).__init__(*args, **kargs)
 
+        self.delete_incompatible = bool(self.data.get('confirm', None))
+
         contacttypes = ContactGroup.objects.filter(field_group=True)
         self.fields['contact_group'].widget.choices = [(g.id, g.name) for g in contacttypes]
 
         self.fields['type'].widget.choices = [(cls.db_type_id, cls.human_type_id)
-            for cls in itervalues(ContactField.types_classes)] # TODO: Sort
+            for cls in six.itervalues(ContactField.types_classes)] # TODO: Sort
         js_test_type_has_choice = ' || '.join(["this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
             if cls.has_choice])
@@ -142,13 +150,55 @@ class FieldEditForm(forms.ModelForm):
             self.fields['choice_group'].widget.attrs['disabled'] = 1
 
     def clean(self):
-        t = self.cleaned_data.get('type', None)
-        if t:
-            # system fields have type disabled, this is ok
-            cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
-            if cls_contact_field.has_choice and not self.cleaned_data.get('choice_group'):
-                raise forms.ValidationError(_('You must select a choice group for that type.'))
+        if self.instance.system:
+            # If this is a system locked field, some attributes may not be
+            # changed:
+            self.cleaned_data['contact_group'] = self.instance.contact_group
+            self.cleaned_data['type'] = self.instance.type
+            self.cleaned_data['choice_group'] = self.instance.choice_group
+
+        new_cls_id = self.cleaned_data['type']
+        choice_group_id = self.cleaned_data.get('choice_group', None)
+        new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
+
+        if new_cls.has_choice and not choice_group_id:
+            raise forms.ValidationError(_('You must select a choice group for that type.'))
+
+        if not self.delete_incompatible:
+            deletion_details = []
+            for cfv in self.instance.values.all():
+                if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
+                    deletion_details.append((cfv.contact, force_text(cfv)))
+            if deletion_details:
+                raise FieldEditForm.IncompatibleData(deletion_details)
+
         return self.cleaned_data
+
+    def save(self):
+        if self.instance.pk:
+            # we are changing an existing field
+            deletion_details = []
+            new_cls_id = self.cleaned_data['type']
+            choice_group_id = self.cleaned_data.get('choice_group', None)
+
+            if self.delete_incompatible:
+                new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
+                for cfv in self.instance.values.all():
+                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
+                        cfv.delete()
+            else:  # delete_incompatible==False
+                new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
+                for cfv in self.instance.values.all():
+                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
+                        deletion_details.append((cfv.contact, cfv))
+                if deletion_details:
+                    raise FieldEditForm.IncompatibleData(deletion_details)
+
+        result = super(FieldEditForm, self).save(commit=False)
+        self.instance.sort_weight = self.cleaned_data['move_after'] + 5
+        self.instance.save()
+        ContactField.renumber()
+        return result
 
 
 @login_required()
@@ -167,74 +217,36 @@ def field_edit(request, id):
 
     if request.method == 'POST':
         form = FieldEditForm(request.POST, instance=cf)
-        #print(request.POST)
-        if form.is_valid():
-            data = form.clean()
-            if not id:
-                cf = ContactField(name=data['name'],
-                                  hint=data['hint'],
-                                  contact_group_id=data['contact_group'].id,
-                                  type=data['type'],
-                                  choice_group_id=data['choice_group'] and data['choice_group'].id or None,
-                                  sort_weight=int(data['move_after']+5))
-                cf.save()
-            else:
-                if not cf.system and (cf.type != data['type'] or force_text(cf.choice_group_id) != data['choice_group']):
-                    deletion_details = []
-                    newcls = ContactField.get_contact_field_type_by_dbid(data['type'])
-                    choice_group_id = None
-                    if data['choice_group']:
-                        choice_group_id = data['choice_group']
-                    for cfv in cf.values.all():
-                        if not newcls.validate_unicode_value(cfv.value, choice_group_id):
-                            deletion_details.append((cfv.contact, cfv))
+        try:
+            if form.is_valid():
+                form.save()
 
-                    if deletion_details:
-                        if request.POST.get('confirm', None):
-                            for cfv in [dd[1] for dd in deletion_details]:
-                                cfv.delete()
-                        else:
-                            context = {}
-                            context['title'] = _('Type incompatible with existing data')
-                            context['id'] = id
-                            context['cf'] = cf
-                            context['deletion_details'] = deletion_details
-                            for k in ('name', 'hint', 'contact_group', 'type', 'choice_group', 'move_after'):
-                                context[k] = data[k]
-                            context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
-                            return render_to_response('type_change.html', context, RequestContext(request))
-
-                    cf.type = data['type']
-                    cf.polymorphic_upgrade() # This is needed after changing type
-                    cf.save()
-                cf.name = data['name']
-                cf.hint = data['hint']
-                if not cf.system:
-                    # system fields have some properties disabled
-                    cf.contact_group_id = data['contact_group'].id
-                    cf.type = data['type']
-                    if data['choice_group']:
-                        cf.choice_group_id = data['choice_group'].id
-                    else:
-                        cf.choice_group_id = None
-                cf.sort_weight = int(data['move_after'])+5
-                cf.save()
-
-            ContactField.renumber()
-            messages.add_message(request, messages.SUCCESS, _('Field %s has been changed sucessfully.') % cf.name)
-            if request.POST.get('_continue', None):
-                return HttpResponseRedirect(cf.get_absolute_url()+'edit')
-            elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(cf.get_class_absolute_url()+'add')
-            else:
-                return HttpResponseRedirect(reverse('field_list'))
+                messages.add_message(request, messages.SUCCESS, _('Field %s has been saved sucessfully.') % cf.name)
+                if request.POST.get('_continue', None):
+                    return HttpResponseRedirect(cf.get_absolute_url()+'edit')
+                elif request.POST.get('_addanother', None):
+                    return HttpResponseRedirect(cf.get_class_absolute_url()+'add')
+                else:
+                    return HttpResponseRedirect(reverse('field_list'))
+        except FieldEditForm.IncompatibleData as err:
+            context = {}
+            context['title'] = _('Type incompatible with existing data')
+            context['id'] = id
+            context['cf'] = cf
+            context['deletion_details'] = err.deletion_details
+            for k in ('name', 'hint', 'contact_group', 'type', 'move_after'):
+                context[k] = form.cleaned_data[k]
+            context['contact_group'] = form.cleaned_data['contact_group'].id
+            if form.cleaned_data['choice_group']:
+                context['choice_group'] = form.cleaned_data['choice_group'].id
+            context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete imcompatible data')))
+            return render_to_response('type_change.html', context, RequestContext(request))
         # else validation error
     else:
         if id: # modify
             form = FieldEditForm(instance=cf)
         else: # add
             form = FieldEditForm()
-
 
     context = {}
     context['form'] = form

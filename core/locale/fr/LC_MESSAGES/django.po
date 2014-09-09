@@ -984,12 +984,12 @@ msgid ""
 "choice is to delete these records."
 msgstr ""
 "Vous êtes sur le point de changer %(fieldtype)s %(fieldname)s. Néanmoins, "
-"certaines données existantes ne sont pas compatible avec le type que vous "
+"certaines données existantes ne sont pas compatibles avec le type que vous "
 "avez sélectionné. Le seul choix est d'effacer ces enregistrements."
 
 #: templates/type_change.html:16
 msgid "The following data will be deleted"
-msgstr "Les données suivantes vont être effacée"
+msgstr "Les données suivantes vont être effacées"
 
 #: templates/type_change.html:22
 msgid "Back"
