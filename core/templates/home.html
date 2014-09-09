@@ -41,6 +41,18 @@
         </div>
     {% endif %}
 {% endfor %}
+{% for g in unread_groups %}
+    {% if forloop.first %}
+        <div class=module>
+        <h2>{% trans "Unread messages" %}:</h2>
+        <ul class=padded>
+    {% endif %}
+    <li><a href="{{g.get_absolute_url}}messages/">{{ g }} : {{ g.unread_count }}</a><br>
+    {% if forloop.last %}
+        </ul>
+        </div>
+    {% endif %}
+{% endfor %}
 </div>
 {% endblock %}
 {# vim: set et ts=4 ft=htmldjango: #}
