@@ -5,12 +5,14 @@ Base view class; View helpers
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
+from collections import OrderedDict
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils import six
+from django.utils.text import capfirst
 from django.utils.http import urlencode
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
@@ -142,6 +144,7 @@ class NgwListView(ListView):
     page_kwarg = '_page'
     default_sort = None
     filter_list = ()
+    actions = ()
 
     def __init__(self, *args, **kwargs):
         super(NgwListView, self).__init__(*args, **kwargs)
@@ -208,18 +211,48 @@ class NgwListView(ListView):
         return '?%s' % urlencode(sorted(p.items()))
 
 
+    def get_actions(self, request):
+        '''
+        This returns a dictionary of actions allowed. The keys are action
+        names, and the values are (function, name, short_description) tuples.
+        '''
+        result = OrderedDict()
+        for action_name in self.actions:
+            action_func = getattr(self, action_name)
+            try:
+                action_desc = action_func.short_description
+            except AttributeError:
+                action_desc = capfirst(action_name.replace('_', ' '))
+            result[action_name] = action_func, action_name, action_desc
+        return result
+
+
     def get_context_data(self, **kwargs):
         context = {}
         context['cols'] = self.cols
-        #baseurl = '&'.join([ "%s=%s" % (key, value)
-        #    for key, value in six.iteritems(self.url_params)
-        #    if value != '' and value != None])
         context['baseurl'] = self.get_query_string()
         context['order'] = self.order
         context['simplefilters'] = [ (filter,filter.choices(self)) for filter in self.simplefilters ]
+        context['actions'] = [ x[1:3] for x in six.itervalues(self.get_actions(self.request))]
         context.update(kwargs)
         return super(NgwListView, self).get_context_data(**context)
 
+
+    def post(self, request, *args, **kwargs):
+        selected_pk = request.POST.getlist('_selected_action')
+        if selected_pk:
+            action_name = request.POST['action']
+            action_func, action_name, action_desc = self.get_actions(request)[action_name]
+
+            queryset = self.get_queryset()
+            queryset = queryset.filter(pk__in=selected_pk)
+
+            result = action_func(request, queryset)
+            if result is not None:
+                return result
+        else:
+            messages.add_message(request, messages.ERROR, _('You must select some items in order to perform the action.'))
+        return self.get(self, request, *args, **kwargs)
 
 #######################################################################
 #

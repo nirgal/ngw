@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% load i18n staticfiles %}
 
+{% block extrahead %}{{ block.super }}
+{% if actions %}
+<script type="text/javascript" src="{% static "admin/js/actions.js" %}"></script>
+<script type="text/javascript">
+(function($) {
+    $(document).ready(function($) {
+        $("tr input.action-select").actions();
+    });
+})(django.jQuery);
+</script>
+{% endif %}
+{% endblock %}
+
 {% block bodyclass %}change-list{% endblock %}
 
 {% block coltype %}flex{% endblock %}

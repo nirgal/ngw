@@ -8,13 +8,33 @@ Optionnal parameters:
     order: number of the column used to sort
 {% endcomment %}
 
-<div class="results">
 <form id="changelist-form" action="" method="post">{% csrf_token %}
+{% if actions %}
+<div class="actions">
+    <label>Action :<select name="action">
+    {% for action_name, action_desc in actions %}
+    <option value="{{ action_name }}">{{ action_desc }}
+    {% endfor %}
+    </select>
+    </label>
+    <button type="submit" class="button" title="{% trans "Run the selected action" %}" name="index" value="0">{% trans "Go" %}</button>
+    <script type="text/javascript">var _actions_icnt="{{query|length|default:"0" }}";</script>
+    <span class="action-counter">0 of {{query|length|default:"0" }} selected</span>
+</div>
+{% endif %}
+
+<div class="results">
 <table id=result_list>
 {% for row in query %}
     {% if not forloop.counter0 %}
         <thead>
         <tr>
+        {% if actions %}
+        <th scope="col"  class="action-checkbox-column">
+            <div class="text"><span><input type="checkbox" id="action-toggle" /></span></div>
+            <div class="clear"></div>
+        </th>
+        {% endif %}
         {% for col in cols %}
             <th scope="col" class="{% if col|get_notnull:3 %}sortable{% endif %} {% if order|order_absmatch:forloop.counter0 %}sorted {% if order|order_isreverted %}ascending{% else %}descending{% endif %}{% endif %}">
             {% if order|order_absmatch:forloop.counter0 %}
@@ -34,6 +54,9 @@ Optionnal parameters:
         <tbody>
     {% endif %}
     <tr class={% cycle 'row1' 'row2' %}>
+    {% if actions %}
+    <td class="action-checkbox"><input class="action-select" name="_selected_action" type="checkbox" value="{{row.pk}}" />
+    {% endif %}
     {% for col in cols %}
         <td>{{row|ngw_display:col|safe}} <!-- TODO: check safe -->
     {% endfor %}

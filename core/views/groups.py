@@ -34,7 +34,7 @@ from ngw.core.models import (
 from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core import perms
-from ngw.core.views.contacts import BaseContactListView, BaseCsvContactListView, BaseVcardContactListView
+from ngw.core.views.contacts import BaseContactListView
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import generic_delete, NgwUserAcl, InGroupAcl, NgwListView
 
@@ -341,12 +341,9 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         return super(GroupMemberListView, self).get_context_data(**context)
 
 
-class CsvGroupMemberListView(GroupMemberListView, BaseCsvContactListView):
-    pass
-
-
-class VcardGroupMemberListView(GroupMemberListView, BaseVcardContactListView):
-    pass
+    def action_send_message(self, request, queryset):
+        raise NotImplementedError
+    action_send_message.short_description = _("Send a message")
 
 
 class EmailGroupMemberListView(GroupMemberListView):

@@ -239,8 +239,11 @@ class ContactQuerySet(RawQuerySet):
         self.add_group(group_id)
         self.qry_fields['group_%s_note' % group_id] = 'cig_%s.note' % group_id
 
-    def filter(self, extrawhere):
-        self.qry_where.append(extrawhere)
+    def filter(self, extrawhere=None, pk__in=None):
+        if extrawhere is not None:
+            self.qry_where.append(extrawhere)
+        if pk__in:
+            self.qry_where.append('contact.id IN (%s)' % ','.join(pk__in))
         return self
 
     def add_params(self, params):
@@ -425,7 +428,6 @@ class FieldSelectForm(forms.Form):
         self.fields['selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_columns(user.id))
 
 
-
 class BaseContactListView(NgwListView):
     '''
     Base view for contact list.
@@ -436,6 +438,12 @@ class BaseContactListView(NgwListView):
     # contact_make_query_with_fields and Csv views
     # can be text
     query_format = 'html'
+
+    actions = (
+        'action_csv_export',
+        'action_vcard_export',
+        'action_bcc',
+    )
 
     def get_root_queryset(self):
         request = self.request
@@ -492,37 +500,17 @@ class BaseContactListView(NgwListView):
         return super(BaseContactListView, self).get_context_data(**context)
 
 
-class ContactListView(NgwUserAcl, BaseContactListView):
-    '''
-    This is just like the base contact list, but with user access check.
-    '''
-    def check_perm_user(self, user):
-        if not perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
-            raise PermissionDenied
-
-
-#######################################################################
-#
-# Export contact list
-#
-#######################################################################
-
-class BaseCsvContactListView(BaseContactListView):
-    query_format = 'text'
-
-    def get_paginate_by(self, queryset):
-        return None
-
-    def render_to_response(self, *args, **kwargs):
+    def action_csv_export(self, request, queryset):
+        # FIXME: this is html format. It should not.
         result = ''
         def _quote_csv(u):
-            return '"' + u.replace('"', '\\"') + '"'
+            return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
         for i, col in enumerate(self.cols):
             if i: # not first column
                 result += ','
             result += _quote_csv(col[0])
         result += '\n'
-        for row in self.get_queryset():
+        for row in queryset:
             for i, col in enumerate(self.cols):
                 if i: # not first column
                     result += ','
@@ -532,35 +520,44 @@ class BaseCsvContactListView(BaseContactListView):
                 result += _quote_csv(v)
             result += '\n'
         return HttpResponse(result, mimetype='text/csv; charset=utf-8')
+    action_csv_export.short_description = _("CSV format export")
 
 
-class CsvContactListView(BaseCsvContactListView):
-    '''
-    This is just like the base CSV contact list, but with user access check.
-    '''
-    def check_perm_user(self, user):
-        if not perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
-            raise PermissionDenied
+    def action_bcc(self, request, queryset):
+        emails = []
+        noemails = []
+        for contact in queryset:
+            c_emails = contact.get_fieldvalues_by_type('EMAIL')  # only the first email
+            if c_emails:
+                emails.append(c_emails[0])
+            else:
+                noemails.append(contact.name)
+
+        messages.add_message(request, messages.WARNING, _('The following people do not have an email address: %s') %
+            ', '.join(noemails))
+
+        response = HttpResponse(status=303)
+        response['Location'] = 'mailto:?bcc=' + ','.join(emails)
+        return response
+    action_bcc.short_description = _("Send email locally (thunderbird or similar)")
 
 
-class BaseVcardContactListView(BaseContactListView):
-    query_format = 'text'
-
-    def get_paginate_by(self, queryset):
-        return None
-
-    def render_to_response(self, *args, **kwargs):
-        #TODO: field permission validation
-        #FIXME: This works but is really inefficient (try it on a large group!)
+    def action_vcard_export(self, request, queryset):
         result = ''
-        for contact in self.get_queryset():
+        for contact in queryset:
             result += contact.vcard()
         return HttpResponse(result, mimetype='text/x-vcard')
+    action_vcard_export.short_description = _("Vcard format export")
 
 
-class VcardContactListView(BaseVcardContactListView):
+#    def action_add_to_group(self, request, queryset):
+#        raise NotImplementedError
+#    action_add_to_group.short_description = _("Add to another group")
+
+
+class ContactListView(NgwUserAcl, BaseContactListView):
     '''
-    This is just like the base CSV contact list, but with user access check.
+    This is just like the base contact list, but with user access check.
     '''
     def check_perm_user(self, user):
         if not perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):

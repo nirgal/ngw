@@ -12,8 +12,8 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, CsvContactListView, VcardContactListView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, CsvGroupMemberListView, VcardGroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView, ContactGroupView
+from ngw.core.views.contacts import ContactListView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView, ContactGroupView
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
@@ -30,9 +30,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<id>\d+)/edit$', 'ngw.core.views.groups.contactgroup_edit'),
     url(r'^(?P<id>\d+)/delete$', 'ngw.core.views.groups.contactgroup_delete'),
     url(r'^(?P<gid>\d+)/members/$', GroupMemberListView.as_view(), name='group_members'),
-    url(r'^(?P<gid>\d+)/members/vcards$', VcardGroupMemberListView.as_view()),
     url(r'^(?P<gid>\d+)/members/emails$', EmailGroupMemberListView.as_view()),
-    url(r'^(?P<gid>\d+)/members/csv$', CsvGroupMemberListView.as_view()),
     url(r'^(?P<gid>\d+)/members/add$', 'ngw.core.views.contacts.contact_edit', {'cid':None}),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$', 'ngw.core.views.contacts.contact_vcard'),
@@ -84,8 +82,6 @@ urlpatterns = patterns('',
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', ContactSearchColumnFiltersView.as_view()),
     url(r'^contacts/ajaxsearch/custom/user/(?P<filter_id>[^/]+)$', ContactSearchCustomFilterParamsView.as_view()),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)/(?P<filter_id>[^/]+)$', ContactSearchFilterParamsView.as_view()),
-    url(r'^contacts/csv$', CsvContactListView.as_view()),
-    url(r'^contacts/vcard$', VcardContactListView.as_view()),
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contacts.contact_make_login_mailing'),
 
     url(r'^contacts/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail', name='contact_detail'),
