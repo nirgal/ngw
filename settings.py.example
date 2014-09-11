@@ -180,7 +180,3 @@ EMAIL_PORT = 465
 #DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
 EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
-
-#django-session-security settings:
-SESSION_SECURITY_WARN_AFTER=SESSION_COOKIE_AGE-2*60 # 2 minutes before
-SESSION_SECURITY_EXPIRE_AFTER=SESSION_COOKIE_AGE
