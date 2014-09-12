@@ -134,6 +134,7 @@ class SendMessageView(InGroupAcl, FormView):
     def check_perm_groupuser(self, group, user):
         if not perms.c_can_write_msgs_cg(user.id, group.id):
             raise PermissionDenied
+
     def get_initial(self):
         return {'ids': self.request.REQUEST['ids']}
 

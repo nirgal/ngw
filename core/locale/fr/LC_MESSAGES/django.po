@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-11 13:50+0000\n"
+"POT-Creation-Date: 2014-09-12 15:06+0000\n"
 "PO-Revision-Date: 2014-06-30 12:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
@@ -18,83 +18,83 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Lokalize 1.5\n"
 
-#: models.py:223
+#: models.py:222
 msgid "log"
 msgstr "historique"
 
-#: models.py:224 templates/base.html:59
+#: models.py:223 templates/base.html:59
 msgid "logs"
 msgstr "historique"
 
-#: models.py:255
+#: models.py:254
 msgid "config"
 msgstr "configuration"
 
-#: models.py:256
+#: models.py:255
 msgid "configs"
 msgstr "configurations"
 
-#: models.py:280
+#: models.py:279
 msgid "choice"
 msgstr "choix"
 
-#: models.py:281 templates/base.html:58
+#: models.py:280 templates/base.html:58
 msgid "choices"
 msgstr "choix"
 
-#: models.py:291
+#: models.py:290
 msgid "choices list"
 msgstr "liste de choix"
 
-#: models.py:292
+#: models.py:291
 msgid "choices lists"
 msgstr "listes de choix"
 
-#: models.py:345 models.py:1200 views/choices.py:34 views/contacts.py:310
-#: views/contacts.py:312 views/contacts.py:735 views/contactsearch.py:27
-#: views/fields.py:34 views/fields.py:145 views/groups.py:92
-#: views/groups.py:479
+#: models.py:344 models.py:1199 views/choices.py:34 views/contacts.py:310
+#: views/contacts.py:312 views/contacts.py:661 views/contactsearch.py:27
+#: views/fields.py:34 views/fields.py:145 views/groups.py:91
+#: views/groups.py:483
 msgid "Name"
 msgstr "Nom"
 
-#: models.py:360
+#: models.py:359
 msgid "contact"
 msgstr "contact"
 
-#: models.py:361
+#: models.py:360
 msgid "contacts"
 msgstr "contacts"
 
-#: models.py:637
+#: models.py:636
 #, python-format
 msgid "Login information generated for User %s."
 msgstr "Identifiants de connexion générés pour l'Utilisateur %s"
 
-#: models.py:641
+#: models.py:640
 #, python-format
 msgid "Login information deleted for User %s."
 msgstr "Identifiants de connexion effacés pour l'Utilisateur %s"
 
-#: models.py:710
+#: models.py:709
 msgid "contact group"
 msgstr "groupe de contacts"
 
-#: models.py:711 models.py:724
+#: models.py:710 models.py:723
 msgid "contact groups"
 msgstr "groupes de contacts"
 
-#: models.py:722 templates/base.html:55 views/groups.py:234
+#: models.py:721 templates/base.html:55 views/groups.py:233
 msgid "events"
 msgstr "événements"
 
-#: models.py:962
+#: models.py:961
 #, python-format
 msgid "Error while reading shared files list in %(folder)s: %(err)s"
 msgstr ""
 "Erreur lors de la lecture de la liste des fichiers partagés dans le dossier "
 "%(folder)s: %(err)s"
 
-#: models.py:1155
+#: models.py:1154
 #, python-format
 msgid ""
 "Contact %(contacts)s has been added in %(group)s with status %(status)s."
@@ -102,7 +102,7 @@ msgstr ""
 "Le contact %(contacts)s a été ajouté dans le groupe %(group)s avec le statut "
 "%(status)s."
 
-#: models.py:1157
+#: models.py:1156
 #, python-format
 msgid ""
 "Contact %(contacts)s have been added in %(group)s with status %(status)s."
@@ -110,7 +110,7 @@ msgstr ""
 "Les contacts %(contacts)s ont été ajoutés dans le groupe %(group)s avec le "
 "statut %(status)s."
 
-#: models.py:1165
+#: models.py:1164
 #, python-format
 msgid ""
 "Contact %(contacts)s already was in %(group)s. Status has been changed to "
@@ -119,7 +119,7 @@ msgstr ""
 "Le contact %(contacts)s était déjà dans %(group)s. Son statut a été changé à "
 "%(status)s."
 
-#: models.py:1167
+#: models.py:1166
 #, python-format
 msgid ""
 "Contacts %(contact)s already were in %(group)s. Status has been changed to "
@@ -128,208 +128,208 @@ msgstr ""
 "Les contacts %(contact)s étaient déjà dans %(group)s. Leur statut a été "
 "changé à %(status)s."
 
-#: models.py:1201
+#: models.py:1200
 msgid "Hint"
 msgstr "Indice"
 
-#: models.py:1202 views/fields.py:35
+#: models.py:1201 views/fields.py:35
 msgid "Type"
 msgstr "Type"
 
-#: models.py:1203 views/fields.py:36
+#: models.py:1202 views/fields.py:36
 msgid "Only for"
 msgstr "Seulement pour"
 
-#: models.py:1205
+#: models.py:1204
 msgid "Choice group"
 msgstr "Groupe de choix"
 
-#: models.py:1207
+#: models.py:1206
 msgid "Default value"
 msgstr "Valeur par défaut"
 
-#: models.py:1210
+#: models.py:1209
 msgid "contact field"
 msgstr "champ des contacts"
 
-#: models.py:1211
+#: models.py:1210
 msgid "contact fields"
 msgstr "champ des contacts"
 
-#: models.py:1354 models.py:1386
+#: models.py:1353 models.py:1385
 msgid "has a word starting with"
 msgstr "a un mot commençant par"
 
-#: models.py:1449
+#: models.py:1448
 msgid "is undefined"
 msgstr "est indéfini"
 
-#: models.py:1458
+#: models.py:1457
 msgid "is defined"
 msgstr "est défini"
 
-#: models.py:1521
+#: models.py:1520
 msgid "Age (years) ≥"
 msgstr "Age (années) ≥"
 
-#: models.py:1530
+#: models.py:1529
 msgid "date until event ≥"
 msgstr "date jusqu'à l'événement ≥"
 
-#: models.py:1539
+#: models.py:1538
 msgid "In the future"
 msgstr "Dans le futur"
 
-#: models.py:1581
+#: models.py:1580
 msgid "contains"
 msgstr "contient"
 
-#: models.py:1595
+#: models.py:1594
 msgid "doesn't contain"
 msgstr "ne contient pas"
 
-#: models.py:1613
+#: models.py:1612
 msgid "is member of group"
 msgstr "est membre du groupe"
 
-#: models.py:1630
+#: models.py:1629
 msgid "is not member of group"
 msgstr "n'est pas membre du groupe"
 
-#: models.py:1647
+#: models.py:1646
 msgid "has been invited in group"
 msgstr "a été invité dans le groupe"
 
-#: models.py:1664
+#: models.py:1663
 msgid "has not been invited in group"
 msgstr "n'a pas été invité dans le groupe"
 
-#: models.py:1681
+#: models.py:1680
 msgid "has declined invitation in group"
 msgstr "a décliné l'invitation dans le groupe"
 
-#: models.py:1698
+#: models.py:1697
 msgid "has not declined invitation in group"
 msgstr "n'a pas décliné l'invitation dans le groupe"
 
-#: models.py:1710
+#: models.py:1709
 msgid "has not reacted to any invitation since"
 msgstr "n'a pas réagi à une invitation depuis le"
 
-#: models.py:1720
+#: models.py:1719
 msgid "1 year invitation reaction percentage less than"
 msgstr "Pourcentage de réaction aux invitations sur 1 an inférieur à"
 
-#: models.py:1730
+#: models.py:1729
 msgid "1 year invitation reaction percentage more than"
 msgstr "Pourcentage réaction aux invitations sur 1 an supérieur à"
 
-#: models.py:1774
+#: models.py:1773
 msgid "All contacts"
 msgstr "Tous les contacts"
 
-#: models.py:1794
+#: models.py:1793
 msgid "AND"
 msgstr "ET"
 
-#: models.py:1817
+#: models.py:1816
 msgid "OR"
 msgstr "OU"
 
-#: models.py:1831
+#: models.py:1830
 msgid "contact field value"
 msgstr "valeur de champ des contacts"
 
-#: models.py:1832
+#: models.py:1831
 msgid "contact field values"
 msgstr "valeurs de champ des contacts"
 
-#: models.py:1853
+#: models.py:1852
 msgid "group in group"
 msgstr "groupe dans groupe"
 
-#: models.py:1854
+#: models.py:1853
 msgid "groups in group"
 msgstr "groupes dans groupe"
 
-#: models.py:1867
+#: models.py:1866
 msgid "group managing group"
 msgstr "groupe gérant des groupes"
 
-#: models.py:1868
+#: models.py:1867
 msgid "groups managing group"
 msgstr "groupes gérant des groupes"
 
-#: models.py:1883
+#: models.py:1882
 msgid "contact in group"
 msgstr "contact dans un groupe"
 
-#: models.py:1884
+#: models.py:1883
 msgid "contacts in group"
 msgstr "contacts dans un groupe"
 
-#: models.py:1890
+#: models.py:1889
 #, python-format
 msgid "contact %(contactname)s in group %(groupname)s"
 msgstr "contact %(contactname)s dans le groupe %(groupname)s"
 
-#: models.py:1909
+#: models.py:1908
 msgid "title"
 msgstr "titre"
 
-#: models.py:1910
+#: models.py:1909
 msgid "text"
 msgstr "texte"
 
-#: models.py:1914
+#: models.py:1913
 msgid "news item"
 msgstr "nouvelle"
 
-#: models.py:1915 templates/base.html:53 views/news.py:50
+#: models.py:1914 templates/base.html:53 views/news.py:50
 msgid "news"
 msgstr "nouvelles"
 
-#: models.py:1939
+#: models.py:1938
 msgid "message"
 msgstr "message"
 
-#: models.py:1940 views/messages.py:93 views/messages.py:133
+#: models.py:1939 views/messages.py:92 views/messages.py:233
 msgid "messages"
 msgstr "messages"
 
-#: models.py:1958 templates/message_detail.html:19 views/messages.py:34
+#: models.py:1957 templates/message_detail.html:19 views/messages.py:39
 msgid "Received"
 msgstr "Reçu"
 
-#: models.py:1960 views/messages.py:52
+#: models.py:1959 views/messages.py:57
 msgid "Read"
 msgstr "Lu"
 
-#: models.py:1962 views/messages.py:51
+#: models.py:1961 views/messages.py:56
 msgid "Unread"
 msgstr "Non lu"
 
-#: models.py:1964 templates/message_detail.html:19 views/messages.py:35
+#: models.py:1963 templates/message_detail.html:19 views/messages.py:40
 msgid "Sent"
 msgstr "Envoyé"
 
-#: models.py:1968
+#: models.py:1967
 msgid "Stored externally"
 msgstr "Stocké en externe"
 
-#: models.py:1970
+#: models.py:1969
 msgid "External storage expired"
 msgstr "Stockage externe expiré"
 
-#: models.py:1972
+#: models.py:1971
 msgid "Not stored externally"
 msgstr "Non stocké en externe"
 
-#: models.py:1976
+#: models.py:1975
 msgid "Notification sent and read"
 msgstr "Notification envoyée et lue"
 
-#: models.py:1978
+#: models.py:1977
 msgid "Notification sent but unread"
 msgstr "Notification envoyée mais non lue"
 
@@ -432,7 +432,7 @@ msgstr "Modifier"
 msgid "VCard"
 msgstr "Carte de visite"
 
-#: templates/contact_detail.html:68 views/contacts.py:948
+#: templates/contact_detail.html:68 views/contacts.py:874
 msgid "Change password"
 msgstr "Changer le mot de passe"
 
@@ -440,7 +440,7 @@ msgstr "Changer le mot de passe"
 msgid "Filters"
 msgstr "Filtres"
 
-#: templates/contact_detail.html:72 views/contacts.py:1228
+#: templates/contact_detail.html:72 views/contacts.py:1154
 msgid "Default group"
 msgstr "Groupe par défaut"
 
@@ -555,80 +555,6 @@ msgstr "Enregistrer et continuer à modifier"
 msgid "Delete"
 msgstr "Supprimer"
 
-#: templates/emails.html:38 templates/emails.html.py:91
-msgid "Enter your message here."
-msgstr "Entrez votre message ici."
-
-#: templates/emails.html:52
-msgid "Memberships"
-msgstr "Appartenances"
-
-#: templates/emails.html:54
-msgid "Include members"
-msgstr "Inclure les membres"
-
-#: templates/emails.html:54 templates/emails.html.py:56
-#: templates/emails.html:58 templates/emails.html.py:60
-#: templates/emails.html:62
-msgid "Yes"
-msgstr "Oui"
-
-#: templates/emails.html:54 templates/emails.html.py:56
-#: templates/emails.html:58 templates/emails.html.py:60
-#: templates/emails.html:62
-msgid "No"
-msgstr "Non"
-
-#: templates/emails.html:56
-msgid "Include invited"
-msgstr "Include les invités"
-
-#: templates/emails.html:58
-msgid "Include declined invitations"
-msgstr "Include les invitation déclinées"
-
-#: templates/emails.html:60 templates/group_detail.html:36
-msgid "Include subgroups"
-msgstr "Inclure les sous-groupes"
-
-#: templates/emails.html:62
-msgid "Include admins"
-msgstr "Inclure les admins"
-
-#: templates/emails.html:66 templates/filter_form.html:13
-#: templates/list.html:31
-msgid "Filter"
-msgstr "Filtre"
-
-#: templates/emails.html:70
-msgid "Don't forget to <b>use Bcc</b> whenever you can!"
-msgstr "N'oubliez pas d'<b>utiliser Cci</b> quand c'est possible"
-
-#: templates/emails.html:76 templates/group_add_contacts_to.html:30
-msgid "Select all"
-msgstr "Tout sélectionner"
-
-#: templates/emails.html:76 templates/group_add_contacts_to.html:30
-msgid "Unselect all"
-msgstr "Tout désélectionner"
-
-#: templates/emails.html:82
-msgid "Warning, the following people does not have any email address"
-msgstr "Attention, les personnes suivantes n'ont pas d'adresse de courriel"
-
-#: templates/emails.html:89 templates/message_detail.html:20
-#: views/messages.py:73
-msgid "Subject"
-msgstr "Sujet"
-
-#: templates/emails.html:96
-msgid "Use my program"
-msgstr "Utiliser mon programme"
-
-#: templates/emails.html:97
-msgid "Send from server"
-msgstr "Envoyer depuis le serveur"
-
 #: templates/event_list.html:35
 msgid "Go back one year"
 msgstr "Reculer d'une année"
@@ -657,116 +583,23 @@ msgstr "Avancer d'un an"
 msgid "Add event"
 msgstr "Ajouter un événement"
 
+#: templates/filter_form.html:13 templates/list.html:31
+msgid "Filter"
+msgstr "Filtre"
+
 #: templates/filter_list.html:20
 msgid "That user has no custom filter."
 msgstr "Cet utilisateur n'a aucun filtre personnalisé."
 
-#: templates/group_add_contacts_to.html:24
-msgid "Selected people"
-msgstr "Personnes sélectionnées"
-
-#: templates/group_add_contacts_to.html:33
-msgid "Select a group"
-msgstr "Sélectionner un groupe"
-
-#: templates/group_add_contacts_to.html:36
-msgid "Choose a group"
-msgstr "Choisir un groupe"
-
-#: templates/group_add_contacts_to.html:40 views/groups.py:233
-msgid "Events"
-msgstr "Événements"
-
-#: templates/group_add_contacts_to.html:42
-msgid "Permanent groups"
-msgstr "Groupes permanents"
-
-#: templates/group_add_contacts_to.html:50
-msgid "Select membership mode"
-msgstr "Sélectionnez le mode d'appartenance"
-
-#: templates/group_add_contacts_to.html:57
-#: templates/membership_inlineform.html:11 views/contacts.py:103
-#: views/contacts.py:105 views/groups.py:752 views/messages.py:143
-msgid "Member"
-msgstr "Membre"
-
-#: templates/group_add_contacts_to.html:63
-#: templates/membership_inlineform.html:10 views/contacts.py:107
-#: views/contacts.py:109 views/groups.py:750 views/messages.py:146
-msgid "Invited"
-msgstr "Invité"
-
-#: templates/group_add_contacts_to.html:69
-#: templates/membership_inlineform.html:12 views/messages.py:149
-msgid "Declined invitation"
-msgstr "Invitation déclinée"
-
-#: templates/group_add_contacts_to.html:87 views/groups.py:753
-msgid "Operator"
-msgstr "Opérateur"
-
-#: templates/group_add_contacts_to.html:99 views/groups.py:755
-msgid "Viewer"
-msgstr "Observateur"
-
-#: templates/group_add_contacts_to.html:116
-msgid "Can see group"
-msgstr "Peut voir le groupe"
-
-#: templates/group_add_contacts_to.html:123
-msgid "Group editor"
-msgstr "Peut modifier le groupe"
-
-#: templates/group_add_contacts_to.html:132 views/groups.py:760
-msgid "Can see members"
-msgstr "Peut voir les membres"
-
-#: templates/group_add_contacts_to.html:140 views/groups.py:761
-msgid "Can change members"
-msgstr "Peut modifier les membres"
-
-#: templates/group_add_contacts_to.html:149 views/groups.py:762
-msgid "Can view fields"
-msgstr "Peut voir les champs"
-
-#: templates/group_add_contacts_to.html:157 views/groups.py:764
-msgid "Can write fields"
-msgstr "Peut changer les champs"
-
-#: templates/group_add_contacts_to.html:166 views/groups.py:765
-msgid "Can view news"
-msgstr "Peut voir les nouvelles"
-
-#: templates/group_add_contacts_to.html:174 views/groups.py:767
-msgid "Can write news"
-msgstr "Peut écrire des nouvelles"
-
-#: templates/group_add_contacts_to.html:183
-msgid "Can view files"
-msgstr "Peut voir les fichiers"
-
-#: templates/group_add_contacts_to.html:191 views/groups.py:770
-msgid "Can upload files"
-msgstr "Peut envoyer des fichiers"
-
-#: templates/group_add_contacts_to.html:200 views/groups.py:771
-msgid "Can view messages"
-msgstr "Peut voir les messages"
-
-#: templates/group_add_contacts_to.html:208 views/groups.py:772
-msgid "Can write messages"
-msgstr "Peut gérer les messages"
-
-#: templates/group_add_contacts_to.html:213
+#: templates/group_add_contacts_to.html:21
 msgid "Add to group"
 msgstr "Ajouter au groupe"
 
-#: templates/group_detail.html:11 views/groups.py:483
+#: templates/group_detail.html:11 views/groups.py:487
 msgid "Date"
 msgstr "Date"
 
-#: templates/group_detail.html:12 views/groups.py:486
+#: templates/group_detail.html:12 views/groups.py:490
 msgid "Budget code"
 msgstr "Code budget"
 
@@ -790,11 +623,15 @@ msgstr "Invités"
 msgid "Declined invitations"
 msgstr "Invitation déclinées"
 
+#: templates/group_detail.html:36
+msgid "Include subgroups"
+msgstr "Inclure les sous-groupes"
+
 #: templates/group_detail.html:37
 msgid "Admins"
 msgstr "Admins"
 
-#: templates/group_detail.html:49 views/groups.py:96
+#: templates/group_detail.html:49 views/groups.py:95
 msgid "Sub groups"
 msgstr "Sous-groupes"
 
@@ -814,31 +651,16 @@ msgstr "Groupes qui ont un accès à"
 msgid "Happy birthday to"
 msgstr "Joyeux anniversaire à"
 
-#: templates/group_detail.html:98
-msgid "Emails"
-msgstr "Courriels"
-
-#: templates/group_detail.html:99
-msgid "Vcards"
-msgstr "Cartes de visite"
-
 #: templates/group_detail.html:100
-msgid "CSV export"
-msgstr "Exportation CSV"
-
-#: templates/group_detail.html:103
 msgid "Create a new contact in that group"
 msgstr "Créer un nouveau contact dans ce groupe"
-
-#: templates/group_detail.html:105
-msgid "Add to another group"
-msgstr "Ajouter à un autre groupe"
 
 #: templates/group_files.html:22
 msgid "There are no files in that group."
 msgstr "Il n'y a aucun fichier dans ce groupe."
 
 #: templates/group_files.html:42 templates/group_mailman.html:19
+#: templates/message_send.html:38
 msgid "Send"
 msgstr "Envoyer"
 
@@ -929,6 +751,20 @@ msgstr "Ce site web nécessite des cookies."
 msgid "Login"
 msgstr "Connexion"
 
+#: templates/membership_inlineform.html:10 views/contacts.py:107
+#: views/contacts.py:109 views/groups.py:754 views/messages.py:246
+msgid "Invited"
+msgstr "Invité"
+
+#: templates/membership_inlineform.html:11 views/contacts.py:103
+#: views/contacts.py:105 views/groups.py:756 views/messages.py:243
+msgid "Member"
+msgstr "Membre"
+
+#: templates/membership_inlineform.html:12 views/messages.py:249
+msgid "Declined invitation"
+msgstr "Invitation déclinée"
+
 #: templates/membership_inlineform.html:15
 msgid "More..."
 msgstr "Plus..."
@@ -945,6 +781,10 @@ msgstr "De"
 msgid "To"
 msgstr "À"
 
+#: templates/message_detail.html:20 views/messages.py:73 views/messages.py:108
+msgid "Subject"
+msgstr "Sujet"
+
 #: templates/message_detail.html:22
 msgid "Read by recipent"
 msgstr "Lu par le destinataire"
@@ -952,6 +792,15 @@ msgstr "Lu par le destinataire"
 #: templates/message_detail.html:35
 msgid "Flag as unread"
 msgstr "Marquer comme non lu"
+
+#: templates/message_send.html:19
+#, python-format
+msgid "%(nbcontacts)s contact(s) selected"
+msgstr "%(nbcontacts)s contact(s) selectionnés"
+
+#: templates/message_send.html:24
+msgid "Warning, the following people does not have any email address"
+msgstr "Attention, les personnes suivantes n'ont pas d'adresse de courriel"
 
 #: templates/news.html:18
 msgid "by"
@@ -1052,37 +901,37 @@ msgstr ""
 msgid "Choice %s has been saved sucessfully."
 msgstr "Le choix %s a été enregistré avec succès!"
 
-#: views/choices.py:218 views/contacts.py:784 views/fields.py:227
-#: views/groups.py:575 views/news.py:83
+#: views/choices.py:218 views/contacts.py:710 views/fields.py:227
+#: views/groups.py:579 views/news.py:83
 #, python-format
 msgid "Editing %s"
 msgstr "Modification de %s"
 
-#: views/choices.py:221 views/contacts.py:786 views/fields.py:230
-#: views/groups.py:577 views/news.py:86
+#: views/choices.py:221 views/contacts.py:712 views/fields.py:230
+#: views/groups.py:581 views/news.py:86
 #, python-format
 msgid "Adding a new %s"
 msgstr "Ajout d'un(e) nouvel(le) %s"
 
-#: views/choices.py:229 views/contacts.py:907 views/fields.py:238
-#: views/groups.py:694 views/news.py:96
+#: views/choices.py:229 views/contacts.py:833 views/fields.py:238
+#: views/groups.py:698 views/news.py:96
 msgid "edit"
 msgstr "modifier"
 
-#: views/choices.py:231 views/contacts.py:909 views/fields.py:240
-#: views/groups.py:697 views/news.py:98
+#: views/choices.py:231 views/contacts.py:835 views/fields.py:240
+#: views/groups.py:701 views/news.py:98
 msgid "add"
 msgstr "ajouter"
 
-#: views/contacts.py:111 views/groups.py:751
+#: views/contacts.py:111 views/groups.py:755
 msgid "Declined"
 msgstr "Décliné"
 
-#: views/contacts.py:135 views/messages.py:152 views/messages.py:155
+#: views/contacts.py:135 views/messages.py:252 views/messages.py:255
 msgid "Nil"
 msgstr "Néant"
 
-#: views/contacts.py:162 views/messages.py:158
+#: views/contacts.py:162 views/messages.py:258
 #, python-format
 msgid "%(contactname)s in group %(groupname)s"
 msgstr "%(contactname)s dans le groupe %(groupname)s"
@@ -1095,98 +944,98 @@ msgstr "Note"
 msgid "Status"
 msgstr "Statut"
 
-#: views/contacts.py:494
+#: views/contacts.py:492
 msgid "Contact list"
 msgstr "Liste des contacts"
 
-#: views/contacts.py:525
+#: views/contacts.py:523
 msgid "CSV format export"
 msgstr "Exporter au format CSV"
 
-#: views/contacts.py:538
+#: views/contacts.py:536
 #, python-format
 msgid "The following people do not have an email address: %s"
 msgstr "Les personnes suivantes n'ont pas d'adresse de courriel: %s"
 
-#: views/contacts.py:544
+#: views/contacts.py:542
 msgid "Send email locally (thunderbird or similar)"
 msgstr "Envoyer un courriel localement (thunderbird ou simmilaire)"
 
-#: views/contacts.py:552
+#: views/contacts.py:550
 msgid "Vcard format export"
 msgstr "Exporter au format VCard"
 
-#: views/contacts.py:672
+#: views/contacts.py:598
 #, python-format
 msgid "Details for %s"
 msgstr "Détails de %s"
 
-#: views/contacts.py:677 views/contacts.py:902 views/contacts.py:968
-#: views/contacts.py:1020 views/contacts.py:1074 views/groups.py:335
-#: views/groups.py:373 views/groups.py:423 views/groups.py:1013
-#: views/groups.py:1073
+#: views/contacts.py:603 views/contacts.py:828 views/contacts.py:894
+#: views/contacts.py:946 views/contacts.py:1000 views/groups.py:337
+#: views/groups.py:457 views/groups.py:1017 views/groups.py:1077
+#: views/messages.py:183
 msgid "members"
 msgstr "membres"
 
-#: views/contacts.py:853
+#: views/contacts.py:779
 #, python-format
 msgid "Contact %s has been saved sucessfully!"
 msgstr "Le contact %s a été enregistré avec succès!"
 
-#: views/contacts.py:929
+#: views/contacts.py:855
 msgid "The passwords must match!"
 msgstr "Les mots de passe doivent être identiques!"
 
-#: views/contacts.py:956 views/contacts.py:1031
+#: views/contacts.py:882 views/contacts.py:957
 msgid "Password has been changed sucessfully!"
 msgstr "Le mot de passe a été changé avec succès!"
 
-#: views/contacts.py:972
+#: views/contacts.py:898
 msgid "password"
 msgstr "mot de passe"
 
-#: views/contacts.py:1015
+#: views/contacts.py:941
 msgid "Generate a new password and print a letter"
 msgstr "Générer un nouveau mot de passe et imprimer une lettre"
 
-#: views/contacts.py:1024
+#: views/contacts.py:950
 msgid "password letter"
 msgstr "Courrier de mot de passe"
 
-#: views/contacts.py:1047
+#: views/contacts.py:973
 msgid "File generation failed"
 msgstr "La génération de fichier a échoué"
 
-#: views/contacts.py:1098
+#: views/contacts.py:1024
 msgid "No name"
 msgstr "Sans nom"
 
-#: views/contacts.py:1101
+#: views/contacts.py:1027
 msgid "Filter has been added sucessfully!"
 msgstr "Le filtre a été ajouté avec succès!"
 
-#: views/contacts.py:1122
+#: views/contacts.py:1048
 msgid "User custom filters"
 msgstr "Filtres personnalisés de l'utilisateur."
 
-#: views/contacts.py:1127 views/contacts.py:1184
+#: views/contacts.py:1053 views/contacts.py:1110
 msgid "custom filters"
 msgstr "filtres personnalisés"
 
-#: views/contacts.py:1154
+#: views/contacts.py:1080
 #, python-format
 msgid "ERROR: Can't find filter #%s"
 msgstr "ERREUR: filtre #%s introuvable"
 
-#: views/contacts.py:1166
+#: views/contacts.py:1092
 msgid "Filter has been renamed."
 msgstr "Le filtre a été renommé."
 
-#: views/contacts.py:1171
+#: views/contacts.py:1097
 msgid "User custom filter renaming"
 msgstr "Changement de nom du filtre utilisateur personnalisé"
 
-#: views/contacts.py:1178
+#: views/contacts.py:1104
 #, python-format
 msgid ""
 "[Permission was denied to explain that filter. You probably don't have "
@@ -1195,41 +1044,41 @@ msgstr ""
 "[La permission d'expliquer le filtre a été refusée. Vous n'avez probablement "
 "pas accès au champs / groupes qu'il utilise.]<br>Filtre brut=%s"
 
-#: views/contacts.py:1180
+#: views/contacts.py:1106
 msgid "Unparsable filter: Field does not exist."
 msgstr "Filtre inanalysable: Le champ n'existe pas."
 
-#: views/contacts.py:1210
+#: views/contacts.py:1136
 msgid "Filter has been deleted."
 msgstr "Le filtre a été effacé."
 
-#: views/contacts.py:1225
+#: views/contacts.py:1151
 msgid "Create new personnal group"
 msgstr "Créer un nouveau groupe personnel"
 
-#: views/contacts.py:1245
+#: views/contacts.py:1171
 #, python-format
 msgid "Group of %s"
 msgstr "Groupe de %s"
 
-#: views/contacts.py:1246
+#: views/contacts.py:1172
 #, python-format
 msgid "This is the default group of %s"
 msgstr "Ceci est le groupe par défaut de %s"
 
-#: views/contacts.py:1257
+#: views/contacts.py:1183
 msgid "Personnal group created."
 msgstr "Groupe personnel créé."
 
-#: views/contacts.py:1261
+#: views/contacts.py:1187
 msgid "Default group has been changed sucessfully."
 msgstr "Le groupe par défaut a été modifié avec succès."
 
-#: views/contacts.py:1267
+#: views/contacts.py:1193
 msgid "User default group"
 msgstr "Groupe par défaut de l'utilisateur"
 
-#: views/contacts.py:1272
+#: views/contacts.py:1198
 msgid "default group"
 msgstr "groupe par défaut"
 
@@ -1298,6 +1147,10 @@ msgstr "Ne peux pas envoyer le fichier %(filename)s: %(error)s"
 msgid "All"
 msgstr "Tout"
 
+#: views/generic.py:254
+msgid "You must select some items in order to perform the action."
+msgstr "Vous devez sélectionner des éléments pour exécuter l'action."
+
 #: views/generic.py:265
 msgid "Please confirm deletetion"
 msgstr "Confirmer l'effacement svp"
@@ -1311,65 +1164,74 @@ msgstr "%s a été effacé avec succès!"
 msgid "delete"
 msgstr "supprimer"
 
-#: views/groups.py:93 views/groups.py:481
+#: views/groups.py:92 views/groups.py:485
 msgid "Description"
 msgstr "Description"
 
-#: views/groups.py:95
+#: views/groups.py:94
 msgid "Super groups"
 msgstr "Super-groupes"
 
-#: views/groups.py:110
+#: views/groups.py:109
 msgid "Select a contact group"
 msgstr "Sélectionner un groupe de contacts"
 
-#: views/groups.py:332
+#: views/groups.py:232 views/groups.py:378
+msgid "Events"
+msgstr "Événements"
+
+#: views/groups.py:334
 #, python-format
 msgid "Contacts of group %s"
 msgstr "Contacts du groupe %s"
 
-#: views/groups.py:369
-#, python-format
-msgid "Emails for %s"
-msgstr "Courriels de %s"
+#: views/groups.py:349
+msgid "Send a message (external storage)"
+msgstr "Envoyer un message (stockage externe)"
+
+#: views/groups.py:355
+msgid "Add to another group"
+msgstr "Ajouter à un autre groupe"
+
+#: views/groups.py:372
+msgid "Target group"
+msgstr "Groupe cible"
 
 #: views/groups.py:374
-msgid "emails"
-msgstr "courriels"
+msgid "Choose a group"
+msgstr "Choisir un groupe"
 
-#: views/groups.py:390
-msgid "No title"
-msgstr "Sans titre"
+#: views/groups.py:375
+msgid "Permanent groups"
+msgstr "Groupes permanents"
 
-#: views/groups.py:404
-msgid "Message stored."
-msgstr "Message stocké."
+#: views/groups.py:410
+msgid ""
+"You need to be operator of the target group to add this kind of membership."
+msgstr "Vous devez être opérateur du groupe cible pour ajouter ce type d'appartenance"
 
-#: views/groups.py:421
-msgid "Add contacts to a group"
-msgstr "Ajouter des contacts à un groupe"
-
-#: views/groups.py:424
-msgid "add contacts to"
-msgstr "ajouter des contacts à"
-
-#: views/groups.py:440
-msgid "You must select a target group"
-msgstr "Vous devez sélectionner un groupe cible"
-
-#: views/groups.py:457
+#: views/groups.py:415
 msgid "You must select at least one mode"
 msgstr "Vous devez sélectionner au moins un mode"
 
-#: views/groups.py:485
+#: views/groups.py:455
+#, python-format
+msgid "Add %s contact(s) to a group"
+msgstr "Ajouter %s contact(s) à un groupe"
+
+#: views/groups.py:458
+msgid "add contacts to"
+msgstr "ajouter des contacts à"
+
+#: views/groups.py:489
 msgid "Leave empty for permanent groups."
 msgstr "Laissez vide pour les groupes permanents"
 
-#: views/groups.py:488
+#: views/groups.py:492
 msgid "Sticky"
 msgstr "Collant"
 
-#: views/groups.py:490
+#: views/groups.py:494
 msgid ""
 "If set, automatic membership because of subgroups becomes permanent. Use "
 "with caution."
@@ -1377,37 +1239,37 @@ msgstr ""
 "Lorsque cette case est cochée, l'ajout au sous-groupes devient permanent. "
 "Utilisez avec précaution."
 
-#: views/groups.py:491
+#: views/groups.py:495
 msgid "Field group"
 msgstr "Groupe de champs"
 
-#: views/groups.py:493
+#: views/groups.py:497
 msgid "Does that group yield specific fields to its members?"
 msgstr "Est ce que ce groupe fourni des champs spécifiques à ses membres"
 
-#: views/groups.py:494
+#: views/groups.py:498
 msgid "Mailman address"
 msgstr "Adresse mailman"
 
-#: views/groups.py:496
+#: views/groups.py:500
 msgid "Mailing list address, if the group is linked to a mailing list."
 msgstr ""
 "Adresse de liste de diffusion, si le groupe est liée à une liste de "
 "diffusion."
 
-#: views/groups.py:497
+#: views/groups.py:501
 msgid "Direct supergroups"
 msgstr "Super-groupes directs"
 
-#: views/groups.py:499
+#: views/groups.py:503
 msgid "Members will automatically be granted membership in these groups."
 msgstr "Les membres vont automatiquement obtenir l'appartenance à ces groupes."
 
-#: views/groups.py:500
+#: views/groups.py:504
 msgid "Operator groups"
 msgstr "Groupes opérateur"
 
-#: views/groups.py:502
+#: views/groups.py:506
 msgid ""
 "Members of these groups will automatically be granted administrative "
 "priviledges."
@@ -1415,11 +1277,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir les privilèges "
 "d'administrateur."
 
-#: views/groups.py:504
+#: views/groups.py:508
 msgid "Viewer groups"
 msgstr "Groupes observateur"
 
-#: views/groups.py:506
+#: views/groups.py:510
 msgid ""
 "Members of these groups will automatically be granted viewer priviledges: "
 "They can see everything but can't change things."
@@ -1427,11 +1289,11 @@ msgstr ""
 "Les membres de ces groupes automatiquement obtenir les privilèges "
 "d'observateur: Il peuvent tout voir mais ne peuvent rien modifier."
 
-#: views/groups.py:508
+#: views/groups.py:512
 msgid "Existence seer groups"
 msgstr "Groupes voyant l'existence"
 
-#: views/groups.py:510
+#: views/groups.py:514
 msgid ""
 "Members of these groups will automatically be granted priviledge to know "
 "that current group exists."
@@ -1439,11 +1301,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de voir "
 "que ce groupe existe."
 
-#: views/groups.py:512
+#: views/groups.py:516
 msgid "Editor groups"
 msgstr "Groupes modificateurs"
 
-#: views/groups.py:514
+#: views/groups.py:518
 msgid ""
 "Members of these groups will automatically be granted priviledge to change/"
 "delete the current group."
@@ -1451,11 +1313,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
 "modifier/effacer le groupe courant."
 
-#: views/groups.py:516
+#: views/groups.py:520
 msgid "Members seer groups"
 msgstr "Groupes observateurs"
 
-#: views/groups.py:518
+#: views/groups.py:522
 msgid ""
 "Members of these groups will automatically be granted priviledge to see the "
 "list of members."
@@ -1463,11 +1325,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de voir "
 "la liste des membres."
 
-#: views/groups.py:520
+#: views/groups.py:524
 msgid "Members changing groups"
 msgstr "Groupes changeants les membres"
 
-#: views/groups.py:522
+#: views/groups.py:526
 msgid ""
 "Members of these groups will automatically be granted permission to change "
 "members of current group."
@@ -1475,11 +1337,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
 "modifier les membres du groupe courant."
 
-#: views/groups.py:524
+#: views/groups.py:528
 msgid "Fields viewer groups"
 msgstr "Groupes voyant les champs"
 
-#: views/groups.py:526
+#: views/groups.py:530
 msgid ""
 "Members of these groups will automatically be granted permission to read the "
 "fields associated to current group."
@@ -1487,11 +1349,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de lire "
 "les champs associés au groupe courant."
 
-#: views/groups.py:528
+#: views/groups.py:532
 msgid "Fields writer groups"
 msgstr "Groupes changeant les champs"
 
-#: views/groups.py:530
+#: views/groups.py:534
 msgid ""
 "Members of these groups will automatically be granted priviledge to write to "
 "fields associated to current group."
@@ -1499,11 +1361,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège "
 "d'écrire dans les champs associés au groupe courant."
 
-#: views/groups.py:532
+#: views/groups.py:536
 msgid "News viewer groups"
 msgstr "Groupes voyant les nouvelles"
 
-#: views/groups.py:534
+#: views/groups.py:538
 msgid ""
 "Members of these groups will automatically be granted permisson to read news "
 "of current group."
@@ -1511,11 +1373,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège le lire "
 "les nouvelles du groupe courant."
 
-#: views/groups.py:536
+#: views/groups.py:540
 msgid "News writer groups"
 msgstr "Groupes écrivant les nouvelles"
 
-#: views/groups.py:538
+#: views/groups.py:542
 msgid ""
 "Members of these groups will automatically be granted permission to write "
 "news in that group."
@@ -1523,11 +1385,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège "
 "d'écrire des nouvelles dans ce groupe."
 
-#: views/groups.py:540
+#: views/groups.py:544
 msgid "File viewer groups"
 msgstr "Groupes voyant les fichiers"
 
-#: views/groups.py:542
+#: views/groups.py:546
 msgid ""
 "Members of these groups will automatically be granted permission to view "
 "uploaded files in that group."
@@ -1535,11 +1397,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de lire "
 "les fichiers téléchargés dans ce groupe."
 
-#: views/groups.py:544
+#: views/groups.py:548
 msgid "File uploader groups"
 msgstr "Groupes modifiant les fichiers"
 
-#: views/groups.py:546
+#: views/groups.py:550
 msgid ""
 "Members of these groups will automatically be granted permission to upload "
 "files."
@@ -1547,11 +1409,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
 "télécharger des fichiers dans ce groupe."
 
-#: views/groups.py:548
+#: views/groups.py:552
 msgid "Message viewer groups"
 msgstr "Groupes voyant les messages"
 
-#: views/groups.py:550
+#: views/groups.py:554
 msgid ""
 "Members of these groups will automatically be granted permission to view "
 "messages in that group."
@@ -1559,11 +1421,11 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de voir "
 "les messages de ce groupe."
 
-#: views/groups.py:552
+#: views/groups.py:556
 msgid "Message sender groups"
 msgstr "Groupes gérant les messages"
 
-#: views/groups.py:554
+#: views/groups.py:558
 msgid ""
 "Members of these groups will automatically be granted permission to send "
 "messages."
@@ -1571,17 +1433,17 @@ msgstr ""
 "Les membres de ces groupes vont automatiquement obtenir le privilège de "
 "gérer les messages de ce groupe."
 
-#: views/groups.py:640
+#: views/groups.py:644
 #, python-format
 msgid "Group %s has been changed sucessfully!"
 msgstr "Le groupe %s a été modifié avec succès!"
 
-#: views/groups.py:672
+#: views/groups.py:676
 msgid "You must define a default group before you can create a group."
 msgstr ""
 "Vous devez définir un group par défaut avant de pouvoir créer un groupe."
 
-#: views/groups.py:677
+#: views/groups.py:681
 msgid ""
 "You no longer are member of your default group. Please define a new default "
 "group."
@@ -1589,7 +1451,7 @@ msgstr ""
 "Vous n'êtes plus membre de votre groupe par défaut. Veuillez définir un "
 "nouveau groupe par défaut."
 
-#: views/groups.py:681
+#: views/groups.py:685
 msgid ""
 "You no longer are authorized to see your default group. Please define a new "
 "default group."
@@ -1597,32 +1459,52 @@ msgstr ""
 "Vous n'êtes plus autorisé à voir votre groupe par défaut. Veuillez définir "
 "un nouveau groupe par défaut."
 
-#: views/groups.py:737
+#: views/groups.py:741
 #, python-format
 msgid "Group %s is locked and CANNOT be deleted."
 msgstr "Le groupe %s est verrouillé et ne peut PAS être effacé."
 
-#: views/groups.py:754
+#: views/groups.py:757
+msgid "Operator"
+msgstr "Opérateur"
+
+#: views/groups.py:758
 msgid "Full administrator of that group."
 msgstr "Administrateur complets de ce groupe."
 
-#: views/groups.py:756
+#: views/groups.py:759
+msgid "Viewer"
+msgstr "Observateur"
+
+#: views/groups.py:760
 msgid "Can see everything, but read only access."
 msgstr "Ils peuvent tout voir, mais n'ont un accès qu'en lecture seule."
 
-#: views/groups.py:757
+#: views/groups.py:761
 msgid "Can see group exists"
 msgstr "Peut voir que le groupe existe"
 
-#: views/groups.py:758
+#: views/groups.py:762
 msgid "Can change group"
 msgstr "Peut modifier le groupe"
 
-#: views/groups.py:759
+#: views/groups.py:763
 msgid "Can change the group itself, delete it."
 msgstr "Peut modifier le groupe lui-même, l'effacer."
 
-#: views/groups.py:763
+#: views/groups.py:764
+msgid "Can see members"
+msgstr "Peut voir les membres"
+
+#: views/groups.py:765
+msgid "Can change members"
+msgstr "Peut modifier les membres"
+
+#: views/groups.py:766
+msgid "Can view fields"
+msgstr "Peut voir les champs"
+
+#: views/groups.py:767
 msgid ""
 "Can view the fields (like \"address\" or \"email\") associated with that "
 "group. Few groups support that."
@@ -1630,33 +1512,57 @@ msgstr ""
 "Peut voir les champs (comme \"adresse\" ou \"courriel\") associés avec ce "
 "groupe. Peu de groupe supportent cela."
 
-#: views/groups.py:766
+#: views/groups.py:768
+msgid "Can write fields"
+msgstr "Peut changer les champs"
+
+#: views/groups.py:769
+msgid "Can view news"
+msgstr "Peut voir les nouvelles"
+
+#: views/groups.py:770
 msgid "View the news of that group."
 msgstr "Voir les nouvelles de ce groupe."
 
-#: views/groups.py:768
+#: views/groups.py:771
+msgid "Can write news"
+msgstr "Peut écrire des nouvelles"
+
+#: views/groups.py:772
 msgid "Can view uploaded files"
 msgstr "Peut lire les fichiers envoyés"
 
-#: views/groups.py:769
+#: views/groups.py:773
 msgid "View the uploaded files. Few group supports that."
 msgstr "Voir les fichiers envoyés. Peu de groupes supportent cette option."
 
-#: views/groups.py:940
+#: views/groups.py:774
+msgid "Can upload files"
+msgstr "Peut envoyer des fichiers"
+
+#: views/groups.py:775
+msgid "Can view messages"
+msgstr "Peut voir les messages"
+
+#: views/groups.py:776
+msgid "Can write messages"
+msgstr "Peut gérer les messages"
+
+#: views/groups.py:944
 #, python-format
 msgid "Contact %(contact)s in group %(group)s"
 msgstr "Contact %(contact)s dans le groupe %(group)s"
 
-#: views/groups.py:974
+#: views/groups.py:978
 #, python-format
 msgid "Member %(contact)s of group %(group)s has been changed sucessfully!"
 msgstr "Le membre %(contact)s du groupe %(group)s a été modifié avec succès!"
 
-#: views/groups.py:1015
+#: views/groups.py:1019
 msgid "membership"
 msgstr "appartenance"
 
-#: views/groups.py:1070
+#: views/groups.py:1074
 msgid "Error, that contact is not a direct member. Please check subgroups"
 msgstr ""
 "Erreur, le contact n'est pas un membre direct. Vérifiez les sous-groupes"
@@ -1697,11 +1603,11 @@ msgstr "Synchronisation mailman"
 msgid "mailman"
 msgstr "mailman"
 
-#: views/messages.py:30
+#: views/messages.py:35
 msgid "direction"
 msgstr "direction"
 
-#: views/messages.py:47
+#: views/messages.py:52
 msgid "read status"
 msgstr "statut lu"
 
@@ -1713,21 +1619,56 @@ msgstr "État"
 msgid "Contact"
 msgstr "Contact"
 
-#: views/messages.py:91
+#: views/messages.py:90
 #, python-format
 msgid "Messages for %s"
 msgstr "Messages pour %s"
 
-#: views/messages.py:119
+#: views/messages.py:111
+msgid "Message"
+msgstr "Message"
+
+#: views/messages.py:145
+msgid "Message stored."
+msgstr "Message stocké."
+
+#: views/messages.py:147
+#, python-format
+msgid "%s messages stored."
+msgstr "%s messages stockés."
+
+#: views/messages.py:152
+msgid "One contact doesn't have an email address."
+msgstr "Un contact n'a pas d'adresse de courriel."
+
+#: views/messages.py:154
+#, python-format
+msgid "%s contacts don't have an email address."
+msgstr "%s contacts n'ont pas d'adresse de courriel."
+
+#: views/messages.py:158
+msgid " The message will be kept here until you define his email address."
+msgstr " Le message sera conservé jusqu'ç ce que vous définissiez son adresse de courriel"
+
+#: views/messages.py:179
+#, python-format
+msgid "Send message in %s"
+msgstr "Envoi de messagee dans %s"
+
+#: views/messages.py:184
+msgid "send message"
+msgstr "envoyer message"
+
+#: views/messages.py:219
 msgid "You don't have the permission to flag that message as read."
 msgstr "Vous n'avez pas la permission de marquer ce message comme lu."
 
-#: views/messages.py:123
+#: views/messages.py:223
 #, python-format
 msgid "Message from %(contactname)s in group %(groupname)s"
 msgstr "Message de %(contactname)s dans le groupe %(groupname)s"
 
-#: views/messages.py:128
+#: views/messages.py:228
 #, python-format
 msgid "Message to %(contactname)s in group %(groupname)s"
 msgstr "Message à %(contactname)s dans le groupe %(groupname)s"
@@ -1750,6 +1691,84 @@ msgstr "Nouvelles pour le groupe %s"
 #, python-format
 msgid "News %s has been saved."
 msgstr "La nouvelle %s a été enregistrée."
+
+#~ msgid "Enter your message here."
+#~ msgstr "Entrez votre message ici."
+
+#~ msgid "Memberships"
+#~ msgstr "Appartenances"
+
+#~ msgid "Include members"
+#~ msgstr "Inclure les membres"
+
+#~ msgid "Yes"
+#~ msgstr "Oui"
+
+#~ msgid "No"
+#~ msgstr "Non"
+
+#~ msgid "Include invited"
+#~ msgstr "Include les invités"
+
+#~ msgid "Include declined invitations"
+#~ msgstr "Include les invitation déclinées"
+
+#~ msgid "Include admins"
+#~ msgstr "Inclure les admins"
+
+#~ msgid "Don't forget to <b>use Bcc</b> whenever you can!"
+#~ msgstr "N'oubliez pas d'<b>utiliser Cci</b> quand c'est possible"
+
+#~ msgid "Select all"
+#~ msgstr "Tout sélectionner"
+
+#~ msgid "Unselect all"
+#~ msgstr "Tout désélectionner"
+
+#~ msgid "Use my program"
+#~ msgstr "Utiliser mon programme"
+
+#~ msgid "Send from server"
+#~ msgstr "Envoyer depuis le serveur"
+
+#~ msgid "Selected people"
+#~ msgstr "Personnes sélectionnées"
+
+#~ msgid "Select a group"
+#~ msgstr "Sélectionner un groupe"
+
+#~ msgid "Select membership mode"
+#~ msgstr "Sélectionnez le mode d'appartenance"
+
+#~ msgid "Can see group"
+#~ msgstr "Peut voir le groupe"
+
+#~ msgid "Group editor"
+#~ msgstr "Peut modifier le groupe"
+
+#~ msgid "Can view files"
+#~ msgstr "Peut voir les fichiers"
+
+#~ msgid "Emails"
+#~ msgstr "Courriels"
+
+#~ msgid "Vcards"
+#~ msgstr "Cartes de visite"
+
+#~ msgid "CSV export"
+#~ msgstr "Exportation CSV"
+
+#~ msgid "Emails for %s"
+#~ msgstr "Courriels de %s"
+
+#~ msgid "emails"
+#~ msgstr "courriels"
+
+#~ msgid "No title"
+#~ msgstr "Sans titre"
+
+#~ msgid "You must select a target group"
+#~ msgstr "Vous devez sélectionner un groupe cible"
 
 #~ msgid "delete imcompatible data"
 #~ msgstr "effacer les données incompatibles"

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import subprocess
 import logging
 import json
+from collections import OrderedDict
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
@@ -113,15 +114,13 @@ OBSERVER_CIGFLAGS = (CIGFLAG_VIEWER
                 | CIGFLAG_VIEW_FILES
                 | CIGFLAG_VIEW_MSGS)
 # dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
-TRANS_CIGFLAG_CODE2INT = {}
-TRANS_CIGFLAG_CODE2TXT = {}
+TRANS_CIGFLAG_CODE2INT = OrderedDict()
+TRANS_CIGFLAG_CODE2TXT = OrderedDict()
 
 # dict for dependencies
-# TODO: This is new, all was hardcoded and should use this:
 CIGFLAGS_CODEDEPENDS = {}
 
 # dict for cascade deletion of flags
-# TODO: This is new, all was hardcoded and should use this:
 CIGFLAGS_CODEONDELETE = {}
 
 def _initialise_cigflags_constants():

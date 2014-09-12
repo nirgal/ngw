@@ -99,7 +99,6 @@
     {% else %}
     <a class=button href="add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Create a new contact in that group" %}</a>
     {% endif %}
-    <a class=button href="add_contacts_to?filter={{filter|escape_amp_query}}&amp;display={{display}}"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add to another group" %}</a>
 </div>
 {% endblock %}
 {# vim: set et ts=4 ft=htmldjango: #}

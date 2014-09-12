@@ -13,11 +13,12 @@ from django.utils import html
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils import formats
+from django.utils import six
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import View, TemplateView
+from django.views.generic import View, TemplateView, FormView
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
@@ -25,6 +26,7 @@ from ngw.core.models import (
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ADMIN_CIGFLAGS,
     TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT,
+    CIGFLAGS_CODEDEPENDS, CIGFLAGS_CODEONDELETE,
     Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
     hooks)
@@ -272,7 +274,8 @@ class ContactGroupView(InGroupAcl, View):
 class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_detail.html'
 
-    actions = list(BaseContactListView.actions) + ['action_send_message']
+    actions = list(BaseContactListView.actions) \
+        + ['action_send_message', 'add_to_group']
 
     def check_perm_groupuser(self, group, user):
         if not perms.c_can_see_members_cg(user.id, group.id):
@@ -346,6 +349,12 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     action_send_message.short_description = _("Send a message (external storage)")
 
 
+    def add_to_group(self, request, queryset):
+        ids = request.POST.getlist('_selected_action')
+        return HttpResponseRedirect('add_contacts_to?ids=' + ','.join(ids))
+    add_to_group.short_description = _("Add to another group")
+
+
 #######################################################################
 #
 # Add to another group
@@ -353,13 +362,97 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 #######################################################################
 
 
-class GroupAddManyView(GroupMemberListView):
+class GroupAddManyForm(forms.Form):
+    ids = forms.CharField(widget=forms.widgets.HiddenInput)
+
+    def __init__(self, user, *args, **kwargs):
+        super(GroupAddManyForm, self).__init__(*args, **kwargs)
+        self.user = user
+        self.fields['group'] = forms.ChoiceField(
+            label=_('Target group'),
+            choices = [
+                ('', _('Choose a group')),
+                (_('Permanent groups'), [
+                    (group.id, group.name)
+                    for group in ContactGroup.objects.filter(date__isnull=1).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id])]),
+                (_('Events'), [
+                    (group.id, group.name_with_date())
+                    for group in ContactGroup.objects.filter(date__isnull=0).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id])]),
+                ],
+            )
+        for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TXT):
+            field_name = 'membership_' + flag
+            dependencies = [
+                'this.form.membership_%s.checked=true;' % code
+                for code in CIGFLAGS_CODEDEPENDS[flag]]
+            oncheck_js = ''.join(dependencies)
+            conflicts = [
+                'this.form.membership_%s.checked=false;' % code
+                for code in CIGFLAGS_CODEONDELETE[flag]]
+            oncheck_js += ''.join(conflicts)
+
+            onuncheck_js = ''
+            for flag1, depflag1 in six.iteritems(CIGFLAGS_CODEDEPENDS):
+                if flag in depflag1:
+                    onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
+
+            self.fields[field_name] = forms.BooleanField(
+                label=longname.replace('_', ' '), required=False,
+                widget=forms.widgets.CheckboxInput(attrs={
+                    'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
+                }))
+
+
+    def clean(self):
+        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TXT):
+            if self.cleaned_data['membership_' + flag]:
+                if TRANS_CIGFLAG_CODE2INT[flag] & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
+                    raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
+
+        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TXT):
+            if self.cleaned_data['membership_' + flag]:
+                return super(GroupAddManyForm, self).clean()
+        raise forms.ValidationError(_('You must select at least one mode'))
+
+
+    def add_them(self, request):
+        group_id = self.cleaned_data['group']
+        target_group = get_object_or_404(ContactGroup, pk=group_id)
+
+        contact_ids = self.cleaned_data['ids']
+        contacts = Contact.objects.filter(pk__in=contact_ids)
+
+        modes = ''
+        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TXT):
+            field_name = 'membership_' + flag
+            if self.cleaned_data[field_name]:
+                modes += '+' + flag
+
+        target_group.set_member_n(request, contacts, modes)
+
+
+class GroupAddManyView(InGroupAcl, FormView):
+    form_class = GroupAddManyForm
     template_name = 'group_add_contacts_to.html'
 
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_see_members_cg(user.id, group.id):
+            raise PermissionDenied
+
+    def get_initial(self):
+        return {'ids': self.request.REQUEST['ids']}
+
+    def get_form_kwargs(self):
+        kwargs = super(GroupAddManyView, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+
     def get_context_data(self, **kwargs):
-        cg = self.cg
+        cg = self.contactgroup
         context = {}
-        context['title'] = _('Add contacts to a group')
+        ids = self.request.REQUEST['ids'].split(',')
+        context['title'] = _('Add %s contact(s) to a group' % len(ids))
         context['nav'] = cg.get_smart_navbar() \
             .add_component(('members', _('members'))) \
             .add_component(('add_contacts_to', _('add contacts to')))
@@ -369,45 +462,15 @@ class GroupAddManyView(GroupMemberListView):
         return super(GroupAddManyView, self).get_context_data(**context)
 
 
-    def post(self, request, *args, **kwargs):
-        # Note that dispatch is already checking GROUP_USER_NGW membership
-        # and c_can_see_members_cg
-        view_params = self.kwargs
-        gid =  view_params['gid']
-        cg = get_object_or_404(ContactGroup, pk=view_params['gid'])
+    def form_valid(self, form):
+        form.add_them(self.request)
+        self.form = form
+        return super(GroupAddManyView, self).form_valid(form)
 
-        target_gid = request.POST['group']
-        if not target_gid:
-            messages.add_message(request, messages.ERROR, _('You must select a target group'))
-            return self.get(self, request, *args, **kwargs)
-
-        if not perms.c_can_change_members_cg(request.user.id, target_gid):
-            raise PermissionDenied
-        target_group = get_object_or_404(ContactGroup, pk=target_gid)
-
-        modes = ''
-        for flag, propname in TRANS_CIGFLAG_CODE2TXT.items():
-            field_name = 'membership_' + propname
-            if request.REQUEST.get(field_name, False):
-                modes += '+' + flag
-                intflag = TRANS_CIGFLAG_CODE2INT[flag]
-                if intflag & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(request.user.id, target_gid):
-                    # Only operator can grant permissions
-                    raise PermissionDenied
-        if not modes:
-            raise ValueError(_('You must select at least one mode'))
-
-        contacts = []
-        for param in request.POST:
-            if not param.startswith('contact_'):
-                continue
-            contact_id = param[len('contact_'):]
-            #TODO: Check contact_id can be seen by user
-            contact = get_object_or_404(Contact, pk=contact_id)
-            contacts.append(contact)
-        target_group.set_member_n(request, contacts, modes)
-
-        return HttpResponseRedirect(target_group.get_absolute_url())
+    def get_success_url(self):
+        group_id = self.form.cleaned_data['group']
+        target_group = get_object_or_404(ContactGroup, pk=group_id)
+        return target_group.get_absolute_url() + 'members/'
 
 
 #######################################################################
