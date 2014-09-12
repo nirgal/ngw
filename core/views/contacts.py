@@ -16,6 +16,7 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.six import iteritems
+from django.utils import html
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
@@ -483,9 +484,9 @@ class BaseContactListView(NgwListView):
 
 
     def action_csv_export(self, request, queryset):
-        # FIXME: this is html format. It should not.
         result = ''
         def _quote_csv(u):
+            u = html.strip_tags(force_text(u))
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
         for i, col in enumerate(self.cols):
             if i: # not first column
