@@ -293,7 +293,7 @@ class ContactQuerySet(RawQuerySet):
             yield x
 
 
-def contact_make_query_with_fields(request, fields, current_cg=None, format='html'):
+def contact_make_query_with_fields(request, fields, current_cg=None):
     '''
     Creates an iterable objects with all the required fields (including groups).
     returns a tupple (query, columns)
@@ -306,10 +306,7 @@ def contact_make_query_with_fields(request, fields, current_cg=None, format='htm
     user_id = request.user.id
     for prop in fields:
         if prop == 'name':
-            if format == 'html':
-                cols.append((_('Name'), None, 'name_with_relative_link', 'name'))
-            else:
-                cols.append((_('Name'), None, 'name', 'name'))
+            cols.append((_('Name'), None, 'name_with_relative_link', 'name'))
         elif prop.startswith(DISP_GROUP_PREFIX):
             groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
@@ -320,13 +317,9 @@ def contact_make_query_with_fields(request, fields, current_cg=None, format='htm
 
             cg = ContactGroup.objects.get(pk=groupid)
 
-            if format == 'html':
-                #cols.append((cg.name, None, membership_to_text_factory(groupid), None))
-                cols.append((cg.name, None, membership_extended_widget_factory(request, cg), None))
-                #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
-            else:
-                cols.append((cg.name, None, lambda c: membership_to_text(c, cg.id), None))
-                cols.append((_('Note'), None, 'group_%s_note' % cg.id, None))
+            #cols.append((cg.name, None, membership_to_text_factory(groupid), None))
+            cols.append((cg.name, None, membership_extended_widget_factory(request, cg), None))
+            #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
 
         elif prop.startswith(DISP_FIELD_PREFIX):
             fieldid = prop[len(DISP_FIELD_PREFIX):]
@@ -340,23 +333,16 @@ def contact_make_query_with_fields(request, fields, current_cg=None, format='htm
             # add_field should create as_html and as_text attributes
             # then here is the last place where col[1] is ever used
 
-            if format == 'html':
-                cols.append((cf.name, cf.format_value_html, prop, prop))
-            else:
-                cols.append((cf.name, cf.format_value_text, prop, prop))
+            cols.append((cf.name, cf.format_value_html, prop, prop))
         else:
             raise ValueError('Invalid field '+prop)
 
     if current_cg is not None:
         q.add_group_withnote(current_cg.id)
-        if format == 'html':
-            cols.append((_('Status'), None, membership_extended_widget_factory(request, current_cg), None))
-            #cols.append(('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
-            #cols.append(('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
-            #cols.append(('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
-        else:
-            cols.append((_('Status'), None, lambda c: membership_to_text(c, current_cg.id), None))
-            cols.append((_('Note'), None, 'group_%s_note' % current_cg.id, None))
+        cols.append((_('Status'), None, membership_extended_widget_factory(request, current_cg), None))
+        #cols.append(('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
+        #cols.append(('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
+        #cols.append(('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
     return q, cols
 
 
@@ -435,10 +421,6 @@ class BaseContactListView(NgwListView):
     '''
     template_name = 'contact_list.html'
 
-    # contact_make_query_with_fields and Csv views
-    # can be text
-    query_format = 'html'
-
     actions = (
         'action_csv_export',
         'action_vcard_export',
@@ -469,7 +451,7 @@ class BaseContactListView(NgwListView):
         else:
             cg = None
 
-        q, cols = contact_make_query_with_fields(request, fields, current_cg=cg, format=self.query_format)
+        q, cols = contact_make_query_with_fields(request, fields, current_cg=cg)
 
         q = filter.apply_filter_to_query(q)
 
@@ -548,11 +530,6 @@ class BaseContactListView(NgwListView):
             result += contact.vcard()
         return HttpResponse(result, mimetype='text/x-vcard')
     action_vcard_export.short_description = _("Vcard format export")
-
-
-#    def action_add_to_group(self, request, queryset):
-#        raise NotImplementedError
-#    action_add_to_group.short_description = _("Add to another group")
 
 
 class ContactListView(NgwUserAcl, BaseContactListView):
