@@ -6,13 +6,10 @@ ContactGroup managing views
 from __future__ import division, absolute_import, print_function, unicode_literals
 
 from datetime import date, datetime, timedelta
-import json
-from decoratedstr import remove_decoration
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
-from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils import formats
@@ -28,7 +25,7 @@ from ngw.core.models import (
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ADMIN_CIGFLAGS,
     TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT,
-    Contact, ContactMsg, ContactGroup, ContactInGroup, GroupInGroup,
+    Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
     hooks)
 from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
@@ -268,12 +265,14 @@ class ContactGroupView(InGroupAcl, View):
 
 #######################################################################
 #
-# Member list / email / csv / vcard
+# Member list
 #
 #######################################################################
 
 class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_detail.html'
+
+    actions = list(BaseContactListView.actions) + ['action_send_message']
 
     def check_perm_groupuser(self, group, user):
         if not perms.c_can_see_members_cg(user.id, group.id):
@@ -342,64 +341,9 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 
 
     def action_send_message(self, request, queryset):
-        raise NotImplementedError
-    action_send_message.short_description = _("Send a message")
-
-
-class EmailGroupMemberListView(GroupMemberListView):
-    template_name = 'emails.html'
-
-    def get_context_data(self, **kwargs):
-        #TODO: field permission validation
-        cg = self.cg
-        emails = []
-        noemails = []
-        for contact in self.get_queryset():
-            c_emails = contact.get_fieldvalues_by_type('EMAIL')
-            if c_emails:
-                emails.append((contact.id, contact, c_emails[0])) # only the first email
-            else:
-                noemails.append(contact)
-        emails.sort(key=lambda x: remove_decoration(x[1].name.lower()))
-
-        context = {}
-        context['title'] = _('Emails for %s') % cg.name
-        context['emails'] = emails
-        context['noemails'] = noemails
-        context['nav'] = cg.get_smart_navbar() \
-            .add_component(('members', _('members'))) \
-            .add_component(('emails', _('emails')))
-        context['active_submenu'] = 'members'
-
-        context.update(kwargs)
-        return super(EmailGroupMemberListView, self).get_context_data(**context)
-
-
-    def post(self, request, *args, **kwargs):
-        # Note that dispatch is already checking GROUP_USER_NGW membership
-        # and c_can_see_members_cg
-        view_params = self.kwargs
-        gid =  view_params['gid']
-        cg = get_object_or_404(ContactGroup, pk=view_params['gid'])
-
-        if not perms.c_can_write_msgs_cg(request.user.id, gid):
-            raise PermissionDenied
-        subject = request.POST.get('subject', _('No title'))
-        message = request.POST.get('message', '')
-        language = translation.get_language()
-        for param in request.POST:
-            if not param.startswith('contact_'):
-                continue
-            contact_id = param[len('contact_'):]
-            contact = get_object_or_404(Contact, pk=contact_id)
-            contact_msg = ContactMsg(contact=contact, group=cg)
-            contact_msg.send_date = datetime.utcnow()
-            contact_msg.subject = subject
-            contact_msg.text = message
-            contact_msg.sync_info = json.dumps({'language': language})
-            contact_msg.save()
-            messages.add_message(request, messages.SUCCESS, _('Message stored.'))
-        return HttpResponseRedirect(cg.get_absolute_url())
+        ids = request.POST.getlist('_selected_action')
+        return HttpResponseRedirect('send_message?ids=' + ','.join(ids))
+    action_send_message.short_description = _("Send a message (external storage)")
 
 
 #######################################################################

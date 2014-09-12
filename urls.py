@@ -13,11 +13,11 @@ admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EmailGroupMemberListView, EventListView, GroupAddManyView, ContactGroupView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
-from ngw.core.views.messages import MessageListView, MessageDetailView
+from ngw.core.views.messages import MessageListView, SendMessageView, MessageDetailView
 from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView, FieldEditView, FieldCreateView
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
 from ngw.core.views.logs import LogListView
@@ -30,7 +30,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<id>\d+)/edit$', 'ngw.core.views.groups.contactgroup_edit'),
     url(r'^(?P<id>\d+)/delete$', 'ngw.core.views.groups.contactgroup_delete'),
     url(r'^(?P<gid>\d+)/members/$', GroupMemberListView.as_view(), name='group_members'),
-    url(r'^(?P<gid>\d+)/members/emails$', EmailGroupMemberListView.as_view()),
+    url(r'^(?P<gid>\d+)/members/send_message$', SendMessageView.as_view()),
     url(r'^(?P<gid>\d+)/members/add$', 'ngw.core.views.contacts.contact_edit', {'cid':None}),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$', 'ngw.core.views.contacts.contact_vcard'),

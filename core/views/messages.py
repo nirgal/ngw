@@ -5,17 +5,21 @@ Messages managing views
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
+import json
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
+from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.timezone import now
-from django.views.generic import DetailView
+from django.shortcuts import get_object_or_404
+from django.views.generic import DetailView, FormView
+from django import forms
 from django.contrib import messages
 from ngw.core.models import (
     FIELD_EMAIL,
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
-    ContactMsg, ContactInGroup)
+    Contact, ContactMsg, ContactInGroup)
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
 
@@ -25,6 +29,7 @@ from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
 # Messages list
 #
 #######################################################################
+
 
 class MessageDirectionFilter(BaseListFilter):
     title = _('direction')
@@ -90,6 +95,105 @@ class MessageListView(InGroupAcl, NgwListView):
         return super(MessageListView, self).get_context_data(**context)
 
 
+#######################################################################
+#
+# Messages sending
+#
+#######################################################################
+
+
+class SendMessageForm(forms.Form):
+    ids = forms.CharField(widget=forms.widgets.HiddenInput)
+    subject = forms.CharField(
+        label=_('Subject'), max_length=64,
+        widget=forms.widgets.Input(attrs={'size': '64'}))
+    message = forms.CharField(
+        label=_('Message'),
+        widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '20'}))
+
+    def send_message(self, group):
+        contacts_noemail = []
+        language = translation.get_language()
+        for contact_id in self.cleaned_data['ids'].split(','):
+            contact = get_object_or_404(Contact, pk=contact_id)
+            if not contact.get_fieldvalues_by_type('EMAIL'):
+                contacts_noemail.append(contact)
+            contact_msg = ContactMsg(contact=contact, group=group)
+            contact_msg.send_date = now()
+            contact_msg.subject = self.cleaned_data['subject']
+            contact_msg.text = self.cleaned_data['message']
+            contact_msg.sync_info = json.dumps({'language': language})
+            contact_msg.save()
+        return contacts_noemail
+
+
+class SendMessageView(InGroupAcl, FormView):
+    form_class = SendMessageForm
+    template_name = 'message_send.html'
+
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_write_msgs_cg(user.id, group.id):
+            raise PermissionDenied
+    def get_initial(self):
+        return {'ids': self.request.REQUEST['ids']}
+
+    def form_valid(self, form):
+        contacts_noemail = form.send_message(self.contactgroup)
+        nbmessages = len(form.cleaned_data['ids'].split(','))
+        if nbmessages == 1:
+            success_msg = _('Message stored.')
+        else:
+            success_msg = _('%s messages stored.') % nbmessages
+        messages.add_message(self.request, messages.SUCCESS, success_msg)
+        if contacts_noemail:
+            nb_noemail = len(contacts_noemail)
+            if nb_noemail == 1:
+                error_msg = _("One contact doesn't have an email address.")
+            else:
+                error_msg = (_("%s contacts don't have an email address.")
+                    % nb_noemail)
+            messages.add_message(self.request, messages.WARNING,
+                translation.string_concat(error_msg,
+                    _(" The message will be kept here until you define his email address.")))
+        return super(SendMessageView, self).form_valid(form)
+
+    def get_success_url(self):
+        return self.contactgroup.get_absolute_url()+'messages/'
+
+    def get_context_data(self, **kwargs):
+        cg = self.contactgroup
+
+        #if group.date and group.date <= now().date():
+        #    return HttpResponse('Date error. Event is over.')
+
+        ids = self.request.REQUEST['ids'].split(',')
+        nbcontacts = len(ids)
+        noemails = []
+        for contact in Contact.objects.filter(id__in=ids):
+            c_emails = contact.get_fieldvalues_by_type('EMAIL')
+            if not c_emails:
+                noemails.append(contact)
+
+        context = {}
+        context['title'] = _('Send message in %s') % cg.name_with_date()
+        context['nbcontacts'] = nbcontacts
+        context['noemails'] = noemails
+        context['nav'] = cg.get_smart_navbar() \
+            .add_component(('members', _('members'))) \
+            .add_component(('send_message', _('send message')))
+        context['active_submenu'] = 'messages'
+
+        context.update(kwargs)
+        return super(SendMessageView, self).get_context_data(**context)
+
+
+#######################################################################
+#
+# Messages list
+#
+#######################################################################
+
+
 class MessageDetailView(InGroupAcl, DetailView):
     pk_url_kwarg = 'mid'
     model = ContactMsg
@@ -109,7 +213,8 @@ class MessageDetailView(InGroupAcl, DetailView):
                 self.object.read_by = self.request.user
                 self.object.save()
             else:
-                messages.add_message(self.request, messages.WARNING,
+                messages.add_message(
+                    self.request, messages.WARNING,
                     _("You don't have the permission to flag that message as read."))
         cg = self.contactgroup
         context = {}

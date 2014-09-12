@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block extrahead %}{{ block.super }}
+<script>
+{% endblock %}
+
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<form id="contact_list" method="post" action='?'>
+{% csrf_token %}
+<div class="module padded">
+
+    <div>
+    {% blocktrans %}{{ nbcontacts }} contact(s) selected{% endblocktrans %}
+    <br>
+    </div>
+
+    {% if noemails %}
+        <div>{% trans "Warning, the following people does not have any email address" %}:<br>
+        {% for contact in noemails %}
+        <a href="{{ contact.get_absolute_url }}">{{ contact.name }}</a><br>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    <table>
+    {{ form.as_table }}
+    </table>
+</div>
+
+{% block submitbar %}
+<div class=submit-row>
+      <input type=submit value="{% trans "Send" %}">
+</div>
+{% endblock %}
+
+</form>
+</div>
+{% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}
