@@ -9,6 +9,8 @@ Disallow sending message for an event today or in the past.
 
 Remove the "you are leaving that page" warning on column choice change.
 
+Disable CRSF validation on login page
+
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS
