@@ -502,7 +502,7 @@ class BaseContactListView(NgwListView):
                     continue
                 result += _quote_csv(v)
             result += '\n'
-        return HttpResponse(result, mimetype='text/csv; charset=utf-8')
+        return HttpResponse(result, content_type='text/csv; charset=utf-8')
     action_csv_export.short_description = _("CSV format export")
 
 
@@ -529,7 +529,7 @@ class BaseContactListView(NgwListView):
         result = ''
         for contact in queryset:
             result += contact.vcard()
-        return HttpResponse(result, mimetype='text/x-vcard')
+        return HttpResponse(result, content_type='text/x-vcard')
     action_vcard_export.short_description = _("Vcard format export")
 
 
@@ -618,7 +618,7 @@ def contact_vcard(request, gid=None, cid=None):
     # ...) are readable by user
 
     contact = get_object_or_404(Contact, pk=cid)
-    return HttpResponse(contact.vcard(), mimetype='text/x-vcard')
+    return HttpResponse(contact.vcard(), content_type='text/x-vcard')
 
 
 
