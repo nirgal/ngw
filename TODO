@@ -23,11 +23,11 @@ Top right quick search: Add a drop down select filed by ajax to quick select peo
 CODE REFACTOR
 ====================================================================================================
 
-Make a MultiWidget for flags, including javascript pre-checks/clears
-Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE
-- in javascript checkbox
-- in set_member_1
+Make a nice MultiWidget for flags for use in GroupAddManyView & contactingroup_edit
+
+Use CIGFLAGS_CODEDEPENDS & CIGFLAGS_CODEONDELETE in set_member_1
 Fix perms: can_read_msg => can see members (?)
+
 Show detailed membership in message_detail, including inherited.
 
 Complete migration to class based views:

@@ -79,23 +79,23 @@ CIGFLAG_WRITE_MSGS     = 65536 # 'X'
 # dependency: 'u':'e' means viewing files implies viewing group existence
 # conflicts: 'F':'f' means can't write to fields unless can read them too
 __cig_flag_info__ = (
-    (CIGFLAG_MEMBER, 'm', 'member', '', 'id', _('Member')),
-    (CIGFLAG_INVITED, 'i', 'invited', '', 'md', _('Invited')),
-    (CIGFLAG_DECLINED, 'd', 'declined', '', 'mi', _('Declined')),
-    (CIGFLAG_OPERATOR, 'o', 'operator', 'veEcCfFnNuUxX', '', _('Operator')),
-    (CIGFLAG_VIEWER, 'v', 'viewer', 'ecfnux', '', _('Observer')),
-    (CIGFLAG_SEE_CG, 'e', 'see_group', '', '', _('See group')),
-    (CIGFLAG_CHANGE_CG, 'E', 'change_group', 'e', '', _('Change group')),
-    (CIGFLAG_SEE_MEMBERS, 'c', 'see_members', 'e', '', _('See members')),
-    (CIGFLAG_CHANGE_MEMBERS, 'C', 'change_members', 'ec', '', _('Change members')),
-    (CIGFLAG_VIEW_FIELDS, 'f', 'view_fields', 'e', '', _('View fields')),
-    (CIGFLAG_WRITE_FIELDS, 'F', 'write_fields', 'ef', '', _('Write fields')),
-    (CIGFLAG_VIEW_NEWS, 'n', 'view_news', 'e', '', _('View news')),
-    (CIGFLAG_WRITE_NEWS, 'N', 'write_news', 'en', '', _('Write news')),
-    (CIGFLAG_VIEW_FILES, 'u', 'view_files', 'e', '', _('View files')),
-    (CIGFLAG_WRITE_FILES, 'U', 'write_files', 'eu', '', _('Write files')),
-    (CIGFLAG_VIEW_MSGS, 'x', 'view_msgs', 'e', '', _('View messages')),
-    (CIGFLAG_WRITE_MSGS, 'X', 'write_msgs', 'ex', '', _('Write messages')),
+    (CIGFLAG_MEMBER, 'm', '', 'id', _('Member')),
+    (CIGFLAG_INVITED, 'i', '', 'md', _('Invited')),
+    (CIGFLAG_DECLINED, 'd', '', 'mi', _('Declined')),
+    (CIGFLAG_OPERATOR, 'o', 'veEcCfFnNuUxX', '', _('Operator')),
+    (CIGFLAG_VIEWER, 'v', 'ecfnux', '', _('Viewer')),
+    (CIGFLAG_SEE_CG, 'e', '', '', _('Can see group exists')),
+    (CIGFLAG_CHANGE_CG, 'E', 'e', '', _('Can change group')),
+    (CIGFLAG_SEE_MEMBERS, 'c', 'e', '', _('Can see members')),
+    (CIGFLAG_CHANGE_MEMBERS, 'C', 'ec', '', _('Can change members')),
+    (CIGFLAG_VIEW_FIELDS, 'f', 'e', '', _('Can view fields')),
+    (CIGFLAG_WRITE_FIELDS, 'F', 'ef', '', _('Can write fields')),
+    (CIGFLAG_VIEW_NEWS, 'n', 'e', '', _('Can view news')),
+    (CIGFLAG_WRITE_NEWS, 'N', 'en', '', _('Can write news')),
+    (CIGFLAG_VIEW_FILES, 'u', 'e', '', _('Can view uploaded files')),
+    (CIGFLAG_WRITE_FILES, 'U', 'eu', '', _('Can upload files')),
+    (CIGFLAG_VIEW_MSGS, 'x', 'e', '', _('Can view messages')),
+    (CIGFLAG_WRITE_MSGS, 'X', 'ex', '', _('Can write messages')),
 )
 
 ADMIN_CIGFLAGS = (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
@@ -115,7 +115,6 @@ OBSERVER_CIGFLAGS = (CIGFLAG_VIEWER
                 | CIGFLAG_VIEW_MSGS)
 # dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
 TRANS_CIGFLAG_CODE2INT = OrderedDict()
-TRANS_CIGFLAG_CODE2TXT = OrderedDict()
 TRANS_CIGFLAG_CODE2TEXT = OrderedDict()
 
 # dict for dependencies
@@ -127,12 +126,11 @@ CIGFLAGS_CODEONDELETE = {}
 def _initialise_cigflags_constants():
     if TRANS_CIGFLAG_CODE2INT:
         return # already initialized
-    for intval, code, txt, requires, conflicts, text in __cig_flag_info__:
+    for intval, code, requires, conflicts, text in __cig_flag_info__:
         TRANS_CIGFLAG_CODE2INT[code] = intval
-        TRANS_CIGFLAG_CODE2TXT[code] = txt
         TRANS_CIGFLAG_CODE2TEXT[code] = text
 
-    for intval, code, txt, requires, conflicts, text in __cig_flag_info__:
+    for intval, code, requires, conflicts, text in __cig_flag_info__:
         CIGFLAGS_CODEDEPENDS[code] = requires
         CIGFLAGS_CODEONDELETE[code] = conflicts
 
@@ -1095,8 +1093,8 @@ class ContactGroup(NgwModel):
                     log.action = LOG_ACTION_CHANGE
                     log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
                     log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
-                    log.property = TRANS_CIGFLAG_CODE2TXT[flag]
-                    log.property_repr = log.property.replace('_', ' ').capitalize()
+                    log.property = 'membership_' + flag
+                    log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
                     log.change = 'new value is true'
                     log.save()
                     result = result or LOG_ACTION_CHANGE
@@ -1116,8 +1114,8 @@ class ContactGroup(NgwModel):
                     log.action = LOG_ACTION_CHANGE
                     log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
                     log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
-                    log.property = TRANS_CIGFLAG_CODE2TXT[flag]
-                    log.property_repr = log.property.replace('_', ' ').capitalize()
+                    log.property = 'membership_' + flag
+                    log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
                     log.change = 'new value is false'
                     log.save()
                     result = result or LOG_ACTION_CHANGE

@@ -25,7 +25,7 @@ from ngw.core.models import (
     FIELD_DEFAULT_GROUP,
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ADMIN_CIGFLAGS,
-    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT, TRANS_CIGFLAG_CODE2TEXT,
+    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TEXT,
     CIGFLAGS_CODEDEPENDS, CIGFLAGS_CODEONDELETE,
     Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
@@ -382,14 +382,13 @@ class GroupAddManyForm(forms.Form):
             )
         for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TEXT):
             field_name = 'membership_' + flag
-            dependencies = [
+
+            oncheck_js = ''.join([
                 'this.form.membership_%s.checked=true;' % code
-                for code in CIGFLAGS_CODEDEPENDS[flag]]
-            oncheck_js = ''.join(dependencies)
-            conflicts = [
+                for code in CIGFLAGS_CODEDEPENDS[flag]])
+            oncheck_js += ''.join([
                 'this.form.membership_%s.checked=false;' % code
-                for code in CIGFLAGS_CODEONDELETE[flag]]
-            oncheck_js += ''.join(conflicts)
+                for code in CIGFLAGS_CODEONDELETE[flag]])
 
             onuncheck_js = ''
             for flag1, depflag1 in six.iteritems(CIGFLAGS_CODEDEPENDS):
@@ -502,59 +501,59 @@ class ContactGroupForm(forms.Form):
         required=False,
         help_text=_('Members will automatically be granted membership in these groups.'), widget=FilterMultipleSelectWidget('groups', False))
 
-    operator_groups = forms.MultipleChoiceField(label=_('Operator groups'),
+    admin_o_groups = forms.MultipleChoiceField(label=_('Operator groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted administrative priviledges.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    viewer_groups = forms.MultipleChoiceField(label=_('Viewer groups'),
+    admin_v_groups = forms.MultipleChoiceField(label=_('Viewer groups'),
         required=False,
         help_text=_("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."),
         widget=FilterMultipleSelectWidget('groups', False))
-    see_group_groups = forms.MultipleChoiceField(label=_('Existence seer groups'),
+    admin_e_groups = forms.MultipleChoiceField(label=_('Existence seer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to know that current group exists.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    change_group_groups = forms.MultipleChoiceField(label=_('Editor groups'),
+    admin_E_groups = forms.MultipleChoiceField(label=_('Editor groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to change/delete the current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    see_members_groups = forms.MultipleChoiceField(label=_('Members seer groups'),
+    admin_c_groups = forms.MultipleChoiceField(label=_('Members seer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to see the list of members.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    change_members_groups = forms.MultipleChoiceField(label=_('Members changing groups'),
+    admin_C_groups = forms.MultipleChoiceField(label=_('Members changing groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to change members of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_fields_groups = forms.MultipleChoiceField(label=_('Fields viewer groups'),
+    admin_f_groups = forms.MultipleChoiceField(label=_('Fields viewer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to read the fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_fields_groups = forms.MultipleChoiceField(label=_('Fields writer groups'),
+    admin_F_groups = forms.MultipleChoiceField(label=_('Fields writer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_news_groups = forms.MultipleChoiceField(label=_('News viewer groups'),
+    admin_n_groups = forms.MultipleChoiceField(label=_('News viewer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permisson to read news of current group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_news_groups = forms.MultipleChoiceField(label=_('News writer groups'),
+    admin_N_groups = forms.MultipleChoiceField(label=_('News writer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to write news in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_files_groups = forms.MultipleChoiceField(label=_('File viewer groups'),
+    admin_u_groups = forms.MultipleChoiceField(label=_('File viewer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to view uploaded files in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_files_groups = forms.MultipleChoiceField(label=_('File uploader groups'),
+    admin_U_groups = forms.MultipleChoiceField(label=_('File uploader groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to upload files.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    view_msgs_groups = forms.MultipleChoiceField(label=_('Message viewer groups'),
+    admin_x_groups = forms.MultipleChoiceField(label=_('Message viewer groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to view messages in that group.'),
         widget=FilterMultipleSelectWidget('groups', False))
-    write_msgs_groups = forms.MultipleChoiceField(label=_('Message sender groups'),
+    admin_X_groups = forms.MultipleChoiceField(label=_('Message sender groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted permission to send messages.'),
         widget=FilterMultipleSelectWidget('groups', False))
@@ -564,7 +563,7 @@ class ContactGroupForm(forms.Form):
         visible_groups_choices = [(g.id, g.name_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name')]
         self.fields['direct_supergroups'].choices = visible_groups_choices
         for flag in 'oveEcCfFnNuUxX':
-            field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
+            field_name = 'admin_%s_groups' % flag
             self.fields[field_name].choices = visible_groups_choices
 
 
@@ -616,7 +615,7 @@ def contactgroup_edit(request, id):
 
             # Update the administrative groups
             for flag in 'oveEcCfFnNuUxX':
-                field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
+                field_name = 'admin_%s_groups' % flag
                 intflag = TRANS_CIGFLAG_CODE2INT[flag]
                 old_groups_ids = set(cg.get_visible_mananger_groups_ids(request.user.id, intflag))
                 new_groups_ids = set([int(ogid) for ogid in data[field_name]])
@@ -667,7 +666,7 @@ def contactgroup_edit(request, id):
                 'direct_supergroups': cg.get_visible_direct_supergroups_ids(request.user.id),
             }
             for flag in 'ovveEcCfFnNuUxX':
-                field_name = TRANS_CIGFLAG_CODE2TXT[flag] + '_groups'
+                field_name = 'admin_%s_groups' % flag
                 intflag = TRANS_CIGFLAG_CODE2INT[flag]
                 initialdata[field_name] = cg.get_visible_mananger_groups_ids(request.user.id, intflag)
         else: # add new one
@@ -686,7 +685,7 @@ def contactgroup_edit(request, id):
                     _('You no longer are authorized to see your default group. Please define a new default group.'))
                 return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
             initialdata = {
-                TRANS_CIGFLAG_CODE2TXT['o'] + '_groups': (default_group_id,)}
+                'admin_o_groups': (default_group_id,)}
         form = ContactGroupForm(request.user.id, initial=initialdata)
     context = {}
     context['title'] = title
@@ -752,178 +751,37 @@ def contactgroup_delete(request, id):
 
 
 class ContactInGroupForm(forms.Form):
-    invited = forms.BooleanField(label=_('Invited'), required=False)
-    declined = forms.BooleanField(label=_('Declined'), required=False)
-    member = forms.BooleanField(label=_('Member'), required=False)
-    operator = forms.BooleanField(label=_('Operator'), required=False,
-        help_text=_('Full administrator of that group.'))
-    viewer = forms.BooleanField(label=_('Viewer'), required=False,
-        help_text=_('Can see everything, but read only access.'))
-    see_group = forms.BooleanField(label=_('Can see group exists'), required=False)
-    change_group = forms.BooleanField(label=_('Can change group'), required=False,
-        help_text=_('Can change the group itself, delete it.'))
-    see_members = forms.BooleanField(label=_('Can see members'), required=False)
-    change_members = forms.BooleanField(label=_('Can change members'), required=False)
-    view_fields = forms.BooleanField(label=_('Can view fields'), required=False,
-        help_text=_('Can view the fields (like "address" or "email") associated with that group. Few groups support that.'))
-    write_fields = forms.BooleanField(label=_('Can write fields'), required=False)
-    view_news = forms.BooleanField(label=_('Can view news'), required=False,
-        help_text=_('View the news of that group.'))
-    write_news = forms.BooleanField(label=_('Can write news'), required=False)
-    view_files = forms.BooleanField(label=_('Can view uploaded files'), required=False,
-        help_text=_('View the uploaded files. Few group supports that.'))
-    write_files = forms.BooleanField(label=_('Can upload files'), required=False)
-    view_msgs = forms.BooleanField(label=_('Can view messages'), required=False)
-    write_msgs = forms.BooleanField(label=_('Can write messages'), required=False)
-    note = forms.CharField(required=False)
-
     def __init__(self, *args, **kargs):
         super(ContactInGroupForm, self).__init__(*args, **kargs)
-        self.fields['invited'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.declined.checked=false;
-                this.form.member.checked=false;
-            }'''}
-        self.fields['declined'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.invited.checked=false;
-                this.form.member.checked=false;
-            }'''}
-        self.fields['member'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.invited.checked=false;
-                this.form.declined.checked=false;
-            }'''}
-        self.fields['operator'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.viewer.checked=true;
-                this.form.see_group.checked=true;
-                this.form.change_group.checked=true;
-                this.form.see_members.checked=true;
-                this.form.change_members.checked=true;
-                this.form.view_fields.checked=true;
-                this.form.write_fields.checked=true;
-                this.form.view_news.checked=true;
-                this.form.write_news.checked=true;
-                this.form.view_files.checked=true;
-                this.form.write_files.checked=true;
-                this.form.view_msgs.checked=true;
-                this.form.write_msgs.checked=true;
-            }'''}
-        self.fields['viewer'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-                this.form.see_members.checked=true;
-                this.form.view_fields.checked=true;
-                this.form.view_news.checked=true;
-                this.form.view_files.checked=true;
-                this.form.view_msgs.checked=true;
-            } else {
-                this.form.operator.checked=false;
-            }'''}
-        self.fields['see_group'].widget.attrs = {'onchange': '''
-            if (!this.checked) {
-                this.form.operator.checked=false;
-                this.form.viewer.checked=false;
-                this.form.change_group.checked=false;
-                this.form.see_members.checked=false;
-                this.form.change_members.checked=false;
-                this.form.view_fields.checked=false;
-                this.form.write_fields.checked=false;
-                this.form.view_news.checked=false;
-                this.form.write_news.checked=false;
-                this.form.view_files.checked=false;
-                this.form.write_files.checked=false;
-                this.form.view_msgs.checked=false;
-                this.form.write_msgs.checked=false;
-            }'''}
-        self.fields['change_group'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-            } else {
-                this.form.operator.checked=false;
-            }'''}
-        self.fields['see_members'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-            } else {
-                this.form.operator.checked=false;
-                this.form.viewer.checked=false;
-                this.form.change_members.checked=false;
-            }'''}
-        self.fields['change_members'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-                this.form.see_members.checked=true;
-            } else {
-                this.form.operator.checked=false;
-            }'''}
-        self.fields['view_fields'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-            } else {
-                this.form.operator.checked=false;
-                this.form.viewer.checked=false;
-                this.form.write_fields.checked=false;
-            }'''}
-        self.fields['write_fields'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-                this.form.view_fields.checked=true;
-            } else {
-                this.form.operator.checked=false;
-            }'''}
-        self.fields['view_news'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-            } else {
-                this.form.operator.checked=false;
-                this.form.viewer.checked=false;
-                this.form.write_news.checked=false;
-            }'''}
-        self.fields['write_news'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-                this.form.view_news.checked=true;
-            } else {
-                this.form.operator.checked=false;
-            }'''}
-        self.fields['view_files'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-            } else {
-                this.form.operator.checked=false;
-                this.form.viewer.checked=false;
-                this.form.write_files.checked=false;
-            }'''}
-        self.fields['write_files'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-                this.form.view_files.checked=true;
-            } else {
-                this.form.operator.checked=false;
-            }'''}
-        self.fields['view_msgs'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-            } else {
-                this.form.operator.checked=false;
-                this.form.viewer.checked=false;
-                this.form.write_msgs.checked=false;
-            }'''}
-        self.fields['write_msgs'].widget.attrs = {'onchange': '''
-            if (this.checked) {
-                this.form.see_group.checked=true;
-                this.form.view_msgs.checked=true;
-            } else {
-                this.form.operator.checked=false;
-            }'''}
+        for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TEXT):
+            field_name = 'membership_' + flag
+
+            oncheck_js = ''.join([
+                'this.form.membership_%s.checked=true;' % code
+                for code in CIGFLAGS_CODEDEPENDS[flag]])
+            oncheck_js += ''.join([
+                'this.form.membership_%s.checked=false;' % code
+                for code in CIGFLAGS_CODEONDELETE[flag]])
+
+            onuncheck_js = ''
+            for flag1, depflag1 in six.iteritems(CIGFLAGS_CODEDEPENDS):
+                if flag in depflag1:
+                    onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
+
+            self.fields[field_name] = forms.BooleanField(
+                label=longname, required=False,
+                widget=forms.widgets.CheckboxInput(attrs={
+                    'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
+                }))
+        self.fields['note'] = forms.CharField(required=False)
 
     def clean(self):
+        # TODO: improve conflicts/dependencies checking
+        # Currently gets best resolution in set_member_1
         data = self.cleaned_data
-        if   (data['invited'] and data['declined']) \
-          or (data['declined'] and data['member']) \
-          or (data['invited'] and data['member']):
+        if   (data['membership_i'] and data['membership_d']) \
+          or (data['membership_d'] and data['membership_m']) \
+          or (data['membership_i'] and data['membership_m']):
             raise forms.ValidationError('Invalid flags combinaison')
         return data
 
@@ -951,10 +809,9 @@ def contactingroup_edit(request, gid, cid):
     context['objtype'] = ContactInGroup
 
     initial = {}
-    for code, intval in TRANS_CIGFLAG_CODE2INT.items():
+    for flag, intval in six.iteritems(TRANS_CIGFLAG_CODE2INT):
         if cig.flags & intval:
-            field_name = TRANS_CIGFLAG_CODE2TXT[code]
-            initial[field_name] = True
+            initial['membership_' + flag] = True
     initial['note'] = cig.note
 
     if request.method == 'POST':
@@ -962,9 +819,9 @@ def contactingroup_edit(request, gid, cid):
         if form.is_valid():
             data = form.cleaned_data
             newflags = 0
-            for code, field_name in TRANS_CIGFLAG_CODE2TXT.items():
-                if data[field_name]:
-                    newflags |= TRANS_CIGFLAG_CODE2INT[code]
+            for flag, intvalue in six.iteritems(TRANS_CIGFLAG_CODE2INT):
+                if data['membership_' + flag]:
+                    newflags |= intvalue
             if not newflags:
                 return HttpResponseRedirect(reverse('ngw.core.views.groups.contactingroup_delete', args=(force_text(cg.id), cid)))
             if (cig.flags ^ newflags) & ADMIN_CIGFLAGS \
@@ -976,7 +833,7 @@ def contactingroup_edit(request, gid, cid):
             # TODO: use set_member_1 for logs
             messages.add_message(
                 request, messages.SUCCESS,
-                _('Member %(contact)s of group %(group)s has been changed sucessfully!') % {
+                _('Member %(contact)s of group %(group)s has been changed.') % {
                     'contact': contact.name,
                     'group': cg.name})
             Contact.check_login_created(request)
