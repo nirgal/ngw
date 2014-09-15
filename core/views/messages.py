@@ -259,12 +259,8 @@ class MessageDetailView(InGroupAcl, DetailView):
             'contactname': self.object.contact.name,
             'groupname': cg.name_with_date()}
         if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
-            email = self.object.contact.get_fieldvalue_by_id(FIELD_EMAIL)
-            if email:
-                context['reply_url'] = "../members/emails?display=midag&filter=ffilter(%(fieldid)s,eq,'%(email)s')" % {
-                    'fieldid': FIELD_EMAIL,
-                    'email': email,
-                }
+            context['reply_url'] = "../members/send_message?ids=%s" % \
+                self.object.id
         context.update(kwargs)
         return super(MessageDetailView, self).get_context_data(**context)
 
