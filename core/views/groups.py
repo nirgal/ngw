@@ -25,7 +25,7 @@ from ngw.core.models import (
     FIELD_DEFAULT_GROUP,
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ADMIN_CIGFLAGS,
-    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT,
+    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT, TRANS_CIGFLAG_CODE2TEXT,
     CIGFLAGS_CODEDEPENDS, CIGFLAGS_CODEONDELETE,
     Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
@@ -380,7 +380,7 @@ class GroupAddManyForm(forms.Form):
                     for group in ContactGroup.objects.filter(date__isnull=0).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id])]),
                 ],
             )
-        for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TXT):
+        for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TEXT):
             field_name = 'membership_' + flag
             dependencies = [
                 'this.form.membership_%s.checked=true;' % code
@@ -397,19 +397,19 @@ class GroupAddManyForm(forms.Form):
                     onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
             self.fields[field_name] = forms.BooleanField(
-                label=longname.replace('_', ' '), required=False,
+                label=longname, required=False,
                 widget=forms.widgets.CheckboxInput(attrs={
                     'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
                 }))
 
 
     def clean(self):
-        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TXT):
+        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
             if self.cleaned_data['membership_' + flag]:
                 if TRANS_CIGFLAG_CODE2INT[flag] & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
                     raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
 
-        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TXT):
+        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
             if self.cleaned_data['membership_' + flag]:
                 return super(GroupAddManyForm, self).clean()
         raise forms.ValidationError(_('You must select at least one mode'))
@@ -423,7 +423,7 @@ class GroupAddManyForm(forms.Form):
         contacts = Contact.objects.filter(pk__in=contact_ids)
 
         modes = ''
-        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TXT):
+        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
             field_name = 'membership_' + flag
             if self.cleaned_data[field_name]:
                 modes += '+' + flag
@@ -501,6 +501,7 @@ class ContactGroupForm(forms.Form):
     direct_supergroups = forms.MultipleChoiceField(label=_('Direct supergroups'),
         required=False,
         help_text=_('Members will automatically be granted membership in these groups.'), widget=FilterMultipleSelectWidget('groups', False))
+
     operator_groups = forms.MultipleChoiceField(label=_('Operator groups'),
         required=False,
         help_text=_('Members of these groups will automatically be granted administrative priviledges.'),

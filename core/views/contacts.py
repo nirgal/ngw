@@ -26,7 +26,7 @@ from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
     CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     ADMIN_CIGFLAGS,
-    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TXT,
+    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TEXT,
     Config, Contact, ContactGroup, ContactField, ContactFieldValue,
     ContactInGroup, Log,
     LOG_ACTION_ADD, LOG_ACTION_CHANGE,
@@ -86,18 +86,15 @@ def membership_to_text(contact_with_extra_fields, group_id):
         # Inherited member + member
         for code in 'midoveEcCfFnNuUxX':
             if flags & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
-                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
                 memberships.append(nice_perm)
         for code in 'mid':
             if flags_inherited & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
-                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
                 memberships.append(nice_perm + ' ' + automatic_member_indicator)
         for code in 'oveEcCfFnNuUxX':
             if flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
-                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
                 memberships.append(nice_perm + ' ' + automatic_admin_indicator)
     else:
         if flags & CIGFLAG_MEMBER:
@@ -113,14 +110,12 @@ def membership_to_text(contact_with_extra_fields, group_id):
 
         for code in 'ovEcCfFnNuUexX':
             if flags & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
-                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
                 memberships.append(nice_perm)
                 if code == 'o':
                     break # Don't show more details then
             elif flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TXT[code]
-                nice_perm = nice_perm.replace('_', ' ').capitalize()
+                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
                 memberships.append(nice_perm + ' ' + automatic_admin_indicator)
                 if code == 'o':
                     break # Don't show more details then
