@@ -403,10 +403,11 @@ class GroupAddManyForm(forms.Form):
 
 
     def clean(self):
-        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
-            if self.cleaned_data['membership_' + flag]:
-                if TRANS_CIGFLAG_CODE2INT[flag] & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
-                    raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
+        if 'group' in self.cleaned_data:
+            for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
+                if self.cleaned_data['membership_' + flag]:
+                    if TRANS_CIGFLAG_CODE2INT[flag] & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
+                        raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
 
         for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
             if self.cleaned_data['membership_' + flag]:

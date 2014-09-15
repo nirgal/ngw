@@ -134,19 +134,9 @@ def _initialise_cigflags_constants():
         CIGFLAGS_CODEDEPENDS[code] = requires
         CIGFLAGS_CODEONDELETE[code] = conflicts
 
-    for cflag, depends in six.iteritems(CIGFLAGS_CODEDEPENDS):
-        for depend in depends:
-            if cflag not in CIGFLAGS_CODEONDELETE[depend]:
-                CIGFLAGS_CODEONDELETE[depend] += cflag
 
     #for intval, code, txt, requires, conflicts in __cig_flag_info__:
-    #    print(code,
-    #        str(TRANS_CIGFLAG_CODE2INT[code]),
-    #        '+', CIGFLAGS_CODEDEPENDS[code],
-    #        '|'.join([str(TRANS_CIGFLAG_CODE2INT[flag]) for flag in CIGFLAGS_CODEDEPENDS[code]]),
-    #        '-', CIGFLAGS_CODEONDELETE[code],
-    #        '|'.join([str(TRANS_CIGFLAG_CODE2INT[flag]) for flag in CIGFLAGS_CODEONDELETE[code]]),
-    #    )
+    #    print ('+%s => +%s-%s' % (code, CIGFLAGS_CODEDEPENDS[code], CIGFLAGS_CODEONDELETE[code]))
 
 # This is run on module loading:
 _initialise_cigflags_constants()
@@ -1020,115 +1010,89 @@ class ContactGroup(NgwModel):
         user = request.user
         result = 0
 
-        add_mode = 0
-        del_mode = 0
+        try:
+            cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
+        except ContactInGroup.DoesNotExist:
+            cig = ContactInGroup(contact_id=contact.id, group_id=self.id, flags=0)
+            result = LOG_ACTION_ADD
+        newflags = cig.flags
 
         assert group_member_mode and group_member_mode[0] in '+-', 'Invalid membership mode'
         for letter in group_member_mode:
             if letter in '+-':
                 operation = letter
-            elif letter == 'm':
-                if operation == '+':
-                    add_mode = (add_mode | CIGFLAG_MEMBER) & ~(CIGFLAG_INVITED | CIGFLAG_DECLINED)
-                    del_mode = del_mode & ~CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED
-                else: # operation == '-'
-                    del_mode |= CIGFLAG_MEMBER
-                    add_mode &= ~CIGFLAG_MEMBER
-            elif letter == 'i':
-                if operation == '+':
-                    add_mode = (add_mode | CIGFLAG_INVITED) & ~(CIGFLAG_MEMBER | CIGFLAG_DECLINED)
-                    del_mode = del_mode & ~CIGFLAG_INVITED | CIGFLAG_MEMBER | CIGFLAG_DECLINED
-                else: # operation == '-'
-                    del_mode |= CIGFLAG_INVITED
-                    add_mode &= ~CIGFLAG_INVITED
-            elif letter == 'd':
-                if operation == '+':
-                    add_mode = (add_mode | CIGFLAG_DECLINED) & ~ (CIGFLAG_MEMBER | CIGFLAG_INVITED)
-                    del_mode = del_mode & ~CIGFLAG_DECLINED | CIGFLAG_MEMBER | CIGFLAG_INVITED
-                else: # operation == '-'
-                    del_mode |= CIGFLAG_DECLINED
-                    add_mode &= ~CIGFLAG_DECLINED
-            elif letter in 'oveEcCfFnNuUxX':
-                intmode = TRANS_CIGFLAG_CODE2INT[letter]
-                if operation == '+':
-                    add_mode |= intmode
-                    del_mode &= ~intmode
-                else: # operation == '-'
-                    del_mode |= intmode
-                    add_mode &= ~intmode
-            else:
-                raise ValueError('Unknown mode "%s"' % letter)
+                continue
 
-        try:
-            cig = ContactInGroup.objects.get(contact_id=contact.id, group_id=self.id)
-        except ContactInGroup.DoesNotExist:
-            if not add_mode:
-                return result # 0 = no change
+            if operation == '+':
+                newflags |= TRANS_CIGFLAG_CODE2INT[letter]
+                for dependency in CIGFLAGS_CODEDEPENDS[letter]:
+                    newflags |= TRANS_CIGFLAG_CODE2INT[dependency]
+                for conflict in CIGFLAGS_CODEONDELETE[letter]:
+                    newflags &= ~TRANS_CIGFLAG_CODE2INT[conflict]
+            else:  # operation == '-'
+                newflags &= ~TRANS_CIGFLAG_CODE2INT[letter]
+                for flag1, depflag1 in six.iteritems(CIGFLAGS_CODEDEPENDS):
+                    if letter in depflag1:
+                        newflags &= ~TRANS_CIGFLAG_CODE2INT[flag1]
 
-            cig = ContactInGroup(contact_id=contact.id, group_id=self.id, flags=0)
-            log = Log(contact_id=user.id)
-            log.action = LOG_ACTION_ADD
-            log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
-            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
-            log.save()
-            result = LOG_ACTION_ADD
+        if cig.flags ^ newflags & ADMIN_CIGFLAGS:
+            if not perms.c_operatorof_cg(user.id, self.id):
+                # You need to be operator to be able to change permissions
+                raise PermissionDenied
+        if cig.flags ^ newflags & ~ADMIN_CIGFLAGS:  # m/i/d
+            # user needs to be able to add contacts
+            # in all subgroups it's not a member yet, including
+            # hidden ones
+            for sg in self.get_supergroups():
+                if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(user.id, sg.id):
+                    raise PermissionDenied
 
-        for flag in 'midoveEcCfFnNuUxX':
-            intflag = TRANS_CIGFLAG_CODE2INT[flag]
-            if add_mode & intflag:
-                if not cig.flags & intflag:
-                    if intflag & ADMIN_CIGFLAGS:
-                        if not perms.c_operatorof_cg(user.id, self.id):
-                            # You need to be operator to be able to change permissions
-                            raise PermissionDenied
-                    else: # m/i/d
-                        # user needs to be able to add contacts
-                        # in all subgroups it's not a member yet, including
-                        # hidden ones
-                        for sg in self.get_supergroups():
-                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(user.id, sg.id):
-                                raise PermissionDenied
-                    cig.flags |= intflag
-                    log = Log(contact_id=user.id)
-                    log.action = LOG_ACTION_CHANGE
-                    log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
-                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
-                    log.property = 'membership_' + flag
-                    log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
-                    log.change = 'new value is true'
-                    log.save()
-                    result = result or LOG_ACTION_CHANGE
-            if del_mode & intflag:
-                if cig.flags & intflag:
-                    if intflag & ADMIN_CIGFLAGS:
-                        if not perms.c_operatorof_cg(user.id, self.id):
-                            # You need to be operator to be able to change permissions
-                            raise PermissionDenied
-                    else: # m/i/d
-                        # See comment above
-                        for sg in self.get_supergroups():
-                            if not contact.is_directmember_of(sg.id) and not perms.c_can_change_members_cg(user.id, sg.id):
-                                raise PermissionDenied
-                    cig.flags &= ~intflag
-                    log = Log(contact_id=user.id)
-                    log.action = LOG_ACTION_CHANGE
-                    log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
-                    log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
-                    log.property = 'membership_' + flag
-                    log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
-                    log.change = 'new value is false'
-                    log.save()
-                    result = result or LOG_ACTION_CHANGE
+        if newflags == 0:
+            if result == LOG_ACTION_ADD:
+                # We were about to add the contact in the group: nothing to do
+                return 0
 
-        if not cig.flags:
             cig.delete()
+
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_DEL
             log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
             log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
-            result = LOG_ACTION_CHANGE
+
+            hooks.membership_changed(request, contact, self)
+
+            return LOG_ACTION_CHANGE # FIXME
+
+        if result == LOG_ACTION_ADD:
+            log = Log(contact_id=user.id)
+            log.action = LOG_ACTION_ADD
+            log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
+            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
         else:
-            cig.save()
+            result = LOG_ACTION_CHANGE
+
+        for flag, intflag in six.iteritems(TRANS_CIGFLAG_CODE2INT):
+            if cig.flags & intflag and not newflags & intflag:
+                log = Log(contact_id=user.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
+                log.property = 'membership_' + flag
+                log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
+                log.change = 'new value is false'
+                log.save()
+            if not cig.flags & intflag and newflags & intflag:
+                log = Log(contact_id=user.id)
+                log.action = LOG_ACTION_CHANGE
+                log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
+                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
+                log.property = 'membership_' + flag
+                log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
+                log.change = 'new value is true'
+                log.save()
+
+        cig.flags = newflags
+        cig.save()
 
         if result:
             hooks.membership_changed(request, contact, self)
@@ -1163,7 +1127,7 @@ class ContactGroup(NgwModel):
             if len(changed_contacts) == 1:
                 msg = _('Contact %(contacts)s already was in %(group)s. Status has been changed to %(status)s.')
             else:
-                msg = _('Contacts %(contact)s already were in %(group)s. Status has been changed to %(status)s.')
+                msg = _('Contacts %(contacts)s already were in %(group)s. Status has been changed to %(status)s.')
             messages.add_message(request, messages.SUCCESS, msg % {
                 'contacts': msgpart_contacts,
                 'group': self.name_with_date(),
