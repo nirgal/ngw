@@ -274,9 +274,6 @@ class ContactGroupView(InGroupAcl, View):
 class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_detail.html'
 
-    actions = list(BaseContactListView.actions) \
-        + ['action_send_message', 'add_to_group']
-
     def check_perm_groupuser(self, group, user):
         if not perms.c_can_see_members_cg(user.id, group.id):
             raise PermissionDenied
@@ -341,6 +338,14 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 
         context.update(kwargs)
         return super(GroupMemberListView, self).get_context_data(**context)
+
+
+    def get_actions(self, request):
+        for action in super(GroupMemberListView, self).get_actions(request):
+            yield action
+        if perms.c_can_write_msgs_cg(request.user.id, self.contactgroup.id):
+            yield 'action_send_message'
+        yield 'add_to_group'
 
 
     def action_send_message(self, request, queryset):

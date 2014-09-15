@@ -213,27 +213,27 @@ class NgwListView(ListView):
 
     def get_actions(self, request):
         '''
-        This returns a dictionary of actions allowed. The keys are action
-        names, and the values are (function, name, short_description) tuples.
+        Get the list of available action names. Specific classes may overwrite
+        that method to yield user-specfic list.
         '''
-        result = OrderedDict()
-        for action_name in self.actions:
-            action_func = getattr(self, action_name)
-            try:
-                action_desc = action_func.short_description
-            except AttributeError:
-                action_desc = capfirst(action_name.replace('_', ' '))
-            result[action_name] = action_func, action_name, action_desc
-        return result
+        return self.actions
 
 
     def get_context_data(self, **kwargs):
+        def _get_action_desc(function):
+            print(function)
+            try:
+                return function.short_description
+            except AttributeError:
+                return capfirst(function.__name__.replace('_', ' '))
         context = {}
         context['cols'] = self.cols
         context['baseurl'] = self.get_query_string()
         context['order'] = self.order
         context['simplefilters'] = [ (filter,filter.choices(self)) for filter in self.simplefilters ]
-        context['actions'] = [ x[1:3] for x in six.itervalues(self.get_actions(self.request))]
+        context['actions'] = [
+            (funcname, _get_action_desc(getattr(self, funcname)))
+            for funcname in self.get_actions(self.request)]
         context.update(kwargs)
         return super(NgwListView, self).get_context_data(**context)
 
@@ -242,7 +242,9 @@ class NgwListView(ListView):
         selected_pk = request.POST.getlist('_selected_action')
         if selected_pk:
             action_name = request.POST['action']
-            action_func, action_name, action_desc = self.get_actions(request)[action_name]
+            if action_name not in self.get_actions(request):
+                raise PermissionDenied
+            action_func = getattr(self, action_name)
 
             queryset = self.get_queryset()
             queryset = queryset.filter(pk__in=selected_pk)
