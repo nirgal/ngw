@@ -221,7 +221,6 @@ class NgwListView(ListView):
 
     def get_context_data(self, **kwargs):
         def _get_action_desc(function):
-            print(function)
             try:
                 return function.short_description
             except AttributeError:
