@@ -186,8 +186,9 @@ def read_answers():
                 text=response_text,
                 is_answer=True,
                 sync_info=json.dumps({
-                    'backend': __name__}),
+                    'backend': __name__,
                     'otid': sync_info['otid'],
+                    }),
                 )
             answer_msg.save()
 
