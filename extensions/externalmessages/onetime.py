@@ -185,9 +185,12 @@ def read_answers():
                 subject=jresponse['subject'],
                 text=response_text,
                 is_answer=True,
-                sync_info=json.dumps({'otid': sync_info['otid']}),
+                sync_info=json.dumps({
+                    'backend': __name__}),
+                    'otid': sync_info['otid'],
                 )
             answer_msg.save()
+
 
 def do_sync():
     try:

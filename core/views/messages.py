@@ -6,6 +6,7 @@ Messages managing views
 from __future__ import division, absolute_import, print_function, unicode_literals
 
 import json
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.utils import translation
@@ -122,7 +123,9 @@ class SendMessageForm(forms.Form):
             contact_msg.send_date = now()
             contact_msg.subject = self.cleaned_data['subject']
             contact_msg.text = self.cleaned_data['message']
-            contact_msg.sync_info = json.dumps({'language': language})
+            contact_msg.sync_info = json.dumps({
+                'backend': settings.EXTERNAL_MESSAGE_BACKEND,
+                'language': language})
             contact_msg.save()
         return contacts_noemail
 
@@ -190,7 +193,7 @@ class SendMessageView(InGroupAcl, FormView):
 
 #######################################################################
 #
-# Messages list
+# Message detail
 #
 #######################################################################
 
