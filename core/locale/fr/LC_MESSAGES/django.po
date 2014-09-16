@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-15 16:31+0000\n"
+"POT-Creation-Date: 2014-09-16 08:47+0000\n"
 "PO-Revision-Date: 2014-06-30 12:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
@@ -1198,20 +1198,20 @@ msgstr "Ne peux pas envoyer le fichier %(filename)s: %(error)s"
 msgid "All"
 msgstr "Tout"
 
-#: views/generic.py:256
+#: views/generic.py:255
 msgid "You must select some items in order to perform the action."
 msgstr "Vous devez sélectionner des éléments pour exécuter l'action."
 
-#: views/generic.py:267
+#: views/generic.py:266
 msgid "Please confirm deletetion"
 msgstr "Confirmer l'effacement svp"
 
-#: views/generic.py:282
+#: views/generic.py:281
 #, python-format
 msgid "%s has been deleted sucessfully!"
 msgstr "%s a été effacé avec succès!"
 
-#: views/generic.py:287
+#: views/generic.py:286
 msgid "delete"
 msgstr "supprimer"
 
@@ -1516,6 +1516,10 @@ msgstr ""
 msgid "Group %s is locked and CANNOT be deleted."
 msgstr "Le groupe %s est verrouillé et ne peut PAS être effacé."
 
+#: views/groups.py:782
+msgid "Note"
+msgstr "Note"
+
 #: views/groups.py:809
 #, python-format
 msgid "Contact %(contact)s in group %(group)s"
@@ -1556,8 +1560,9 @@ msgid "Property"
 msgstr "Propriété"
 
 #: views/logs.py:26
+msgctxt "noun"
 msgid "Change"
-msgstr "Modifier"
+msgstr "Modification"
 
 #: views/logs.py:32
 msgid "Global log"
@@ -1661,9 +1666,6 @@ msgstr "Nouvelles pour le groupe %s"
 #, python-format
 msgid "News %s has been saved."
 msgstr "La nouvelle %s a été enregistrée."
-
-#~ msgid "Note"
-#~ msgstr "Note"
 
 #~ msgid "Full administrator of that group."
 #~ msgstr "Administrateur complets de ce groupe."

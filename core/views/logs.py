@@ -4,7 +4,7 @@ Log managing views
 '''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, pgettext_lazy
 from ngw.core.models import Log
 from ngw.core.nav import Navbar
 from ngw.core.views.generic import NgwAdminAcl, NgwListView
@@ -23,7 +23,7 @@ class LogListView(NgwAdminAcl, NgwListView):
         (_('Action'), None, 'action_txt', 'action'),
         (_('Target'), None, 'target_repr', 'target_repr'),
         (_('Property'), None, 'property_repr', 'property_repr'),
-        (_('Change'), None, 'change', 'change'),
+        (pgettext_lazy('noun', 'Change'), None, 'change', 'change'),
     ]
 
 
