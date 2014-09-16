@@ -13,6 +13,7 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.timezone import now
+from django.utils.importlib import import_module
 from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, FormView
 from django import forms
@@ -102,6 +103,17 @@ class MessageListView(InGroupAcl, NgwListView):
 #
 #######################################################################
 
+try:
+    EXTERNAL_MESSAGE_BACKEND_NAME = settings.EXTERNAL_MESSAGE_BACKEND
+except AttributeError as e:
+    raise ImproperlyConfigured(('You need to add an "EXTERNAL_MESSAGE_BACKEND" handler in your settings.py: "%s"'
+        % e))
+try:
+    EXTERNAL_MESSAGE_BACKEND = import_module(EXTERNAL_MESSAGE_BACKEND_NAME)
+except ImportError as e:
+    raise ImproperlyConfigured(('Error importing external messages backend module %s: "%s"'
+        % (EXTERNAL_MESSAGE_BACKEND_NAME, e)))
+
 
 class SendMessageForm(forms.Form):
     ids = forms.CharField(widget=forms.widgets.HiddenInput)
@@ -124,7 +136,7 @@ class SendMessageForm(forms.Form):
             contact_msg.subject = self.cleaned_data['subject']
             contact_msg.text = self.cleaned_data['message']
             contact_msg.sync_info = json.dumps({
-                'backend': settings.EXTERNAL_MESSAGE_BACKEND,
+                'backend': EXTERNAL_MESSAGE_BACKEND_NAME,
                 'language': language})
             contact_msg.save()
         return contacts_noemail
