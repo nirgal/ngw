@@ -1628,7 +1628,7 @@ msgstr ""
 #: views/messages.py:179
 #, python-format
 msgid "Send message in %s"
-msgstr "Envoi de messagee dans %s"
+msgstr "Envoi de message dans %s"
 
 #: views/messages.py:184
 msgid "send message"
