@@ -779,7 +779,7 @@ class ContactInGroupForm(forms.Form):
                 widget=forms.widgets.CheckboxInput(attrs={
                     'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
                 }))
-        self.fields['note'] = forms.CharField(required=False)
+        self.fields['note'] = forms.CharField(label=_('Note'), required=False)
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
