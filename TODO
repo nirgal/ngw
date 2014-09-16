@@ -9,7 +9,8 @@ Disallow sending message for an event today or in the past.
 
 Remove the "you are leaving that page" warning on column choice change.
 
-Disable CRSF validation on login page
+CRSF validation fails on login page if it is shown too long:
+See https://github.com/yourlabs/django-session-security/issues/29
 
 
 ====================================================================================================
