@@ -379,10 +379,10 @@ class GroupAddManyForm(forms.Form):
                 ('', _('Choose a group')),
                 (_('Permanent groups'), [
                     (group.id, group.name)
-                    for group in ContactGroup.objects.filter(date__isnull=1).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id])]),
+                    for group in ContactGroup.objects.filter(date__isnull=1).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id]).order_by('name')]),
                 (_('Events'), [
                     (group.id, group.name_with_date())
-                    for group in ContactGroup.objects.filter(date__isnull=0).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id])]),
+                    for group in ContactGroup.objects.filter(date__isnull=0).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id]).order_by('-date', 'name')]),
                 ],
             )
         for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TEXT):
