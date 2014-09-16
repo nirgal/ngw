@@ -424,7 +424,7 @@ class GroupAddManyForm(forms.Form):
         group_id = self.cleaned_data['group']
         target_group = get_object_or_404(ContactGroup, pk=group_id)
 
-        contact_ids = self.cleaned_data['ids']
+        contact_ids = self.cleaned_data['ids'].split(',')
         contacts = Contact.objects.filter(pk__in=contact_ids)
 
         modes = ''
