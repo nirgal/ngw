@@ -172,7 +172,7 @@ class SendMessageForm(forms.Form):
             contact_msg.subject = self.cleaned_data['subject']
             contact_msg.text = self.cleaned_data['message']
             contact_msg.sync_info = json_sync_info
-            #contact_msg.save()
+            contact_msg.save()
         return contacts_noemail
 
 
