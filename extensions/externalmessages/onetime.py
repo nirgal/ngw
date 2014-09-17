@@ -19,6 +19,8 @@ import ngw.core.contactfield
 
 _ = lambda x: x
 
+SUPPORTS_EXPIRATION = False
+
 NOTIFICATION_TEXT = _('''Hello
 
 You can read your message at https://onetime.info/%s

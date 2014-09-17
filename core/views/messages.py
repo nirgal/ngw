@@ -6,6 +6,7 @@ Messages managing views
 from __future__ import division, absolute_import, print_function, unicode_literals
 
 import json
+from datetime import date, timedelta
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect, Http404, HttpResponse
@@ -24,6 +25,7 @@ from ngw.core.models import (
     Contact, ContactMsg, ContactInGroup)
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
+from ngw.core.widgets import NgwCalendarWidget
 
 
 #######################################################################
@@ -116,17 +118,51 @@ except ImportError as e:
 
 
 class SendMessageForm(forms.Form):
-    ids = forms.CharField(widget=forms.widgets.HiddenInput)
-    subject = forms.CharField(
-        label=_('Subject'), max_length=64,
-        widget=forms.widgets.Input(attrs={'size': '64'}))
-    message = forms.CharField(
-        label=_('Message'),
-        widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '20'}))
+    def __init__(self, contactgroup, *args, **kwargs):
+        super(SendMessageForm, self).__init__(*args, **kwargs)
+
+        self.fields['ids'] = forms.CharField(widget=forms.widgets.HiddenInput)
+        if self.support_expiration_date():
+            if contactgroup.date:
+                initial_date = contactgroup.date
+            else:
+                initial_date = date.today() + timedelta(days=21)
+            self.fields['expiration_date'] = forms.DateField(
+                label=_('Expiration date'),
+                widget=NgwCalendarWidget(attrs={'class':'vDateField'}),
+                initial=initial_date)
+        self.fields['subject'] = forms.CharField(
+            label=_('Subject'), max_length=64,
+            widget=forms.widgets.Input(attrs={'size': '64'}))
+        self.fields['message'] = forms.CharField(
+            label=_('Message'),
+            widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '20'}))
+
+
+    def support_expiration_date(self):
+        return getattr(EXTERNAL_MESSAGE_BACKEND, 'SUPPORTS_EXPIRATION', False)
+
+
+    def clean_expiration_date(self):
+        expiration_date = self.cleaned_data['expiration_date']
+        if expiration_date <= date.today():
+            raise forms.ValidationError(_('The expiration date must be in the future.'))
+        return expiration_date
+
 
     def send_message(self, group):
         contacts_noemail = []
+
         language = translation.get_language()
+        sync_info = {
+            'backend': EXTERNAL_MESSAGE_BACKEND_NAME,
+            'language': language,
+        }
+        if self.support_expiration_date():
+            expiration = (self.cleaned_data['expiration_date'] - date.today()).days
+            sync_info['expiration'] = expiration
+        json_sync_info = json.dumps(sync_info)
+
         for contact_id in self.cleaned_data['ids'].split(','):
             contact = get_object_or_404(Contact, pk=contact_id)
             if not contact.get_fieldvalues_by_type('EMAIL'):
@@ -135,10 +171,8 @@ class SendMessageForm(forms.Form):
             contact_msg.send_date = now()
             contact_msg.subject = self.cleaned_data['subject']
             contact_msg.text = self.cleaned_data['message']
-            contact_msg.sync_info = json.dumps({
-                'backend': EXTERNAL_MESSAGE_BACKEND_NAME,
-                'language': language})
-            contact_msg.save()
+            contact_msg.sync_info = json_sync_info
+            #contact_msg.save()
         return contacts_noemail
 
 
@@ -149,6 +183,11 @@ class SendMessageView(InGroupAcl, FormView):
     def check_perm_groupuser(self, group, user):
         if not perms.c_can_write_msgs_cg(user.id, group.id):
             raise PermissionDenied
+
+    def get_form_kwargs(self):
+        kwargs = super(SendMessageView, self).get_form_kwargs()
+        kwargs['contactgroup'] = self.contactgroup
+        return kwargs
 
     def get_initial(self):
         return {'ids': self.request.REQUEST['ids']}
@@ -275,7 +314,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             'groupname': cg.name_with_date()}
         if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
             context['reply_url'] = "../members/send_message?ids=%s" % \
-                self.object.id
+                self.object.contact_id
         context.update(kwargs)
         return super(MessageDetailView, self).get_context_data(**context)
 
