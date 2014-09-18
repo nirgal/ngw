@@ -19,7 +19,7 @@ import ngw.core.contactfield
 
 _ = lambda x: x
 
-SUPPORTS_EXPIRATION = False
+SUPPORTS_EXPIRATION = True
 
 NOTIFICATION_TEXT = _('''Hello
 
@@ -30,8 +30,8 @@ a pen ready before clicking the link. :)
 
 Do not replay to that email. Use the link above.''')
 
+SMTP_CONNECTION = None  # Permanent connection accross calls (within cron job)
 SMTP_SERVER_CONGESTION = False
-SMTP_CONNECTION = None
 
 logger = logging.getLogger('msgsync')
 
@@ -57,11 +57,14 @@ def send_to_onetime(msg):
 
     logger.info('Storing message for %s.', msg.contact)
 
-    dt = msg.group.date
-    if dt:
-        days = (dt - now().date()).days
-    else:
-        days = 21
+    try:
+        days = sync_info['days']
+    except KeyError:
+        dt = msg.group.date
+        if dt:
+            days = (dt - now().date()).days
+        else:
+            days = 21
     ot_conn.request('POST', '/', urllib.parse.urlencode({
         'subject': msg.subject.encode(settings.DEFAULT_CHARSET),
         'message': msg.text.encode(settings.DEFAULT_CHARSET),
