@@ -7,6 +7,8 @@ TBD
 
 Remove the "you are leaving that page" warning on column choice change.
 
+Onetime refuses the message when it's too far in the future: Prevent that from happenning
+
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS
@@ -15,6 +17,8 @@ VALIDATED IMPROVEMENTS
 Top right quick search: Add a drop down select filed by ajax to quick select people
 
 Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
+
+Show messages counts on the member list
 
 
 ====================================================================================================
@@ -91,3 +95,5 @@ Invite groups (?):
 Check date is not null when creating an event
 
 Extensions: Change hooks for signals
+
+Add support for attachements in externals messages (?)

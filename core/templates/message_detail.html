@@ -25,7 +25,7 @@
     {{ object.text|linebreaksbr }}
 </div>
 
-{% if cg_perms.X and object.is_answer %}
+{% if 'X' in cg_perms and object.is_answer %}
 <div class="submit-row">
 <form method=post>
 {% csrf_token %}

@@ -1,64 +1,64 @@
 {% load i18n %}
 <div id=submenucontainer>
 {% spaceless %}
-{% if cg_perms.c %}
+{% if 'c' in cg_perms %}
     <a href="{{cg.get_absolute_url}}members/">
 {% endif %}
-    <div class="submenuitem {% if active_submenu == "members" %}activesubmenuitem{% endif %}"{% if not cg_perms.c %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+    <div class="submenuitem {% if active_submenu == "members" %}activesubmenuitem{% endif %}"{% if not 'c' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
         {% trans "Members" %}
     </div>
-{% if cg_perms.c %}
+{% if 'c' in cg_perms %}
     </a>
 {% endif %}
 {% endspaceless %}
 
 {% spaceless %}
-{% if cg_perms.n %}
+{% if 'n' in cg_perms %}
     <a href="{{cg.get_absolute_url}}news/">
 {% endif %}
-    <div class="submenuitem {% if active_submenu == "news" %}activesubmenuitem{% endif %}"{% if not cg_perms.n %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+    <div class="submenuitem {% if active_submenu == "news" %}activesubmenuitem{% endif %}"{% if not 'n' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
         {% trans "News" %}
     </div>
-{% if cg_perms.n %}
+{% if 'n' in cg_perms %}
     </a>
 {% endif %}
 {% endspaceless %}
 
 {% spaceless %}
-{% if cg_perms.u %}
+{% if 'u' in cg_perms %}
     <a href="{{cg.get_absolute_url}}files/">
 {% endif %}
-    <div class="submenuitem {% if active_submenu == "files" %}activesubmenuitem{% endif %}"{% if not cg_perms.u %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+    <div class="submenuitem {% if active_submenu == "files" %}activesubmenuitem{% endif %}"{% if not 'u' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
         {% trans "Files" %}
     </div>
-{% if cg_perms.u %}
+{% if 'u' in cg_perms %}
     </a>
 {% endif %}
 {% endspaceless %}
 
 {% if cg.mailman_address %}
-{% if cg_perms.c %}
+{% if 'c' in cg_perms %}
     <a href="{{cg.get_absolute_url}}mailman">
 {% endif %}
-    <div class="submenuitem {% if active_submenu == "mailman" %}activesubmenuitem{% endif %}"{% if not cg_perms.c %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+    <div class="submenuitem {% if active_submenu == "mailman" %}activesubmenuitem{% endif %}"{% if not 'c' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
         {% trans "Mailman" %}
     </div>
-{% if cg_perms.c %}
+{% if 'c' in cg_perms %}
     </a>
 {% endif %}
 {% endif %}
 
 {% spaceless %}
-{% if cg_perms.x %}
+{% if 'x' in cg_perms %}
     <a href="{{cg.get_absolute_url}}messages/?&_order=-1">
 {% endif %}
-    <div class="submenuitem {% if active_submenu == "messages" %}activesubmenuitem{% endif %}"{% if not cg_perms.o %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+    <div class="submenuitem {% if active_submenu == "messages" %}activesubmenuitem{% endif %}"{% if not 'x' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
         {% trans "Messages" %}
         {% with nbmsg=cg.count_unread_messages %}
         {% if nbmsg %}<span style='color:red;'>{{ nbmsg }}✉</span>{% endif %}
         {% endwith %}
     </div>
-{% if cg_perms.x %}
+{% if 'x' in cg_perms %}
     </a>
 {% endif %}
 {% endspaceless %}

@@ -23,7 +23,7 @@
         </div>
     {% endfor %}
 
-    {% if cg_perms.U %}
+    {% if 'U' in cg_perms %}
     {{form.media|safe}}
     {# {{ form.errors } #}
     {% block preform %}{% endblock %}
@@ -37,14 +37,14 @@
     {% endif %}
 
 {% block submitbar %}
-{% if cg_perms.U %}
+{% if 'U' in cg_perms %}
 <div class="submit-row">
     <input type=submit value="{% trans "Send" %}" class="default">
 </div>
 {% endif %}
 {% endblock %}
 
-{% if cg_perms.U %}
+{% if 'U' in cg_perms %}
 </form>
 {% endif %}
 

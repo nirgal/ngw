@@ -10,9 +10,9 @@
     {% for n in news %}
     <div class=module>
     <h2>
-        {% if cg_perms.N %}<a href="{{n.get_absolute_url}}">{% endif %}
+        {% if 'N' in cg_perms %}<a href="{{n.get_absolute_url}}">{% endif %}
         {{ n.title }}
-        {% if cg_perms.N %}</a>{% endif %}
+        {% if 'N' in cg_perms %}</a>{% endif %}
     </h2>
     <p>
         <b>{{ n.date|date:"DATE_FORMAT" }}</b> - {% trans "by" %} <a href="../members/{{ n.author.id}}/"> {{ n.author }}</a><br>
@@ -50,7 +50,7 @@
     {% endif %}
 
     {% block submitbar %}
-    {% if cg_perms.N %}
+    {% if 'N' in cg_perms %}
     <div class="submit-row">
     <a class=button href="add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
     </div>

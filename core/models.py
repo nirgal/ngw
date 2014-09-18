@@ -141,6 +141,13 @@ def _initialise_cigflags_constants():
 # This is run on module loading:
 _initialise_cigflags_constants()
 
+def perms_int_to_flags(intflags):
+    result = ''
+    for flag, intflag in six.iteritems(TRANS_CIGFLAG_CODE2INT):
+        if intflags & intflag:
+            result += flag
+    return result
+
 # Ends with a /
 GROUP_STATIC_DIR = settings.MEDIA_ROOT+'g/'
 
@@ -357,14 +364,14 @@ class Contact(NgwModel):
 
     def  is_anonymous():
         '''
-        Always returns False. Not like AnonymousUser.
+        Always returns False. Unlike AnonymousUser.
         See https://docs.djangoproject.com/en/1.5/ref/contrib/auth/#methods
         '''
         return False
 
     def is_authenticated(self):
         '''
-        Always returns True. Not like AnonymousUser.
+        Always returns True. Unlike AnonymousUser.
         See https://docs.djangoproject.com/en/1.5/ref/contrib/auth/#methods
         '''
         return True
@@ -787,89 +794,10 @@ class ContactGroup(NgwModel):
 
     def get_contact_perms(self, contact_id):
         '''
-        Returns a dictionary will all that group permissions for a given user
+        Returns a string will all that group permissions for a given user
         '''
-        # This is the optimized version of
-        # return {
-        #    'o': perms.c_operatorof_cg(contact_id, self.id),
-        #    #'v'
-        #    'e': perms.c_can_see_cg(contact_id, self.id),
-        #    'E': perms.c_can_change_cg(contact_id, self.id),
-        #    'c': perms.c_can_see_members_cg(contact_id, self.id),
-        #    'C': perms.c_can_change_members_cg(contact_id, self.id),
-        #    'f': perms.c_can_view_fields_cg(contact_id, self.id),
-        #    'F': perms.c_can_write_fields_cg(contact_id, self.id),
-        #    'n': perms.c_can_see_news_cg(contact_id, self.id),
-        #    'N': perms.c_can_change_news_cg(contact_id, self.id),
-        #    'u': perms.c_can_see_files_cg(contact_id, self.id),
-        #    'U': perms.c_can_change_files_cg(contact_id, self.id),
-        #    'x': perms.c_can_see_msgs_cg(contact_id, self.id),
-        #    'X': perms.c_can_change_msgs_cg(contact_id, self.id),
-        # } that returns data in a single query
-        sql = '''
-            SELECT bit_or(admin_flags) FROM
-            (
-                SELECT bit_or(gmg_perms.flags) AS admin_flags
-                FROM contact_in_group
-                JOIN (
-                    SELECT self_and_subgroups(father_id) AS group_id,
-                        bit_or(flags) AS flags
-                    FROM group_manage_group
-                    WHERE subgroup_id=%(gid)s
-                    GROUP BY group_id
-                ) AS gmg_perms
-                ON contact_in_group.group_id=gmg_perms.group_id
-                    AND contact_in_group.flags & 1 <> 0
-                    AND contact_id = %(cid)s
-                UNION
-                    (
-                    SELECT contact_in_group.flags AS admin_flags
-                    FROM contact_in_group
-                    WHERE contact_in_group.group_id=%(gid)s
-                    AND contact_in_group.contact_id=%(cid)s
-                    )
-                UNION
-                    (
-                    SELECT %(ADMIN_CIGFLAGS)s AS admin_flags
-                    WHERE c_ismemberof_cg(%(cid)s, %(GROUP_ADMIN)s)
-                    )
-                UNION
-                    (
-                    SELECT %(OBSERVER_CIGFLAGS)s AS admin_flags
-                    WHERE c_ismemberof_cg(%(cid)s, %(GROUP_OBSERVERS)s)
-                    )
-            ) AS compiled
-            ''' % {
-            'cid': contact_id,
-            'gid': self.id,
-            'ADMIN_CIGFLAGS': ADMIN_CIGFLAGS,
-            'OBSERVER_CIGFLAGS': OBSERVER_CIGFLAGS,
-            'GROUP_ADMIN': GROUP_ADMIN,
-            'GROUP_OBSERVERS': GROUP_OBSERVERS,
-            }
-        cursor = connection.cursor()
-        cursor.execute(sql)
-        row = cursor.fetchone()
-        if row:
-            perms = row[0]
-        else:
-            perms = 0
-        return {
-            'o': perms & CIGFLAG_OPERATOR,
-            'v': perms & CIGFLAG_VIEWER,
-            'e': perms & CIGFLAG_SEE_CG,
-            'E': perms & CIGFLAG_CHANGE_CG,
-            'c': perms & CIGFLAG_SEE_MEMBERS,
-            'C': perms & CIGFLAG_CHANGE_MEMBERS,
-            'f': perms & CIGFLAG_VIEW_FIELDS,
-            'F': perms & CIGFLAG_WRITE_FIELDS,
-            'n': perms & CIGFLAG_VIEW_NEWS,
-            'N': perms & CIGFLAG_WRITE_NEWS,
-            'u': perms & CIGFLAG_VIEW_FILES,
-            'U': perms & CIGFLAG_WRITE_FILES,
-            'x': perms & CIGFLAG_VIEW_MSGS,
-            'X': perms & CIGFLAG_WRITE_MSGS,
-        }
+        perm = perms.c_flags_cg_int(contact_id, self.id)
+        return perms_int_to_flags(perm)
 
 
     def get_link_name(self):
