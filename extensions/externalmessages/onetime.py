@@ -60,7 +60,7 @@ def send_to_onetime(msg):
     try:
         days = sync_info['expiration']
     except KeyError:
-        logger.warning("Message %s doesn't have an expiration date.")
+        logger.warning("Message %s doesn't have an expiration date." % msg.id)
         dt = msg.group.date
         if dt:
             days = (dt - now().date()).days
