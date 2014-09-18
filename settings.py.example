@@ -146,7 +146,7 @@ AUTH_USER_MODEL = 'core.Contact'
 LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
 
-SESSION_COOKIE_AGE = 15*60
+SESSION_COOKIE_AGE = 3*3600
 SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
 SESSION_COOKIE_SECURE = True # We are not using http, only https
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # We have short time sessions anyways
