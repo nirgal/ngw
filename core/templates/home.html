@@ -29,6 +29,18 @@
 
 {% block sidebar %}
 <div id="content-related">
+{% for g in unread_groups %}
+    {% if forloop.first %}
+        <div class=module>
+        <h2>{% trans "Unread messages" %}:</h2>
+        <ul class=padded>
+    {% endif %}
+    <li><a href="{{g.get_absolute_url}}messages/?&_order=-1">{{ g }} : {{ g.unread_count }}</a><br>
+    {% if forloop.last %}
+        </ul>
+        </div>
+    {% endif %}
+{% endfor %}
 {% for g in operator_groups %}
     {% if forloop.first %}
         <div class=module>
@@ -36,18 +48,6 @@
         <ul class=padded>
     {% endif %}
     <li><a href="{{g.get_absolute_url}}">{{ g.name_with_date }}</a><br>
-    {% if forloop.last %}
-        </ul>
-        </div>
-    {% endif %}
-{% endfor %}
-{% for g in unread_groups %}
-    {% if forloop.first %}
-        <div class=module>
-        <h2>{% trans "Unread messages" %}:</h2>
-        <ul class=padded>
-    {% endif %}
-    <li><a href="{{g.get_absolute_url}}messages/">{{ g }} : {{ g.unread_count }}</a><br>
     {% if forloop.last %}
         </ul>
         </div>
