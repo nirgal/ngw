@@ -24,9 +24,6 @@ from django import forms
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
-    CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
-    ADMIN_CIGFLAGS,
-    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TEXT,
     Config, Contact, ContactGroup, ContactField, ContactFieldValue,
     ContactInGroup, Log,
     LOG_ACTION_ADD, LOG_ACTION_CHANGE,
@@ -85,37 +82,37 @@ def membership_to_text(contact_with_extra_fields, group_id):
         # That version show everything, even when obvious like
         # Inherited member + member
         for code in 'midoveEcCfFnNuUxX':
-            if flags & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
+            if flags & perms.FLAGTOINT[code]:
+                nice_perm = perms.FLAGTOTEXT[code]
                 memberships.append(nice_perm)
         for code in 'mid':
-            if flags_inherited & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
+            if flags_inherited & perms.FLAGTOINT[code]:
+                nice_perm = perms.FLAGTOTEXT[code]
                 memberships.append(nice_perm + ' ' + automatic_member_indicator)
         for code in 'oveEcCfFnNuUxX':
-            if flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
+            if flags_ainherited & perms.FLAGTOINT[code]:
+                nice_perm = perms.FLAGTOTEXT[code]
                 memberships.append(nice_perm + ' ' + automatic_admin_indicator)
     else:
-        if flags & CIGFLAG_MEMBER:
+        if flags & perms.MEMBER:
             memberships.append(_("Member"))
-        elif flags_inherited & CIGFLAG_MEMBER:
+        elif flags_inherited & perms.MEMBER:
             memberships.append(_("Member") + " " + automatic_member_indicator)
-        elif flags & CIGFLAG_INVITED:
+        elif flags & perms.INVITED:
             memberships.append(_("Invited"))
-        elif flags_inherited & CIGFLAG_INVITED:
+        elif flags_inherited & perms.INVITED:
             memberships.append(_("Invited") + " " + automatic_member_indicator)
-        elif flags & CIGFLAG_DECLINED:
+        elif flags & perms.DECLINED:
             memberships.append(_("Declined"))
 
         for code in 'ovEcCfFnNuUexX':
-            if flags & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
+            if flags & perms.FLAGTOINT[code]:
+                nice_perm = perms.FLAGTOTEXT[code]
                 memberships.append(nice_perm)
                 if code == 'o':
                     break # Don't show more details then
-            elif flags_ainherited & TRANS_CIGFLAG_CODE2INT[code]:
-                nice_perm = TRANS_CIGFLAG_CODE2TEXT[code]
+            elif flags_ainherited & perms.FLAGTOINT[code]:
+                nice_perm = perms.FLAGTOTEXT[code]
                 memberships.append(nice_perm + ' ' + automatic_admin_indicator)
                 if code == 'o':
                     break # Don't show more details then
@@ -139,11 +136,11 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
     flags = getattr(contact_with_extra_fields, 'group_%s_flags' % contact_group.id)
     if flags is None:
         flags = 0
-    if flags & CIGFLAG_MEMBER:
+    if flags & perms.MEMBER:
         membership = 'member'
-    elif flags & CIGFLAG_INVITED:
+    elif flags & perms.INVITED:
         membership = 'invited'
-    elif flags & CIGFLAG_DECLINED:
+    elif flags & perms.DECLINED:
         membership = 'declined'
     else:
         membership = ''
@@ -732,7 +729,7 @@ def contact_edit(request, gid=None, cid=None):
                 log = Log(request.user.id)
 
                 cig = ContactInGroup(contact_id=contact.id, group_id=gid)
-                cig.flags = CIGFLAG_MEMBER
+                cig.flags = perms.MEMBER
                 cig.save()
                 # TODO: Log new cig
                 # TODO: Check can add members in super groups
@@ -1150,7 +1147,7 @@ def contact_default_group(request, cid=None):
                 cig = ContactInGroup(
                     contact_id=cid,
                     group_id=cg.id,
-                    flags=CIGFLAG_MEMBER|ADMIN_CIGFLAGS,
+                    flags=perms.MEMBER|perms.ADMIN_ALL,
                     )
                 cig.save()
                 messages.add_message(request, messages.SUCCESS, _('Personnal group created.'))

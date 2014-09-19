@@ -5,19 +5,15 @@
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 import os
-from functools import wraps
 from datetime import datetime, timedelta
-import subprocess
 import logging
 import json
-from collections import OrderedDict
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models, connection
-from django import forms
 from django.http import Http404
 from django.utils import html
 from django.utils import formats
@@ -53,100 +49,6 @@ FIELD_COUNTRY = 48
 FIELD_PHPBB_USERID = 73
 FIELD_PASSWORD_STATUS = 75
 FIELD_DEFAULT_GROUP = 83    # GROUP_USER_NGW
-
-CIGFLAG_MEMBER         =     1 # 'm'ember
-CIGFLAG_INVITED        =     2 # 'i'nvited
-CIGFLAG_DECLINED       =     4 # 'd'eclined invitation
-CIGFLAG_OPERATOR       =     8 # 'o'pertor
-CIGFLAG_VIEWER         =    16 # 'v'iewer
-CIGFLAG_SEE_CG         =    32 # 'e'xistance
-CIGFLAG_CHANGE_CG      =    64 # 'E'
-CIGFLAG_SEE_MEMBERS    =   128 # 'c'ontent
-CIGFLAG_CHANGE_MEMBERS =   256 # 'C'
-CIGFLAG_VIEW_FIELDS    =   512 # 'f'ields
-CIGFLAG_WRITE_FIELDS   =  1024 # 'F'
-CIGFLAG_VIEW_NEWS      =  2048 # 'n'ews
-CIGFLAG_WRITE_NEWS     =  4096 # 'N'
-CIGFLAG_VIEW_FILES     =  8192 # 'u'ploaded
-CIGFLAG_WRITE_FILES    = 16384 # 'U'
-CIGFLAG_VIEW_MSGS      = 32768 # 'x'ternal messages
-CIGFLAG_WRITE_MSGS     = 65536 # 'X'
-
-# That information contains:
-# int value (see above)
-# character letter value, kinda human friendly
-# human friendly text, sometimes used in forms field names
-# dependency: 'u':'e' means viewing files implies viewing group existence
-# conflicts: 'F':'f' means can't write to fields unless can read them too
-__cig_flag_info__ = (
-    (CIGFLAG_MEMBER, 'm', '', 'id', _('Member')),
-    (CIGFLAG_INVITED, 'i', '', 'md', _('Invited')),
-    (CIGFLAG_DECLINED, 'd', '', 'mi', _('Declined')),
-    (CIGFLAG_OPERATOR, 'o', 'veEcCfFnNuUxX', '', _('Operator')),
-    (CIGFLAG_VIEWER, 'v', 'ecfnux', '', _('Viewer')),
-    (CIGFLAG_SEE_CG, 'e', '', '', _('Can see group exists')),
-    (CIGFLAG_CHANGE_CG, 'E', 'e', '', _('Can change group')),
-    (CIGFLAG_SEE_MEMBERS, 'c', 'e', '', _('Can see members')),
-    (CIGFLAG_CHANGE_MEMBERS, 'C', 'ec', '', _('Can change members')),
-    (CIGFLAG_VIEW_FIELDS, 'f', 'e', '', _('Can view fields')),
-    (CIGFLAG_WRITE_FIELDS, 'F', 'ef', '', _('Can write fields')),
-    (CIGFLAG_VIEW_NEWS, 'n', 'e', '', _('Can view news')),
-    (CIGFLAG_WRITE_NEWS, 'N', 'en', '', _('Can write news')),
-    (CIGFLAG_VIEW_FILES, 'u', 'e', '', _('Can view uploaded files')),
-    (CIGFLAG_WRITE_FILES, 'U', 'eu', '', _('Can upload files')),
-    (CIGFLAG_VIEW_MSGS, 'x', 'e', '', _('Can view messages')),
-    (CIGFLAG_WRITE_MSGS, 'X', 'ex', '', _('Can write messages')),
-)
-
-ADMIN_CIGFLAGS = (CIGFLAG_OPERATOR | CIGFLAG_VIEWER
-                | CIGFLAG_SEE_CG | CIGFLAG_CHANGE_CG
-                | CIGFLAG_SEE_MEMBERS | CIGFLAG_CHANGE_MEMBERS
-                | CIGFLAG_VIEW_FIELDS | CIGFLAG_WRITE_FIELDS
-                | CIGFLAG_VIEW_NEWS | CIGFLAG_WRITE_NEWS
-                | CIGFLAG_VIEW_FILES | CIGFLAG_WRITE_FILES
-                | CIGFLAG_VIEW_MSGS | CIGFLAG_WRITE_MSGS)
-
-OBSERVER_CIGFLAGS = (CIGFLAG_VIEWER
-                | CIGFLAG_SEE_CG
-                | CIGFLAG_SEE_MEMBERS
-                | CIGFLAG_VIEW_FIELDS
-                | CIGFLAG_VIEW_NEWS
-                | CIGFLAG_VIEW_FILES
-                | CIGFLAG_VIEW_MSGS)
-# dicts for quick translation 1 letter txt -> int, and 1 letter txt -> txt
-TRANS_CIGFLAG_CODE2INT = OrderedDict()
-TRANS_CIGFLAG_CODE2TEXT = OrderedDict()
-
-# dict for dependencies
-CIGFLAGS_CODEDEPENDS = {}
-
-# dict for cascade deletion of flags
-CIGFLAGS_CODEONDELETE = {}
-
-def _initialise_cigflags_constants():
-    if TRANS_CIGFLAG_CODE2INT:
-        return # already initialized
-    for intval, code, requires, conflicts, text in __cig_flag_info__:
-        TRANS_CIGFLAG_CODE2INT[code] = intval
-        TRANS_CIGFLAG_CODE2TEXT[code] = text
-
-    for intval, code, requires, conflicts, text in __cig_flag_info__:
-        CIGFLAGS_CODEDEPENDS[code] = requires
-        CIGFLAGS_CODEONDELETE[code] = conflicts
-
-
-    #for intval, code, txt, requires, conflicts in __cig_flag_info__:
-    #    print ('+%s => +%s-%s' % (code, CIGFLAGS_CODEDEPENDS[code], CIGFLAGS_CODEONDELETE[code]))
-
-# This is run on module loading:
-_initialise_cigflags_constants()
-
-def perms_int_to_flags(intflags):
-    result = ''
-    for flag, intflag in six.iteritems(TRANS_CIGFLAG_CODE2INT):
-        if intflags & intflag:
-            result += flag
-    return result
 
 # Ends with a /
 GROUP_STATIC_DIR = settings.MEDIA_ROOT+'g/'
@@ -332,7 +234,7 @@ class MyContactManager(models.Manager):
 
         cig = ContactInGroup(contact_id=contact.id,
                              group_id=GROUP_ADMIN,
-                             flags=CIGFLAG_MEMBER|CIGFLAG_OPERATOR)
+                             flags=perms.MEMBER|perms.OPERATOR)
         cig.save()
 
 
@@ -404,27 +306,27 @@ class Contact(NgwModel):
 
     def get_directgroups_member(self):
         "returns the list of groups that contact is a direct member of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.MEMBER)]).order_by('-date', 'name')
 
     def get_allgroups_member(self):
         "returns the list of groups that contact is a member of."
-        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=%s AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
+        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=%s AND flags & %s <> 0)' % (self.id, perms.MEMBER)])
 
     def get_directgroups_invited(self):
         "returns the list of groups that contact has been invited to, directly without group inheritance"
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_INVITED)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.INVITED)]).order_by('-date', 'name')
 
     def get_directgroups_declinedinvitation(self):
         "returns the list of groups that contact has been invited to and he declined the invitation."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_DECLINED)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.DECLINED)]).order_by('-date', 'name')
 
     def get_directgroups_operator(self):
         "returns the list of groups that contact is an operator of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_OPERATOR)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.OPERATOR)]).order_by('-date', 'name')
 
     def get_directgroups_viewer(self):
         "returns the list of groups that contact is a viewer of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, CIGFLAG_VIEWER)]).order_by('-date', 'name')
+        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.VIEWER)]).order_by('-date', 'name')
 
     def get_allgroups_withfields(self):
         "returns the list of groups with field_group ON that contact is member of."
@@ -625,7 +527,7 @@ class Contact(NgwModel):
     def check_login_created(request):
         # Create login for all members of GROUP_USER
         cursor = connection.cursor()
-        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN})
+        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {'member_flag': perms.MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN})
         for uid, in cursor:
             contact = Contact.objects.get(pk=uid)
             new_login = contact.generate_login()
@@ -633,7 +535,7 @@ class Contact(NgwModel):
             contact.set_password(contact.generate_password(), request=request)
             messages.add_message(request, messages.SUCCESS, _("Login information generated for User %s.") % contact.name)
 
-        for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': CIGFLAG_MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
+        for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': perms.MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
             cfv.delete()
             messages.add_message(request, messages.SUCCESS, _("Login information deleted for User %s.") % cfv.contact.name)
 
@@ -643,7 +545,7 @@ class Contact(NgwModel):
         Return True if self is a member of group group_id, either directly or
         through inheritence.
         '''
-        cin = ContactInGroup.objects.filter(contact_id=self.id).extra(where=['flags & %s <> 0' % CIGFLAG_MEMBER, 'group_id IN (SELECT self_and_subgroups(%s))' % group_id])
+        cin = ContactInGroup.objects.filter(contact_id=self.id).extra(where=['flags & %s <> 0' % perms.MEMBER, 'group_id IN (SELECT self_and_subgroups(%s))' % group_id])
         return len(cin) > 0
 
 
@@ -652,7 +554,7 @@ class Contact(NgwModel):
         Return True if self is a dirrect member of group group_id. Inheritence
         is ignored here.
         '''
-        cin = ContactInGroup.objects.filter(contact_id=self.id).extra(where=['flags & %s <> 0' % CIGFLAG_MEMBER]).filter(group_id=group_id)
+        cin = ContactInGroup.objects.filter(contact_id=self.id).extra(where=['flags & %s <> 0' % perms.MEMBER]).filter(group_id=group_id)
         return len(cin) > 0
 
 
@@ -788,7 +690,7 @@ class ContactGroup(NgwModel):
             .filter(direct_gmg_subgroups__subgroup_id=self.id)
 
     def get_all_members(self):
-        return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.id, CIGFLAG_MEMBER)])
+        return Contact.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.id, perms.MEMBER)])
 
     def get_members_count(self):
         return self.get_all_members().count()
@@ -797,8 +699,8 @@ class ContactGroup(NgwModel):
         '''
         Returns a string will all that group permissions for a given user
         '''
-        perm = perms.c_flags_cg_int(contact_id, self.id)
-        return perms_int_to_flags(perm)
+        perm = perms.cig_flags_int(contact_id, self.id)
+        return perms.int_to_flags(perm)
 
 
     def get_link_name(self):
@@ -953,22 +855,22 @@ class ContactGroup(NgwModel):
                 continue
 
             if operation == '+':
-                newflags |= TRANS_CIGFLAG_CODE2INT[letter]
-                for dependency in CIGFLAGS_CODEDEPENDS[letter]:
-                    newflags |= TRANS_CIGFLAG_CODE2INT[dependency]
-                for conflict in CIGFLAGS_CODEONDELETE[letter]:
-                    newflags &= ~TRANS_CIGFLAG_CODE2INT[conflict]
+                newflags |= perms.FLAGTOINT[letter]
+                for dependency in perms.FLAGDEPENDS[letter]:
+                    newflags |= perms.FLAGTOINT[dependency]
+                for conflict in perms.FLAGCONFLICTS[letter]:
+                    newflags &= ~perms.FLAGTOINT[conflict]
             else:  # operation == '-'
-                newflags &= ~TRANS_CIGFLAG_CODE2INT[letter]
-                for flag1, depflag1 in six.iteritems(CIGFLAGS_CODEDEPENDS):
+                newflags &= ~perms.FLAGTOINT[letter]
+                for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
                     if letter in depflag1:
-                        newflags &= ~TRANS_CIGFLAG_CODE2INT[flag1]
+                        newflags &= ~perms.FLAGTOINT[flag1]
 
-        if cig.flags ^ newflags & ADMIN_CIGFLAGS:
+        if cig.flags ^ newflags & perms.ADMIN_ALL:
             if not perms.c_operatorof_cg(user.id, self.id):
                 # You need to be operator to be able to change permissions
                 raise PermissionDenied
-        if cig.flags ^ newflags & ~ADMIN_CIGFLAGS:  # m/i/d
+        if cig.flags ^ newflags & ~perms.ADMIN_ALL:  # m/i/d
             # user needs to be able to add contacts
             # in all subgroups it's not a member yet, including
             # hidden ones
@@ -1000,14 +902,14 @@ class ContactGroup(NgwModel):
         else:
             result = LOG_ACTION_CHANGE
 
-        for flag, intflag in six.iteritems(TRANS_CIGFLAG_CODE2INT):
+        for flag, intflag in six.iteritems(perms.FLAGTOINT):
             if cig.flags & intflag and not newflags & intflag:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
                 log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
                 log.property = 'membership_' + flag
-                log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
+                log.property_repr = perms.FLAGTOTEXT[flag]
                 log.change = 'new value is false'
                 log.save()
             if not cig.flags & intflag and newflags & intflag:
@@ -1016,7 +918,7 @@ class ContactGroup(NgwModel):
                 log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
                 log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
                 log.property = 'membership_' + flag
-                log.property_repr = TRANS_CIGFLAG_CODE2TEXT[flag]
+                log.property_repr = perms.FLAGTOTEXT[flag]
                 log.change = 'new value is true'
                 log.save()
 
@@ -1492,7 +1394,7 @@ class GroupFilterIsMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_MEMBER), {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, perms.MEMBER), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1509,7 +1411,7 @@ class GroupFilterIsNotMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_MEMBER), {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, perms.MEMBER), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1526,7 +1428,7 @@ class GroupFilterIsInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_INVITED), {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, perms.INVITED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1543,7 +1445,7 @@ class GroupFilterIsNotInvited(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_INVITED), {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, perms.INVITED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1560,7 +1462,7 @@ class GroupFilterDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_DECLINED), {}
+        return 'EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, perms.DECLINED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1577,7 +1479,7 @@ class GroupFilterNotDeclinedInvitation(Filter):
     def __init__(self, group_id):
         self.group_id = group_id
     def get_sql_where_params(self):
-        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, CIGFLAG_DECLINED), {}
+        return 'NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (self.group_id, perms.DECLINED), {}
     def to_html(self):
         try:
             group = ContactGroup.objects.get(pk=self.group_id)
@@ -1593,7 +1495,7 @@ GroupFilterNotDeclinedInvitation.human_name = _('has not declined invitation in 
 class AllEventsNotReactedSince(Filter):
     def get_sql_where_params(self, value):
         value = decoratedstr.decorated_match(value)
-        return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (CIGFLAG_MEMBER | CIGFLAG_DECLINED), {'date':value}
+        return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (perms.MEMBER | perms.DECLINED), {'date':value}
     def to_html(self, value):
         return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
@@ -1603,7 +1505,7 @@ AllEventsNotReactedSince.human_name = _('has not reacted to any invitation since
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
     def to_html(self, value):
         return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):
@@ -1613,7 +1515,7 @@ AllEventsReactionYearRatioLess.human_name = _('1 year invitation reaction percen
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(CIGFLAG_MEMBER | CIGFLAG_INVITED | CIGFLAG_DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
     def to_html(self, value):
         return string_concat(self.__class__.human_name, ' "', value, '"')
     def get_param_types(self):

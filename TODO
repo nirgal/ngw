@@ -25,11 +25,11 @@ Show messages counts on the member list
 CODE REFACTOR
 ====================================================================================================
 
+Show detailed membership in message_detail, including inherited.
+
 Make a nice MultiWidget for flags for use in GroupAddManyView & contactingroup_edit
 
 Fix perms: can_read_msg => can see members (?)
-
-Show detailed membership in message_detail, including inherited.
 
 Complete migration to class based views:
 - groups.contactgroup_edit

@@ -13,7 +13,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import TemplateView
 from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
-from ngw.core.models import CIGFLAG_OPERATOR, Contact, ContactGroup, ContactGroupNews
+from ngw.core.models import Contact, ContactGroup, ContactGroupNews
+from ngw.core import perms
 from ngw.core.nav import Navbar
 from ngw.core.views.generic import NgwUserAcl
 
@@ -52,7 +53,7 @@ class HomeView(NgwUserAcl, TemplateView):
                        FROM contact_in_group
                        WHERE contact_in_group.group_id = contact_group.id
                          AND contact_in_group.contact_id=%s AND contact_in_group.flags & %s <> 0)'''
-            % (self.request.user.id, CIGFLAG_OPERATOR)])
+            % (self.request.user.id, perms.OPERATOR)])
 
         qry_news = ContactGroupNews.objects.extra(where=[
             'perm_c_can_see_news_cg(%s, contact_group_news.contact_group_id)'

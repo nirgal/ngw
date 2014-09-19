@@ -23,10 +23,6 @@ from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
     FIELD_DEFAULT_GROUP,
-    CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
-    ADMIN_CIGFLAGS,
-    TRANS_CIGFLAG_CODE2INT, TRANS_CIGFLAG_CODE2TEXT,
-    CIGFLAGS_CODEDEPENDS, CIGFLAGS_CODEONDELETE,
     Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
     hooks)
@@ -291,13 +287,13 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 
         wanted_flags = 0
         if 'm' in display:
-            wanted_flags |= CIGFLAG_MEMBER
+            wanted_flags |= perms.MEMBER
         if 'i' in display:
-            wanted_flags |= CIGFLAG_INVITED
+            wanted_flags |= perms.INVITED
         if 'd' in display:
-            wanted_flags |= CIGFLAG_DECLINED
+            wanted_flags |= perms.DECLINED
         if 'a' in display:
-            wanted_flags |= ADMIN_CIGFLAGS
+            wanted_flags |= perms.ADMIN_ALL
 
         if not wanted_flags:
             # Show nothing
@@ -314,10 +310,10 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
                 % (cg.id, wanted_flags))
             # The inherited memberships/invited/declined
             or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
-                % (cg.id, wanted_flags & (CIGFLAG_MEMBER|CIGFLAG_INVITED|CIGFLAG_DECLINED)))
+                % (cg.id, wanted_flags & (perms.MEMBER|perms.INVITED|perms.DECLINED)))
             # The inherited admins
             or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
-                % (cg.id, wanted_flags & ADMIN_CIGFLAGS))
+                % (cg.id, wanted_flags & perms.ADMIN_ALL))
 
             q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
 
@@ -385,18 +381,18 @@ class GroupAddManyForm(forms.Form):
                     for group in ContactGroup.objects.filter(date__isnull=0).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id]).order_by('-date', 'name')]),
                 ],
             )
-        for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TEXT):
+        for flag, longname in six.iteritems(perms.FLAGTOTEXT):
             field_name = 'membership_' + flag
 
             oncheck_js = ''.join([
                 'this.form.membership_%s.checked=true;' % code
-                for code in CIGFLAGS_CODEDEPENDS[flag]])
+                for code in perms.FLAGDEPENDS[flag]])
             oncheck_js += ''.join([
                 'this.form.membership_%s.checked=false;' % code
-                for code in CIGFLAGS_CODEONDELETE[flag]])
+                for code in perms.FLAGCONFLICTS[flag]])
 
             onuncheck_js = ''
-            for flag1, depflag1 in six.iteritems(CIGFLAGS_CODEDEPENDS):
+            for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
                 if flag in depflag1:
                     onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
@@ -409,12 +405,12 @@ class GroupAddManyForm(forms.Form):
 
     def clean(self):
         if 'group' in self.cleaned_data:
-            for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
+            for flag in six.iterkeys(perms.FLAGTOTEXT):
                 if self.cleaned_data['membership_' + flag]:
-                    if TRANS_CIGFLAG_CODE2INT[flag] & ADMIN_CIGFLAGS and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
+                    if perms.FLAGTOINT[flag] & perms.ADMIN_ALL and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
                         raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
 
-        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
+        for flag in six.iterkeys(perms.FLAGTOTEXT):
             if self.cleaned_data['membership_' + flag]:
                 return super(GroupAddManyForm, self).clean()
         raise forms.ValidationError(_('You must select at least one mode'))
@@ -428,7 +424,7 @@ class GroupAddManyForm(forms.Form):
         contacts = Contact.objects.filter(pk__in=contact_ids)
 
         modes = ''
-        for flag in six.iterkeys(TRANS_CIGFLAG_CODE2TEXT):
+        for flag in six.iterkeys(perms.FLAGTOTEXT):
             field_name = 'membership_' + flag
             if self.cleaned_data[field_name]:
                 modes += '+' + flag
@@ -622,7 +618,7 @@ def contactgroup_edit(request, id):
             # Update the administrative groups
             for flag in 'oveEcCfFnNuUxX':
                 field_name = 'admin_%s_groups' % flag
-                intflag = TRANS_CIGFLAG_CODE2INT[flag]
+                intflag = perms.FLAGTOINT[flag]
                 old_groups_ids = set(cg.get_visible_mananger_groups_ids(request.user.id, intflag))
                 new_groups_ids = set([int(ogid) for ogid in data[field_name]])
                 groups_added = new_groups_ids - old_groups_ids
@@ -673,7 +669,7 @@ def contactgroup_edit(request, id):
             }
             for flag in 'ovveEcCfFnNuUxX':
                 field_name = 'admin_%s_groups' % flag
-                intflag = TRANS_CIGFLAG_CODE2INT[flag]
+                intflag = perms.FLAGTOINT[flag]
                 initialdata[field_name] = cg.get_visible_mananger_groups_ids(request.user.id, intflag)
         else: # add new one
             default_group_id = request.user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
@@ -759,18 +755,18 @@ def contactgroup_delete(request, id):
 class ContactInGroupForm(forms.Form):
     def __init__(self, *args, **kargs):
         super(ContactInGroupForm, self).__init__(*args, **kargs)
-        for flag, longname in six.iteritems(TRANS_CIGFLAG_CODE2TEXT):
+        for flag, longname in six.iteritems(perms.FLAGTOTEXT):
             field_name = 'membership_' + flag
 
             oncheck_js = ''.join([
                 'this.form.membership_%s.checked=true;' % code
-                for code in CIGFLAGS_CODEDEPENDS[flag]])
+                for code in perms.FLAGDEPENDS[flag]])
             oncheck_js += ''.join([
                 'this.form.membership_%s.checked=false;' % code
-                for code in CIGFLAGS_CODEONDELETE[flag]])
+                for code in perms.FLAGCONFLICTS[flag]])
 
             onuncheck_js = ''
-            for flag1, depflag1 in six.iteritems(CIGFLAGS_CODEDEPENDS):
+            for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
                 if flag in depflag1:
                     onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
@@ -815,7 +811,7 @@ def contactingroup_edit(request, gid, cid):
     context['objtype'] = ContactInGroup
 
     initial = {}
-    for flag, intval in six.iteritems(TRANS_CIGFLAG_CODE2INT):
+    for flag, intval in six.iteritems(perms.FLAGTOINT):
         if cig.flags & intval:
             initial['membership_' + flag] = True
     initial['note'] = cig.note
@@ -825,12 +821,12 @@ def contactingroup_edit(request, gid, cid):
         if form.is_valid():
             data = form.cleaned_data
             newflags = 0
-            for flag, intvalue in six.iteritems(TRANS_CIGFLAG_CODE2INT):
+            for flag, intvalue in six.iteritems(perms.FLAGTOINT):
                 if data['membership_' + flag]:
                     newflags |= intvalue
             if not newflags:
                 return HttpResponseRedirect(reverse('ngw.core.views.groups.contactingroup_delete', args=(force_text(cg.id), cid)))
-            if (cig.flags ^ newflags) & ADMIN_CIGFLAGS \
+            if (cig.flags ^ newflags) & perms.ADMIN_ALL \
                 and not perms.c_operatorof_cg(request.user.id, cg.id):
                 # If you change any permission flags of that group, you must be a group operator
                 raise PermissionDenied
@@ -853,7 +849,7 @@ def contactingroup_edit(request, gid, cid):
 
     inherited_info = ''
 
-    automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, CIGFLAG_MEMBER)]).exclude(id=gid).order_by('-date', 'name')
+    automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.MEMBER)]).exclude(id=gid).order_by('-date', 'name')
     visible_automember_groups = automember_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     invisible_automember_groups = automember_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     #print(automember_groups.query)
@@ -865,7 +861,7 @@ def contactingroup_edit(request, gid, cid):
             inherited_info += '<li>Hidden group(s)...'
         inherited_info += '<br>'
 
-    autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, CIGFLAG_INVITED)]).exclude(id=gid).order_by('-date', 'name')
+    autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.INVITED)]).exclude(id=gid).order_by('-date', 'name')
     visible_autoinvited_groups = autoinvited_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     invisible_autoinvited_groups = autoinvited_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
     if autoinvited_groups:

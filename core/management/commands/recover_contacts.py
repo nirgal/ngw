@@ -3,7 +3,8 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 import logging
 from django.core.management.base import NoArgsCommand
-from ngw.core.models import Contact, GROUP_EVERYBODY, CIGFLAG_MEMBER
+from ngw.core.models import Contact, GROUP_EVERYBODY
+from ngw.core import perms
 
 class Command(NoArgsCommand):
     help = 'Recover lost contacts'
@@ -24,5 +25,5 @@ class Command(NoArgsCommand):
         elif verbosity == 3:
             logger.setLevel(logging.DEBUG)
 
-        for contact in Contact.objects.extra(where=['NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (GROUP_EVERYBODY, CIGFLAG_MEMBER)]):
+        for contact in Contact.objects.extra(where=['NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (GROUP_EVERYBODY, perms.MEMBER)]):
             logger.error('%s is not member of group EVERYBODY', contact)

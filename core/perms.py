@@ -18,15 +18,116 @@ c_can_change_files_cg     C can change/delete files of CG
 """
 
 from __future__ import division, absolute_import, print_function, unicode_literals
+from collections import OrderedDict
 from django.db import connection
+from django.utils import six
+from django.utils.translation import ugettext_lazy as _
+
+MEMBER         =     1 # 'm'ember
+INVITED        =     2 # 'i'nvited
+DECLINED       =     4 # 'd'eclined invitation
+OPERATOR       =     8 # 'o'pertor
+VIEWER         =    16 # 'v'iewer
+SEE_CG         =    32 # 'e'xistance
+CHANGE_CG      =    64 # 'E'
+SEE_MEMBERS    =   128 # 'c'ontent
+CHANGE_MEMBERS =   256 # 'C'
+VIEW_FIELDS    =   512 # 'f'ields
+WRITE_FIELDS   =  1024 # 'F'
+VIEW_NEWS      =  2048 # 'n'ews
+WRITE_NEWS     =  4096 # 'N'
+VIEW_FILES     =  8192 # 'u'ploaded
+WRITE_FILES    = 16384 # 'U'
+VIEW_MSGS      = 32768 # 'x'ternal messages
+WRITE_MSGS     = 65536 # 'X'
+
+# That information contains:
+# int value (see above)
+# character letter value, kinda human friendly
+# human friendly text, sometimes used in forms field names
+# dependency: 'u':'e' means viewing files implies viewing group existence
+# conflicts: 'F':'f' means can't write to fields unless can read them too
+__cig_flag_info__ = (
+    (MEMBER, 'm', '', 'id', _('Member')),
+    (INVITED, 'i', '', 'md', _('Invited')),
+    (DECLINED, 'd', '', 'mi', _('Declined')),
+    (OPERATOR, 'o', 'veEcCfFnNuUxX', '', _('Operator')),
+    (VIEWER, 'v', 'ecfnux', '', _('Viewer')),
+    (SEE_CG, 'e', '', '', _('Can see group exists')),
+    (CHANGE_CG, 'E', 'e', '', _('Can change group')),
+    (SEE_MEMBERS, 'c', 'e', '', _('Can see members')),
+    (CHANGE_MEMBERS, 'C', 'ec', '', _('Can change members')),
+    (VIEW_FIELDS, 'f', 'e', '', _('Can view fields')),
+    (WRITE_FIELDS, 'F', 'ef', '', _('Can write fields')),
+    (VIEW_NEWS, 'n', 'e', '', _('Can view news')),
+    (WRITE_NEWS, 'N', 'en', '', _('Can write news')),
+    (VIEW_FILES, 'u', 'e', '', _('Can view uploaded files')),
+    (WRITE_FILES, 'U', 'eu', '', _('Can upload files')),
+    (VIEW_MSGS, 'x', 'e', '', _('Can view messages')),
+    (WRITE_MSGS, 'X', 'ex', '', _('Can write messages')),
+)
+
+ADMIN_ALL = (
+    OPERATOR | VIEWER
+    | SEE_CG | CHANGE_CG
+    | SEE_MEMBERS | CHANGE_MEMBERS
+    | VIEW_FIELDS | WRITE_FIELDS
+    | VIEW_NEWS | WRITE_NEWS
+    | VIEW_FILES | WRITE_FILES
+    | VIEW_MSGS | WRITE_MSGS)
+
+FLAGTOINT = OrderedDict()  # dict for quick translation 1 letter -> int
+FLAGTOTEXT = OrderedDict()  # dict for quick translation 1 letter -> txt
+FLAGDEPENDS = {}  # flag dependencies
+FLAGCONFLICTS = {}
+
+def __initialise_cigflags_constants():
+    if FLAGTOINT:
+        print('Warning flags were already initialized')
+        return # already initialized
+    for intval, code, requires, conflicts, text in __cig_flag_info__:
+        FLAGTOINT[code] = intval
+        FLAGTOTEXT[code] = text
+        FLAGDEPENDS[code] = requires
+        FLAGCONFLICTS[code] = conflicts
+
+    for intval, code, txt, requires, conflicts in __cig_flag_info__:
+        print ('+%s => +%s-%s' % (
+            code, FLAGDEPENDS[code], FLAGCONFLICTS[code]))
+
+# This is run on module loading:
+__initialise_cigflags_constants()
 
 
-def c_flags_cg_int(cid, gid):
+def int_to_flags(intflags):
+    '''
+    Converts a membership / permission interger such as MEMBER|SEE_CG|CHANGE_CG
+    into a flag strig such as 'meE'
+    '''
+    result = ''
+    for flag, intflag in six.iteritems(FLAGTOINT):
+        if intflags & intflag:
+            result += flag
+    return result
+
+
+def cig_flags_int(cid, gid):
     '''
     Return the integer value of flags (midoveE...)
     '''
     cursor = connection.cursor()
     cursor.execute("SELECT cig_flags(%s, %s)", [cid, gid])
+    row = cursor.fetchone()
+    return row[0]
+
+
+def cig_flags_direct_int(cid, gid):
+    '''
+    Return the integer value of flags (midoveE...) without inheritance.
+    Returns 0 if contact_in_group doesn't exists
+    '''
+    cursor = connection.cursor()
+    cursor.execute("SELECT cig_flags_direct(%s, %s)", [cid, gid])
     row = cursor.fetchone()
     return row[0]
 

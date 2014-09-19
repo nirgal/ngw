@@ -21,7 +21,6 @@ from django import forms
 from django.contrib import messages
 from ngw.core.models import (
     FIELD_EMAIL,
-    CIGFLAG_MEMBER, CIGFLAG_INVITED, CIGFLAG_DECLINED,
     Contact, ContactMsg, ContactInGroup)
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
@@ -289,16 +288,20 @@ class MessageDetailView(InGroupAcl, DetailView):
         context['active_submenu'] = 'messages'
 
         try:
+            #flags = perms.cig_flags_int(
+            #    self.object.contact.id,
+            #    cg.id)
             cig = ContactInGroup.objects.get(
                 contact_id=self.object.contact.id,
                 group_id=cg.id)
-            if cig.flags & CIGFLAG_MEMBER:
+            flags = cig.flags
+            if flags & perms.MEMBER:
                 membership = 'member'
                 membership_str = _('Member')
-            elif cig.flags & CIGFLAG_INVITED:
+            elif flags & perms.INVITED:
                 membership = 'invited'
                 membership_str = _('Invited')
-            elif cig.flags & CIGFLAG_DECLINED:
+            elif flags & perms.DECLINED:
                 membership = 'declined'
                 membership_str = _('Declined invitation')
             else:
