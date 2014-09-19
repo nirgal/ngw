@@ -42,31 +42,73 @@ WRITE_FILES    = 16384 # 'U'
 VIEW_MSGS      = 32768 # 'x'ternal messages
 WRITE_MSGS     = 65536 # 'X'
 
+
+FLAGTOINT = OrderedDict()  # dict for translation 1 letter -> int
+FLAGTOTEXT = OrderedDict()  # dict for translation 1 letter -> txt
+FLAGDEPENDS = OrderedDict()  # flag dependencies
+FLAGCONFLICTS = OrderedDict()
+FLAGGROUPLABEL = OrderedDict()  # dict for translation 1 letter -> group label
+FLAGGROUPHELP = OrderedDict()  # dict for translation 1 letter -> group label
+
+def _register_flag(intval, code, requires, conflicts, text, group_label, group_help):
+    FLAGTOINT[code] = intval
+    FLAGTOTEXT[code] = text
+    FLAGGROUPLABEL[code] = group_label
+    FLAGGROUPHELP[code] = group_help
+    FLAGDEPENDS[code] = requires
+    FLAGCONFLICTS[code] = conflicts
+
 # That information contains:
 # int value (see above)
 # character letter value, kinda human friendly
 # human friendly text, sometimes used in forms field names
 # dependency: 'u':'e' means viewing files implies viewing group existence
 # conflicts: 'F':'f' means can't write to fields unless can read them too
-__cig_flag_info__ = (
-    (MEMBER, 'm', '', 'id', _('Member')),
-    (INVITED, 'i', '', 'md', _('Invited')),
-    (DECLINED, 'd', '', 'mi', _('Declined')),
-    (OPERATOR, 'o', 'veEcCfFnNuUxX', '', _('Operator')),
-    (VIEWER, 'v', 'ecfnux', '', _('Viewer')),
-    (SEE_CG, 'e', '', '', _('Can see group exists')),
-    (CHANGE_CG, 'E', 'e', '', _('Can change group')),
-    (SEE_MEMBERS, 'c', 'e', '', _('Can see members')),
-    (CHANGE_MEMBERS, 'C', 'ec', '', _('Can change members')),
-    (VIEW_FIELDS, 'f', 'e', '', _('Can view fields')),
-    (WRITE_FIELDS, 'F', 'ef', '', _('Can write fields')),
-    (VIEW_NEWS, 'n', 'e', '', _('Can view news')),
-    (WRITE_NEWS, 'N', 'en', '', _('Can write news')),
-    (VIEW_FILES, 'u', 'e', '', _('Can view uploaded files')),
-    (WRITE_FILES, 'U', 'eu', '', _('Can upload files')),
-    (VIEW_MSGS, 'x', 'e', '', _('Can view messages')),
-    (WRITE_MSGS, 'X', 'ex', '', _('Can write messages')),
-)
+_register_flag(MEMBER, 'm', '', 'id', _('Member'), None, None)
+_register_flag(INVITED, 'i', '', 'md', _('Invited'), None, None)
+_register_flag(DECLINED, 'd', '', 'mi', _('Declined'), None, None)
+_register_flag(OPERATOR, 'o', 'veEcCfFnNuUxX', '', _('Operator'),
+    _('Operator groups'),
+    _('Members of these groups will automatically be granted administrative priviledges.'))
+_register_flag(VIEWER, 'v', 'ecfnux', '', _('Viewer'),
+    _('Viewer groups'),
+    _("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."))
+_register_flag(SEE_CG, 'e', '', '', _('Can see group exists'),
+    _('Existence seer groups'),
+    _('Members of these groups will automatically be granted priviledge to know that current group exists.'))
+_register_flag(CHANGE_CG, 'E', 'e', '', _('Can change group'),
+    _('Editor groups'),
+    _('Members of these groups will automatically be granted priviledge to change/delete the current group.'))
+_register_flag(SEE_MEMBERS, 'c', 'e', '', _('Can see members'),
+    _('Members seer groups'),
+    _('Members of these groups will automatically be granted priviledge to see the list of members.'))
+_register_flag(CHANGE_MEMBERS, 'C', 'ec', '', _('Can change members'),
+    _('Members changing groups'),
+    _('Members of these groups will automatically be granted permission to change members of current group.'))
+_register_flag(VIEW_FIELDS, 'f', 'e', '', _('Can view fields'),
+    _('Fields viewer groups'),
+    _('Members of these groups will automatically be granted permission to read the fields associated to current group.'))
+_register_flag(WRITE_FIELDS, 'F', 'ef', '', _('Can write fields'),
+    _('Fields writer groups'),
+    _('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'))
+_register_flag(VIEW_NEWS, 'n', 'e', '', _('Can view news'),
+    _('News viewer groups'),
+    _('Members of these groups will automatically be granted permisson to read news of current group.'))
+_register_flag(WRITE_NEWS, 'N', 'en', '', _('Can write news'),
+    _('News writer groups'),
+    _('Members of these groups will automatically be granted permission to write news in that group.'))
+_register_flag(VIEW_FILES, 'u', 'e', '', _('Can view uploaded files'),
+    _('File viewer groups'),
+    _('Members of these groups will automatically be granted permission to view uploaded files in that group.'))
+_register_flag(WRITE_FILES, 'U', 'eu', '', _('Can upload files'),
+    _('File uploader groups'),
+    _('Members of these groups will automatically be granted permission to upload files.'))
+_register_flag(VIEW_MSGS, 'x', 'e', '', _('Can view messages'),
+    _('Message viewer groups'),
+    _('Members of these groups will automatically be granted permission to view messages in that group.'))
+_register_flag(WRITE_MSGS, 'X', 'ex', '', _('Can write messages'),
+    _('Message sender groups'),
+    _('Members of these groups will automatically be granted permission to send messages.'))
 
 ADMIN_ALL = (
     OPERATOR | VIEWER
@@ -76,28 +118,6 @@ ADMIN_ALL = (
     | VIEW_NEWS | WRITE_NEWS
     | VIEW_FILES | WRITE_FILES
     | VIEW_MSGS | WRITE_MSGS)
-
-FLAGTOINT = OrderedDict()  # dict for quick translation 1 letter -> int
-FLAGTOTEXT = OrderedDict()  # dict for quick translation 1 letter -> txt
-FLAGDEPENDS = {}  # flag dependencies
-FLAGCONFLICTS = {}
-
-def __initialise_cigflags_constants():
-    if FLAGTOINT:
-        print('Warning flags were already initialized')
-        return # already initialized
-    for intval, code, requires, conflicts, text in __cig_flag_info__:
-        FLAGTOINT[code] = intval
-        FLAGTOTEXT[code] = text
-        FLAGDEPENDS[code] = requires
-        FLAGCONFLICTS[code] = conflicts
-
-    #for intval, code, txt, requires, conflicts in __cig_flag_info__:
-    #    print ('+%s => +%s-%s' % (
-    #        code, FLAGDEPENDS[code], FLAGCONFLICTS[code]))
-
-# This is run on module loading:
-__initialise_cigflags_constants()
 
 
 def int_to_flags(intflags):

@@ -594,14 +594,20 @@ class Contact(NgwModel):
 @python_2_unicode_compatible
 class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    field_group = models.BooleanField(default=False)
-    date = models.DateField(null=True, blank=True)
-    budget_code = models.CharField(max_length=10)
-    system = models.BooleanField(default=False)
-    mailman_address = models.CharField(max_length=255, blank=True)
-    sticky = models.BooleanField(default=False)
+    name = models.CharField(_('Name'), max_length=255)
+    description = models.TextField(_('Description'), blank=True)
+    field_group = models.BooleanField(
+        _('Field group'), default=False,
+        help_text=_('Does that group yield specific fields to its members?'))
+    date = models.DateField(_('Date'), null=True, blank=True)
+    budget_code = models.CharField(_('Budget code'), max_length=10, blank=True)
+    system = models.BooleanField(_('System locked'), default=False)
+    mailman_address = models.CharField(
+        _('Mailman address'), max_length=255, blank=True,
+        help_text=_('Mailing list address, if the group is linked to a mailing list.'))
+    sticky = models.BooleanField(
+        ('Sticky'), default=False,
+        help_text=_('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
     #direct_supergroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none1+')
     #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')
     class Meta:

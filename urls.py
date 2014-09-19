@@ -13,7 +13,7 @@ admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
@@ -25,9 +25,9 @@ from ngw.core.views.contactsearch import ContactSearchColumnsView, ContactSearch
 
 # These patterns are valid with both /contactgroups and /events prefixes
 groups_urlpatterns = patterns('',
-    url(r'^add$', 'ngw.core.views.groups.contactgroup_edit', {'id': None}),
+    url(r'^add$', GroupCreateView.as_view()),
     url(r'^(?P<gid>\d+)/$', ContactGroupView.as_view()),
-    url(r'^(?P<id>\d+)/edit$', 'ngw.core.views.groups.contactgroup_edit'),
+    url(r'^(?P<gid>\d+)/edit$', GroupEditView.as_view()),
     url(r'^(?P<id>\d+)/delete$', 'ngw.core.views.groups.contactgroup_delete'),
     url(r'^(?P<gid>\d+)/members/$', GroupMemberListView.as_view(), name='group_members'),
     url(r'^(?P<gid>\d+)/members/send_message$', SendMessageView.as_view()),

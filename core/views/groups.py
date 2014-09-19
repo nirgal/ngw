@@ -18,7 +18,8 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import View, TemplateView, FormView
+from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
+from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER_NGW,
@@ -84,14 +85,14 @@ def get_UContactGroup(userid):
 
 class ContactGroupListView(NgwUserAcl, NgwListView):
     cols = [
-        ( _('Name'), None, 'name', 'name' ),
-        ( _('Description'), None, 'description_not_too_long', 'description' ),
-        #( _('Contact fields'), None, 'rendered_fields', 'field_group' ),
-        ( _('Super groups'), None, 'visible_direct_supergroups_5', None ),
-        ( _('Sub groups'), None, 'visible_direct_subgroups_5', None ),
-        #( _('Budget\u00a0code'), None, 'budget_code', 'budget_code' ),
-        #( _('Members'), None, 'visible_member_count', None ),
-        #( _('System\u00a0locked'), None, 'system', 'system' ),
+        (_('Name'), None, 'name', 'name'),
+        (_('Description'), None, 'description_not_too_long', 'description'),
+        #(_('Contact fields'), None, 'rendered_fields', 'field_group'),
+        (_('Super groups'), None, 'visible_direct_supergroups_5', None),
+        (_('Sub groups'), None, 'visible_direct_subgroups_5', None),
+        #(_('Budget\u00a0code'), None, 'budget_code', 'budget_code'),
+        #(_('Members'), None, 'visible_member_count', None),
+        #(_('System\u00a0locked'), None, 'system', 'system'),
     ]
 
     def get_root_queryset(self):
@@ -480,229 +481,192 @@ class GroupAddManyView(InGroupAcl, FormView):
 #
 #######################################################################
 
-class ContactGroupForm(forms.Form):
-    name = forms.CharField(label=_('Name'),
-        max_length=255)
-    description = forms.CharField(label=_('Description'),
-        required=False, widget=forms.Textarea)
-    date = forms.DateField(label=_('Date'),
-        required=False,
-        help_text=_('Leave empty for permanent groups.'), widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
-    budget_code = forms.CharField(label=_('Budget code'),
-        required=False, max_length=10)
-    sticky = forms.BooleanField(label=_('Sticky'),
-        required=False,
-        help_text=_('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
-    field_group = forms.BooleanField(label=_('Field group'),
-        required=False,
-        help_text=_('Does that group yield specific fields to its members?'))
-    mailman_address = forms.CharField(label=_('Mailman address'),
-        required=False, max_length=255,
-        help_text=_('Mailing list address, if the group is linked to a mailing list.'))
-    direct_supergroups = forms.MultipleChoiceField(label=_('Direct supergroups'),
-        required=False,
-        help_text=_('Members will automatically be granted membership in these groups.'), widget=FilterMultipleSelectWidget('groups', False))
+class ContactGroupForm(forms.ModelForm):
+    class Meta:
+        model = ContactGroup
+        fields = ['name', 'description', 'date', 'budget_code', 'sticky', 'field_group',
+            'mailman_address']
+        widgets = {
+            'date': NgwCalendarWidget(attrs={'class':'vDateField'}),
+        }
 
-    admin_o_groups = forms.MultipleChoiceField(label=_('Operator groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted administrative priviledges.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_v_groups = forms.MultipleChoiceField(label=_('Viewer groups'),
-        required=False,
-        help_text=_("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_e_groups = forms.MultipleChoiceField(label=_('Existence seer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted priviledge to know that current group exists.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_E_groups = forms.MultipleChoiceField(label=_('Editor groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted priviledge to change/delete the current group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_c_groups = forms.MultipleChoiceField(label=_('Members seer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted priviledge to see the list of members.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_C_groups = forms.MultipleChoiceField(label=_('Members changing groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permission to change members of current group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_f_groups = forms.MultipleChoiceField(label=_('Fields viewer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permission to read the fields associated to current group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_F_groups = forms.MultipleChoiceField(label=_('Fields writer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_n_groups = forms.MultipleChoiceField(label=_('News viewer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permisson to read news of current group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_N_groups = forms.MultipleChoiceField(label=_('News writer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permission to write news in that group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_u_groups = forms.MultipleChoiceField(label=_('File viewer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permission to view uploaded files in that group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_U_groups = forms.MultipleChoiceField(label=_('File uploader groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permission to upload files.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_x_groups = forms.MultipleChoiceField(label=_('Message viewer groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permission to view messages in that group.'),
-        widget=FilterMultipleSelectWidget('groups', False))
-    admin_X_groups = forms.MultipleChoiceField(label=_('Message sender groups'),
-        required=False,
-        help_text=_('Members of these groups will automatically be granted permission to send messages.'),
-        widget=FilterMultipleSelectWidget('groups', False))
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        self.user = user
+        instance = kwargs.get('instance', None)
 
-    def __init__(self, for_user, *args, **kargs):
-        super(ContactGroupForm, self).__init__(*args, **kargs)
-        visible_groups_choices = [(g.id, g.name_with_date()) for g in ContactGroup.objects.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % for_user]).order_by('-date', 'name')]
-        self.fields['direct_supergroups'].choices = visible_groups_choices
+        super(ContactGroupForm, self).__init__(*args, **kwargs)
+
+        # Only show visible groups
+        visible_groups_choices = [
+            (g.id, g.name_with_date())
+            for g in ContactGroup.objects.extra(
+                where=['perm_c_can_see_cg(%s, contact_group.id)' % user.id]
+                ).order_by('-date', 'name')]
+
+        # Super groups
+        if instance:
+            field_initial = instance.get_visible_direct_supergroups_ids(user.id)
+        else:
+            field_initial = None
+        self.fields['direct_supergroups'] = forms.MultipleChoiceField(
+            label=_('Direct supergroups'),
+            required=False,
+            help_text=_('Members will automatically be granted membership in these groups.'),
+            widget=FilterMultipleSelectWidget('groups', False),
+            choices = visible_groups_choices,
+            initial = field_initial)
+
+        # Add fields for kind of permissions
         for flag in 'oveEcCfFnNuUxX':
             field_name = 'admin_%s_groups' % flag
-            self.fields[field_name].choices = visible_groups_choices
-
-
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_edit(request, id):
-    id = id and int(id) or None
-    objtype = ContactGroup
-    if id:
-        cg = get_object_or_404(ContactGroup, pk=id)
-        if not perms.c_can_change_cg(request.user.id, id):
-            raise PermissionDenied
-        title = _('Editing %s') % cg.name_with_date()
-    else:
-        title = _('Adding a new %s') % objtype.get_class_verbose_name()
-
-    if request.method == 'POST':
-        form = ContactGroupForm(request.user.id, request.POST)
-        if form.is_valid():
-            # record the values
-
-            data = form.clean()
-            if not id:
-                cg = ContactGroup()
-            cg.name = data['name']
-            cg.description = data['description']
-            cg.field_group = data['field_group']
-            cg.sticky = data['sticky']
-            cg.date = data['date']
-            cg.budget_code = data['budget_code']
-            cg.mailman_address = data['mailman_address']
-            cg.save()
-
-            # Update the super groups
-            old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(request.user.id))
-            new_direct_supergroups_id = set([int(i) for i in data['direct_supergroups']])
-            if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
-                new_direct_supergroups_id = {GROUP_EVERYBODY}
-
-            supergroup_added = new_direct_supergroups_id - old_direct_supergroups_ids
-            supergroup_removed = old_direct_supergroups_ids - new_direct_supergroups_id
-
-            print('supergroup_added=', supergroup_added)
-            print('supergroup_removed=', supergroup_removed)
-            for sgid in supergroup_added:
-                GroupInGroup(father_id=sgid, subgroup_id=cg.id).save()
-            for sgid in supergroup_removed:
-                GroupInGroup.objects.get(father_id=sgid, subgroup_id=cg.id).delete()
-
-            # Update the administrative groups
-            for flag in 'oveEcCfFnNuUxX':
-                field_name = 'admin_%s_groups' % flag
+            if instance:
                 intflag = perms.FLAGTOINT[flag]
-                old_groups_ids = set(cg.get_visible_mananger_groups_ids(request.user.id, intflag))
-                new_groups_ids = set([int(ogid) for ogid in data[field_name]])
-                groups_added = new_groups_ids - old_groups_ids
-                groups_removed = old_groups_ids - new_groups_ids
-                print('flag', flag, 'groups_added=', groups_added)
-                print('flag', flag, 'groups_removed=', groups_removed)
-                if id and (groups_added or groups_removed) and not perms.c_operatorof_cg(request.user.id, id):
-                    # Only operators can change permissions
-                    raise PermissionDenied
-                for ogid in groups_added:
-                    try:
-                        gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
-                    except GroupManageGroup.DoesNotExist:
-                        gmg = GroupManageGroup(father_id=ogid, subgroup_id=cg.id, flags=0)
-                    gmg.flags |= intflag
-                    gmg.save()
-                for ogid in groups_removed:
-                    gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
-                    gmg.flags &= ~ intflag
-                    if gmg.flags:
-                        gmg.save()
-                    else:
-                        gmg.delete()
-
-            messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.name_with_date())
-
-            cg.check_static_folder_created()
-            Contact.check_login_created(request) # subgroups change
-
-            if request.POST.get('_continue', None):
-                return HttpResponseRedirect(cg.get_absolute_url() + 'edit')
-            elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(cg.get_class_absolute_url() + 'add')
+                field_initial = instance.get_visible_mananger_groups_ids(user.id, intflag)
             else:
+                if flag == 'o':
+                    default_group_id = user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
+                    assert default_group_id, "User doesn't have a default group"
+                    field_initial = int(default_group_id),
+                else:
+                    field_initial = None
+            self.fields[field_name] = forms.MultipleChoiceField(
+                label=perms.FLAGGROUPLABEL[flag],
+                required=False,
+                help_text=perms.FLAGGROUPHELP[flag],
+                widget=FilterMultipleSelectWidget('groups', False),
+                choices = visible_groups_choices,
+                initial = field_initial)
+
+    def save(self):
+        is_creation = self.instance.pk is None
+        data = self.cleaned_data
+
+        # Save the base fields
+        cg = super(ContactGroupForm, self).save()
+
+        # Update the super groups
+        old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(self.user.id))
+        new_direct_supergroups_id = set([int(i) for i in data['direct_supergroups']])
+        if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
+            new_direct_supergroups_id = {GROUP_EVERYBODY}
+
+        supergroup_added = new_direct_supergroups_id - old_direct_supergroups_ids
+        supergroup_removed = old_direct_supergroups_ids - new_direct_supergroups_id
+
+        print('supergroup_added=', supergroup_added)
+        print('supergroup_removed=', supergroup_removed)
+        for sgid in supergroup_added:
+            GroupInGroup(father_id=sgid, subgroup_id=cg.id).save()
+        for sgid in supergroup_removed:
+            GroupInGroup.objects.get(father_id=sgid, subgroup_id=cg.id).delete()
+
+        # Update the administrative groups
+        for flag in 'oveEcCfFnNuUxX':
+            field_name = 'admin_%s_groups' % flag
+            intflag = perms.FLAGTOINT[flag]
+            old_groups_ids = set(cg.get_visible_mananger_groups_ids(self.user.id, intflag))
+            new_groups_ids = set([int(ogid) for ogid in data[field_name]])
+            groups_added = new_groups_ids - old_groups_ids
+            groups_removed = old_groups_ids - new_groups_ids
+            print('flag', flag, 'groups_added=', groups_added)
+            print('flag', flag, 'groups_removed=', groups_removed)
+            if not is_creation and (groups_added or groups_removed) and not perms.c_operatorof_cg(self.user.id, cg.id):
+                # Only operators can change permissions
+                raise PermissionDenied
+            for ogid in groups_added:
+                try:
+                    gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
+                except GroupManageGroup.DoesNotExist:
+                    gmg = GroupManageGroup(father_id=ogid, subgroup_id=cg.id, flags=0)
+                gmg.flags |= intflag
+                gmg.save()
+            for ogid in groups_removed:
+                gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
+                gmg.flags &= ~ intflag
+                if gmg.flags:
+                    gmg.save()
+                else:
+                    gmg.delete()
+
+        return cg
+
+
+class GroupEditMixin(ModelFormMixin):
+    template_name = 'edit.html'
+    form_class = ContactGroupForm
+    model = ContactGroup
+    pk_url_kwarg = 'gid'
+
+    def get_form_kwargs(self):
+        kwargs = super(GroupEditMixin, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        request = self.request
+        cg = form.save()
+
+        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.name_with_date())
+
+        cg.check_static_folder_created()
+        Contact.check_login_created(request) # subgroups change
+
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(cg.get_absolute_url() + 'edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(cg.get_class_absolute_url() + 'add')
+        else:
                 return HttpResponseRedirect(cg.get_absolute_url())
 
-    else: # GET
-        if id:
-            initialdata = {
-                'name': cg.name,
-                'description': cg.description,
-                'field_group': cg.field_group,
-                'sticky': cg.sticky,
-                'date': cg.date,
-                'budget_code': cg.budget_code,
-                'mailman_address': cg.mailman_address,
-                'direct_supergroups': cg.get_visible_direct_supergroups_ids(request.user.id),
-            }
-            for flag in 'ovveEcCfFnNuUxX':
-                field_name = 'admin_%s_groups' % flag
-                intflag = perms.FLAGTOINT[flag]
-                initialdata[field_name] = cg.get_visible_mananger_groups_ids(request.user.id, intflag)
-        else: # add new one
-            default_group_id = request.user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
-            if not default_group_id:
-                messages.add_message(request, messages.WARNING,
-                    _('You must define a default group before you can create a group.'))
-                return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
-            default_group_id = int(default_group_id)
-            if not request.user.is_member_of(default_group_id):
-                messages.add_message(request, messages.WARNING,
-                    _('You no longer are member of your default group. Please define a new default group.'))
-                return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
-            if not perms.c_can_see_cg(request.user.id, default_group_id):
-                messages.add_message(request, messages.WARNING,
-                    _('You no longer are authorized to see your default group. Please define a new default group.'))
-                return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
-            initialdata = {
-                'admin_o_groups': (default_group_id,)}
-        form = ContactGroupForm(request.user.id, initial=initialdata)
-    context = {}
-    context['title'] = title
-    context['id'] = id
-    context['objtype'] = objtype
-    context['form'] = form
-    if id:
-        context['object'] = cg
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('edit', _('edit')))
-    else:
-        context['nav'] = Navbar(ContactGroup.get_class_navcomponent()) \
-                         .add_component(('add', _('add')))
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            title = _('Editing %s') % self.object.name_with_date()
+            id = self.object.id
+        else:
+            title = _('Adding a new %s') % ContactGroup.get_class_verbose_name()
+            id = None
 
-    return render_to_response('edit.html', context, RequestContext(request))
+        context['title'] = title
+        context['id'] = id
+        context['objtype'] = ContactGroup
+
+        if id:
+            context['nav'] = self.object.get_smart_navbar() \
+                             .add_component(('edit', _('edit')))
+        else:
+            context['nav'] = Navbar(ContactGroup.get_class_navcomponent()) \
+                             .add_component(('add', _('add')))
+
+        context.update(kwargs)
+        return super(GroupEditMixin, self).get_context_data(**context)
+
+
+class GroupEditView(InGroupAcl, GroupEditMixin, UpdateView):
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_change_cg(user.id, group.id):
+            raise PermissionDenied
+
+
+class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
+    def get(self, request, *args, **kwargs):
+        default_group_id = request.user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
+        if not default_group_id:
+            messages.add_message(request, messages.WARNING,
+                _('You must define a default group before you can create a group.'))
+            return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+        default_group_id = int(default_group_id)
+        if not request.user.is_member_of(default_group_id):
+            messages.add_message(request, messages.WARNING,
+                _('You no longer are member of your default group. Please define a new default group.'))
+            return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+        if not perms.c_can_see_cg(request.user.id, default_group_id):
+            messages.add_message(request, messages.WARNING,
+                _('You no longer are authorized to see your default group. Please define a new default group.'))
+            return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+
+        return super(GroupCreateView, self).get(request, *args, **kwargs)
 
 
 #######################################################################

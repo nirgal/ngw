@@ -1367,7 +1367,7 @@ msgstr ""
 
 #: views/groups.py:526
 msgid "Members seer groups"
-msgstr "Groupes observateurs"
+msgstr "Groupes voyant les membres"
 
 #: views/groups.py:528
 msgid ""
@@ -1493,7 +1493,7 @@ msgstr "Le groupe %s a été modifié avec succès!"
 #: views/groups.py:682
 msgid "You must define a default group before you can create a group."
 msgstr ""
-"Vous devez définir un group par défaut avant de pouvoir créer un groupe."
+"Vous devez définir un groupe par défaut avant de pouvoir créer un groupe."
 
 #: views/groups.py:687
 msgid ""
