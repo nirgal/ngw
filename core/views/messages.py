@@ -287,29 +287,18 @@ class MessageDetailView(InGroupAcl, DetailView):
         context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + force_text(self.object.contact_id)
         context['active_submenu'] = 'messages'
 
-        try:
-            #flags = perms.cig_flags_int(
-            #    self.object.contact.id,
-            #    cg.id)
-            cig = ContactInGroup.objects.get(
-                contact_id=self.object.contact.id,
-                group_id=cg.id)
-            flags = cig.flags
-            if flags & perms.MEMBER:
-                membership = 'member'
-                membership_str = _('Member')
-            elif flags & perms.INVITED:
-                membership = 'invited'
-                membership_str = _('Invited')
-            elif flags & perms.DECLINED:
-                membership = 'declined'
-                membership_str = _('Declined invitation')
-            else:
-                membership = ''
-                membership_str = _('Nil')
-        except ContactInGroup.DoesNotExist:
+        flags = perms.cig_flags_int(self.object.contact.id, cg.id)
+        flags_direct = perms.cig_flags_direct_int(self.object.contact.id, cg.id)
+
+        membership_str =  perms.int_to_text(flags_direct, flags & ~flags_direct)
+        if flags_direct & perms.MEMBER:
+            membership = 'member'
+        elif flags_direct & perms.INVITED:
+            membership = 'invited'
+        elif flags_direct & perms.DECLINED:
+            membership = 'declined'
+        else:
             membership = ''
-            membership_str = _('Nil')
         context['membership'] = membership
         context['membership_str'] = membership_str
         context['membership_title'] = _('%(contactname)s in group %(groupname)s') % {

@@ -63,11 +63,6 @@ FTYPE_PASSWORD = 'PASSWORD'
 
 
 def membership_to_text(contact_with_extra_fields, group_id):
-    debug_memberships = False
-    automatic_member_indicator = '⁂'
-    automatic_admin_indicator = '⁑'
-
-    memberships = []
     flags = getattr(contact_with_extra_fields, 'group_%s_flags' % group_id)
     if flags is None:
         flags = 0
@@ -78,54 +73,10 @@ def membership_to_text(contact_with_extra_fields, group_id):
     if flags_ainherited is None:
         flags_ainherited = 0
 
-    if debug_memberships:
-        # That version show everything, even when obvious like
-        # Inherited member + member
-        for code in 'midoveEcCfFnNuUxX':
-            if flags & perms.FLAGTOINT[code]:
-                nice_perm = perms.FLAGTOTEXT[code]
-                memberships.append(nice_perm)
-        for code in 'mid':
-            if flags_inherited & perms.FLAGTOINT[code]:
-                nice_perm = perms.FLAGTOTEXT[code]
-                memberships.append(nice_perm + ' ' + automatic_member_indicator)
-        for code in 'oveEcCfFnNuUxX':
-            if flags_ainherited & perms.FLAGTOINT[code]:
-                nice_perm = perms.FLAGTOTEXT[code]
-                memberships.append(nice_perm + ' ' + automatic_admin_indicator)
-    else:
-        if flags & perms.MEMBER:
-            memberships.append(_("Member"))
-        elif flags_inherited & perms.MEMBER:
-            memberships.append(_("Member") + " " + automatic_member_indicator)
-        elif flags & perms.INVITED:
-            memberships.append(_("Invited"))
-        elif flags_inherited & perms.INVITED:
-            memberships.append(_("Invited") + " " + automatic_member_indicator)
-        elif flags & perms.DECLINED:
-            memberships.append(_("Declined"))
+    return perms.int_to_text(
+        flags,
+        (flags_inherited & ~perms.ADMIN_ALL) | (flags_ainherited & perms.ADMIN_ALL))
 
-        for code in 'ovEcCfFnNuUexX':
-            if flags & perms.FLAGTOINT[code]:
-                nice_perm = perms.FLAGTOTEXT[code]
-                memberships.append(nice_perm)
-                if code == 'o':
-                    break # Don't show more details then
-            elif flags_ainherited & perms.FLAGTOINT[code]:
-                nice_perm = perms.FLAGTOTEXT[code]
-                memberships.append(nice_perm + ' ' + automatic_admin_indicator)
-                if code == 'o':
-                    break # Don't show more details then
-
-    if memberships:
-        result = ''
-        for membership in memberships:
-            if result:
-                result = translation.string_concat(result, ', ')
-            result = translation.string_concat(result, membership)
-        return result
-    else:
-        return _('Nil')
 
 def membership_to_text_factory(group_id):
     return lambda contact_with_extra_fields: \

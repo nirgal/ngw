@@ -21,6 +21,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from collections import OrderedDict
 from django.db import connection
 from django.utils import six
+from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 
 MEMBER         =     1 # 'm'ember
@@ -91,9 +92,9 @@ def __initialise_cigflags_constants():
         FLAGDEPENDS[code] = requires
         FLAGCONFLICTS[code] = conflicts
 
-    for intval, code, txt, requires, conflicts in __cig_flag_info__:
-        print ('+%s => +%s-%s' % (
-            code, FLAGDEPENDS[code], FLAGCONFLICTS[code]))
+    #for intval, code, txt, requires, conflicts in __cig_flag_info__:
+    #    print ('+%s => +%s-%s' % (
+    #        code, FLAGDEPENDS[code], FLAGCONFLICTS[code]))
 
 # This is run on module loading:
 __initialise_cigflags_constants()
@@ -101,14 +102,66 @@ __initialise_cigflags_constants()
 
 def int_to_flags(intflags):
     '''
-    Converts a membership / permission interger such as MEMBER|SEE_CG|CHANGE_CG
-    into a flag strig such as 'meE'
+    Converts a membership / permission integer such as MEMBER|SEE_CG|CHANGE_CG
+    into a flag string such as 'meE'
     '''
     result = ''
     for flag, intflag in six.iteritems(FLAGTOINT):
         if intflags & intflag:
             result += flag
     return result
+
+
+def int_to_text(flags, inherited_flags):
+    '''
+    Converts a membership / permission integers such as MEMBER|SEE_CG|CHANGE_CG
+    into a string such as "Member, Can see group exists, Can change group"
+    '''
+    debug_memberships = False
+    automatic_member_indicator = '⁂'
+    automatic_admin_indicator = '⁑'
+
+    memberships = []
+    if debug_memberships:
+        # That version show everything, even when obvious like
+        # Inherited member + member
+        for code in 'midoveEcCfFnNuUxX':
+            if flags & FLAGTOINT[code]:
+                nice_perm = FLAGTOTEXT[code]
+                memberships.append(nice_perm)
+        for code in 'mid':
+            if inherited_flags & FLAGTOINT[code]:
+                nice_perm = FLAGTOTEXT[code]
+                memberships.append(nice_perm + ' ' + automatic_member_indicator)
+        for code in 'oveEcCfFnNuUxX':
+            if inherited_flags & FLAGTOINT[code]:
+                nice_perm = FLAGTOTEXT[code]
+                memberships.append(nice_perm + ' ' + automatic_admin_indicator)
+    else:
+        if flags & MEMBER:
+            memberships.append(_("Member"))
+        elif inherited_flags & MEMBER:
+            memberships.append(_("Member") + " " + automatic_member_indicator)
+        elif flags & INVITED:
+            memberships.append(_("Invited"))
+        elif inherited_flags & INVITED:
+            memberships.append(_("Invited") + " " + automatic_member_indicator)
+        elif flags & DECLINED:
+            memberships.append(_("Declined"))
+
+        for code in 'ovEcCfFnNuUexX':
+            if flags & FLAGTOINT[code]:
+                nice_perm = FLAGTOTEXT[code]
+                memberships.append(nice_perm)
+                if code == 'o':
+                    break # Don't show more details then
+            elif inherited_flags & FLAGTOINT[code]:
+                nice_perm = FLAGTOTEXT[code]
+                memberships.append(nice_perm + ' ' + automatic_admin_indicator)
+                if code == 'o':
+                    break # Don't show more details then
+
+    return ', '.join([force_text(membership) for membership in memberships]) or _('Nil')
 
 
 def cig_flags_int(cid, gid):
