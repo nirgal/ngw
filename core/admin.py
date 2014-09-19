@@ -27,13 +27,13 @@ admin.site.register(ContactGroup, ContactGroupAdmin)
 class ChoiceAdminInLine(admin.TabularInline):
     model = Choice
 class ChoiceGroupAdmin(admin.ModelAdmin):
-    list_display = 'name', 'choices'
+    list_display = 'name', 'ordered_choices'
     inlines = [ChoiceAdminInLine]
 admin.site.register(ChoiceGroup, ChoiceGroupAdmin)
 
 
 class ContactGroupNewsAdmin(admin.ModelAdmin):
-    list_display = 'title', 'date', 'author'
+    list_display = 'title', 'date', 'author', 'contact_group'
 admin.site.register(ContactGroupNews, ContactGroupNewsAdmin)
 
 class ContactFieldAdmin(admin.ModelAdmin):
