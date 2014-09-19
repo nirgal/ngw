@@ -242,6 +242,7 @@ function submit_fields() {
         p = document.getElementById('mainform');
         savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
     }
+    $('#field_selection_widget').removeAttr('data-dirty'); // ignore the fact user filled in widget
     document.forms['mainform'].submit();
     return false;
 }

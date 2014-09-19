@@ -5,8 +5,6 @@ When adding someone in a group, check supergroups permission to add members.
 Or just allow supergroup inherited...
 TBD
 
-Remove the "you are leaving that page" warning on column choice change.
-
 Onetime refuses the message when it's too far in the future: Prevent that from happenning
 
 
