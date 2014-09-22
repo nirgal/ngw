@@ -12,7 +12,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactVcardView
+from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactVcardView, PasswordView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
@@ -35,7 +35,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/$', ContactDetailView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$', ContactVcardView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
-    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass'),
+    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass$', PasswordView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass_letter$', 'ngw.core.views.contacts.contact_pass_letter'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membership$', 'ngw.core.views.groups.contactingroup_edit'),
@@ -76,7 +76,6 @@ urlpatterns = patterns('',
     url(r'^logs$', LogListView.as_view(), name='log_list'),
 
     url(r'^contacts/$', ContactListView.as_view(), name='contact_list'),
-    #url(r'^contacts/add$', 'ngw.core.views.contacts.contact_edit', {'gid':None, 'cid':None}),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', ContactSearchColumnsView.as_view()),
     url(r'^contacts/ajaxsearch/custom/user$', ContactSearchCustomFiltersView.as_view()),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', ContactSearchColumnFiltersView.as_view()),
@@ -86,7 +85,7 @@ urlpatterns = patterns('',
 
     url(r'^contacts/(?P<cid>\d+)/$', ContactDetailView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
-    url(r'^contacts/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass', {'gid': None}, name='contact_pass'),
+    url(r'^contacts/(?P<cid>\d+)/pass$', PasswordView.as_view(), name='contact_pass'),
     url(r'^contacts/(?P<cid>\d+)/pass_letter$', 'ngw.core.views.contacts.contact_pass_letter', {'gid': None}),
     url(r'^contacts/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete', {'gid': None}),
     url(r'^contacts/(?P<cid>\d+)/vcard$', ContactVcardView.as_view()),

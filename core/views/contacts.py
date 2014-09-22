@@ -783,7 +783,10 @@ class ContactCreateView(InGroupAcl, ContactEditMixin, CreateView):
 #######################################################################
 
 
-class ContactPasswordForm(forms.Form):
+class ContactPasswordForm(forms.ModelForm):
+    class Meta:
+        model = Contact
+        fields = []
     new_password = forms.CharField(widget=forms.PasswordInput())
     confirm_password = forms.CharField(widget=forms.PasswordInput())
 
@@ -794,51 +797,62 @@ class ContactPasswordForm(forms.Form):
         try:
             crack.FascistCheck(self.cleaned_data.get('new_password', ''))
         except ValueError as err:
-            raise forms.ValidationError(err.message)
+            raise forms.ValidationError("%s" % err)
 
         return self.cleaned_data
 
+    def save(self, request):
+        data = self.cleaned_data
+        self.instance.set_password(data['new_password'], request=request)
+        return self.instance
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_pass(request, gid=None, cid=None):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
-        raise PermissionDenied
-    contact = get_object_or_404(Contact, pk=cid)
-    context = {}
-    context['title'] = _('Change password')
-    context['contact'] = contact
-    if request.method == 'POST':
-        form = ContactPasswordForm(request.POST)
-        if form.is_valid():
-            # record the value
-            password = form.clean()['new_password']
-            contact.set_password(password, request=request)
-            messages.add_message(request, messages.SUCCESS, _('Password has been changed sucessfully!'))
-            if gid:
-                cg = get_object_or_404(ContactGroup, pk=gid)
-                return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + force_text(cid) + '/')
-            else:
-                return HttpResponseRedirect(reverse('contact_detail', args=(cid,)))
-    else: # GET
-        form = ContactPasswordForm()
-    context['form'] = form
-    if gid:
-        cg = get_object_or_404(ContactGroup, pk=gid)
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('members', _('members')))
-    else:
-        context['nav'] = Navbar(Contact.get_class_navcomponent())
-    context['nav'].add_component(contact.get_navcomponent()) \
-                  .add_component(('password', _('password')))
-    try:
-        context['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
-        # So here the 'reset by letter' button will be enabled
-    except AttributeError:
-        pass # it's ok not to have a letter
-    return render_to_response('password.html', context, RequestContext(request))
+
+class PasswordView(InGroupAcl, UpdateView):
+    '''
+    User change password
+    '''
+
+    is_group_required = False
+    template_name = 'password.html'
+    form_class = ContactPasswordForm
+    model = Contact
+    pk_url_kwarg = 'cid'
+
+    def check_perm_groupuser(self, group, user):
+        if user.id == user.id:
+            return  # Ok for oneself
+        if not perms.c_can_write_fields_cg(user.id, GROUP_USER):
+            raise PermissionDenied
+
+    def form_valid(self, form):
+        contact = form.save(self.request)
+        messages.add_message(
+            self.request, messages.SUCCESS,
+            _('Password has been changed sucessfully!'))
+        if self.contactgroup:
+            return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + force_text(cid) + '/')
+        else:
+            return HttpResponseRedirect(contact.get_absolute_url())
+
+    def get_context_data(self, **kwargs):
+        contact = self.object
+        context = {}
+        context['title'] = _('Change password')
+        context['contact'] = contact
+        if self.contactgroup:
+            context['nav'] = self.contactgroup.get_smart_navbar() \
+                             .add_component(('members', _('members')))
+        else:
+            context['nav'] = Navbar(Contact.get_class_navcomponent())
+        context['nav'].add_component(contact.get_navcomponent()) \
+                      .add_component(('password', _('password')))
+        try:
+            context['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
+            # So here the 'reset by letter' button will be enabled
+        except AttributeError:
+            pass # it's ok not to have a letter
+        context.update(kwargs)
+        return super(PasswordView, self).get_context_data(**context)
 
 
 #######################################################################

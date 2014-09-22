@@ -521,6 +521,7 @@ class Contact(NgwModel):
                 self.set_fieldvalue(request, FIELD_PASSWORD_STATUS, '1') # Generated
         else:
             self.set_fieldvalue(request, FIELD_PASSWORD_STATUS, new_password_status)
+        self.save()
 
 
     @staticmethod
