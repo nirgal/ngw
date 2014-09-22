@@ -21,6 +21,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
+from django.views.generic import View
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
@@ -34,7 +35,7 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import NgwUserAcl, generic_delete, NgwListView
+from ngw.core.views.generic import NgwUserAcl, InGroupAcl, generic_delete, NgwListView
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 
 from django.db.models.query import RawQuerySet, sql
@@ -542,27 +543,34 @@ def contact_detail(request, gid=None, cid=None):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_vcard(request, gid=None, cid=None):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if cid == request.user.id:
-        # The user can see himself
-        pass
-    elif gid != None and perms.c_can_see_members_cg(request.user.id, gid):
-        pass
-    elif gid != None and perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
-        pass
-    else:
-        raise PermissionDenied
+class ContactVcardView(InGroupAcl, View):
+    '''
+    Returns vcf file for specified user
+    '''
 
-    # TODO: We should also check the specific fields (email, address, phone,
-    # ...) are readable by user
+    is_group_required = False
 
-    contact = get_object_or_404(Contact, pk=cid)
-    return HttpResponse(contact.vcard(), content_type='text/x-vcard')
+    def check_perm_groupuser(self, group, user):
+        cid = int(self.kwargs['cid'])
+        if self.contactgroup:
+            if not perms.c_can_see_members_cg(user.id, group.id):
+                raise PermissionDenied
+        else:  # No group specified
+            if cid == user.id:
+                # The user can see himself
+                pass
+            elif perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
+                pass
+            else:
+                raise PermissionDenied
 
+    def get(self, request, *args, **kwargs):
+        # TODO: We should also check the specific fields (email, address, phone,
+        # ...) are readable by user
+
+        cid = int(self.kwargs['cid'])
+        contact = get_object_or_404(Contact, pk=cid)
+        return HttpResponse(contact.vcard(), content_type='text/x-vcard')
 
 
 #######################################################################

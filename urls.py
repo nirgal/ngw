@@ -12,7 +12,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView
+from ngw.core.views.contacts import ContactListView, ContactVcardView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
@@ -33,7 +33,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/send_message$', SendMessageView.as_view()),
     url(r'^(?P<gid>\d+)/members/add$', 'ngw.core.views.contacts.contact_edit', {'cid':None}),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/$', 'ngw.core.views.contacts.contact_detail'),
-    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$', 'ngw.core.views.contacts.contact_vcard'),
+    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$', ContactVcardView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/edit$', 'ngw.core.views.contacts.contact_edit'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass_letter$', 'ngw.core.views.contacts.contact_pass_letter'),
@@ -89,7 +89,7 @@ urlpatterns = patterns('',
     url(r'^contacts/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass', {'gid': None}, name='contact_pass'),
     url(r'^contacts/(?P<cid>\d+)/pass_letter$', 'ngw.core.views.contacts.contact_pass_letter', {'gid': None}),
     url(r'^contacts/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete', {'gid': None}),
-    url(r'^contacts/(?P<cid>\d+)/vcard$', 'ngw.core.views.contacts.contact_vcard'),
+    url(r'^contacts/(?P<cid>\d+)/vcard$', ContactVcardView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/filters/$', 'ngw.core.views.contacts.contact_filters_list', name='filter_list'),
     url(r'^contacts/(?P<cid>\d+)/filters/add$', 'ngw.core.views.contacts.contact_filters_add', name='filter_list'),
     url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/$', 'ngw.core.views.contacts.contact_filters_edit', name='filter_edit'),

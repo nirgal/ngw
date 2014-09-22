@@ -66,22 +66,30 @@ class InGroupAcl(ContextMixin):
     Views using that mixin must define a "gid" url pattern.
     Mixin will setup a self.contactgroup and set up context.
     '''
+
+    # Class whose gid parameter is optionnal should set is_group_required to
+    # False.
+    is_group_required = True
+
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
     def dispatch(self, request, *args, **kwargs):
         group_id = self.kwargs.get('gid', None)
-        try:
-            group_id = int(group_id)
-        except (ValueError, TypeError):
-            raise Http404
-        contactgroup = get_object_or_404(ContactGroup, pk=group_id)
-        self.contactgroup = contactgroup
-        self.check_perm_groupuser(contactgroup, request.user)
+        if group_id:
+            try:
+                group_id = int(group_id)
+            except (ValueError, TypeError):
+                raise Http404
+            group = get_object_or_404(ContactGroup, pk=group_id)
+        else:
+            group = None
+        self.contactgroup = group
+        self.check_perm_groupuser(group, request.user)
         return super(InGroupAcl, self).dispatch(request, *args, **kwargs)
 
     def check_perm_groupuser(self, group, user):
         '''
-        That function give the opportunity to specialise clas to add extra
+        That function give the opportunity to specialise class to add extra
         permission checks.
         '''
 
@@ -89,7 +97,8 @@ class InGroupAcl(ContextMixin):
         cg = self.contactgroup
         context = {}
         context['cg'] = cg
-        context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
+        if cg:
+            context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
         context.update(kwargs)
         return super(InGroupAcl, self).get_context_data(**context)
 

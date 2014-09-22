@@ -28,11 +28,9 @@ Make a nice MultiWidget for flags for use in GroupAddManyView & contactingroup_e
 Fix perms: can_read_msg => can see members (?)
 
 Complete migration to class based views:
-- groups.contactgroup_delete
 - contacts.contact_edit
 - contacts.hook_change_password
 - contacts.contact_detail
-- contacts.contact_vcard
 - contacts.contact_pass
 - contacts.contact_pass_letter
 - contacts.contact_delete
@@ -42,6 +40,7 @@ Complete migration to class based views:
 - contacts.contact_filters_edit
 - contacts.contact_filters_delete
 - contacts.contact_default_group
+- groups.contactgroup_delete
 - groups.contactingroup_edit
 - groups.contactingroup_edit_inline
 - groups.contactingroup_delete
@@ -58,7 +57,9 @@ Support Image contactfields
 
 Event selection widget (Do not load everything at once, like for column selection)
 
-Global search widget (top right) should send to /contacts/ ? But what about the add_to button ?
+Add add_to action to groupless contact list
+
+Global search widget (top right) should send to /contacts/
 
 Files handling:
 - Improve display (mimetype, size, ...)
