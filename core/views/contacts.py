@@ -21,7 +21,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import View
+from django.views.generic import View, TemplateView
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
@@ -493,47 +493,55 @@ class ContactListView(NgwUserAcl, BaseContactListView):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_detail(request, gid=None, cid=None):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if gid:
-        cg = get_object_or_404(ContactGroup, pk=gid)
-        if not perms.c_can_see_members_cg(request.user.id, gid):
-            raise PermissionDenied
-    else:
-        # gid is undefined: access through global contact list
-        if cid != request.user.id and not perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
-            raise PermissionDenied
-    c = get_object_or_404(Contact, pk=cid)
+class ContactDetailView(InGroupAcl, TemplateView):
+    is_group_required = False
+    template_name = 'contact_detail.html'
 
-    rows = []
-    for cf in c.get_all_visible_fields(request.user.id):
-        try:
-            cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
-            rows.append((cf.name, mark_safe(cfv.as_html())))
-        except ContactFieldValue.DoesNotExist:
-            pass # ignore blank values
+    def check_perm_groupuser(self, group, user):
+        cid = int(self.kwargs['cid'])
+        if self.contactgroup:
+            if not perms.c_can_see_members_cg(user.id, group.id):
+                raise PermissionDenied
+        else:  # No group specified
+            if cid == user.id:
+                # The user can see himself
+                pass
+            elif perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
+                pass
+            else:
+                raise PermissionDenied
 
-    context = {}
-    context['title'] = _('Details for %s') % force_text(c)
-    if gid:
-        #context['title'] += ' in group '+cg.name_with_date()
-        context['cg'] = cg
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('members', _('members')))
-        context['cg_perms'] = cg.get_contact_perms(request.user.id)
-        context['active_submenu'] = 'members'
-    else:
-        context['nav'] = Navbar(Contact.get_class_navcomponent())
-    context['nav'].add_component(c.get_navcomponent())
-    context['objtype'] = Contact
-    context['contact'] = c
-    context['rows'] = rows
-    context['group_user_perms'] = ContactGroup.objects.get(pk=GROUP_USER).get_contact_perms(request.user.id)
-    context['group_user_ngw_perms'] = ContactGroup.objects.get(pk=GROUP_USER_NGW).get_contact_perms(request.user.id)
-    return render_to_response('contact_detail.html', context, RequestContext(request))
+    def get_context_data(self, **kwargs):
+        cid = int(self.kwargs['cid'])
+        contact = get_object_or_404(Contact, pk=cid)
+
+        rows = []
+        for cf in contact.get_all_visible_fields(self.request.user.id):
+            try:
+                cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
+                rows.append((cf.name, mark_safe(cfv.as_html())))
+            except ContactFieldValue.DoesNotExist:
+                pass # ignore blank values
+
+        context = {}
+        context['title'] = _('Details for %s') % contact
+        cg = self.contactgroup
+        if cg:
+            #context['title'] += ' in group '+cg.name_with_date()
+            context['nav'] = cg.get_smart_navbar() \
+                             .add_component(('members', _('members')))
+            context['active_submenu'] = 'members'
+        else:
+            context['nav'] = Navbar(Contact.get_class_navcomponent())
+        context['nav'].add_component(contact.get_navcomponent())
+        context['objtype'] = Contact
+        context['contact'] = contact
+        context['rows'] = rows
+        context['group_user_perms'] = ContactGroup.objects.get(pk=GROUP_USER).get_contact_perms(self.request.user.id)
+        context['group_user_ngw_perms'] = ContactGroup.objects.get(pk=GROUP_USER_NGW).get_contact_perms(self.request.user.id)
+
+        context.update(kwargs)
+        return super(ContactDetailView, self).get_context_data(**context)
 
 
 #######################################################################
