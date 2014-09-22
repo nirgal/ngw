@@ -11,6 +11,8 @@ register = template.Library()
 
 @register.filter
 def nav_is_active(navbar, tabname):
+    if navbar == '': # Undefined
+        return ''
     if len(navbar.components) < 2:
         activetab = ''
     else:

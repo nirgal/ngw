@@ -47,8 +47,6 @@
                 </div>
                 {% endif %}
             </div>
-            {% endif %}
-            {% if nav %}
             <div id=tabs style="clear:both;">
                 <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
                 <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
