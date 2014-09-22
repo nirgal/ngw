@@ -76,7 +76,7 @@ urlpatterns = patterns('',
     url(r'^logs$', LogListView.as_view(), name='log_list'),
 
     url(r'^contacts/$', ContactListView.as_view(), name='contact_list'),
-    url(r'^contacts/add$', 'ngw.core.views.contacts.contact_edit', {'gid':None, 'cid':None}),
+    #url(r'^contacts/add$', 'ngw.core.views.contacts.contact_edit', {'gid':None, 'cid':None}),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', ContactSearchColumnsView.as_view()),
     url(r'^contacts/ajaxsearch/custom/user$', ContactSearchCustomFiltersView.as_view()),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', ContactSearchColumnFiltersView.as_view()),
