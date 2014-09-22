@@ -12,7 +12,6 @@ from django.core.exceptions import PermissionDenied
 from django.http import (
     CompatibleStreamingHttpResponse, HttpResponse, HttpResponseRedirect)
 from django.utils.safestring import mark_safe
-from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.six import iteritems
@@ -21,7 +20,8 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import View, TemplateView
+from django.views.generic import View, TemplateView, UpdateView, CreateView
+from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
@@ -588,22 +588,32 @@ class ContactVcardView(InGroupAcl, View):
 #######################################################################
 
 
-class ContactEditForm(forms.Form):
-    def __init__(self, user_id, cid=None, contactgroup=None, *args, **kargs):
-        # Note that user_id is the id of the contact making the query, not the
-        # one beeing edited
-        super(ContactEditForm, self).__init__(*args, **kargs)
+class ContactEditForm(forms.ModelForm):
+    class Meta:
+        model = Contact
+        fields = ['name']
 
-        if perms.c_can_write_fields_cg(user_id, GROUP_EVERYBODY):
-            self.fields['name'] = forms.CharField(label=_('Name'))
-        if cid:
-            contact = get_object_or_404(Contact, pk=cid)
-            cfields = contact.get_all_writable_fields(user_id)
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance', None)
+        contactgroup = kwargs.pop('contactgroup')
+        user = kwargs.pop('user')  # contact making the query, not the edited one
+        super(ContactEditForm, self).__init__(*args, **kwargs)
+
+        if instance:
+            cid = instance.id
+        else:
+            cid = None
+        self.contactgroup = contactgroup
+
+        if not perms.c_can_write_fields_cg(user.id, GROUP_EVERYBODY):
+            del self.fields['name'] # = forms.CharField(label=_('Name'))
+        if instance:
+            cfields = instance.get_all_writable_fields(user.id)
             # Here we have all the writable fields, including the one from
             # other groups that the user can see
         elif contactgroup:
             contactgroupids = [g.id for g in contactgroup.get_self_and_supergroups()]
-            cfields = ContactField.objects.filter(contact_group_id__in=contactgroupids).extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight')
+            cfields = ContactField.objects.filter(contact_group_id__in=contactgroupids).extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user.id]).order_by('sort_weight')
             # Here we have the fields from contact_group and all its super
             # groups, IF user can write to them
         else: # FIXME
@@ -612,168 +622,158 @@ class ContactEditForm(forms.Form):
         # store dbfields
         self.cfields = cfields
 
-        # Add all extra forms.fields from ContactFields
         for cf in cfields:
             f = cf.get_form_fields()
             if f:
+                try:
+                    cfv = ContactFieldValue.objects.get(contact=instance, contact_field=cf)
+                    f.initial = cf.db_value_to_formfield_value(cfv.value)
+                except ContactFieldValue.DoesNotExist:
+                    initial = cf.default
+                    if cf.type == FTYPE_DATE and initial == 'today':
+                        initial = date.today()
+                    f.initial = initial
                 self.fields[force_text(cf.id)] = f
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_edit(request, gid=None, cid=None):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if gid: # edit/add in a group
-        if not perms.c_can_see_members_cg(request.user.id, gid):
-            raise PermissionDenied
-        cg = get_object_or_404(ContactGroup, pk=gid)
-    else: # edit out of a group
-        if request.user.id == cid:
-            # Everybody can edit his own data
-            pass
-        elif not perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
-            raise PermissionDenied
-        cg = None
+    def save(self, request):
+        is_creation = self.instance.pk is None
 
-    if cid: # edit existing contact
-        cid = int(cid)
-    else: # record a new contact
-        assert gid, 'Missing required parameter gid' # FIXME: remove from urls.py
+        contact = super(ContactEditForm, self).save()
+        data = self.cleaned_data
 
-    objtype = Contact
-    if cid:
-        contact = get_object_or_404(Contact, pk=cid)
-        title = _('Editing %s') % force_text(contact)
-    else:
-        title = _('Adding a new %s') % objtype.get_class_verbose_name()
+        # 1/ The contact name
 
-    if request.method == 'POST':
-        form = ContactEditForm(request.user.id, cid=cid, data=request.POST, contactgroup=cg)
-        # TODO: New forms system, when bound to a models, should provide a save() method
-        if form.is_valid():
-            data = form.clean()
-            #print('saving', repr(form.data))
+        if is_creation:
+            if not perms.c_can_write_fields_cg(request.user.id, GROUP_EVERYBODY):
+                # If user can't write name, we have a problem creating a new contact
+                raise PermissionDenied
 
-            # record the values
+            log = Log(contact_id=request.user.id)
+            log.action = LOG_ACTION_ADD
+            log.target = 'Contact ' + force_text(contact.id)
+            log.target_repr = 'Contact ' + contact.name
+            log.save()
 
-            # 1/ The contact name
-            if cid:
-                if perms.c_can_write_fields_cg(request.user.id, GROUP_EVERYBODY):
-                    if contact.name != data['name']:
-                        log = Log(contact_id=request.user.id)
-                        log.action = LOG_ACTION_CHANGE
-                        log.target = 'Contact ' + force_text(contact.id)
-                        log.target_repr = 'Contact ' + contact.name
-                        log.property = 'Name'
-                        log.property_repr = 'Name'
-                        log.change = 'change from ' + contact.name + ' to ' + data['name']
-                        log.save()
+            log = Log(contact_id=request.user.id)
+            log.action = LOG_ACTION_CHANGE
+            log.target = 'Contact ' + force_text(contact.id)
+            log.target_repr = 'Contact ' + contact.name
+            log.property = 'Name'
+            log.property_repr = 'Name'
+            log.change = 'new value is ' + contact.name
+            log = Log(request.user.id)
 
-                    contact.name = data['name']
-                    contact.save()
-
-            else:
-                if not perms.c_can_write_fields_cg(request.user.id, GROUP_EVERYBODY):
-                    # If user can't write name, we have a problem creating a new contact
-                    raise PermissionDenied
-                contact = Contact(name=data['name'])
-                contact.save()
-
-                log = Log(contact_id=request.user.id)
-                log.action = LOG_ACTION_ADD
-                log.target = 'Contact ' + force_text(contact.id)
-                log.target_repr = 'Contact ' + contact.name
-                log.save()
-
-                log = Log(contact_id=request.user.id)
-                log.action = LOG_ACTION_CHANGE
-                log.target = 'Contact ' + force_text(contact.id)
-                log.target_repr = 'Contact ' + contact.name
-                log.property = 'Name'
-                log.property_repr = 'Name'
-                log.change = 'new value is ' + contact.name
-                log = Log(request.user.id)
-
-                cig = ContactInGroup(contact_id=contact.id, group_id=gid)
-                cig.flags = perms.MEMBER
-                cig.save()
-                # TODO: Log new cig
-                # TODO: Check can add members in super groups
-
-
-            # 2/ In ContactFields
-            for cf in form.cfields:
-                if cf.type == FTYPE_PASSWORD:
-                    continue
-                #cfname = cf.name
-                cfid = cf.id
-                newvalue = data[force_text(cfid)]
-                if newvalue != None:
-                    newvalue = cf.formfield_value_to_db_value(newvalue)
-                contact.set_fieldvalue(request, cf, newvalue)
-
-            messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved sucessfully!') % contact.name)
-
-            if cg:
-                base_url = cg.get_absolute_url() + 'members/' + force_text(contact.id) + '/'
-            else:
-                base_url = contact.get_class_absolute_url() + force_text(contact.id) + '/'
-
-            if request.POST.get('_continue', None):
-                return HttpResponseRedirect(base_url + 'edit')
-            elif request.POST.get('_addanother', None):
-                return HttpResponseRedirect(base_url + '../add')
-            elif perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
-                return HttpResponseRedirect(base_url)
-            else:
-                return HttpResponseRedirect('/')
-
-        # else add/update failed validation
-    else: # GET /  HEAD
-        initialdata = {}
-        if cid: # modify existing
-            initialdata['name'] = contact.name
-
-            for cfv in contact.values.all():
-                cf = cfv.contact_field
-                if cf.type != FTYPE_PASSWORD:
-                    initialdata[force_text(cf.id)] = cf.db_value_to_formfield_value(cfv.value)
-            form = ContactEditForm(request.user.id, cid=cid, initial=initialdata, contactgroup=cg)
-
+            cig = ContactInGroup(contact_id=contact.id, group_id=self.contactgroup.id)
+            cig.flags = perms.MEMBER
+            cig.save()
+            # TODO: Log new cig
+            # TODO: Check can add members in super groups
         else:
-            for cf in ContactField.objects.all():
-                if cf.default:
-                    if cf.type == FTYPE_DATE and cf.default == 'today':
-                        initialdata[force_text(cf.id)] = date.today()
-                    else:
-                        initialdata[force_text(cf.id)] = cf.db_value_to_formfield_value(cf.default)
+            if perms.c_can_write_fields_cg(request.user.id, GROUP_EVERYBODY):
+                if contact.name != data['name']:
+                    log = Log(contact_id=request.user.id)
+                    log.action = LOG_ACTION_CHANGE
+                    log.target = 'Contact ' + force_text(contact.id)
+                    log.target_repr = 'Contact ' + contact.name
+                    log.property = 'Name'
+                    log.property_repr = 'Name'
+                    log.change = 'change from ' + contact.name + ' to ' + data['name']
+                    log.save()
 
-            if cg:
-                initialdata['groups'] = [cg.id]
-                form = ContactEditForm(request.user.id, cid=cid, initial=initialdata, contactgroup=cg)
+        # 2/ In ContactFields
+        for cf in self.cfields:
+            if cf.type == FTYPE_PASSWORD:
+                continue
+            #cfname = cf.name
+            newvalue = data[force_text(cf.id)]
+            if newvalue != None:
+                newvalue = cf.formfield_value_to_db_value(newvalue)
+            contact.set_fieldvalue(request, cf, newvalue)
+
+        return contact
+
+
+class ContactEditMixin(ModelFormMixin):
+    template_name = 'edit.html'
+    form_class = ContactEditForm
+    model = Contact
+    pk_url_kwarg = 'cid'
+
+    def check_perm_groupuser(self, group, user):
+        if group:
+            if not perms.c_can_change_members_cg(user.id, group.id):
+                raise PermissionDenied
+        else:
+            cid = int(self.kwargs['cid'])  # ok to crash if create & no group
+            if cid == user.id:
+                # The user can change himself
+                pass
+            elif perms.c_can_change_members_cg(user.id, GROUP_EVERYBODY):
+                pass
             else:
-                form = ContactEditForm(request.user.id, cid=cid)
+                raise PermissionDenied
 
-    context = {}
-    context['form'] = form
-    context['title'] = title
-    context['id'] = cid
-    context['objtype'] = objtype
-    if gid:
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('members', _('members')))
-    else:
-        context['nav'] = Navbar(Contact.get_class_navcomponent())
-    if cid:
-        context['nav'].add_component(contact.get_navcomponent()) \
-                      .add_component(('edit', _('edit')))
-    else:
-        context['nav'].add_component(('add', _('add')))
-    if cid:
-        context['object'] = contact
+    def get_form_kwargs(self):
+        kwargs = super(ContactEditMixin, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['contactgroup'] = self.contactgroup
+        return kwargs
 
-    return render_to_response('edit.html', context, RequestContext(request))
+    def form_valid(self, form):
+        request = self.request
+        contact = form.save(request)
+        cg = self.contactgroup
+
+        messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved sucessfully!') % contact.name)
+
+        if cg:
+            base_url = cg.get_absolute_url() + 'members/' + force_text(contact.id) + '/'
+        else:
+            base_url = contact.get_class_absolute_url() + force_text(contact.id) + '/'
+
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(base_url + 'edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '../add')
+        elif perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
+            return HttpResponseRedirect(base_url)
+        else:
+            return HttpResponseRedirect('/')
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            title = _('Editing %s') % self.object
+            id = self.object.id
+        else:
+            title = _('Adding a new %s') % Contact.get_class_verbose_name()
+            id = None
+        context['title'] = title
+        context['id'] = id
+        context['objtype'] = Contact
+        if self.contactgroup:
+            context['nav'] = self.contactgroup.get_smart_navbar() \
+                             .add_component(('members', _('members')))
+        else:
+            context['nav'] = Navbar(Contact.get_class_navcomponent())
+
+        if id:
+            context['nav'].add_component(self.object.get_navcomponent()) \
+                          .add_component(('edit', _('edit')))
+        else:
+            context['nav'].add_component(('add', _('add')))
+
+        context.update(kwargs)
+        return super(ContactEditMixin, self).get_context_data(**context)
+
+
+class ContactEditView(InGroupAcl, ContactEditMixin, UpdateView):
+    pass
+
+
+class ContactCreateView(InGroupAcl, ContactEditMixin, CreateView):
+    pass
 
 
 #######################################################################

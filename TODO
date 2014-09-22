@@ -28,12 +28,10 @@ Make a nice MultiWidget for flags for use in GroupAddManyView & contactingroup_e
 Fix perms: can_read_msg => can see members (?)
 
 Complete migration to class based views:
-- contacts.contact_edit
 - contacts.hook_change_password
 - contacts.contact_pass
 - contacts.contact_pass_letter
 - contacts.contact_delete
-- contacts.contact_pass_letter
 - contacts.contact_filters_list
 - contacts.contact_filters_add
 - contacts.contact_filters_edit

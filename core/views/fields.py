@@ -210,8 +210,7 @@ class FieldEditMixin(ModelFormMixin):
 
     def form_valid(self, form):
         request = self.request
-        form.save()
-        cf = self.object
+        cf = form.save()
 
         messages.add_message(request, messages.SUCCESS, _('Field %s has been saved sucessfully.') % cf.name)
         if request.POST.get('_continue', None):
@@ -232,7 +231,7 @@ class FieldEditMixin(ModelFormMixin):
         context['title'] = title
         context['id'] = id
         context['objtype'] = ChoiceGroup
-        context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
+        context['nav'] = Navbar(ContactField.get_class_navcomponent())
         if id:
             context['nav'].add_component(self.object.get_navcomponent()) \
                           .add_component(('edit', _('edit')))

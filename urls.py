@@ -12,7 +12,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactVcardView
+from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactVcardView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
@@ -31,10 +31,10 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<id>\d+)/delete$', 'ngw.core.views.groups.contactgroup_delete'),
     url(r'^(?P<gid>\d+)/members/$', GroupMemberListView.as_view(), name='group_members'),
     url(r'^(?P<gid>\d+)/members/send_message$', SendMessageView.as_view()),
-    url(r'^(?P<gid>\d+)/members/add$', 'ngw.core.views.contacts.contact_edit', {'cid':None}),
+    url(r'^(?P<gid>\d+)/members/add$', ContactCreateView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/$', ContactDetailView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$', ContactVcardView.as_view()),
-    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/edit$', 'ngw.core.views.contacts.contact_edit'),
+    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass_letter$', 'ngw.core.views.contacts.contact_pass_letter'),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete'),
@@ -85,7 +85,7 @@ urlpatterns = patterns('',
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contacts.contact_make_login_mailing'),
 
     url(r'^contacts/(?P<cid>\d+)/$', ContactDetailView.as_view()),
-    url(r'^contacts/(?P<cid>\d+)/edit$', 'ngw.core.views.contacts.contact_edit'),
+    url(r'^contacts/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/pass$', 'ngw.core.views.contacts.contact_pass', {'gid': None}, name='contact_pass'),
     url(r'^contacts/(?P<cid>\d+)/pass_letter$', 'ngw.core.views.contacts.contact_pass_letter', {'gid': None}),
     url(r'^contacts/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete', {'gid': None}),
