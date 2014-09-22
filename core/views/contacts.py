@@ -20,7 +20,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import View, TemplateView, UpdateView, CreateView
+from django.views.generic import View, TemplateView, UpdateView, CreateView, DetailView
 from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
 from ngw.core.models import (
@@ -809,7 +809,7 @@ class ContactPasswordForm(forms.ModelForm):
 
 class PasswordView(InGroupAcl, UpdateView):
     '''
-    User change password
+    Change contact password
     '''
 
     is_group_required = False
@@ -880,27 +880,39 @@ def hook_change_password(request):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_pass_letter(request, gid=None, cid=None):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER):
-        raise PermissionDenied
-    contact = get_object_or_404(Contact, pk=cid)
-    context = {}
-    context['title'] = _('Generate a new password and print a letter')
-    context['contact'] = contact
-    if gid:
-        cg = get_object_or_404(ContactGroup, pk=gid)
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('members', _('members')))
-    else:
-        context['nav'] = Navbar(Contact.get_class_navcomponent())
-    context['nav'].add_component(contact.get_navcomponent()) \
-                  .add_component(('password letter', _('password letter')))
+class PassLetterView(InGroupAcl, DetailView):
+    '''
+    Reset the password and generate a ready to print pdf letter with it.
+    '''
+    is_group_required = False
+    model = Contact
+    pk_url_kwarg = 'cid'
+    template_name = 'password_letter.html'
 
-    if request.method == 'POST':
+    def check_perm_groupuser(self, group, user):
+        if user.id == user.id:
+            return  # Ok for oneself
+        if not perms.c_can_write_fields_cg(user.id, GROUP_USER):
+            raise PermissionDenied
+
+    def get_context_data(self, **kwargs):
+        contact = self.object
+        context = {}
+        context['title'] = _('Generate a new password and print a letter')
+        context['contact'] = contact
+        if self.contactgroup:
+            context['nav'] = self.contactgroup.get_smart_navbar() \
+                             .add_component(('members', _('members')))
+        else:
+            context['nav'] = Navbar(Contact.get_class_navcomponent())
+        context['nav'].add_component(contact.get_navcomponent()) \
+                  .add_component(('password letter', _('password letter')))
+        context.update(kwargs)
+        return super(PassLetterView, self).get_context_data(**context)
+
+    def post(self, request, *args, **kwargs):
+        contact = self.get_object()
+
         new_password = Contact.generate_password()
 
         # record the value
@@ -910,7 +922,7 @@ def contact_pass_letter(request, gid=None, cid=None):
         fields = {}
         for cf in contact.get_all_visible_fields(request.user.id):
             try:
-                cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
+                cfv = ContactFieldValue.objects.get(contact_id=contact.id, contact_field_id=cf.id)
             except ContactFieldValue.DoesNotExist:
                 continue
             fields[cf.name] = force_text(cfv).replace('\r', '')
@@ -927,7 +939,6 @@ def contact_pass_letter(request, gid=None, cid=None):
         response = CompatibleStreamingHttpResponse(open(fullpath, 'rb'), content_type='application/pdf')
         os.unlink(fullpath)
         return response
-    return render_to_response('password_letter.html', context, RequestContext(request))
 
 
 #######################################################################
