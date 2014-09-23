@@ -1144,59 +1144,75 @@ def contact_filters_delete(request, cid=None, fid=None):
 #######################################################################
 
 
-class DefaultGroupForm(forms.Form):
-    def __init__(self, contact, *args, **kargs):
-        super(DefaultGroupForm, self).__init__(*args, **kargs)
+class DefaultGroupForm(forms.ModelForm):
+    class Meta:
+        model = Contact
+        fields = []
+    def __init__(self, *args, **kwargs):
+        contact = kwargs.get('instance')
+        super(DefaultGroupForm, self).__init__(*args, **kwargs)
         available_groups = contact.get_allgroups_member().filter(date__isnull=True)
         choices = [('', _('Create new personnal group'))] + [(cg.id, cg.name) for cg in available_groups
             if not cg.date and perms.c_can_see_cg(contact.id, cg.id)]
-        self.fields['default_group'] = forms.ChoiceField(
-            label=_('Default group'), choices=choices, required=False)
-
-
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_default_group(request, cid=None):
-    cid = cid and int(cid) or None
-    contact = get_object_or_404(Contact, pk=cid)
-    if not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW) and cid != request.user.id:
-        raise PermissionDenied
-
-    if request.method == 'POST':
-        form = DefaultGroupForm(contact, request.POST)
-        if form.is_valid():
-            default_group = form.cleaned_data['default_group']
-            if not default_group:
-                cg = ContactGroup(
-                    name=_('Group of %s') % contact.name,
-                    description=_('This is the default group of %s') % contact.name,
-                    )
-                cg.save()
-                cg.check_static_folder_created()
-
-                cig = ContactInGroup(
-                    contact_id=cid,
-                    group_id=cg.id,
-                    flags=perms.MEMBER|perms.ADMIN_ALL,
-                    )
-                cig.save()
-                messages.add_message(request, messages.SUCCESS, _('Personnal group created.'))
-                default_group = str(cg.id)
-
-            contact.set_fieldvalue(request, FIELD_DEFAULT_GROUP, default_group)
-            messages.add_message(request, messages.SUCCESS, _('Default group has been changed sucessfully.'))
-            return HttpResponseRedirect(contact.get_absolute_url())
-    else:
         default_group = contact.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
-        form = DefaultGroupForm(contact, initial={'default_group': default_group})
-    context = {}
-    context['title'] = _('User default group')
-    context['contact'] = contact
-    context['form'] = form
-    context['nav'] = Navbar(Contact.get_class_navcomponent()) \
-                     .add_component(contact.get_navcomponent()) \
-                     .add_component(('default_group', _('default group')))
-    return render_to_response('contact_default_group.html', context, RequestContext(request))
+        self.fields['default_group'] = forms.ChoiceField(
+            label=_('Default group'), choices=choices, required=False,
+            initial=default_group)
+
+    def save(self, request):
+        default_group = self.cleaned_data['default_group']
+        contact = self.instance
+        if not default_group:
+            cg = ContactGroup(
+                name=_('Group of %s') % contact.name,
+                description=_('This is the default group of %s') % contact.name,
+                )
+            cg.save()
+            cg.check_static_folder_created()
+
+            cig = ContactInGroup(
+                contact=contact,
+                group_id=cg.id,
+                flags=perms.MEMBER|perms.ADMIN_ALL,
+                )
+            cig.save()
+            messages.add_message(request, messages.SUCCESS, _('Personnal group created.'))
+            default_group = str(cg.id)
+        contact.set_fieldvalue(request, FIELD_DEFAULT_GROUP, default_group)
+        return contact
+
+
+class DefaultGroupView(NgwUserAcl, UpdateView):
+    '''
+    Change the default group
+    '''
+    template_name = 'contact_default_group.html'
+    form_class = DefaultGroupForm
+    model = Contact
+    pk_url_kwarg = 'cid'
+
+    def check_perm_user(self, user):
+        if int(self.kwargs['cid']) == user.id:
+            return  # Ok for oneself
+        if not perms.c_can_write_fields_cg(user.id, GROUP_USER_NGW):
+            raise PermissionDenied
+
+    def form_valid(self, form):
+        contact = form.save(self.request)
+        messages.add_message(self.request, messages.SUCCESS, _('Default group has been changed sucessfully.'))
+        return HttpResponseRedirect(contact.get_absolute_url())
+
+    def get_context_data(self, **kwargs):
+        cid = int(self.kwargs['cid'])
+        contact = get_object_or_404(Contact, pk=cid)
+        context = {}
+        context['title'] = _('User default group')
+        context['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                         .add_component(contact.get_navcomponent()) \
+                         .add_component(('default_group', _('default group')))
+
+        context.update(kwargs)
+        return super(DefaultGroupView, self).get_context_data(**context)
 
 
 #######################################################################
