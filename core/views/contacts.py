@@ -1005,23 +1005,34 @@ def contact_filters_add(request, cid=None):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_filters_list(request, cid=None):
-    cid = cid and int(cid) or None
-    if cid != request.user.id and not perms.c_can_view_fields_cg(request.user.id, GROUP_USER_NGW):
-        raise PermissionDenied
-    contact = get_object_or_404(Contact, pk=cid)
-    filter_list = contact.get_customfilters()
-    filters = [filtername for filtername, filter_str in filter_list]
-    context = {}
-    context['title'] = _('User custom filters')
-    context['contact'] = contact
-    context['filters'] = filters
-    context['nav'] = Navbar(Contact.get_class_navcomponent()) \
-                     .add_component(contact.get_navcomponent()) \
-                     .add_component(('filters', _('custom filters')))
-    return render_to_response('filter_list.html', context, RequestContext(request))
+class FilterListView(InGroupAcl, TemplateView):
+    '''
+    List user custom filters
+    '''
+    is_group_required = False
+    template_name = 'filter_list.html'
+
+    def check_perm_groupuser(self, group, user):
+        if user.id == user.id:
+            return  # Ok for oneself
+        if not perms.c_can_view_fields_cg(user.id, GROUP_USER_NGW):
+            raise PermissionDenied
+
+    def get_context_data(self, **kwargs):
+        cid = int(self.kwargs['cid'])
+        contact = get_object_or_404(Contact, pk=cid)
+        filter_list = contact.get_customfilters()
+        filters = [filtername for filtername, filter_str in filter_list]
+        context = {}
+        context['title'] = _('User custom filters')
+        context['contact'] = contact
+        context['filters'] = filters
+        context['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                         .add_component(contact.get_navcomponent()) \
+                         .add_component(('filters', _('custom filters')))
+
+        context.update(kwargs)
+        return super(FilterListView, self).get_context_data(**context)
 
 
 #######################################################################
