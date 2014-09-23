@@ -454,7 +454,7 @@ class GroupAddManyView(InGroupAcl, FormView):
         cg = self.contactgroup
         context = {}
         ids = self.request.REQUEST['ids'].split(',')
-        context['title'] = _('Add %s contact(s) to a group' % len(ids))
+        context['title'] = _('Add %s contact(s) to a group') % len(ids)
         context['nav'] = cg.get_smart_navbar() \
             .add_component(('members', _('members'))) \
             .add_component(('add_contacts_to', _('add contacts to')))
