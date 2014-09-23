@@ -26,6 +26,7 @@ admin.site.register(ContactGroup, ContactGroupAdmin)
 
 class ChoiceAdminInLine(admin.TabularInline):
     model = Choice
+    fields = 'value', 'key'
 class ChoiceGroupAdmin(admin.ModelAdmin):
     list_display = 'name', 'ordered_choices'
     inlines = [ChoiceAdminInLine]

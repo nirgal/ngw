@@ -108,8 +108,8 @@ class ChoicesField(forms.MultiValueField):
 
 
 class ChoiceGroupForm(forms.Form):
-    name = forms.CharField(max_length=255)
-    sort_by_key = forms.BooleanField(required=False)
+    name = forms.CharField(label=_('Name'), max_length=255)
+    sort_by_key = forms.BooleanField(label=_('Sort by key'), required=False)
 
     def __init__(self, instance=None, *args, **kargs):
         forms.Form.__init__(self, *args, **kargs)
@@ -133,6 +133,7 @@ class ChoiceGroupForm(forms.Form):
             self.initial['possible_values'].append('')
             ndisplay += 1
         self.fields['possible_values'] = ChoicesField(
+            label=_('Possible values'),
             required=False,
             widget=ChoicesWidget(ndisplay=ndisplay),
             ndisplay=ndisplay)

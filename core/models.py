@@ -169,21 +169,22 @@ class Config(NgwModel):
 class Choice(NgwModel):
     oid = models.AutoField(primary_key=True)
     choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
-    key = models.CharField(max_length=255)
-    value = models.CharField(max_length=255)
+    key = models.CharField(_('Key'), max_length=255)
+    value = models.CharField(_('Value'), max_length=255)
     def __str__(self):
         return self.value
     class Meta:
         db_table = 'choice'
         verbose_name = _('choice')
         verbose_name_plural = _('choices')
+        unique_together = 'choice_group', 'key'
 
 
 @python_2_unicode_compatible
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(_('Name'), max_length=255, blank=True)
-    sort_by_key = models.BooleanField(default=False)
+    sort_by_key = models.BooleanField(_('Sort by key'), default=False)
     class Meta:
         db_table = 'choice_group'
         verbose_name = _('choices list')
