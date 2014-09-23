@@ -55,7 +55,7 @@ groups_urlpatterns = patterns('',
 
 
 js_info_dict = {
-    'packages': ('ngw.core',),
+    'packages': ('ngw.core','django.contrib.admin',),
     }
 
 urlpatterns = patterns('',
