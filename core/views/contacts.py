@@ -821,7 +821,7 @@ class PasswordView(InGroupAcl, UpdateView):
     pk_url_kwarg = 'cid'
 
     def check_perm_groupuser(self, group, user):
-        if user.id == user.id:
+        if int(self.kwargs['cid']) == user.id:
             return  # Ok for oneself
         if not perms.c_can_write_fields_cg(user.id, GROUP_USER):
             raise PermissionDenied
@@ -898,7 +898,7 @@ class PassLetterView(InGroupAcl, DetailView):
     template_name = 'password_letter.html'
 
     def check_perm_groupuser(self, group, user):
-        if user.id == user.id:
+        if int(self.kwargs['cid']) == user.id:
             return  # Ok for oneself
         if not perms.c_can_write_fields_cg(user.id, GROUP_USER):
             raise PermissionDenied
@@ -982,20 +982,23 @@ def contact_delete(request, gid=None, cid=None):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_filters_add(request, cid=None):
-    cid = cid and int(cid) or None
-    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
-        raise PermissionDenied
-    contact = get_object_or_404(Contact, pk=cid)
-    filter_str = request.GET['filterstr']
-    filter_list = contact.get_customfilters()
-    filter_list.append((_('No name'), filter_str))
-    filter_list_str = ','.join(['"' + force_text(name) + '","' + force_text(filterstr) + '"' for name, filterstr in filter_list])
-    contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-    messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
-    return HttpResponseRedirect(reverse('filter_edit', args=(cid, len(filter_list)-1)))
+class FilterAddView(NgwUserAcl, View):
+    def check_perm_user(self, user):
+        if int(self.kwargs['cid']) == user.id:
+            return  # Ok for oneself
+        if not perms.c_can_write_fields_cg(user.id, GROUP_USER_NGW):
+            raise PermissionDenied
+
+    def get(self, request, cid):
+        cid = int(cid)
+        contact = get_object_or_404(Contact, pk=cid)
+        filter_str = request.GET['filterstr']
+        filter_list = contact.get_customfilters()
+        filter_list.append((_('No name'), filter_str))
+        filter_list_str = ','.join(['"' + force_text(name) + '","' + force_text(filterstr) + '"' for name, filterstr in filter_list])
+        contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
+        messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
+        return HttpResponseRedirect(reverse('filter_edit', args=(cid, len(filter_list)-1)))
 
 
 #######################################################################
@@ -1013,7 +1016,7 @@ class FilterListView(InGroupAcl, TemplateView):
     template_name = 'filter_list.html'
 
     def check_perm_groupuser(self, group, user):
-        if user.id == user.id:
+        if int(self.kwargs['cid']) == user.id:
             return  # Ok for oneself
         if not perms.c_can_view_fields_cg(user.id, GROUP_USER_NGW):
             raise PermissionDenied

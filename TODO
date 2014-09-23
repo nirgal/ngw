@@ -26,7 +26,6 @@ Fix perms: can_read_msg => can see members (?)
 
 Complete migration to class based views:
 - contacts.contact_delete
-- contacts.contact_filters_add
 - contacts.contact_filters_edit
 - contacts.contact_filters_delete
 - contacts.contact_default_group
@@ -63,6 +62,7 @@ Add duration to events (end date)
 CRSF validation fails on login page if it is shown too long:
 See https://github.com/yourlabs/django-session-security/issues/29
 
+Change USE_TZ to True
 
 ====================================================================================================
 UNSORTED
