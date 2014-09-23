@@ -16,12 +16,14 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.six import iteritems
 from django.utils import html
+from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
 from django.views.generic import View, TemplateView, UpdateView, CreateView, DetailView
 from django.views.generic.edit import ModelFormMixin
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
@@ -862,15 +864,21 @@ class PasswordView(InGroupAcl, UpdateView):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER) # not GROUP_USER_NGW
-def hook_change_password(request):
-    newpassword_plain = request.POST.get('password')
-    if not newpassword_plain:
-        return HttpResponse('Missing password POST parameter')
-    #TODO: check strength
-    request.user.set_password(newpassword_plain, request=request)
-    return HttpResponse('OK')
+class HookPasswordView(View):
+    '''
+    This view allow a user to change his password through a post.
+    That view allow other modules to change the central password.
+    '''
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        username = request.META['REMOTE_USER']  # Apache external auth
+        request.user = Contact.objects.get_by_natural_key(username)
+        return super(HookPasswordView, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request):
+        newpassword_plain = request.POST['password']
+        request.user.set_password(newpassword_plain, request=request)
+        return HttpResponse('OK')
 
 
 #######################################################################

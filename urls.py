@@ -12,7 +12,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactVcardView, PasswordView, PassLetterView
+from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
 from ngw.core.views.files import FileListView, GroupMediaFileView
@@ -68,7 +68,7 @@ urlpatterns = patterns('',
 
     url(r'session_security/', include('session_security.urls')),
 
-    url(r'^hook_change_password$', 'ngw.core.views.contacts.hook_change_password'),
+    url(r'^hook_change_password$', HookPasswordView.as_view()),
 
     url(r'^login$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
     url(r'^logout$', LogoutView.as_view(), name='logout'),
