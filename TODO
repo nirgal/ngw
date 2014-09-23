@@ -26,7 +26,6 @@ Fix perms: can_read_msg => can see members (?)
 
 Complete migration to class based views:
 - contacts.contact_delete
-- contacts.contact_filters_edit
 - contacts.contact_filters_delete
 - contacts.contact_default_group
 - groups.contactgroup_delete

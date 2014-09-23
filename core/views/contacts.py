@@ -10,7 +10,8 @@ import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import (
-    CompatibleStreamingHttpResponse, HttpResponse, HttpResponseRedirect)
+    CompatibleStreamingHttpResponse, HttpResponse, HttpResponseRedirect,
+    Http404)
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
@@ -21,7 +22,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
-from django.views.generic import View, TemplateView, UpdateView, CreateView, DetailView
+from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView, DetailView
 from django.views.generic.edit import ModelFormMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
@@ -1040,7 +1041,7 @@ class FilterListView(InGroupAcl, TemplateView):
 
 #######################################################################
 #
-# Rename contact filter
+# Rename custom filter
 #
 #######################################################################
 
@@ -1048,53 +1049,68 @@ class FilterListView(InGroupAcl, TemplateView):
 class FilterEditForm(forms.Form):
     name = forms.CharField(max_length=50)
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_filters_edit(request, cid=None, fid=None):
-    cid = cid and int(cid) or None
-    fid = int(fid)
-    # Warning, here fid is the index in the filter list of a given user
-    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
-        raise PermissionDenied
-    contact = get_object_or_404(Contact, pk=cid)
-    filter_list = contact.get_customfilters()
-    try:
-        filtername, filterstr = filter_list[fid]
-    except (IndexError, ValueError):
-        return HttpResponse(_("ERROR: Can't find filter #%s") % fid)
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        contact = kwargs.pop('contact')
+        fid = int(kwargs.pop('fid'))
+        super(FilterEditForm, self).__init__(*args, **kwargs)
 
-    if request.method == 'POST':
-        form = FilterEditForm(request.POST)
-        if form.is_valid():
-            #print(repr(filter_list))
-            #print(repr(filter_list_str))
-            filter_list[int(fid)] = (form.clean()['name'], filterstr)
-            #print(repr(filter_list))
-            filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
-            #print(repr(filter_list_str))
-            contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-            messages.add_message(request, messages.SUCCESS, _('Filter has been renamed.'))
-            return HttpResponseRedirect(reverse('contact_detail', args=(cid,)))
-    else:
-        form = FilterEditForm(initial={'name': filtername})
-    context = {}
-    context['title'] = _('User custom filter renaming')
-    context['contact'] = contact
-    context['form'] = form
-    context['filtername'] = filtername
-    try:
-        filter_html = parse_filterstring(filterstr, request.user.id).to_html()
-    except PermissionDenied:
-        filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
-    except ContactField.DoesNotExist:
-        filter_html = _("Unparsable filter: Field does not exist.")
-    context['filter_html'] = filter_html
-    context['nav'] = Navbar(Contact.get_class_navcomponent()) \
-                     .add_component(contact.get_navcomponent()) \
-                     .add_component(('filters', _('custom filters'))) \
-                     .add_component((force_text(fid), filtername))
+        self.contact = contact
+        self.fid = fid
+        self.filter_list = contact.get_customfilters()
+        try:
+            self.filtername, filterstr = self.filter_list[fid]
+        except (IndexError, ValueError):
+            raise Http404
+        self.fields['name'].initial = self.filtername
+        try:
+            self.filter_html = parse_filterstring(filterstr, user.id).to_html()
+        except PermissionDenied:
+            self.filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
 
-    return render_to_response('filter_form.html', context, RequestContext(request))
+    def save(self, request):
+        filter_list = self.filter_list
+        filter_list[self.fid] = self.cleaned_data['name'], filter_list[self.fid][1]
+        filter_list_str = ','.join(
+            ['"%s","%s"' % filterdata for filterdata in filter_list])
+        self.contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
+
+
+class FilterEditView(NgwUserAcl, FormView):
+    form_class = FilterEditForm
+    template_name = 'filter_form.html'
+
+    def check_perm_user(self, user):
+        if int(self.kwargs['cid']) == user.id:
+            return  # Ok for oneself
+        if not perms.c_can_write_fields_cg(user.id, GROUP_USER_NGW):
+            raise PermissionDenied
+
+    def get_form_kwargs(self):
+        kwargs = super(FilterEditView, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['contact'] = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
+        kwargs['fid'] = self.kwargs['fid']
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        contact = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
+        context = {}
+        context['title'] = _('User custom filter renaming')
+        context['nav'] = Navbar(Contact.get_class_navcomponent()) \
+                         .add_component(contact.get_navcomponent()) \
+                         .add_component(('filters', _('custom filters')))
+        #                 .add_component((self.kwargs['fid'], self.form.filtername))
+        context.update(kwargs)
+        return super(FilterEditView, self).get_context_data(**context)
+
+    def form_valid(self, form):
+        form.save(self.request)
+        messages.add_message(self.request, messages.SUCCESS, _('Filter has been renamed.'))
+        return super(FilterEditView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('contact_detail', args=(self.kwargs['cid'],))
 
 
 #######################################################################
