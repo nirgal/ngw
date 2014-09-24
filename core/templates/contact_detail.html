@@ -63,7 +63,7 @@
   <a class=button href="vcard">{% trans "VCard" %}</a>
   {# <a class=button href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
   {% endif %}
-  {% if contact.get_login %}
+  {% if contact.get_username %}
     {% if 'F' in group_user_perms or user.id = contact.id %}
         <a class=button href="pass">{% trans "Change password" %}</a>
     {% endif %}

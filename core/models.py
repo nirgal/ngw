@@ -441,9 +441,10 @@ class Contact(NgwModel):
                 hooks.contact_field_changed(request, field_id, self)
 
 
-    def get_login(self):
+    def get_username(self):
         # See templates/contact_detail.htm
         return self.get_fieldvalue_by_id(FIELD_LOGIN)
+
 
     def vcard(self):
         # http://www.ietf.org/rfc/rfc2426.txt
@@ -490,7 +491,7 @@ class Contact(NgwModel):
         def get_logincfv_by_login(ref_uid, login):
             """
             Returns login cfv where loginname=login and not uid!=ref_uid
-            This can be evaluated as true is login is already in use by another user
+            This can be evaluated as true if login is already in use by another user
             """
             return ContactFieldValue.objects.filter(contact_field_id=FIELD_LOGIN) \
                                    .filter(value=login) \

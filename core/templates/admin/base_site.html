@@ -30,7 +30,8 @@
 {% endblock %}
 
 {% block userlinks %}
-<a href="/logout">{% trans "Logout" %}</a>
+<a href="/contacts/{{user.id}}/pass">{% trans 'Change password' %}</a> /
+<a href="/logout">{% trans 'Log out' %}</a>
 {% if user.can_see_all_contacts %}
 <br>
 <div id=header_search>
