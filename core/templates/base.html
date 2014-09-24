@@ -28,25 +28,27 @@
     {% if not is_popup %}
     <!-- Header -->
     <div id="header">
-        <div id="upperheader">
-            <div id=branding>{{ banner|safe }}</div>
-            {% if user.is_authenticated %}
-            <div id="user-tools">
-                {% trans "Welcome" %} <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="/logout">{% trans "Logout" %}</a>
-                <br>
-                {% if user.can_see_all_contacts %}
-                <div id=header_search>
-                    <form id=header_quicksearch action="/contactgroups/1/members/"
-                        onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); document.forms['header_quicksearch']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; return true;">
-                        <input type=hidden name=filter>
-                        <input name=disp_filter value="{% trans "Quick contact search" %}" size=30 class=quicksearch
-                            onclick="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
-                            onblur="if (this.value=='') { this.value='{% trans "Quick contact search" %}'; }"
-                        >
-                    </form>
-                </div>
-                {% endif %}
+        <div id=branding><h1 id="site-name">{{ banner|safe }}</h1></div>
+        {% if user.is_authenticated %}
+        <div id="user-tools">
+            {% trans "Welcome" %} <a href="{{user.get_absolute_url}}">{{ user }}</a> • <a href="/logout">{% trans "Logout" %}</a>
+            <br>
+            {% if user.can_see_all_contacts %}
+            <div id=header_search>
+                <form id=header_quicksearch action="/contactgroups/1/members/"
+                    onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); document.forms['header_quicksearch']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; return true;">
+                    <input type=hidden name=filter>
+                    <input name=disp_filter value="{% trans "Quick contact search" %}" size=30 class=quicksearch
+                        onclick="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
+                        onblur="if (this.value=='') { this.value='{% trans "Quick contact search" %}'; }"
+                    >
+                </form>
             </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% block nav-global %}
+            {% if user.is_authenticated %}
             <div id=tabs style="clear:both;">
                 <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
                 <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
@@ -58,27 +60,27 @@
                 {% endif %}
             </div>
             {% endif %}
-        </div>
-        {% block breadcrumbs %}
-        {% if nav %}
-        <div class=breadcrumbs>
-        {% for urlfragment, navname in nav.components %}
-            {% if forloop.counter0 %} › {% endif %}
-            {% if not forloop.last %}
-                <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
-            {% endif %}
-            {{ navname }}
-            {% if not forloop.last %}
-                </a>
-            {% endif %}
-        {% endfor %}
-        </div>
-        {% endif %}
         {% endblock %}
-        {% block submenu %}{% endblock %}
     </div>
     <!-- END Header -->
     {% endif %}
+    {% block breadcrumbs %}
+    {% if nav %}
+    <div class=breadcrumbs>
+    {% for urlfragment, navname in nav.components %}
+        {% if forloop.counter0 %} › {% endif %}
+        {% if not forloop.last %}
+            <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
+        {% endif %}
+        {{ navname }}
+        {% if not forloop.last %}
+            </a>
+        {% endif %}
+    {% endfor %}
+    </div>
+    {% endif %}
+    {% block submenu %}{% endblock %}
+    {% endblock %}
 
     {% block messages %}
         {% if messages %}

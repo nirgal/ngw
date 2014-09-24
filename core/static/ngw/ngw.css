@@ -1,22 +1,3 @@
-#header {
-	background: white;
-}
-#upperheader {
-	background: #417690;
-	border-bottom: 1px solid white;
-	padding: 5px;
-	padding-bottom: 0px;
-}
-
-#upperheader #branding {
-	float: left;
-	margin-left: 0.5ex;
-	font-size: 130%;
-}
-#header #user-tools {
-	float: right;
-}
-
 #header .quicksearch {
 	border-color:#417690;
 	background-image:url(../admin/img/icon_searchbox.png);
@@ -54,10 +35,6 @@
 div.breadcrumbs {
     border-top: none;
 }
-div.breadcrumbs a:link, div.breadcrumbs a:visited {
-    color: black !important;
-}
-
 
 #submenucontainer {
     display: block;

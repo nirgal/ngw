@@ -8,11 +8,25 @@ function dump(o) {
 }
 
 function check_footer_bottom() {
-    min_height = document.body.clientHeight - $('#header').outerHeight() - $('#footer').outerHeight(); // - $('.breadcrumbs').outerHeight();
+    // Get the body heigth (with quirks mode support)
+    if (window.innerHeight)
+        theHeight=window.innerHeight;
+    else if (document.documentElement && document.documentElement.clientHeight)
+        theHeight=document.documentElement.clientHeight;
+    else if (document.body)
+        theHeight=document.body.clientHeight;
+
+    min_height = theHeight - $('#header').outerHeight() - $('#footer').outerHeight();
+    // remove breadcrumbs:
+    min_height -= $('.breadcrumbs').outerHeight();
+    // remove submenu:
+    min_height -= $('#submenucontainer').outerHeight();
     // remove messages:
     min_height -= $('.messagelist').outerHeight();
+
     // remove margins:
     min_height -= $('#content').outerHeight(true) - $('#content').outerHeight(false);
+//alert('margin='+($('#content').outerHeight(true) - $('#content').outerHeight(false)));
     if (min_height > 0)
         $('#content').css('min-height', min_height+'px');
 }

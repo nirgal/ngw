@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+{% load i18n staticfiles ngwtags %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/changelists.css" %}">
+<link rel="stylesheet" type="text/css" href="{% static "ngw/ngw.css" %}">
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static "admin/js/core.js" %}" type="text/javascript"></script>
+<script src="{% static "admin/js/admin/RelatedObjectLookups.js" %}" type="text/javascript"></script>
+<script src="{% static "admin/js/jquery.js" %}" type="text/javascript"></script>
+<script src="{% static "admin/js/jquery.init.js" %}" type="text/javascript"></script>
+<script src="/jsi18n/" type="text/javascript"></script>
+<script src="{% static "admin/js/SelectBox.js" %}" type="text/javascript"></script>
+<script src="{% static "admin/js/SelectFilter2.js" %}" type="text/javascript"></script>
+<script src="{% static "ngw/ngw.js" %}" type="text/javascript"></script>
+{% endblock %}
+
+{% block blockbots %}
+{{ block.super }}
+{% include 'session_security/all.html' %}
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">{{ banner|safe }}</h1>
+{% endblock %}
+
+{% block userlinks %}
+<a href="/logout">{% trans "Logout" %}</a>
+{% if user.can_see_all_contacts %}
+<br>
+<div id=header_search>
+    <form id=header_quicksearch action="/contactgroups/1/members/"
+        onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); document.forms['header_quicksearch']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; return true;">
+        <input type=hidden name=filter>
+        <input name=disp_filter value="{% trans "Quick contact search" %}" size=30 class=quicksearch
+            onclick="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
+            onblur="if (this.value=='') { this.value='{% trans "Quick contact search" %}'; }"
+        >
+    </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}
+{% if user.is_authenticated %}
+<div id=tabs style="clear:both;">
+    <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
+    <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
+    <a href="/events/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
+    {% if user.is_admin %}
+    <a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>{% trans "fields" %}</a>
+    <a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>{% trans "choices" %}</a>
+    <a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>{% trans "logs" %}</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block breadcrumbs %}
+{% if nav %}
+<div class=breadcrumbs>
+{% for urlfragment, navname in nav.components %}
+    {% if forloop.counter0 %} › {% endif %}
+    {% if not forloop.last %}
+        <a href="{% for urlfragment_sub, navname_sub in nav.components %}{% if forloop.counter0 <= forloop.parentloop.counter0 %}{{urlfragment_sub}}/{% endif %}{% endfor %}">
+    {% endif %}
+    {{ navname }}
+    {% if not forloop.last %}
+        </a>
+    {% endif %}
+{% endfor %}
+</div>
+{% endif %}
+{% block submenu %}{% endblock %}
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block footer %}
+<div id=footer>
+{% if contactcount %} {{ contactcount }} contact{{contactcount|pluralize}} • {% endif %}
+Powered by <a href='http://www.debian.org/' target=_blank noreferrer>Debian/GNU Linux</a>
+</div>
+{% endblock %}
