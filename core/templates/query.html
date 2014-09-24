@@ -36,10 +36,10 @@ Optionnal parameters:
         </th>
         {% endif %}
         {% for col in cols %}
-            <th scope="col" class="{% if col|get_notnull:3 %}sortable{% endif %} {% if order|order_absmatch:forloop.counter0 %}sorted {% if order|order_isreverted %}ascending{% else %}descending{% endif %}{% endif %}">
+            <th scope="col" class="{% if col|get_notnull:3 %}sortable{% endif %} {% if order|order_absmatch:forloop.counter0 %}sorted {% if order|order_isreverted %}descending{% else %}ascending{% endif %}{% endif %}">
             {% if order|order_absmatch:forloop.counter0 %}
             <div class="sortoptions">
-                <a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif %}{{ forloop.counter0 }}" class="toggle {% if order|order_isreverted %}ascending{% else %}descending{% endif %}"></a>
+                <a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif %}{{ forloop.counter0 }}" class="toggle {% if order|order_isreverted %}descending{% else %}ascending{% endif %}"></a>
             </div>
             {% endif %}
             <div class="text">
