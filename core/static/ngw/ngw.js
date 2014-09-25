@@ -16,6 +16,9 @@ function check_footer_bottom() {
     else if (document.body)
         theHeight=document.body.clientHeight;
 
+    if (!$('#footer').outerHeight())
+        return;
+
     min_height = theHeight - $('#header').outerHeight() - $('#footer').outerHeight();
     // remove breadcrumbs:
     min_height -= $('.breadcrumbs').outerHeight();
