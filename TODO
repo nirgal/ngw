@@ -28,7 +28,6 @@ Complete migration to class based views:
 - contacts.contact_delete
 - contacts.contact_filters_delete
 - groups.contactgroup_delete
-- groups.contactingroup_edit
 - groups.contactingroup_edit_inline
 - groups.contactingroup_delete
 - news.contactgroup_news_delete

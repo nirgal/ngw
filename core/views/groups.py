@@ -10,7 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, string_concat
 from django.utils.encoding import force_text
 from django.utils import formats
 from django.utils import six
@@ -716,8 +716,15 @@ def contactgroup_delete(request, id):
 #######################################################################
 
 
-class ContactInGroupForm(forms.Form):
+class ContactInGroupForm(forms.ModelForm):
+    class Meta:
+        model = ContactInGroup
+        fields = ['note']
     def __init__(self, *args, **kargs):
+        instance = kargs.get('instance', None)
+        self.user = kargs.pop('user')
+        self.contact = kargs.pop('contact')
+        self.group = kargs.pop('group')
         super(ContactInGroupForm, self).__init__(*args, **kargs)
         for flag, longname in six.iteritems(perms.FLAGTOTEXT):
             field_name = 'membership_' + flag
@@ -734,12 +741,19 @@ class ContactInGroupForm(forms.Form):
                 if flag in depflag1:
                     onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
-            self.fields[field_name] = forms.BooleanField(
-                label=longname, required=False,
-                widget=forms.widgets.CheckboxInput(attrs={
-                    'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
-                }))
-        self.fields['note'] = forms.CharField(label=_('Note'), required=False)
+            if instance:
+                initial = bool(perms.FLAGTOINT[flag] & instance.flags)
+            else:
+                initial = False
+            self.fields.insert(
+                len(self.fields)-1,  # just before the note
+                field_name,
+                forms.BooleanField(
+                    label=longname, required=False,
+                    widget=forms.widgets.CheckboxInput(attrs={
+                        'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
+                    }),
+                    initial = initial))
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
@@ -749,99 +763,146 @@ class ContactInGroupForm(forms.Form):
           or (data['membership_d'] and data['membership_m']) \
           or (data['membership_i'] and data['membership_m']):
             raise forms.ValidationError('Invalid flags combinaison')
+
+        newflags = 0
+        for flag, intvalue in six.iteritems(perms.FLAGTOINT):
+            if data['membership_' + flag]:
+                newflags |= intvalue
+        if newflags == 0 and data['note']:
+            raise forms.ValidationError(_('You cannot have a note unless you select some flags too'))
         return data
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactingroup_edit(request, gid, cid):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if not perms.c_can_change_members_cg(request.user.id, gid):
-        raise PermissionDenied
-    try:
-        cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
-    except ContactInGroup.DoesNotExist:
-        cig = ContactInGroup(contact_id=cid, group_id=gid, flags=0)
-    cg = ContactGroup.objects.get(pk=gid)
-    contact = Contact.objects.get(pk=cid)
-    context = {}
-    context['title'] = _('Contact %(contact)s in group %(group)s') % {
-        'contact': force_text(contact),
-        'group': cg.name_with_date()}
-    context['cg'] = cg
-    context['cg_perms'] = cg.get_contact_perms(request.user.id)
-    context['contact'] = contact
-    context['objtype'] = ContactInGroup
+    def save(self):
+        oldflags = self.instance.flags or 0
+        is_creation = self.instance.pk is None
+        cig = super(ContactInGroupForm, self).save(commit=False)
+        if is_creation:
+            cig.contact = self.contact
+            cig.group = self.group
 
-    initial = {}
-    for flag, intval in six.iteritems(perms.FLAGTOINT):
-        if cig.flags & intval:
-            initial['membership_' + flag] = True
-    initial['note'] = cig.note
+        data = self.cleaned_data
 
-    if request.method == 'POST':
-        form = ContactInGroupForm(request.POST, initial=initial)
-        if form.is_valid():
-            data = form.cleaned_data
-            newflags = 0
-            for flag, intvalue in six.iteritems(perms.FLAGTOINT):
-                if data['membership_' + flag]:
-                    newflags |= intvalue
-            if not newflags:
-                return HttpResponseRedirect(reverse('ngw.core.views.groups.contactingroup_delete', args=(force_text(cg.id), cid)))
-            if (cig.flags ^ newflags) & perms.ADMIN_ALL \
-                and not perms.c_operatorof_cg(request.user.id, cg.id):
-                # If you change any permission flags of that group, you must be a group operator
-                raise PermissionDenied
-            cig.flags = newflags
-            cig.note = data['note']
-            # TODO: use set_member_1 for logs
+        newflags = 0
+        for flag, intvalue in six.iteritems(perms.FLAGTOINT):
+            if data['membership_' + flag]:
+                newflags |= intvalue
+        if (oldflags ^ newflags) & perms.ADMIN_ALL \
+            and not perms.c_operatorof_cg(self.user.id, self.group.id):
+            # If you change any permission flags of that group, you must be a group operator
+            raise PermissionDenied
+        if not newflags:
+            cig.delete()
+            return None
+        cig.flags = newflags
+        cig.save()
+        # TODO: use set_member_1 for logs
+        return cig
+
+
+class ContactInGroupView(InGroupAcl, FormView):
+    form_class = ContactInGroupForm
+    template_name = 'contact_in_group.html'
+
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_change_cg(user.id, group.id):
+            raise PermissionDenied
+
+    def get_form_kwargs(self):
+        kwargs = super(ContactInGroupView, self).get_form_kwargs()
+        kwargs['group'] = self.contactgroup
+        kwargs['contact'] = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
+        kwargs['user'] = self.request.user
+        try:
+            instance = ContactInGroup.objects.get(
+                contact_id=int(self.kwargs['cid']),
+                group_id=self.contactgroup.id)
+        except ContactInGroup.DoesNotExist:
+            instance = None
+        kwargs['instance'] = instance
+        return kwargs
+
+    def form_valid(self, form):
+        cig = form.save()
+        cg = self.contactgroup
+        contact = form.contact
+        if cig:
             messages.add_message(
-                request, messages.SUCCESS,
+                self.request, messages.SUCCESS,
                 _('Member %(contact)s of group %(group)s has been changed.') % {
                     'contact': contact.name,
                     'group': cg.name})
-            Contact.check_login_created(request)
-            cig.save()
-            hooks.membership_changed(request, contact, cg)
-            return HttpResponseRedirect(cg.get_absolute_url())
-    else:
-        form = ContactInGroupForm(initial=initial)
+        else:
+            messages.add_message(
+                self.request, messages.SUCCESS,
+                _('%(contact)s has been removed from group %(group)s.') % {
+                    'contact': contact.name,
+                    'group': cg.name})
+        Contact.check_login_created(self.request)
+        hooks.membership_changed(self.request, contact, cg)
+        return HttpResponseRedirect(cg.get_absolute_url())
 
-    context['form'] = form
+    def get_context_data(self, **kwargs):
+        cid = int(self.kwargs['cid'])
+        gid = int(self.kwargs['gid'])
+        contact = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
+        cg = self.contactgroup
 
-    inherited_info = ''
+        context = {}
+        context['title'] = _('Contact %(contact)s in group %(group)s') % {
+            'contact': force_text(contact),
+            'group': cg.name_with_date()}
+        context['contact'] = contact
+        context['objtype'] = ContactInGroup
+        inherited_info = ''
 
-    automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.MEMBER)]).exclude(id=gid).order_by('-date', 'name')
-    visible_automember_groups = automember_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
-    invisible_automember_groups = automember_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
-    #print(automember_groups.query)
-    if automember_groups:
-        inherited_info += 'Automatically member because member of subgroup(s):' + '<br>'
-        for sub_cg in visible_automember_groups:
-            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()}
-        if invisible_automember_groups:
-            inherited_info += '<li>Hidden group(s)...'
-        inherited_info += '<br>'
+        automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.MEMBER)]).exclude(id=gid).order_by('-date', 'name')
+        visible_automember_groups = automember_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+        invisible_automember_groups = automember_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+        #print(automember_groups.query)
+        if automember_groups:
+            inherited_info = string_concat(
+                    inherited_info,
+                    _('Automatically member because member of subgroup(s)'),
+                    ':<ul>')
+            for sub_cg in visible_automember_groups:
+                inherited_info = string_concat(
+                    inherited_info,
+                    '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()})
+            if invisible_automember_groups:
+                inherited_info = string_concat(
+                    inherited_info,
+                    '<li>',
+                    _('Hidden group(s)...'))
+            inherited_info = string_concat(inherited_info, '</ul>')
 
-    autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.INVITED)]).exclude(id=gid).order_by('-date', 'name')
-    visible_autoinvited_groups = autoinvited_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
-    invisible_autoinvited_groups = autoinvited_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
-    if autoinvited_groups:
-        inherited_info += 'Automatically invited because invited in subgroup(s):<br>'
-        for sub_cg in visible_autoinvited_groups:
-            inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()}
-        if invisible_autoinvited_groups:
-            inherited_info += '<li>Hidden group(s)...'
+        autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.INVITED)]).exclude(id=gid).order_by('-date', 'name')
+        visible_autoinvited_groups = autoinvited_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+        invisible_autoinvited_groups = autoinvited_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+        if autoinvited_groups:
+            inherited_info = string_concat(
+                inherited_info,
+                _('Automatically invited because invited in subgroup(s)'),
+                ':<ul>')
+            for sub_cg in visible_autoinvited_groups:
+                inherited_info = string_concat(
+                    inherited_info,
+                    '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()})
+            if invisible_autoinvited_groups:
+                inherited_info = string_concat(
+                    inherited_info,
+                    '<li>',
+                    _('Hidden group(s)...'))
+            inherited_info = string_concat(inherited_info, '</ul>')
 
-    context['inherited_info'] = mark_safe(inherited_info)
+        context['inherited_info'] = mark_safe(inherited_info)
 
-    context['nav'] = cg.get_smart_navbar() \
-                     .add_component(('members', _('members'))) \
-                     .add_component(contact.get_navcomponent()) \
-                     .add_component(('membership', _('membership')))
-    return render_to_response('contact_in_group.html', context, RequestContext(request))
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('members', _('members'))) \
+                         .add_component(contact.get_navcomponent()) \
+                         .add_component(('membership', _('membership')))
+        context.update(kwargs)
+        return super(ContactInGroupView, self).get_context_data(**context)
 
 
 #######################################################################

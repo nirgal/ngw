@@ -2,7 +2,10 @@
 {% load i18n staticfiles %}
 
 {% block content %}
-{{ inherited_info }}
+{% if inherited_info %}
+<div class="padded">{{ inherited_info }}</div>
+{% endif %}
+
 {{ block.super }}
 {% endblock %}
 

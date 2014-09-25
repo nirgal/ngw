@@ -833,7 +833,8 @@ class PasswordView(InGroupAcl, UpdateView):
             self.request, messages.SUCCESS,
             _('Password has been changed sucessfully!'))
         if self.contactgroup:
-            return HttpResponseRedirect(cg.get_absolute_url() + 'members/' + force_text(cid) + '/')
+            return HttpResponseRedirect(
+                self.contactgroup.get_absolute_url() + 'members/' + force_text(contact.id) + '/')
         else:
             return HttpResponseRedirect(contact.get_absolute_url())
 
