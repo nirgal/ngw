@@ -274,8 +274,7 @@ class NgwListView(ListView):
 def generic_delete(request, obj, next_url, base_nav=None, ondelete_function=None):
     title = _('Please confirm deletetion')
 
-    confirm = request.GET.get('confirm', '')
-    if confirm:
+    if request.method == 'POST':
         if ondelete_function:
             ondelete_function(obj)
         name = force_text(obj)
@@ -287,7 +286,7 @@ def generic_delete(request, obj, next_url, base_nav=None, ondelete_function=None
         log.target_repr = obj.get_class_verbose_name() + ' '+name
         obj.delete()
         log.save()
-        messages.add_message(request, messages.SUCCESS, _('%s has been deleted sucessfully!') % name)
+        messages.add_message(request, messages.SUCCESS, _('%s has been deleted.') % name)
         return HttpResponseRedirect(next_url)
     else:
         nav = base_nav or Navbar(obj.get_class_navcomponent())

@@ -3,14 +3,17 @@
 
 {% block content %}
 <div id="content-main">
-<div class=module>
-	<p>{% blocktrans with objecttype=object.get_class_verbose_name %}You are about to delete {{ objecttype }} {{ object }}. Are you sure ?{% endblocktrans %}</p>
+<div class="module padded">
+	{% blocktrans with objecttype=object.get_class_verbose_name %}You are about to delete {{ objecttype }} {{ object }}. Are you sure ?{% endblocktrans %}
 </div>
 
 {% block submitbar %}
 <div class=submit-row>
-    <a href="?confirm=1" class=button>{% trans "Yes I'm Sure" %}</a>
+    <form method="post">
+    {% csrf_token %}
+    <input type=submit value="{% trans "Yes I'm Sure" %}">
     <a href="javascript:history.back()" class="button">{% trans "Cancel" %}</a>
+    </form>
 </div>
 {% endblock %}
 

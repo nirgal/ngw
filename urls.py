@@ -14,7 +14,7 @@ admin.autodiscover()
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, DefaultGroupView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView, ContactInGroupView, ContactInGroupInlineView
-from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView
+from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView#, NewsDeleteView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
 from ngw.core.views.messages import MessageListView, SendMessageView, MessageDetailView
@@ -49,6 +49,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/news/add$', NewsCreateView.as_view()),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='edit')),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', NewsEditView.as_view()),
+    #url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', NewsDeleteView.as_view()),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.news.contactgroup_news_delete'),
     url(r'^(?P<gid>\d+)/mailman$', MailmanSyncView.as_view()),
 )

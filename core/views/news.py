@@ -9,12 +9,13 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import get_object_or_404
-from django.views.generic import ListView, UpdateView, CreateView
+from django.views.generic import ListView, UpdateView, CreateView, DeleteView
 from django.views.generic.edit import ModelFormMixin
 from django import forms
 from django.contrib import messages
 from ngw.core.models import (GROUP_USER_NGW, ContactGroup, ContactGroupNews)
 from ngw.core import perms
+from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import InGroupAcl, generic_delete
 
@@ -134,6 +135,28 @@ class NewsCreateView(InGroupAcl, NewsEditMixin, CreateView):
 #
 #######################################################################
 
+
+#class NewsDeleteView(InGroupAcl, DeleteView):
+#    template_name = 'delete.html'
+#    model = ContactGroupNews
+#    pk_url_kwarg = 'nid'
+#
+#    def check_perm_groupuser(self, group, user):
+#        if not perms.c_can_change_news_cg(user.id, group.id):
+#            raise PermissionDenied
+#
+#    def get_context_data(self, **kwargs):
+#        context = {}
+#        context['title'] = _('Please confirm deletetion')
+#
+#        context['nav'] = Navbar(self.object.get_class_navcomponent()) \
+#            .add_component(self.object.get_navcomponent()) \
+#            .add_component(('delete', _('delete')))
+#        context.update(kwargs)
+#        return super(NewsDeleteView, self).get_context_data(**context)
+#
+#    def post(self, request, gid, nid):
+#        pass
 
 @login_required()
 @require_group(GROUP_USER_NGW)

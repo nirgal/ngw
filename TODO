@@ -32,7 +32,6 @@ Complete migration to class based views:
 - contacts.contact_filters_delete
 - groups.contactgroup_delete
 - groups.contactingroup_delete
-- news.contactgroup_news_delete
 - fields.field_delete
 - ngw.core.gpg.lookup
 
