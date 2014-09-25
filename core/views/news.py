@@ -13,11 +13,11 @@ from django.views.generic import ListView, UpdateView, CreateView, DeleteView
 from django.views.generic.edit import ModelFormMixin
 from django import forms
 from django.contrib import messages
-from ngw.core.models import (GROUP_USER_NGW, ContactGroup, ContactGroupNews)
+from ngw.core.models import GROUP_USER_NGW, ContactGroup, ContactGroupNews
 from ngw.core import perms
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import InGroupAcl, generic_delete
+from ngw.core.views.generic import InGroupAcl, NgwDeleteView
 
 
 #######################################################################
@@ -136,35 +136,18 @@ class NewsCreateView(InGroupAcl, NewsEditMixin, CreateView):
 #######################################################################
 
 
-#class NewsDeleteView(InGroupAcl, DeleteView):
-#    template_name = 'delete.html'
-#    model = ContactGroupNews
-#    pk_url_kwarg = 'nid'
-#
-#    def check_perm_groupuser(self, group, user):
-#        if not perms.c_can_change_news_cg(user.id, group.id):
-#            raise PermissionDenied
-#
-#    def get_context_data(self, **kwargs):
-#        context = {}
-#        context['title'] = _('Please confirm deletetion')
-#
-#        context['nav'] = Navbar(self.object.get_class_navcomponent()) \
-#            .add_component(self.object.get_navcomponent()) \
-#            .add_component(('delete', _('delete')))
-#        context.update(kwargs)
-#        return super(NewsDeleteView, self).get_context_data(**context)
-#
-#    def post(self, request, gid, nid):
-#        pass
+class NewsDeleteView(InGroupAcl, NgwDeleteView):
+    model = ContactGroupNews
+    pk_url_kwarg = 'nid'
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_news_delete(request, gid, nid):
-    gid = gid and int(gid) or None
-    nid = nid and int(nid) or None
-    if not perms.c_can_change_news_cg(request.user.id, gid):
-        raise PermissionDenied
-    cg = get_object_or_404(ContactGroup, pk=gid)
-    obj = get_object_or_404(ContactGroupNews, pk=nid)
-    return generic_delete(request, obj, cg.get_absolute_url() + 'news/')
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_change_news_cg(user.id, group.id):
+            raise PermissionDenied
+
+    #def get_context_data(self, **kwargs):
+    #    context = {}
+    #    context.update(kwargs)
+    #    return super(NewsDeleteView, self).get_context_data(**context)
+
+    #def get_success_url(self):
+    #    return self.contactgroup.get_absolute_url() + 'news/'

@@ -17,10 +17,9 @@ from django.core.urlresolvers import reverse
 from django.views.generic import View, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
-from ngw.core.models import GROUP_USER_NGW, ContactField, ContactGroup, ChoiceGroup
+from ngw.core.models import ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
-from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwAdminAcl, NgwListView
+from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 ###############################################################################
 #
@@ -279,15 +278,15 @@ class FieldCreateView(NgwAdminAcl, FieldEditMixin, CreateView):
 ###############################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def field_delete(request, id):
-    if not request.user.is_admin():
-        raise PermissionDenied
-    obj = get_object_or_404(ContactField, pk=id)
-    id = id and int(id) or None
-    next_url = reverse('field_list')
-    if obj.system:
-        messages.add_message(request, messages.ERROR, _('Field %s is locked and CANNOT be deleted.') % obj.name)
-        return HttpResponseRedirect(next_url)
-    return generic_delete(request, obj, next_url)
+class FieldDeleteView(NgwAdminAcl, NgwDeleteView):
+    model = ContactField
+    pk_url_kwarg = 'id'
+
+    def get_object(self, *args, **kwargs):
+        field = super(FieldDeleteView, self).get_object(*args, **kwargs)
+        if field.system:
+            messages.add_message(
+                self.request, messages.ERROR,
+                _('Field %s is locked and CANNOT be deleted.') % field.name)
+            raise PermissionDenied
+        return field

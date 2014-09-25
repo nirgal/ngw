@@ -38,7 +38,7 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import NgwUserAcl, InGroupAcl, generic_delete, NgwListView
+from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 
 from django.db.models.query import RawQuerySet, sql
@@ -958,23 +958,23 @@ class PassLetterView(InGroupAcl, DetailView):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_delete(request, gid=None, cid=None):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if not request.user.is_admin():
-        raise PermissionDenied
-    obj = get_object_or_404(Contact, pk=cid)
-    if gid:
-        cg = get_object_or_404(ContactGroup, pk=gid)
-        base_nav = cg.get_smart_navbar() \
-                     .add_component(('members', _('members')))
-        next_url = cg.get_absolute_url() + 'members/'
-    else:
-        next_url = reverse('contact_list')
-        base_nav = None
-    return generic_delete(request, obj, next_url, base_nav=base_nav)
+class ContactDeleteView(InGroupAcl, NgwDeleteView):
+    is_group_required = False
+    model = Contact
+    pk_url_kwarg = 'cid'
+
+    def check_perm_groupuser(self, group, user):
+        if not user.is_admin():
+            raise PermissionDenied
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.contactgroup:
+            context['nav'] = self.contactgroup.get_smart_navbar() \
+                     .add_component(('members', _('members'))) \
+                     .add_component(('delete', _('delete')))
+        context.update(kwargs)
+        return super(ContactDeleteView, self).get_context_data(**context)
 
 
 #######################################################################

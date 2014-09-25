@@ -12,14 +12,14 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, DefaultGroupView
+from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, DefaultGroupView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView, ContactInGroupView, ContactInGroupInlineView
-from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView#, NewsDeleteView
+from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView, NewsDeleteView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
 from ngw.core.views.messages import MessageListView, SendMessageView, MessageDetailView
-from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView, FieldEditView, FieldCreateView
-from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView
+from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView, FieldEditView, FieldCreateView, FieldDeleteView
+from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView, ChoiceGroupDeleteView
 from ngw.core.views.logs import LogListView
 from ngw.core.views.contactsearch import ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
 
@@ -37,7 +37,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass$', PasswordView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/pass_letter$', PassLetterView.as_view()),
-    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete'),
+    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/delete$', ContactDeleteView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membership$', ContactInGroupView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membershipinline$', ContactInGroupInlineView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/remove$', 'ngw.core.views.groups.contactingroup_delete'),
@@ -49,8 +49,8 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/news/add$', NewsCreateView.as_view()),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='edit')),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', NewsEditView.as_view()),
-    #url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', NewsDeleteView.as_view()),
-    url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.news.contactgroup_news_delete'),
+    url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', NewsDeleteView.as_view()),
+    #url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.news.contactgroup_news_delete'),
     url(r'^(?P<gid>\d+)/mailman$', MailmanSyncView.as_view()),
 )
 
@@ -88,7 +88,7 @@ urlpatterns = patterns('',
     url(r'^contacts/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/pass$', PasswordView.as_view(), name='contact_pass'),
     url(r'^contacts/(?P<cid>\d+)/pass_letter$', PassLetterView.as_view()),
-    url(r'^contacts/(?P<cid>\d+)/delete$', 'ngw.core.views.contacts.contact_delete', {'gid': None}),
+    url(r'^contacts/(?P<cid>\d+)/delete$', ContactDeleteView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/vcard$', ContactVcardView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/filters/$', FilterListView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/filters/add$', FilterAddView.as_view()),
@@ -110,13 +110,13 @@ urlpatterns = patterns('',
     #url(r'^contactfields2/(\d+)/edit$', admin.site._registry[ContactField].change_view),
     url(r'^contactfields/(?P<id>\d+)/moveup$', FieldMoveUpView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/movedown$', FieldMoveDownView.as_view()),
-    url(r'^contactfields/(?P<id>\d+)/delete$', 'ngw.core.views.fields.field_delete'),
+    url(r'^contactfields/(?P<id>\d+)/delete$', FieldDeleteView.as_view()),
 
     url(r'^choicegroups/$', ChoiceListView.as_view(), name='choice_list'),
     url(r'^choicegroups/add$', ChoiceCreateView.as_view(), name='choice_add'),
     url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='edit'), ),
     url(r'^choicegroups/(?P<id>\d+)/edit$', ChoiceEditView.as_view(), name='choice_edit'),
-    url(r'^choicegroups/(?P<id>\d+)/delete$', 'ngw.core.views.choices.choicegroup_delete', name='choice_delete'),
+    url(r'^choicegroups/(?P<id>\d+)/delete$', ChoiceGroupDeleteView.as_view(), name='choice_delete'),
 
     url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', GroupMediaFileView.as_view()),
 

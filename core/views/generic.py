@@ -17,7 +17,7 @@ from django.utils.http import urlencode
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.views.generic.base import ContextMixin
-from django.views.generic import ListView
+from django.views.generic import ListView, DeleteView
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_ADMIN, GROUP_USER_NGW,
@@ -296,3 +296,33 @@ def generic_delete(request, obj, next_url, base_nav=None, ondelete_function=None
             'title': title,
             'object': obj,
             'nav': nav}, RequestContext(request))
+
+
+class NgwDeleteView(DeleteView):
+    template_name = 'delete.html'
+    success_url = '../'
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['title'] = _('Please confirm deletetion')
+        context['nav'] = Navbar(self.object.get_class_navcomponent()) \
+            .add_component(self.object.get_navcomponent()) \
+            .add_component(('delete', _('delete')))
+        context.update(kwargs)
+        return super(NgwDeleteView, self).get_context_data(**context)
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.object = self.get_object()
+        success_url = self.get_success_url()
+
+        name = force_text(obj)
+        log = Log()
+        log.contact_id = self.request.user.id
+        log.action = LOG_ACTION_DEL
+        pk_names = (obj._meta.pk.attname,)  # default django pk name
+        log.target = force_text(obj.__class__.__name__) + ' ' + ' '.join([force_text(obj.__getattribute__(fieldname)) for fieldname in pk_names])
+        log.target_repr = obj.get_class_verbose_name() + ' '+name
+        log.save()
+
+        self.object.delete()
+        return HttpResponseRedirect(success_url)

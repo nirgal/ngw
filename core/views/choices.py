@@ -18,7 +18,7 @@ from django.contrib import messages
 from ngw.core.models import GROUP_USER_NGW, ChoiceGroup
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwAdminAcl, NgwListView
+from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 
 #######################################################################
@@ -250,11 +250,6 @@ class ChoiceCreateView(NgwAdminAcl, ChoiceEditMixin, CreateView):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def choicegroup_delete(request, id):
-    if not request.user.is_admin():
-        raise PermissionDenied
-    id = id and int(id) or None
-    o = get_object_or_404(ChoiceGroup, pk=id)
-    return generic_delete(request, o, reverse('choice_list'))
+class ChoiceGroupDeleteView(NgwAdminAcl, NgwDeleteView):
+    model = ChoiceGroup
+    pk_url_kwarg = 'id'
