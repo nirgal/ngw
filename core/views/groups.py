@@ -911,31 +911,27 @@ class ContactInGroupView(InGroupAcl, FormView):
 #
 #######################################################################
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactingroup_edit_inline(request, gid, cid):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if not perms.c_can_change_members_cg(request.user.id, gid):
-        raise PermissionDenied
-    cg = get_object_or_404(ContactGroup, pk=gid)
-    contact = get_object_or_404(Contact, pk=cid)
-    if request.method == 'GET':
-        # This occurs when there is a timeout (logout)
-        # Fall back to detailed membership:
-        return HttpResponseRedirect(cg.get_absolute_url()+'members/'+cid+'/membership')
-    newmembership = request.POST['membership']
-    if newmembership == 'invited':
-        flags = '+i'
-    elif newmembership == 'member':
-        flags = '+m'
-    elif newmembership == 'declined':
-        flags = '+d'
-    else:
-        raise Exception('invalid membership %s' % newmembership)
-    cg.set_member_1(request, contact, flags)
-    hooks.membership_changed(request, contact, cg)
-    return HttpResponseRedirect(request.POST['next_url'])
+
+class ContactInGroupInlineView(InGroupAcl, View):
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_change_cg(user.id, group.id):
+            raise PermissionDenied
+
+    def post(self, request, gid, cid):
+        cg = self.contactgroup
+        contact = get_object_or_404(Contact, pk=int(cid))
+        newmembership = request.POST['membership']
+        if newmembership == 'invited':
+            flags = '+i'
+        elif newmembership == 'member':
+            flags = '+m'
+        elif newmembership == 'declined':
+            flags = '+d'
+        else:
+            raise Exception('invalid membership %s' % newmembership)
+        cg.set_member_1(request, contact, flags)
+        hooks.membership_changed(request, contact, cg)
+        return HttpResponseRedirect(request.POST['next_url'])
 
 
 #######################################################################
