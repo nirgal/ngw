@@ -22,6 +22,8 @@ CODE REFACTOR
 
 Make a nice MultiWidget for flags for use in GroupAddManyView & contactingroup_edit
 
+Make sure all form.save() support the commit parameter
+
 Fix perms: can_read_msg => can see members (?)
 
 Complete migration to class based views:

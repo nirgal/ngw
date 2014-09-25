@@ -269,7 +269,7 @@ class ContactGroupView(InGroupAcl, View):
 #######################################################################
 
 class GroupMemberListView(InGroupAcl, BaseContactListView):
-    template_name = 'group_detail.html'
+    template_name = 'group_members.html'
 
     def check_perm_groupuser(self, group, user):
         if not perms.c_can_see_members_cg(user.id, group.id):
@@ -796,7 +796,7 @@ class ContactInGroupForm(forms.ModelForm):
             return None
         cig.flags = newflags
         cig.save()
-        # TODO: use set_member_1 for logs
+        # TODO: use set_member_1 for logs:  cg.set_member_1(request, contact, flags)
         return cig
 
 

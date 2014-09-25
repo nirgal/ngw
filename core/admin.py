@@ -37,8 +37,10 @@ class ContactGroupNewsAdmin(admin.ModelAdmin):
     list_display = 'title', 'date', 'author', 'contact_group'
 admin.site.register(ContactGroupNews, ContactGroupNewsAdmin)
 
+from ngw.core.views.fields import FieldEditForm
 class ContactFieldAdmin(admin.ModelAdmin):
     list_display = 'name', 'type', 'contact_group', 'system'
+    form = FieldEditForm
 admin.site.register(ContactField, ContactFieldAdmin)
 
 class ContactFieldValueAdmin(admin.ModelAdmin):

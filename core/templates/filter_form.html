@@ -1,6 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% load i18n staticfiles ngwtags %}
 
+{% block bodyclass %}change-form{% endblock %}
+
 {% block content %}
     {{form.media|safe}}
 <div id="content-main">
