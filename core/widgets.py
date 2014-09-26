@@ -8,14 +8,6 @@ from django.utils.safestring import mark_safe
 from django.utils.encoding import force_text
 from django.utils.html import format_html
 
-class NgwCalendarWidget(forms.TextInput):
-    class Media:
-        #css = {
-        #    'all': ('pretty.css',)
-        #}
-        js = ('ngw/ngw.js', 'admin/js/calendar.js', 'admin/js/admin/DateTimeShortcuts.js')
-
-
 class FilterMultipleSelectWidget(forms.SelectMultiple):
     class Media:
         js = ('ngw/ngw.js',)

@@ -7,9 +7,12 @@ from django.utils import http
 from django.utils import html
 from django.utils import formats
 from django.conf import settings
-from ngw.core.models import (ContactField, ChoiceGroup, Choice,
+from django.contrib.admin.widgets import AdminDateWidget
+from ngw.core.models import (
+    ContactField, ChoiceGroup, Choice,
     register_contact_field_type)
-from ngw.core.models import (NameFilterStartsWith, FieldFilterStartsWith,
+from ngw.core.models import (
+    NameFilterStartsWith, FieldFilterStartsWith,
     FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE,
     FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,
     FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT,
@@ -20,8 +23,7 @@ from ngw.core.models import (NameFilterStartsWith, FieldFilterStartsWith,
     AllEventsReactionYearRatioMore)
     #, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
 from ngw.core import gpg
-from ngw.core.widgets import NgwCalendarWidget, OnelineCheckboxSelectMultiple
-
+from ngw.core.widgets import OnelineCheckboxSelectMultiple
 
 
 class RibField(forms.Field):
@@ -101,7 +103,7 @@ class DateContactField(ContactField):
         proxy = True
 
     def get_form_fields(self):
-        return forms.DateField(label=self.name, required=False, help_text='Use YYYY-MM-DD format.' + ' ' + self.hint, widget=NgwCalendarWidget(attrs={'class':'vDateField'}))
+        return forms.DateField(label=self.name, required=False, help_text=self.hint, widget=AdminDateWidget)
 
     def format_value_html(self, value):
         value = datetime.strptime(value, '%Y-%m-%d')

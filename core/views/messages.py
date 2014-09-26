@@ -19,10 +19,10 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, FormView
 from django import forms
 from django.contrib import messages
+from django.contrib.admin.widgets import AdminDateWidget
 from ngw.core.models import Contact, ContactMsg
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
-from ngw.core.widgets import NgwCalendarWidget
 
 
 #######################################################################
@@ -126,7 +126,7 @@ class SendMessageForm(forms.Form):
                 initial_date = date.today() + timedelta(days=21)
             self.fields['expiration_date'] = forms.DateField(
                 label=_('Expiration date'),
-                widget=NgwCalendarWidget(attrs={'class':'vDateField'}),
+                widget=AdminDateWidget,
                 initial=initial_date)
         self.fields['subject'] = forms.CharField(
             label=_('Subject'), max_length=64,

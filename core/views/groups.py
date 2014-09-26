@@ -18,6 +18,7 @@ from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
+from django.contrib.admin.widgets import AdminDateWidget
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY,
@@ -25,7 +26,7 @@ from ngw.core.models import (
     Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
     hooks)
-from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
+from ngw.core.widgets import FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView
@@ -485,7 +486,7 @@ class ContactGroupForm(forms.ModelForm):
             'name', 'description', 'date', 'budget_code', #'sticky',
             'field_group', 'mailman_address']
         widgets = {
-            'date': NgwCalendarWidget(attrs={'class':'vDateField'}),
+            'date': AdminDateWidget,
         }
 
     def __init__(self, *args, **kwargs):
