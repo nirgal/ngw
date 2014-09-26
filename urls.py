@@ -13,7 +13,7 @@ admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, DefaultGroupView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView, ContactInGroupDelete
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView, NewsDeleteView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
@@ -40,7 +40,7 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/delete$', ContactDeleteView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membership$', ContactInGroupView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membershipinline$', ContactInGroupInlineView.as_view()),
-    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/remove$', 'ngw.core.views.groups.contactingroup_delete'),
+    url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/remove$', ContactInGroupDelete.as_view()),
     url(r'^(?P<gid>\d+)/members/add_contacts_to$', GroupAddManyView.as_view()),
     url(r'^(?P<gid>\d+)/files(?P<path>/.*)$', FileListView.as_view()),
     url(r'^(?P<gid>\d+)/messages/$', MessageListView.as_view(), name='message_list'),

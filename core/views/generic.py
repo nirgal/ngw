@@ -305,9 +305,11 @@ class NgwDeleteView(DeleteView):
     def get_context_data(self, **kwargs):
         context = {}
         context['title'] = _('Please confirm deletetion')
-        context['nav'] = Navbar(self.object.get_class_navcomponent()) \
-            .add_component(self.object.get_navcomponent()) \
-            .add_component(('delete', _('delete')))
+        if 'nav' not in kwargs:
+            # Don't bother if it's overrident
+            context['nav'] = Navbar(self.object.get_class_navcomponent()) \
+                .add_component(self.object.get_navcomponent()) \
+                .add_component(('delete', _('delete')))
         context.update(kwargs)
         return super(NgwDeleteView, self).get_context_data(**context)
 
@@ -325,4 +327,5 @@ class NgwDeleteView(DeleteView):
         log.save()
 
         self.object.delete()
+        messages.add_message(request, messages.SUCCESS, _('%s has been deleted.') % name)
         return HttpResponseRedirect(success_url)

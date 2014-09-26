@@ -22,7 +22,7 @@ from django.views.generic import View, TemplateView, FormView, UpdateView, Creat
 from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
 from ngw.core.models import (
-    GROUP_EVERYBODY, GROUP_USER_NGW,
+    GROUP_EVERYBODY,
     FIELD_DEFAULT_GROUP,
     Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
@@ -950,20 +950,32 @@ class ContactInGroupInlineView(InGroupAcl, View):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactingroup_delete(request, gid, cid):
-    gid = gid and int(gid) or None
-    cid = cid and int(cid) or None
-    if not perms.c_can_change_members_cg(request.user.id, gid):
-        raise PermissionDenied
-    cg = get_object_or_404(ContactGroup, pk=gid)
-    try:
-        obj = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
-    except ContactInGroup.DoesNotExist:
-        return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
-    #messages.add_message(request, messages.SUCCESS, _('%s has been removed for group %s.') % (cig.contact.name, cig.group.name))
-    base_nav = cg.get_smart_navbar() \
-                  .add_component(('members', _('members')))
-    return generic_delete(request, obj, next_url=cg.get_absolute_url()+'members/', base_nav=base_nav)
-    # TODO: realnav bar is 'remove', not 'delete'
+class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_change_members_cg(user.id, group.id):
+            raise PermissionDenied
+
+    def get_object(self, *args, **kwargs):
+        if not hasattr(self, 'object'):
+            cid = int(self.kwargs['cid'])
+            self.object = ContactInGroup.objects.get(
+                contact_id=cid, group_id=self.contactgroup.id)
+        return self.object
+
+    def get_context_data(self, **kwargs):
+        contact = self.object.contact
+        print(self.contactgroup.get_smart_navbar())
+        context = {}
+        context['nav'] = self.contactgroup.get_smart_navbar() \
+            .add_component(('members', _('members'))) \
+            .add_component((force_text(contact.id), contact.name)) \
+            .add_component(('remove', _('delete')))
+        context.update(kwargs)
+        return super(ContactInGroupDelete, self).get_context_data(**context)
+
+    def get(self, request, gid, cid):
+        try:
+            self.get_object()
+        except ContactInGroup.DoesNotExist:
+            return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
+        return super(ContactInGroupDelete, self).get(self, request, gid, cid)
