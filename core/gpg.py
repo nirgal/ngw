@@ -99,9 +99,3 @@ def lookup(request):
         return HttpResponse(__build_content(title, '<pre>'+out+'</pre>'), 'text/html', 200)
 
     return HttpResponse(__build_content(title, 'pks request had an invalid <b>op</b> property'), 'text/html', 501)
-
-if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    options, args = parser.parse_args()
-    print(loadkeyring())

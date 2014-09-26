@@ -1,6 +1,7 @@
 *~
 *.pyc
 *.mo
+.gnupg
 apache.conf
 apache_error.log
 backup.sh
