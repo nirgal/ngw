@@ -12,7 +12,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, DefaultGroupView
+from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, FilterDeleteView, DefaultGroupView
 from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView, ContactInGroupDelete
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView, NewsDeleteView
 from ngw.core.views.files import FileListView, GroupMediaFileView
@@ -93,7 +93,7 @@ urlpatterns = patterns('',
     url(r'^contacts/(?P<cid>\d+)/filters/$', FilterListView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/filters/add$', FilterAddView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/$', FilterEditView.as_view(), name='filter_edit'),
-    url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/delete$', 'ngw.core.views.contacts.contact_filters_delete', name='filter_delete'),
+    url(r'^contacts/(?P<cid>\d+)/filters/(?P<fid>\d+)/delete$', FilterDeleteView.as_view(), name='filter_delete'),
     url(r'^contacts/(?P<cid>\d+)/default_group$', DefaultGroupView.as_view()),
 
     url(r'^contactgroups/$', ContactGroupListView.as_view(), name='group_list'),

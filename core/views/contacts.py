@@ -1121,21 +1121,23 @@ class FilterEditView(NgwUserAcl, FormView):
 #######################################################################
 
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contact_filters_delete(request, cid=None, fid=None):
-    cid = cid and int(cid) or None
-    fid = int(fid)
-    # Warning, here fid is the index in the filter list of a given user
-    if cid != request.user.id and not perms.c_can_write_fields_cg(request.user.id, GROUP_USER_NGW):
-        raise PermissionDenied
-    contact = get_object_or_404(Contact, pk=cid)
-    filter_list = contact.get_customfilters()
-    del filter_list[fid]
-    filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
-    contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-    messages.add_message(request, messages.SUCCESS, _('Filter has been deleted.'))
-    return HttpResponseRedirect(contact.get_absolute_url())
+class FilterDeleteView(NgwUserAcl, View):
+    def check_perm_user(self, user):
+        if int(self.kwargs['cid']) == user.id:
+            return  # Ok for oneself
+        if not perms.c_can_write_fields_cg(user.id, GROUP_USER_NGW):
+            raise PermissionDenied
+
+    def get(self, request, cid, fid):
+        cid = int(cid)
+        fid = int(fid)
+        contact = get_object_or_404(Contact, pk=cid)
+        filter_list = contact.get_customfilters()
+        del filter_list[fid]
+        filter_list_str = ','.join(['"' + name + '","' + filterstr + '"' for name, filterstr in filter_list])
+        contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
+        messages.add_message(request, messages.SUCCESS, _('Filter has been deleted.'))
+        return HttpResponseRedirect(contact.get_absolute_url())
 
 
 #######################################################################
