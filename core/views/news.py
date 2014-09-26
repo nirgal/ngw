@@ -144,10 +144,9 @@ class NewsDeleteView(InGroupAcl, NgwDeleteView):
         if not perms.c_can_change_news_cg(user.id, group.id):
             raise PermissionDenied
 
-    #def get_context_data(self, **kwargs):
-    #    context = {}
-    #    context.update(kwargs)
-    #    return super(NewsDeleteView, self).get_context_data(**context)
-
-    #def get_success_url(self):
-    #    return self.contactgroup.get_absolute_url() + 'news/'
+    def get_context_data(self, **kwargs):
+        context = {}
+    #    context['nav'] = self.contactgroup.get_smart_navbar() \
+    #             .add_component(('delete', _('delete')))
+        context.update(kwargs)
+        return super(NewsDeleteView, self).get_context_data(**context)

@@ -32,7 +32,7 @@ from ngw.core.nav import Navbar
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView
 from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwUserAcl, InGroupAcl, NgwListView
+from ngw.core.views.generic import generic_delete, NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
 
 
 #######################################################################
@@ -675,38 +675,47 @@ class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
 #
 #######################################################################
 
-def on_contactgroup_delete(cg):
-    """
-    All subgroups will now have their fathers' fathers as direct fathers
-    """
-    supergroups_ids = set(cg.get_direct_supergroups_ids())
-    for subcg in cg.get_direct_subgroups():
-        sub_super = set(subcg.get_direct_supergroups_ids())
-        #print(repr(subcg), "had these fathers:", sub_super)
-        sub_super = sub_super | supergroups_ids - {cg.id}
-        if not sub_super:
-            sub_super = {GROUP_EVERYBODY}
-        #print(repr(subcg), "new fathers:", sub_super)
-        subcg.set_direct_supergroups_ids(sub_super)
-        #print(repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids())
-    # TODO: delete static folder
 
+class GroupDeleteView(InGroupAcl, NgwDeleteView):
+    model = ContactGroup
+    pk_url_kwarg = 'gid'
 
-@login_required()
-@require_group(GROUP_USER_NGW)
-def contactgroup_delete(request, id):
-    id = id and int(id) or None
-    if not perms.c_can_change_cg(request.user.id, id):
-        raise PermissionDenied
-    obj = get_object_or_404(ContactGroup, pk=id)
-    if obj.date:
-        next_url = reverse('event_list')
-    else:
-        next_url = reverse('group_list')
-    if obj.system:
-        messages.add_message(request, messages.ERROR, _('Group %s is locked and CANNOT be deleted.') % obj.name)
-        return HttpResponseRedirect(next_url)
-    return generic_delete(request, obj, next_url, ondelete_function=on_contactgroup_delete)# args=(p.id,)))
+    def check_perm_groupuser(self, group, user):
+        if not perms.c_can_change_cg(user.id, group.id):
+            raise PermissionDenied
+
+    def get_object(self, *args, **kwargs):
+        cg = super(GroupDeleteView, self).get_object(*args, **kwargs)
+        if cg.system:
+            messages.add_message(
+                self.request, messages.ERROR,
+                _('Group %s is locked and CANNOT be deleted.') % cg.name)
+            raise PermissionDenied
+        return cg
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.contactgroup:
+            context['nav'] = self.contactgroup.get_smart_navbar() \
+                     .add_component(('delete', _('delete')))
+        context.update(kwargs)
+        return super(GroupDeleteView, self).get_context_data(**context)
+
+    def delete(self, request, *args, **kwargs):
+        cg = self.get_object()
+        # All subgroups will now have their fathers' fathers as direct fathers
+        supergroups_ids = set(cg.get_direct_supergroups_ids())
+        for subcg in cg.get_direct_subgroups():
+            sub_super = set(subcg.get_direct_supergroups_ids())
+            #print(repr(subcg), "had these fathers:", sub_super)
+            sub_super = sub_super | supergroups_ids - {cg.id}
+            if not sub_super:
+                sub_super = {GROUP_EVERYBODY}
+            #print(repr(subcg), "new fathers:", sub_super)
+            subcg.set_direct_supergroups_ids(sub_super)
+            #print(repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids())
+        # TODO: delete static folder
+        return super(GroupDeleteView, self).delete(request, *args, **kwargs)
 
 
 #######################################################################
