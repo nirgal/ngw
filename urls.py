@@ -22,6 +22,7 @@ from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownV
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView, ChoiceGroupDeleteView
 from ngw.core.views.logs import LogListView
 from ngw.core.views.contactsearch import ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
+from ngw.core.gpg import GpgLookupView
 
 # These patterns are valid with both /contactgroups and /events prefixes
 groups_urlpatterns = patterns('',
@@ -120,7 +121,7 @@ urlpatterns = patterns('',
 
     url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', GroupMediaFileView.as_view()),
 
-    url(r'^pks/lookup$', 'ngw.core.gpg.lookup'),
+    url(r'^pks/lookup$', GpgLookupView.as_view()),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     #url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

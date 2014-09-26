@@ -29,9 +29,6 @@ Make sure all form.save() support the commit parameter
 
 Fix perms: can_read_msg => can see members (?)
 
-Complete migration to class based views:
-- ngw.core.gpg.lookup
-
 Check how slicing is optimized in ContactQuerySet
 
 Fix ejabberd cross subscribe overrides:
