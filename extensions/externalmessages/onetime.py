@@ -9,26 +9,16 @@ import logging
 import smtplib
 import traceback
 from django.conf import settings
+from django.forms import ValidationError
 from django.utils.six.moves import urllib, http_client
-from django.utils.translation import ugettext, activate as language_activate
+from django.utils.translation import ugettext as _, activate as language_activate
 from django.utils.timezone import now
 from django.utils.encoding import force_str
 from django.core import mail
 from ngw.core.models import ContactMsg
 import ngw.core.contactfield
 
-_ = lambda x: x
-
 SUPPORTS_EXPIRATION = True
-
-NOTIFICATION_TEXT = _('''Hello
-
-You can read your message at https://onetime.info/%s
-
-Warning, that message will be displayed exactly once, and then be deleted. Have
-a pen ready before clicking the link. :)
-
-Do not replay to that email. Use the link above.''')
 
 SMTP_CONNECTION = None  # Permanent connection accross calls (within cron job)
 SMTP_SERVER_CONGESTION = False
@@ -40,6 +30,15 @@ logger = logging.getLogger('msgsync')
 # answer_password: Onetime password to get answers
 # email_sent: True if notification email was sent
 # deleted: True if remote server returns 404 (deleted on remote end)
+
+def clean_expiration_date(expiration_date):
+    MAXEXPIRATION = 90
+    if expiration_date <= datetime.date.today():
+        raise ValidationError(_('The expiration date must be in the future.'))
+    if expiration_date >= datetime.date.today() + datetime.timedelta(days=MAXEXPIRATION):
+        raise ValidationError(
+            _("The expiration date can't be more that %s days in the future.") % MAXEXPIRATION)
+    return expiration_date
 
 def send_to_onetime(msg):
     "step 1 : Send message to final storage"
@@ -123,9 +122,18 @@ def send_notification(msg):
 
     logger.info('Sending email notification to %s.', mail_addr)
 
+    notification_text = _('''Hello
+
+You can read your message at https://onetime.info/%s
+
+Warning, that message will be displayed exactly once, and then be deleted. Have
+a pen ready before clicking the link. :)
+
+Do not replay to that email. Use the link above.''')
+
     message = mail.EmailMessage(
         subject=msg.subject,
-        body=ugettext(NOTIFICATION_TEXT) % sync_info['otid'],
+        body=notification_text % sync_info['otid'],
         to=(mail_addr,),
         connection=SMTP_CONNECTION)
     try:

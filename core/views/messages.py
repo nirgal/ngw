@@ -142,8 +142,9 @@ class SendMessageForm(forms.Form):
 
     def clean_expiration_date(self):
         expiration_date = self.cleaned_data['expiration_date']
-        if expiration_date <= date.today():
-            raise forms.ValidationError(_('The expiration date must be in the future.'))
+        date_cleaner =  getattr(EXTERNAL_MESSAGE_BACKEND, 'clean_expiration_date', None)
+        if date_cleaner:
+            expiration_date = date_cleaner(expiration_date)
         return expiration_date
 
 
