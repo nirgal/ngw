@@ -9,7 +9,7 @@ import json
 from datetime import date, timedelta
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseRedirect, Http404, HttpResponse
+from django.http import HttpResponseRedirect, Http404
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
@@ -19,9 +19,7 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, FormView
 from django import forms
 from django.contrib import messages
-from ngw.core.models import (
-    FIELD_EMAIL,
-    Contact, ContactMsg, ContactInGroup)
+from ngw.core.models import Contact, ContactMsg
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
 from ngw.core.widgets import NgwCalendarWidget

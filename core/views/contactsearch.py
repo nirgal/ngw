@@ -5,7 +5,6 @@ ajax views for building contact filter
 
 from __future__ import division, print_function, unicode_literals
 
-from collections import OrderedDict
 from django.utils import six
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
@@ -18,24 +17,26 @@ from ngw.core.response import JsonHttpResponse
 from ngw.core.views.generic import NgwUserAcl
 
 
-
 class ContactSearchColumnsView(NgwUserAcl, View):
     def get(self, request, *args, **kwargs):
         column_type = self.kwargs['column_type']
         if column_type == 'fields':
-            fields = ContactField.objects.order_by('sort_weight').extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id])
+            fields = ContactField.objects.order_by('sort_weight').extra(where=[
+                'perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % request.user.id])
             choices = [{'id': 'name', 'text': force_text(_('Name'))}]
             for field in fields:
                 choices.append({'id': force_text(field.id), 'text': field.name})
 
         elif column_type == 'groups':
-            groups = ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('name')
+            groups = ContactGroup.objects.filter(date=None).extra(where=[
+                'perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('name')
             choices = []
             for group in groups:
                 choices.append({'id': force_text(group.id), 'text': group.name})
 
         elif column_type == 'events':
-            groups = ContactGroup.objects.exclude(date=None).extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
+            groups = ContactGroup.objects.exclude(date=None).extra(where=[
+                'perm_c_can_see_members_cg(%s, contact_group.id)' % request.user.id]).order_by('-date', 'name')
             choices = []
             choices.append({'id': 'allevents', 'text': force_text(_('All events'))})
             for group in groups:

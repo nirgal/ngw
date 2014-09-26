@@ -4,20 +4,17 @@ ChoiceGroup & Choice managing views
 '''
 
 from __future__ import division, absolute_import, print_function, unicode_literals
-from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
 from django.utils.translation import ugettext_lazy as _
 from django.utils.six import iteritems
-from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
-from ngw.core.models import GROUP_USER_NGW, ChoiceGroup
+from ngw.core.models import ChoiceGroup
 from ngw.core.nav import Navbar
-from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 

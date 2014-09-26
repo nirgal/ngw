@@ -14,9 +14,7 @@ from django.utils.translation import ugettext_lazy as _, string_concat
 from django.utils.encoding import force_text
 from django.utils import formats
 from django.utils import six
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
-from django.core.urlresolvers import reverse
+from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
@@ -31,8 +29,7 @@ from ngw.core.widgets import NgwCalendarWidget, FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView
-from ngw.core.views.decorators import login_required, require_group
-from ngw.core.views.generic import generic_delete, NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
+from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
 
 
 #######################################################################
@@ -484,8 +481,9 @@ class GroupAddManyView(InGroupAcl, FormView):
 class ContactGroupForm(forms.ModelForm):
     class Meta:
         model = ContactGroup
-        fields = ['name', 'description', 'date', 'budget_code', 'sticky', 'field_group',
-            'mailman_address']
+        fields = [
+            'name', 'description', 'date', 'budget_code', 'sticky',
+            'field_group', 'mailman_address']
         widgets = {
             'date': NgwCalendarWidget(attrs={'class':'vDateField'}),
         }
@@ -653,16 +651,19 @@ class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
     def get(self, request, *args, **kwargs):
         default_group_id = request.user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
         if not default_group_id:
-            messages.add_message(request, messages.WARNING,
+            messages.add_message(
+                request, messages.WARNING,
                 _('You must define a default group before you can create a group.'))
             return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
         default_group_id = int(default_group_id)
         if not request.user.is_member_of(default_group_id):
-            messages.add_message(request, messages.WARNING,
+            messages.add_message(
+                request, messages.WARNING,
                 _('You no longer are member of your default group. Please define a new default group.'))
             return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
         if not perms.c_can_see_cg(request.user.id, default_group_id):
-            messages.add_message(request, messages.WARNING,
+            messages.add_message(
+                request, messages.WARNING,
                 _('You no longer are authorized to see your default group. Please define a new default group.'))
             return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
 
@@ -762,7 +763,7 @@ class ContactInGroupForm(forms.ModelForm):
                     widget=forms.widgets.CheckboxInput(attrs={
                         'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
                     }),
-                    initial = initial))
+                    initial=initial))
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
@@ -865,19 +866,24 @@ class ContactInGroupView(InGroupAcl, FormView):
         context['objtype'] = ContactInGroup
         inherited_info = ''
 
-        automember_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.MEMBER)]).exclude(id=gid).order_by('-date', 'name')
-        visible_automember_groups = automember_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
-        invisible_automember_groups = automember_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+        automember_groups = ContactGroup.objects.extra(
+            where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.MEMBER)]).exclude(id=gid).order_by('-date', 'name')
+        visible_automember_groups = automember_groups.extra(
+            where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+        invisible_automember_groups = automember_groups.extra(
+            where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
         #print(automember_groups.query)
         if automember_groups:
             inherited_info = string_concat(
-                    inherited_info,
-                    _('Automatically member because member of subgroup(s)'),
-                    ':<ul>')
+                inherited_info,
+                _('Automatically member because member of subgroup(s)'),
+                ':<ul>')
             for sub_cg in visible_automember_groups:
                 inherited_info = string_concat(
                     inherited_info,
-                    '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()})
+                    '<li><a href=\"%(url)s\">%(name)s</a>' % {
+                        'name': sub_cg.name_with_date(),
+                        'url': sub_cg.get_absolute_url()})
             if invisible_automember_groups:
                 inherited_info = string_concat(
                     inherited_info,

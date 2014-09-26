@@ -8,15 +8,12 @@ from datetime import datetime
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from django.shortcuts import get_object_or_404
-from django.views.generic import ListView, UpdateView, CreateView, DeleteView
+from django.views.generic import ListView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
 from django import forms
 from django.contrib import messages
-from ngw.core.models import GROUP_USER_NGW, ContactGroup, ContactGroupNews
+from ngw.core.models import ContactGroupNews
 from ngw.core import perms
-from ngw.core.nav import Navbar
-from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import InGroupAcl, NgwDeleteView
 
 

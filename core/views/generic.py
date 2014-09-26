@@ -5,17 +5,14 @@ Base view class; View helpers
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
-from collections import OrderedDict
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
-from django.utils import six
 from django.utils.text import capfirst
 from django.utils.http import urlencode
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404
 from django.views.generic.base import ContextMixin
 from django.views.generic import ListView, DeleteView
 from django.contrib import messages
@@ -238,7 +235,8 @@ class NgwListView(ListView):
         context['cols'] = self.cols
         context['baseurl'] = self.get_query_string()
         context['order'] = self.order
-        context['simplefilters'] = [ (filter,filter.choices(self)) for filter in self.simplefilters ]
+        context['simplefilters'] = [
+            (filter, filter.choices(self)) for filter in self.simplefilters]
         context['actions'] = [
             (funcname, _get_action_desc(getattr(self, funcname)))
             for funcname in self.get_actions(self.request)]
@@ -266,38 +264,11 @@ class NgwListView(ListView):
 
 #######################################################################
 #
-# Generic delete
+# Basic delete view
 #
 #######################################################################
 
 # Helper function that is never call directly, hence the lack of authentification check
-def generic_delete(request, obj, next_url, base_nav=None, ondelete_function=None):
-    title = _('Please confirm deletetion')
-
-    if request.method == 'POST':
-        if ondelete_function:
-            ondelete_function(obj)
-        name = force_text(obj)
-        log = Log()
-        log.contact_id = request.user.id
-        log.action = LOG_ACTION_DEL
-        pk_names = (obj._meta.pk.attname,)  # default django pk name
-        log.target = force_text(obj.__class__.__name__) + ' ' + ' '.join([force_text(obj.__getattribute__(fieldname)) for fieldname in pk_names])
-        log.target_repr = obj.get_class_verbose_name() + ' '+name
-        obj.delete()
-        log.save()
-        messages.add_message(request, messages.SUCCESS, _('%s has been deleted.') % name)
-        return HttpResponseRedirect(next_url)
-    else:
-        nav = base_nav or Navbar(obj.get_class_navcomponent())
-        nav.add_component(obj.get_navcomponent()) \
-           .add_component(('delete', _('delete')))
-        return render_to_response('delete.html', {
-            'title': title,
-            'object': obj,
-            'nav': nav}, RequestContext(request))
-
-
 class NgwDeleteView(DeleteView):
     template_name = 'delete.html'
     success_url = '../'

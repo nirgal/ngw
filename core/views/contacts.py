@@ -18,7 +18,7 @@ from django.utils.encoding import force_text
 from django.utils.six import iteritems
 from django.utils import html
 from django.utils.decorators import method_decorator
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.template import loader, RequestContext
 from django.core.urlresolvers import reverse
 from django import forms
@@ -37,7 +37,6 @@ from ngw.core.nav import Navbar
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
-from ngw.core.views.decorators import login_required, require_group
 from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
 from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 
