@@ -482,7 +482,7 @@ class ContactGroupForm(forms.ModelForm):
     class Meta:
         model = ContactGroup
         fields = [
-            'name', 'description', 'date', 'budget_code', 'sticky',
+            'name', 'description', 'date', 'budget_code', #'sticky',
             'field_group', 'mailman_address']
         widgets = {
             'date': NgwCalendarWidget(attrs={'class':'vDateField'}),
@@ -615,7 +615,7 @@ class GroupEditMixin(ModelFormMixin):
         elif request.POST.get('_addanother', None):
             return HttpResponseRedirect(cg.get_class_absolute_url() + 'add')
         else:
-                return HttpResponseRedirect(cg.get_absolute_url())
+            return HttpResponseRedirect(cg.get_absolute_url())
 
     def get_context_data(self, **kwargs):
         context = {}
