@@ -26,13 +26,13 @@ from django.views.generic import View, TemplateView, FormView, UpdateView, Creat
 from django.views.generic.edit import ModelFormMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from ngw.core.models import (
     GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
     Config, Contact, ContactGroup, ContactField, ContactFieldValue,
     ContactInGroup, Log,
     LOG_ACTION_ADD, LOG_ACTION_CHANGE,
     FIELD_COLUMNS, FIELD_FILTERS, FIELD_DEFAULT_GROUP)
-from ngw.core.widgets import FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
@@ -358,7 +358,9 @@ class FieldSelectForm(forms.Form):
     '''
     def __init__(self, user, *args, **kargs):
         super(FieldSelectForm, self).__init__(*args, **kargs)
-        self.fields['selected_fields'] = forms.MultipleChoiceField(required=False, widget=FilterMultipleSelectWidget('Fields', False), choices=get_available_columns(user.id))
+        self.fields['selected_fields'] = forms.MultipleChoiceField(
+            required=False, widget=FilteredSelectMultiple(_('Fields'), False),
+            choices=get_available_columns(user.id))
 
 
 class BaseContactListView(NgwListView):

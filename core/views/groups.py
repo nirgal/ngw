@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
-from django.contrib.admin.widgets import AdminDateWidget
+from django.contrib.admin.widgets import FilteredSelectMultiple, AdminDateWidget
 from django.contrib import messages
 from ngw.core.models import (
     GROUP_EVERYBODY,
@@ -26,7 +26,6 @@ from ngw.core.models import (
     Contact, ContactGroup, ContactInGroup, GroupInGroup,
     GroupManageGroup,
     hooks)
-from ngw.core.widgets import FilterMultipleSelectWidget
 from ngw.core.nav import Navbar
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView
@@ -512,7 +511,7 @@ class ContactGroupForm(forms.ModelForm):
             label=_('Direct supergroups'),
             required=False,
             help_text=_('Members will automatically be granted membership in these groups.'),
-            widget=FilterMultipleSelectWidget('groups', False),
+            widget=FilteredSelectMultiple(_('groups'), False),
             choices = visible_groups_choices,
             initial = field_initial)
 
@@ -533,7 +532,7 @@ class ContactGroupForm(forms.ModelForm):
                 label=perms.FLAGGROUPLABEL[flag],
                 required=False,
                 help_text=perms.FLAGGROUPHELP[flag],
-                widget=FilterMultipleSelectWidget('groups', False),
+                widget=FilteredSelectMultiple(_('groups'), False),
                 choices = visible_groups_choices,
                 initial = field_initial)
 

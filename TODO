@@ -20,11 +20,11 @@ Show messages counts on the member list
 CODE REFACTOR
 ====================================================================================================
 
-Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEditView
-
 Make sure all form.save() support the commit parameter
 
 Fix perms: can_read_msg => can see members (?)
+
+Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEditView
 
 Check how slicing is optimized in ContactQuerySet
 
@@ -52,8 +52,6 @@ CRSF validation fails on login page if it is shown too long:
 See https://github.com/yourlabs/django-session-security/issues/29
 
 Change USE_TZ to True
-
-Cleanup widgets
 
 
 ====================================================================================================
