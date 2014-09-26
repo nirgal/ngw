@@ -6,7 +6,7 @@ from django.conf import settings
 from django import forms
 from django.utils.safestring import mark_safe
 from django.utils.encoding import force_text
-from django.utils import html
+from django.utils.html import format_html
 
 class NgwCalendarWidget(forms.TextInput):
     class Media:
@@ -37,27 +37,19 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
 
 # That class is a clone of forms.CheckboxSelectMultiple
 # It only adds an extra class=multiplechoice to the <ul>
-class NgwCheckboxSelectMultiple(forms.SelectMultiple):
-    def render(self, name, value, attrs=None, choices=()):
-        if value is None: value = []
-        has_id = attrs and 'id' in attrs
-        final_attrs = self.build_attrs(attrs, name=name)
-        output = ['<ul class=multiplechoice>']
-        # Normalize to strings
-        str_values = set([force_text(v) for v in value])
-        for i, (option_value, option_label) in enumerate(chain(self.choices, choices)):
-            # If an ID attribute was given, add a numeric index as a suffix,
-            # so that the checkboxes don't all have the same ID attribute.
-            if has_id:
-                final_attrs = dict(final_attrs, id='%s_%s' % (attrs['id'], i))
-                label_for = ' for="%s"' % final_attrs['id']
-            else:
-                label_for = ''
-
-            cb = forms.CheckboxInput(final_attrs, check_test=lambda value: value in str_values)
-            option_value = force_text(option_value)
-            rendered_cb = cb.render(name, option_value)
-            option_label = html.conditional_escape(force_text(option_label))
-            output.append('<li><label%s>%s %s</label></li>' % (label_for, rendered_cb, option_label))
-        output.append('</ul>')
-        return mark_safe('\n'.join(output))
+class NgwCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
+    class NgwCheckboxFieldRenderer(forms.widgets.CheckboxFieldRenderer):
+        def render(self):
+            """
+            Outputs a <ul> for this set of choice fields.
+            If an id was given to the field, it is applied to the <ul> (each
+            item in the list will get an id of `$id_$i`).
+            """
+            id_ = self.attrs.get('id', None)
+            start_tag = format_html('<ul class=multiplechoice id="{0}">', id_) if id_ else '<ul class=multiplechoice>'
+            output = [start_tag]
+            for widget in self:
+                output.append(format_html('<li>{0}</li>', force_text(widget)))
+            output.append('</ul>')
+            return mark_safe('\n'.join(output))
+    renderer = NgwCheckboxFieldRenderer

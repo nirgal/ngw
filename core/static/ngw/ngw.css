@@ -127,6 +127,15 @@ div.fullpagebox {
     bbackground: yellow;
 }
 
+
+table ul.multiplechoice {
+    margin: 0;
+    padding: 0;
+}
+table ul.multiplechoice li {
+    display: inline;
+}
+
 /* Hack for admin multiple select widget */
 .selector h2 {
     margin-bottom: 0px;
