@@ -2,9 +2,13 @@
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from django.contrib import admin
+from django.utils.translation import ugettext_lazy as _l
 from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
     ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
     ContactFieldValue, ContactMsg)
+
+# Globally disable delete selected
+#admin.site.disable_action('delete_selected')
 
 class ConfigAdmin(admin.ModelAdmin):
     list_display = 'id',
@@ -39,8 +43,29 @@ admin.site.register(ContactGroupNews, ContactGroupNewsAdmin)
 
 from ngw.core.views.fields import FieldEditForm
 class ContactFieldAdmin(admin.ModelAdmin):
-    list_display = 'name', 'type', 'contact_group', 'system'
+    list_display = 'name', 'nice_case_type', 'contact_group', 'system'
+    #list_display_links = 'name',
+    #list_editable = 'name', 'contact_group',
     form = FieldEditForm
+
+    def nice_case_type(self, field):
+        return field.type[0].upper() + field.type[1:].lower()
+    nice_case_type.short_description = _l('type')
+    nice_case_type.admin_order_field = 'type'
+
+    def changelist_view(self, request):
+        return super(ContactFieldAdmin, self).changelist_view(request)
+    #def get_urls(self):
+    #    urls = super(MyModelAdmin, self).get_urls()
+    #    my_urls = patterns('',
+    #        (r'^my_view/$', self.my_view)
+    #    )
+    #    return my_urls + urls
+
+    #def my_view(self, request):
+    #    # custom view which should return an HttpResponse
+    #    pass
+
 admin.site.register(ContactField, ContactFieldAdmin)
 
 class ContactFieldValueAdmin(admin.ModelAdmin):

@@ -9,6 +9,7 @@ from django.conf.urls.static import static
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
+from ngw.core.models import ContactField
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
@@ -108,10 +109,11 @@ urlpatterns = patterns('',
     url(r'^contactfields/add$', FieldCreateView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/$', RedirectView.as_view(url='edit')),
     url(r'^contactfields/(?P<id>\d+)/edit$', FieldEditView.as_view()),
-    #url(r'^contactfields2/(\d+)/edit$', admin.site._registry[ContactField].change_view),
     url(r'^contactfields/(?P<id>\d+)/moveup$', FieldMoveUpView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/movedown$', FieldMoveDownView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/delete$', FieldDeleteView.as_view()),
+    #url(r'^contactfields2/$', admin.site._registry[ContactField].changelist_view),
+    #url(r'^contactfields2/(\d+)/edit$', admin.site._registry[ContactField].change_view),
 
     url(r'^choicegroups/$', ChoiceListView.as_view(), name='choice_list'),
     url(r'^choicegroups/add$', ChoiceCreateView.as_view(), name='choice_add'),
