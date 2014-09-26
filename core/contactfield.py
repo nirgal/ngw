@@ -20,7 +20,7 @@ from ngw.core.models import (NameFilterStartsWith, FieldFilterStartsWith,
     AllEventsReactionYearRatioMore)
     #, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
 from ngw.core import gpg
-from ngw.core.widgets import NgwCalendarWidget, NgwCheckboxSelectMultiple
+from ngw.core.widgets import NgwCalendarWidget, OnelineCheckboxSelectMultiple
 
 
 
@@ -235,7 +235,7 @@ class MultipleChoiceContactField(ContactField):
                 txt_choice_list.append(c.value)
         return ', '.join(txt_choice_list)
     def get_form_fields(self):
-        return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=NgwCheckboxSelectMultiple())
+        return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=OnelineCheckboxSelectMultiple())
     def formfield_value_to_db_value(self, value):
         return ','.join(value)
     def db_value_to_formfield_value(self, value):

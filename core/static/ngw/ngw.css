@@ -128,12 +128,13 @@ div.fullpagebox {
 }
 
 
-table ul.multiplechoice {
-    margin: 0;
-    padding: 0;
+ul.onelinechoices {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    margin-bottom: 0 !important;
 }
-table ul.multiplechoice li {
-    display: inline;
+ul.onelinechoices li {
+    display: inline-block;
 }
 
 /* Hack for admin multiple select widget */

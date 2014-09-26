@@ -36,8 +36,8 @@ class FilterMultipleSelectWidget(forms.SelectMultiple):
 
 
 # That class is a clone of forms.CheckboxSelectMultiple
-# It only adds an extra class=multiplechoice to the <ul>
-class NgwCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
+# It only adds an extra class=onelinechoices to the <ul>
+class OnelineCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
     class NgwCheckboxFieldRenderer(forms.widgets.CheckboxFieldRenderer):
         def render(self):
             """
@@ -46,7 +46,7 @@ class NgwCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
             item in the list will get an id of `$id_$i`).
             """
             id_ = self.attrs.get('id', None)
-            start_tag = format_html('<ul class=multiplechoice id="{0}">', id_) if id_ else '<ul class=multiplechoice>'
+            start_tag = format_html('<ul class=onelinechoices id="{0}">', id_) if id_ else '<ul class=onelinechoices>'
             output = [start_tag]
             for widget in self:
                 output.append(format_html('<li>{0}</li>', force_text(widget)))
