@@ -183,7 +183,7 @@ class Choice(NgwModel):
 @python_2_unicode_compatible
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(_('Name'), max_length=255, blank=True)
+    name = models.CharField(_('Name'), max_length=255)
     sort_by_key = models.BooleanField(_('Sort by key'), default=False)
     class Meta:
         db_table = 'choice_group'

@@ -54,7 +54,7 @@ CREATE TABLE contact_group (
 
 CREATE TABLE choice_group (
     id serial NOT NULL PRIMARY KEY,
-    name character varying(255),
+    name character varying(255) NOT NULL,
     sort_by_key boolean DEFAULT false NOT NULL
 );
 

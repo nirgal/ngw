@@ -55,7 +55,7 @@ class ChoicesWidget(forms.MultiWidget):
         attrs_value = attrs or {}
         attrs_key = attrs or {}
         attrs_value['style'] = 'width:90%'
-        attrs_key['style'] = 'width:9%; margin-left:1ex;'
+        attrs_key['style'] = 'width:7%; margin-left:1ex;'
 
         for i in range(ndisplay):
             widgets.append(forms.TextInput(attrs=attrs_value))
@@ -108,10 +108,11 @@ class ChoiceGroupForm(forms.Form):
     name = forms.CharField(label=_('Name'), max_length=255)
     sort_by_key = forms.BooleanField(label=_('Sort by key'), required=False)
 
-    def __init__(self, instance=None, *args, **kargs):
-        forms.Form.__init__(self, *args, **kargs)
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.pop('instance', None)
+        forms.Form.__init__(self, *args, **kwargs)
 
-        self.choicegroup = choicegroup = instance
+        self.instance = choicegroup = instance
 
         ndisplay = 0
         self.initial['possible_values'] = []
@@ -135,12 +136,10 @@ class ChoiceGroupForm(forms.Form):
             widget=ChoicesWidget(ndisplay=ndisplay),
             ndisplay=ndisplay)
 
-    def save(self, choicegroup, request):
-        if choicegroup:
-            oldid = choicegroup.id
-        else:
+    def save(self):
+        choicegroup = self.instance
+        if not choicegroup:
             choicegroup = ChoiceGroup()
-            oldid = None
         choicegroup.name = self.clean()['name']
         choicegroup.sort_by_key = self.clean()['sort_by_key']
         choicegroup.save()
@@ -189,7 +188,6 @@ class ChoiceGroupForm(forms.Form):
             #print('ADDING', k)
             choicegroup.choices.create(key=k, value=v)
 
-        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved sucessfully.') % choicegroup.name)
         return choicegroup
 
 
@@ -201,7 +199,8 @@ class ChoiceEditMixin(ModelFormMixin):
 
     def form_valid(self, form):
         request = self.request
-        form.save(self.object, request)
+        choicegroup = form.save()
+        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved sucessfully.') % choicegroup.name)
         choicegroup = self.object
         if request.POST.get('_continue', None):
             return HttpResponseRedirect(choicegroup.get_absolute_url()+'edit')
