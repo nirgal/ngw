@@ -104,22 +104,19 @@ class ChoicesField(forms.MultiValueField):
         return possibles_values
 
 
-class ChoiceGroupForm(forms.Form):
-    name = forms.CharField(label=_('Name'), max_length=255)
-    sort_by_key = forms.BooleanField(label=_('Sort by key'), required=False)
+class ChoiceGroupForm(forms.ModelForm):
+    class Meta:
+        model = ChoiceGroup
+        fields = ['name', 'sort_by_key']
 
     def __init__(self, *args, **kwargs):
-        instance = kwargs.pop('instance', None)
-        forms.Form.__init__(self, *args, **kwargs)
-
-        self.instance = choicegroup = instance
+        choicegroup = kwargs.get('instance', None)
+        super(ChoiceGroupForm, self).__init__(*args, **kwargs)
 
         ndisplay = 0
         self.initial['possible_values'] = []
 
         if choicegroup:
-            self.initial['name'] = choicegroup.name
-            self.initial['sort_by_key'] = choicegroup.sort_by_key
             choices = choicegroup.ordered_choices
             for c in choices:
                 self.initial['possible_values'].append(c[1])
@@ -137,12 +134,7 @@ class ChoiceGroupForm(forms.Form):
             ndisplay=ndisplay)
 
     def save(self):
-        choicegroup = self.instance
-        if not choicegroup:
-            choicegroup = ChoiceGroup()
-        choicegroup.name = self.clean()['name']
-        choicegroup.sort_by_key = self.clean()['sort_by_key']
-        choicegroup.save()
+        choicegroup = super(ChoiceGroupForm, self).save()
 
         possibles_values = self.cleaned_data['possible_values']
         choices = {}
