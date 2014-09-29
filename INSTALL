@@ -79,6 +79,10 @@ Admin account setup:
 In order to create an admin account, use:
 ./manage createsuperuser
 
+oomailing permissions:
+======================
+chown www-data: /usr/lib/ngw/mailing/generated/
+
 Optionnal extensions
 ====================
 
