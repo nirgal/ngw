@@ -6,7 +6,7 @@ ajax views for building contact filter
 from __future__ import division, print_function, unicode_literals
 
 from django.utils import six
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 from django.utils.encoding import force_text
 from django.http import Http404
 from django.views.generic import View

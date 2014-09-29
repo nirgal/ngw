@@ -7,7 +7,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils.text import capfirst

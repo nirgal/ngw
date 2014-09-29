@@ -10,7 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
-from django.utils.translation import ugettext_lazy as _, string_concat
+from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
 from django.utils import formats
 from django.utils import six
@@ -82,14 +82,14 @@ def get_UContactGroup(userid):
 
 class ContactGroupListView(NgwUserAcl, NgwListView):
     cols = [
-        (_('Name'), None, 'name', 'name'),
-        (_('Description'), None, 'description_not_too_long', 'description'),
-        #(_('Contact fields'), None, 'rendered_fields', 'field_group'),
-        (_('Super groups'), None, 'visible_direct_supergroups_5', None),
-        (_('Sub groups'), None, 'visible_direct_subgroups_5', None),
-        #(_('Budget\u00a0code'), None, 'budget_code', 'budget_code'),
-        #(_('Members'), None, 'visible_member_count', None),
-        #(_('System\u00a0locked'), None, 'system', 'system'),
+        (ugettext_lazy('Name'), None, 'name', 'name'),
+        (ugettext_lazy('Description'), None, 'description_not_too_long', 'description'),
+        #(ugettext_lazy('Contact fields'), None, 'rendered_fields', 'field_group'),
+        (ugettext_lazy('Super groups'), None, 'visible_direct_supergroups_5', None),
+        (ugettext_lazy('Sub groups'), None, 'visible_direct_subgroups_5', None),
+        #(ugettext_lazy('Budget\u00a0code'), None, 'budget_code', 'budget_code'),
+        #(ugettext_lazy('Members'), None, 'visible_member_count', None),
+        #(ugettext_lazy('System\u00a0locked'), None, 'system', 'system'),
     ]
 
     def get_root_queryset(self):
@@ -345,13 +345,13 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     def action_send_message(self, request, queryset):
         ids = request.POST.getlist('_selected_action')
         return HttpResponseRedirect('send_message?ids=' + ','.join(ids))
-    action_send_message.short_description = _("Send a message (external storage)")
+    action_send_message.short_description = ugettext_lazy("Send a message (external storage)")
 
 
     def add_to_group(self, request, queryset):
         ids = request.POST.getlist('_selected_action')
         return HttpResponseRedirect('add_contacts_to?ids=' + ','.join(ids))
-    add_to_group.short_description = _("Add to another group")
+    add_to_group.short_description = ugettext_lazy("Add to another group")
 
 
 #######################################################################
@@ -874,41 +874,27 @@ class ContactInGroupView(InGroupAcl, FormView):
             where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
         #print(automember_groups.query)
         if automember_groups:
-            inherited_info = string_concat(
-                inherited_info,
-                _('Automatically member because member of subgroup(s)'),
-                ':<ul>')
+            inherited_info += _('Automatically member because member of subgroup(s)') + ':<ul>'
             for sub_cg in visible_automember_groups:
-                inherited_info = string_concat(
-                    inherited_info,
-                    '<li><a href=\"%(url)s\">%(name)s</a>' % {
-                        'name': sub_cg.name_with_date(),
-                        'url': sub_cg.get_absolute_url()})
+                inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
+                    'name': sub_cg.name_with_date(),
+                    'url': sub_cg.get_absolute_url()}
             if invisible_automember_groups:
-                inherited_info = string_concat(
-                    inherited_info,
-                    '<li>',
-                    _('Hidden group(s)...'))
-            inherited_info = string_concat(inherited_info, '</ul>')
+                inherited_info += '<li>' + _('Hidden group(s)...')
+            inherited_info += '</ul>'
 
         autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.INVITED)]).exclude(id=gid).order_by('-date', 'name')
         visible_autoinvited_groups = autoinvited_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
         invisible_autoinvited_groups = autoinvited_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
         if autoinvited_groups:
-            inherited_info = string_concat(
-                inherited_info,
-                _('Automatically invited because invited in subgroup(s)'),
-                ':<ul>')
+            inherited_info += _('Automatically invited because invited in subgroup(s)') + ':<ul>'
             for sub_cg in visible_autoinvited_groups:
-                inherited_info = string_concat(
-                    inherited_info,
-                    '<li><a href=\"%(url)s\">%(name)s</a>' % {'name': sub_cg.name_with_date(), 'url': sub_cg.get_absolute_url()})
+                inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
+                    'name': sub_cg.name_with_date(),
+                    'url': sub_cg.get_absolute_url()}
             if invisible_autoinvited_groups:
-                inherited_info = string_concat(
-                    inherited_info,
-                    '<li>',
-                    _('Hidden group(s)...'))
-            inherited_info = string_concat(inherited_info, '</ul>')
+                inherited_info += '<li>' + _('Hidden group(s)...')
+            inherited_info += '</ul>'
 
         context['inherited_info'] = mark_safe(inherited_info)
 

@@ -2,7 +2,7 @@
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 from django.contrib import admin
-from django.utils.translation import ugettext_lazy as _l
+from django.utils.translation import ugettext_lazy
 from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
     ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
     ContactFieldValue, ContactMsg)
@@ -62,7 +62,7 @@ class ContactFieldAdmin(admin.ModelAdmin):
 
     def nice_case_type(self, field):
         return field.type[0].upper() + field.type[1:].lower()
-    nice_case_type.short_description = _l('type')
+    nice_case_type.short_description = ugettext_lazy('type')
     nice_case_type.admin_order_field = 'type'
 
     def changelist_view(self, request):

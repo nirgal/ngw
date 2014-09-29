@@ -22,7 +22,7 @@ from collections import OrderedDict
 from django.db import connection
 from django.utils import six
 from django.utils.encoding import force_text
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _, ugettext_lazy
 
 MEMBER         =     1 # 'm'ember
 INVITED        =     2 # 'i'nvited
@@ -64,51 +64,65 @@ def _register_flag(intval, code, requires, conflicts, text, group_label, group_h
 # human friendly text, sometimes used in forms field names
 # dependency: 'u':'e' means viewing files implies viewing group existence
 # conflicts: 'F':'f' means can't write to fields unless can read them too
-_register_flag(MEMBER, 'm', '', 'id', _('Member'), None, None)
-_register_flag(INVITED, 'i', '', 'md', _('Invited'), None, None)
-_register_flag(DECLINED, 'd', '', 'mi', _('Declined'), None, None)
-_register_flag(OPERATOR, 'o', 'veEcCfFnNuUxX', '', _('Operator'),
-    _('Operator groups'),
-    _('Members of these groups will automatically be granted administrative priviledges.'))
-_register_flag(VIEWER, 'v', 'ecfnux', '', _('Viewer'),
-    _('Viewer groups'),
-    _("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."))
-_register_flag(SEE_CG, 'e', '', '', _('Can see group exists'),
-    _('Existence seer groups'),
-    _('Members of these groups will automatically be granted priviledge to know that current group exists.'))
-_register_flag(CHANGE_CG, 'E', 'e', '', _('Can change group'),
-    _('Editor groups'),
-    _('Members of these groups will automatically be granted priviledge to change/delete the current group.'))
-_register_flag(SEE_MEMBERS, 'c', 'e', '', _('Can see members'),
-    _('Members seer groups'),
-    _('Members of these groups will automatically be granted priviledge to see the list of members.'))
-_register_flag(CHANGE_MEMBERS, 'C', 'ec', '', _('Can change members'),
-    _('Members changing groups'),
-    _('Members of these groups will automatically be granted permission to change members of current group.'))
-_register_flag(VIEW_FIELDS, 'f', 'e', '', _('Can view fields'),
-    _('Fields viewer groups'),
-    _('Members of these groups will automatically be granted permission to read the fields associated to current group.'))
-_register_flag(WRITE_FIELDS, 'F', 'ef', '', _('Can write fields'),
-    _('Fields writer groups'),
-    _('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'))
-_register_flag(VIEW_NEWS, 'n', 'e', '', _('Can view news'),
-    _('News viewer groups'),
-    _('Members of these groups will automatically be granted permisson to read news of current group.'))
-_register_flag(WRITE_NEWS, 'N', 'en', '', _('Can write news'),
-    _('News writer groups'),
-    _('Members of these groups will automatically be granted permission to write news in that group.'))
-_register_flag(VIEW_FILES, 'u', 'e', '', _('Can view uploaded files'),
-    _('File viewer groups'),
-    _('Members of these groups will automatically be granted permission to view uploaded files in that group.'))
-_register_flag(WRITE_FILES, 'U', 'eu', '', _('Can upload files'),
-    _('File uploader groups'),
-    _('Members of these groups will automatically be granted permission to upload files.'))
-_register_flag(VIEW_MSGS, 'x', 'e', '', _('Can view messages'),
-    _('Message viewer groups'),
-    _('Members of these groups will automatically be granted permission to view messages in that group.'))
-_register_flag(WRITE_MSGS, 'X', 'ex', '', _('Can write messages'),
-    _('Message sender groups'),
-    _('Members of these groups will automatically be granted permission to send messages.'))
+_register_flag(MEMBER, 'm', '', 'id', ugettext_lazy('Member'), None, None)
+_register_flag(INVITED, 'i', '', 'md', ugettext_lazy('Invited'), None, None)
+_register_flag(DECLINED, 'd', '', 'mi', ugettext_lazy('Declined'), None, None)
+_register_flag(
+    OPERATOR, 'o', 'veEcCfFnNuUxX', '', ugettext_lazy('Operator'),
+    ugettext_lazy('Operator groups'),
+    ugettext_lazy('Members of these groups will automatically be granted administrative priviledges.'))
+_register_flag(
+    VIEWER, 'v', 'ecfnux', '', ugettext_lazy('Viewer'),
+    ugettext_lazy('Viewer groups'),
+    ugettext_lazy("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."))
+_register_flag(
+    SEE_CG, 'e', '', '', ugettext_lazy('Can see group exists'),
+    ugettext_lazy('Existence seer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted priviledge to know that current group exists.'))
+_register_flag(
+    CHANGE_CG, 'E', 'e', '', ugettext_lazy('Can change group'),
+    ugettext_lazy('Editor groups'),
+    ugettext_lazy('Members of these groups will automatically be granted priviledge to change/delete the current group.'))
+_register_flag(
+    SEE_MEMBERS, 'c', 'e', '', ugettext_lazy('Can see members'),
+    ugettext_lazy('Members seer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted priviledge to see the list of members.'))
+_register_flag(
+    CHANGE_MEMBERS, 'C', 'ec', '', ugettext_lazy('Can change members'),
+    ugettext_lazy('Members changing groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permission to change members of current group.'))
+_register_flag(
+    VIEW_FIELDS, 'f', 'e', '', ugettext_lazy('Can view fields'),
+    ugettext_lazy('Fields viewer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permission to read the fields associated to current group.'))
+_register_flag(
+    WRITE_FIELDS, 'F', 'ef', '', ugettext_lazy('Can write fields'),
+    ugettext_lazy('Fields writer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'))
+_register_flag(
+    VIEW_NEWS, 'n', 'e', '', ugettext_lazy('Can view news'),
+    ugettext_lazy('News viewer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permisson to read news of current group.'))
+_register_flag(
+    WRITE_NEWS, 'N', 'en', '', ugettext_lazy('Can write news'),
+    ugettext_lazy('News writer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permission to write news in that group.'))
+_register_flag(
+    VIEW_FILES, 'u', 'e', '', ugettext_lazy('Can view uploaded files'),
+    ugettext_lazy('File viewer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permission to view uploaded files in that group.'))
+_register_flag(
+    WRITE_FILES, 'U', 'eu', '', ugettext_lazy('Can upload files'),
+    ugettext_lazy('File uploader groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permission to upload files.'))
+_register_flag(
+    VIEW_MSGS, 'x', 'e', '', ugettext_lazy('Can view messages'),
+    ugettext_lazy('Message viewer groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permission to view messages in that group.'))
+_register_flag(
+    WRITE_MSGS, 'X', 'ex', '', ugettext_lazy('Can write messages'),
+    ugettext_lazy('Message sender groups'),
+    ugettext_lazy('Members of these groups will automatically be granted permission to send messages.'))
 
 ADMIN_ALL = (
     OPERATOR | VIEWER

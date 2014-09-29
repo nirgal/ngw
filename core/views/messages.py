@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect, Http404
 from django.utils import translation
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
 from django.utils.timezone import now
 from django.utils.importlib import import_module
@@ -33,7 +33,7 @@ from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
 
 
 class MessageDirectionFilter(BaseListFilter):
-    title = _('direction')
+    title = ugettext_lazy('direction')
     parameter_name = 'answer'
     def lookups(self, request, view):
         return (
@@ -50,7 +50,7 @@ class MessageDirectionFilter(BaseListFilter):
 
 
 class MessageReadFilter(BaseListFilter):
-    title = _('read status')
+    title = ugettext_lazy('read status')
     parameter_name = 'unread'
     def lookups(self, request, view):
         return (
@@ -68,10 +68,10 @@ class MessageReadFilter(BaseListFilter):
 
 class MessageListView(InGroupAcl, NgwListView):
     cols = [
-        (_('Flags'), None, 'nice_flags', None),
-        (_('Date UTC'), None, 'nice_date', 'send_date'),
-        (_('Contact'), None, 'contact', 'contact__name'),
-        (_('Subject'), None, 'subject', 'subject'),
+        (ugettext_lazy('Flags'), None, 'nice_flags', None),
+        (ugettext_lazy('Date UTC'), None, 'nice_date', 'send_date'),
+        (ugettext_lazy('Contact'), None, 'contact', 'contact__name'),
+        (ugettext_lazy('Subject'), None, 'subject', 'subject'),
     ]
     template_name = 'message_list.html'
     filter_list = (MessageDirectionFilter, MessageReadFilter)

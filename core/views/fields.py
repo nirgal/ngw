@@ -7,7 +7,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
 from django.utils import six
 from django.shortcuts import render_to_response, get_object_or_404
@@ -30,11 +30,11 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 class FieldListView(NgwAdminAcl, NgwListView):
     cols = [
-        (_('Name'), None, 'name', 'name'),
-        (_('Type'), None, 'type_as_html', 'type'),
-        (_('Only for'), None, 'contact_group', 'contact_group__name'),
-        (_('System locked'), None, 'system', 'system'),
-        #(_('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
+        (ugettext_lazy('Name'), None, 'name', 'name'),
+        (ugettext_lazy('Type'), None, 'type_as_html', 'type'),
+        (ugettext_lazy('Only for'), None, 'contact_group', 'contact_group__name'),
+        (ugettext_lazy('System locked'), None, 'system', 'system'),
+        #(ugettext_lazy('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     default_sort = 'sort_weight'
 
@@ -101,7 +101,7 @@ class FieldEditForm(forms.ModelForm):
             super(FieldEditForm.IncompatibleData, self).__init__(*args, **kwargs)
             self.deletion_details = deletion_details
 
-    move_after = forms.IntegerField(label=_('Move after'), widget=forms.Select)
+    move_after = forms.IntegerField(label=ugettext_lazy('Move after'), widget=forms.Select)
 
     def __init__(self, *args, **kargs):
         instance = kargs.get('instance', None)

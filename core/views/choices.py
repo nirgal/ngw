@@ -7,7 +7,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.six import iteritems
 from django import forms
 from django.views.generic import UpdateView, CreateView
@@ -28,8 +28,8 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 class ChoiceListView(NgwAdminAcl, NgwListView):
     root_queryset = ChoiceGroup.objects.all()
     cols = [
-        (_('Name'), None, 'name', 'name'),
-        (_('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
+        (ugettext_lazy('Name'), None, 'name', 'name'),
+        (ugettext_lazy('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
     ]
 
     def get_context_data(self, **kwargs):

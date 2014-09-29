@@ -20,8 +20,6 @@ Show messages counts on the member list
 CODE REFACTOR
 ====================================================================================================
 
-Remove the "import ugettext_lazy as _": default should be "not lazy"
-
 Make sure all form.save() support the commit parameter
 
 Fix perms: can_read_msg => can see members (?)
@@ -58,7 +56,6 @@ See https://github.com/yourlabs/django-session-security/issues/29
 
 Change USE_TZ to True
 
-
 ====================================================================================================
 UNSORTED
 ====================================================================================================
@@ -82,3 +79,5 @@ Add support for attachements in externals messages (?)
 When adding someone in a group, check supergroups permission to add members.
 Or just allow supergroup inherited...
 TBD
+
+Change MailmanSyncForm into a ModelForm

@@ -12,7 +12,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _, string_concat
+from django.utils.translation import ugettext as _, ugettext_lazy
 from django.db import models, connection
 from django.http import Http404
 from django.utils import html
@@ -118,8 +118,8 @@ class Log(NgwModel):
     change = models.TextField(blank=True, null=True)
     class Meta:
         db_table = 'log'
-        verbose_name = _('log')
-        verbose_name_plural = _('logs')
+        verbose_name = ugettext_lazy('log')
+        verbose_name_plural = ugettext_lazy('logs')
 
     #def __unicode__(self):
     #    return '%(date)s: %(contactname)s %(type_and_data)s' % {
@@ -150,8 +150,8 @@ class Config(NgwModel):
     text = models.TextField(blank=True)
     class Meta:
         db_table = 'config'
-        verbose_name = _('config')
-        verbose_name_plural = _('configs')
+        verbose_name = ugettext_lazy('config')
+        verbose_name_plural = ugettext_lazy('configs')
 
     def __str__(self):
         return self.id
@@ -169,26 +169,26 @@ class Config(NgwModel):
 class Choice(NgwModel):
     oid = models.AutoField(primary_key=True)
     choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
-    key = models.CharField(_('Key'), max_length=255)
-    value = models.CharField(_('Value'), max_length=255)
+    key = models.CharField(ugettext_lazy('Key'), max_length=255)
+    value = models.CharField(ugettext_lazy('Value'), max_length=255)
     def __str__(self):
         return self.value
     class Meta:
         db_table = 'choice'
-        verbose_name = _('choice')
-        verbose_name_plural = _('choices')
+        verbose_name = ugettext_lazy('choice')
+        verbose_name_plural = ugettext_lazy('choices')
         unique_together = 'choice_group', 'key'
 
 
 @python_2_unicode_compatible
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(_('Name'), max_length=255)
-    sort_by_key = models.BooleanField(_('Sort by key'), default=False)
+    name = models.CharField(ugettext_lazy('Name'), max_length=255)
+    sort_by_key = models.BooleanField(ugettext_lazy('Sort by key'), default=False)
     class Meta:
         db_table = 'choice_group'
-        verbose_name = _('choices list')
-        verbose_name_plural = _('choices lists')
+        verbose_name = ugettext_lazy('choices list')
+        verbose_name_plural = ugettext_lazy('choices lists')
         ordering = 'name',
 
     def __str__(self):
@@ -242,7 +242,7 @@ class MyContactManager(models.Manager):
 @python_2_unicode_compatible
 class Contact(NgwModel):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(verbose_name=_('Name'), max_length=255, unique=True)
+    name = models.CharField(verbose_name=ugettext_lazy('Name'), max_length=255, unique=True)
 
     objects = MyContactManager()
     USERNAME_FIELD = 'name' # Needed by contrib.auth
@@ -257,8 +257,8 @@ class Contact(NgwModel):
 
     class Meta:
         db_table = 'contact'
-        verbose_name = _('contact')
-        verbose_name_plural = _('contacts')
+        verbose_name = ugettext_lazy('contact')
+        verbose_name_plural = ugettext_lazy('contacts')
 
     def __repr__(self):
         return force_str('<Contact %s>' % self.name)
@@ -597,26 +597,26 @@ class Contact(NgwModel):
 @python_2_unicode_compatible
 class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(_('Name'), max_length=255)
-    description = models.TextField(_('Description'), blank=True)
+    name = models.CharField(ugettext_lazy('Name'), max_length=255)
+    description = models.TextField(ugettext_lazy('Description'), blank=True)
     field_group = models.BooleanField(
-        _('Field group'), default=False,
-        help_text=_('Does that group yield specific fields to its members?'))
-    date = models.DateField(_('Date'), null=True, blank=True)
-    budget_code = models.CharField(_('Budget code'), max_length=10, blank=True)
-    system = models.BooleanField(_('System locked'), default=False)
+        ugettext_lazy('Field group'), default=False,
+        help_text=ugettext_lazy('Does that group yield specific fields to its members?'))
+    date = models.DateField(ugettext_lazy('Date'), null=True, blank=True)
+    budget_code = models.CharField(ugettext_lazy('Budget code'), max_length=10, blank=True)
+    system = models.BooleanField(ugettext_lazy('System locked'), default=False)
     mailman_address = models.CharField(
-        _('Mailman address'), max_length=255, blank=True,
-        help_text=_('Mailing list address, if the group is linked to a mailing list.'))
+        ugettext_lazy('Mailman address'), max_length=255, blank=True,
+        help_text=ugettext_lazy('Mailing list address, if the group is linked to a mailing list.'))
     sticky = models.BooleanField(
         ('Sticky'), default=False,
-        help_text=_('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
+        help_text=ugettext_lazy('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
     #direct_supergroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none1+')
     #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')
     class Meta:
         db_table = 'contact_group'
-        verbose_name = _('contact group')
-        verbose_name_plural = _('contact groups')
+        verbose_name = ugettext_lazy('contact group')
+        verbose_name_plural = ugettext_lazy('contact groups')
 
     def __str__(self):
         return self.name
@@ -1000,18 +1000,18 @@ class ContactField(NgwModel):
     types_classes = {}
 
     id = models.AutoField(primary_key=True)
-    name = models.CharField(_('Name'), max_length=255)
-    hint = models.TextField(_('Hint'), blank=True)
-    type = models.CharField(_('Type'), max_length=15, default='TEXT')
-    contact_group = models.ForeignKey(ContactGroup, verbose_name=_('Only for'))
+    name = models.CharField(ugettext_lazy('Name'), max_length=255)
+    hint = models.TextField(ugettext_lazy('Hint'), blank=True)
+    type = models.CharField(ugettext_lazy('Type'), max_length=15, default='TEXT')
+    contact_group = models.ForeignKey(ContactGroup, verbose_name=ugettext_lazy('Only for'))
     sort_weight = models.IntegerField()
-    choice_group = models.ForeignKey(ChoiceGroup, verbose_name=_('Choice group'), null=True, blank=True)
+    choice_group = models.ForeignKey(ChoiceGroup, verbose_name=ugettext_lazy('Choice group'), null=True, blank=True)
     system = models.BooleanField(default=False)
-    default = models.TextField(_('Default value'), blank=True)
+    default = models.TextField(ugettext_lazy('Default value'), blank=True)
     class Meta:
         db_table = 'contact_field'
-        verbose_name = _('contact field')
-        verbose_name_plural = _('contact fields')
+        verbose_name = ugettext_lazy('contact field')
+        verbose_name_plural = ugettext_lazy('contact fields')
         ordering = 'sort_weight',
 
     @classmethod
@@ -1149,12 +1149,15 @@ class NameFilterStartsWith(Filter):
         value = decoratedstr.decorated_match(value)
         return '(contact.name ~* %(value_name1)s OR contact.name ~* %(value_name2)s)', {'value_name1': '^' + value, 'value_name2': ' '+value}
     def to_html(self, value):
-        return string_concat('<b>Name</b> ', self.__class__.human_name, ' "', value, '"')
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value)s"' % {
+            'fieldname': _('Name'),
+            'filtername': self.__class__.human_name,
+            'value': value})
 
     def get_param_types(self):
         return (six.text_type,)
 NameFilterStartsWith.internal_name = 'startswith'
-NameFilterStartsWith.human_name = _('has a word starting with')
+NameFilterStartsWith.human_name = ugettext_lazy('has a word starting with')
 
 class FieldFilter(Filter):
     """ Helper abstract class for field filters """
@@ -1165,18 +1168,22 @@ class FieldFilterOp0(FieldFilter):
     """ Helper abstract class for field filters that takes no parameter """
     def to_html(self):
         field = ContactField.objects.get(pk=self.field_id)
-        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name)
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name)})
 
 class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
-        result = string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' ')
         if isinstance(value, six.text_type):
-            value = string_concat('"', value, '"')
+            formt = '<b>%(fieldname)s</b> %(filtername)s "%(value)s"'
         else:
-            value = force_text(value)
-        return string_concat(result, value)
+            formt = '<b>%(fieldname)s</b> %(filtername)s %(value)s'
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value)s"' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(force_text(value))})
 
 
 class FieldFilterStartsWith(FieldFilterOp1):
@@ -1186,7 +1193,7 @@ class FieldFilterStartsWith(FieldFilterOp1):
     def get_param_types(self):
         return (six.text_type,)
 FieldFilterStartsWith.internal_name = 'startswith'
-FieldFilterStartsWith.human_name = _('has a word starting with')
+FieldFilterStartsWith.human_name = ugettext_lazy('has a word starting with')
 
 
 class FieldFilterEQ(FieldFilterOp1):
@@ -1249,7 +1256,7 @@ class FieldFilterNull(FieldFilterOp0):
     def get_param_types(self):
         return ()
 FieldFilterNull.internal_name = 'null'
-FieldFilterNull.human_name = _('is undefined')
+FieldFilterNull.human_name = ugettext_lazy('is undefined')
 
 
 class FieldFilterNotNull(FieldFilterOp0):
@@ -1258,7 +1265,7 @@ class FieldFilterNotNull(FieldFilterOp0):
     def get_param_types(self):
         return ()
 FieldFilterNotNull.internal_name = 'notnull'
-FieldFilterNotNull.human_name = _('is defined')
+FieldFilterNotNull.human_name = ugettext_lazy('is defined')
 
 
 class FieldFilterIEQ(FieldFilterOp1):
@@ -1321,7 +1328,7 @@ class FieldFilterAGE_GE(FieldFilterOp1):
     def get_param_types(self):
         return (int,)
 FieldFilterAGE_GE.internal_name = 'agege'
-FieldFilterAGE_GE.human_name = _('Age (years) ≥')
+FieldFilterAGE_GE.human_name = ugettext_lazy('Age (years) ≥')
 
 
 class FieldFilterVALID_GT(FieldFilterOp1):
@@ -1330,7 +1337,7 @@ class FieldFilterVALID_GT(FieldFilterOp1):
     def get_param_types(self):
         return (int,)
 FieldFilterVALID_GT.internal_name = 'validitygt'
-FieldFilterVALID_GT.human_name = _('date until event ≥')
+FieldFilterVALID_GT.human_name = ugettext_lazy('date until event ≥')
 
 
 class FieldFilterFUTURE(FieldFilterOp0):
@@ -1339,7 +1346,7 @@ class FieldFilterFUTURE(FieldFilterOp0):
     def get_param_types(self):
         return ()
 FieldFilterFUTURE.internal_name = 'future'
-FieldFilterFUTURE.human_name = _('In the future')
+FieldFilterFUTURE.human_name = ugettext_lazy('In the future')
 
 
 class FieldFilterChoiceEQ(FieldFilterOp1):
@@ -1348,7 +1355,10 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value)s"' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(cfv.value)})
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
@@ -1362,7 +1372,10 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value)s"' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(cfv.value)})
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
@@ -1376,12 +1389,15 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value)s"' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(cfv.value)})
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterMultiChoiceHAS.internal_name = 'mchas'
-FieldFilterMultiChoiceHAS.human_name = _('contains')
+FieldFilterMultiChoiceHAS.human_name = ugettext_lazy('contains')
 
 
 class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
@@ -1390,12 +1406,15 @@ class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
         cfv = Choice.objects.get(choice_group_id=field.choice_group_id, key=value)
-        return string_concat('<b>', html.escape(field.name), '</b> ', self.__class__.human_name, ' "', html.escape(cfv.value), '"')
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value)s"' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(cfv.value)})
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
 FieldFilterMultiChoiceHASNOT.internal_name = 'mchasnot'
-FieldFilterMultiChoiceHASNOT.human_name = _("doesn't contain")
+FieldFilterMultiChoiceHASNOT.human_name = ugettext_lazy("doesn't contain")
 
 
 
@@ -1409,11 +1428,13 @@ class GroupFilterIsMember(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
+        return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'groupname': html.escape(group.name_with_date())})
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name = 'memberof'
-GroupFilterIsMember.human_name = _('is member of group')
+GroupFilterIsMember.human_name = ugettext_lazy('is member of group')
 
 
 class GroupFilterIsNotMember(Filter):
@@ -1426,11 +1447,13 @@ class GroupFilterIsNotMember(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
+        return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'groupname': html.escape(group.name_with_date())})
     def get_param_types(self):
         return ()
 GroupFilterIsNotMember.internal_name = 'notmemberof'
-GroupFilterIsNotMember.human_name = _('is not member of group')
+GroupFilterIsNotMember.human_name = ugettext_lazy('is not member of group')
 
 
 class GroupFilterIsInvited(Filter):
@@ -1443,11 +1466,13 @@ class GroupFilterIsInvited(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
+        return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'groupname': html.escape(group.name_with_date())})
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name = 'ginvited'
-GroupFilterIsInvited.human_name = _('has been invited in group')
+GroupFilterIsInvited.human_name = ugettext_lazy('has been invited in group')
 
 
 class GroupFilterIsNotInvited(Filter):
@@ -1460,11 +1485,13 @@ class GroupFilterIsNotInvited(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
+        return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'groupname': html.escape(group.name_with_date())})
     def get_param_types(self):
         return ()
 GroupFilterIsNotInvited.internal_name = 'gnotinvited'
-GroupFilterIsNotInvited.human_name = _('has not been invited in group')
+GroupFilterIsNotInvited.human_name = ugettext_lazy('has not been invited in group')
 
 
 class GroupFilterDeclinedInvitation(Filter):
@@ -1477,11 +1504,13 @@ class GroupFilterDeclinedInvitation(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
+        return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'groupname': html.escape(group.name_with_date())})
     def get_param_types(self):
         return ()
 GroupFilterDeclinedInvitation.internal_name = "gdeclined"
-GroupFilterDeclinedInvitation.human_name = _('has declined invitation in group')
+GroupFilterDeclinedInvitation.human_name = ugettext_lazy('has declined invitation in group')
 
 
 class GroupFilterNotDeclinedInvitation(Filter):
@@ -1494,11 +1523,13 @@ class GroupFilterNotDeclinedInvitation(Filter):
             group = ContactGroup.objects.get(pk=self.group_id)
         except ContactGroup.DoesNotExist:
             raise Http404()
-        return string_concat(self.__class__.human_name, ' <b>', group.name_with_date(), '</b>')
+        return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'groupname': html.escape(group.name_with_date())})
     def get_param_types(self):
         return ()
 GroupFilterNotDeclinedInvitation.internal_name = 'gnotdeclined'
-GroupFilterNotDeclinedInvitation.human_name = _('has not declined invitation in group')
+GroupFilterNotDeclinedInvitation.human_name = ugettext_lazy('has not declined invitation in group')
 
 
 class AllEventsNotReactedSince(Filter):
@@ -1506,31 +1537,37 @@ class AllEventsNotReactedSince(Filter):
         value = decoratedstr.decorated_match(value)
         return 'NOT EXISTS (SELECT * from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %%(date)s AND flags & %s <> 0)' % (perms.MEMBER | perms.DECLINED), {'date':value}
     def to_html(self, value):
-        return string_concat(self.__class__.human_name, ' "', value, '"')
+        return mark_safe('%(filtername)s "%(value)s"' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(value)})
     def get_param_types(self):
         return (six.text_type,) # TODO: Accept date parameters
 AllEventsNotReactedSince.internal_name = 'notreactedsince'
-AllEventsNotReactedSince.human_name = _('has not reacted to any invitation since')
+AllEventsNotReactedSince.human_name = ugettext_lazy('has not reacted to any invitation since')
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
         return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
     def to_html(self, value):
-        return string_concat(self.__class__.human_name, ' "', value, '"')
+        return mark_safe('%(filtername)s "%(value)s"' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(value)})
     def get_param_types(self):
         return (int,)
 AllEventsReactionYearRatioLess.internal_name = 'yearreactionratioless'
-AllEventsReactionYearRatioLess.human_name = _('1 year invitation reaction percentage less than')
+AllEventsReactionYearRatioLess.human_name = ugettext_lazy('1 year invitation reaction percentage less than')
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
         return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
     def to_html(self, value):
-        return string_concat(self.__class__.human_name, ' "', value, '"')
+        return mark_safe('%(filtername)s "%(value)s"' % {
+            'filtername': html.escape(self.__class__.human_name),
+            'value': html.escape(value)})
     def get_param_types(self):
         return (int,)
 AllEventsReactionYearRatioMore.internal_name = 'yearreactionratiomore'
-AllEventsReactionYearRatioMore.human_name = _('1 year invitation reaction percentage more than')
+AllEventsReactionYearRatioMore.human_name = ugettext_lazy('1 year invitation reaction percentage more than')
 
 
 
@@ -1567,14 +1604,14 @@ class BoundFilter(BaseBoundFilter):
         return self.filter.get_sql_where_params(*self.args)
 
     def to_html(self, indent_level=0):
-        return string_concat(self.indent(indent_level), self.filter.to_html(*self.args))
+        return mark_safe(self.indent(indent_level), self.filter.to_html(*self.args))
 
 
 class EmptyBoundFilter(BaseBoundFilter):
     def apply_filter_to_query(self, query):
         return query
     def to_html(self, indent_level=0):
-        return string_concat(self.indent(indent_level), _('All contacts'))
+        return mark_safe(self.indent(indent_level) + _('All contacts'))
 
 
 class AndBoundFilter(BaseBoundFilter):
@@ -1592,12 +1629,12 @@ class AndBoundFilter(BaseBoundFilter):
         html = ''
         for subfilter in self.subfilters:
             if html:
-                html = string_concat(html, '<br>')
-                html = string_concat(html, self.indent(indent_level))
-                html = string_concat(html, _('AND'))
-                html = string_concat(html, '<br>')
-            html = string_concat(html, subfilter.to_html(indent_level+1))
-        return html
+                html += '<br>'
+                html += self.indent(indent_level)
+                html += _('AND')
+                html += '<br>'
+            html += subfilter.to_html(indent_level+1)
+        return mark_safe(html)
 
 
 class OrBoundFilter(BaseBoundFilter):
@@ -1615,12 +1652,12 @@ class OrBoundFilter(BaseBoundFilter):
         html = ''
         for subfilter in self.subfilters:
             if html:
-                html = string_concat(html, '<br>')
-                html = string_concat(html, self.indent(indent_level))
-                html = string_concat(html, _('OR'))
-                html = string_concat(html, '<br>')
-            html = string_concat(html, subfilter.to_html(indent_level+1))
-        return html
+                html += '<br>'
+                html += self.indent(indent_level)
+                html += _('OR')
+                html += '<br>'
+            html += subfilter.to_html(indent_level+1)
+        return mark_safe(html)
 
 
 @python_2_unicode_compatible
@@ -1631,8 +1668,8 @@ class ContactFieldValue(NgwModel):
     value = models.TextField(blank=True)
     class Meta:
         db_table = 'contact_field_value'
-        verbose_name = _('contact field value')
-        verbose_name_plural = _('contact field values')
+        verbose_name = ugettext_lazy('contact field value')
+        verbose_name_plural = ugettext_lazy('contact field values')
 
     def __repr__(self):
         cf = self.contact_field
@@ -1653,8 +1690,8 @@ class GroupInGroup(NgwModel):
     subgroup = models.ForeignKey(ContactGroup, related_name='direct_gig_supergroups')
     class Meta:
         db_table = 'group_in_group'
-        verbose_name = _('group in group')
-        verbose_name_plural = _('groups in group')
+        verbose_name = ugettext_lazy('group in group')
+        verbose_name_plural = ugettext_lazy('groups in group')
 
     def __repr__(self):
         return force_str('<GroupInGroup %s %s>' % (self.subgroup_id, self.father_id))
@@ -1667,8 +1704,8 @@ class GroupManageGroup(NgwModel):
     flags = models.IntegerField()
     class Meta:
         db_table = 'group_manage_group'
-        verbose_name = _('group managing group')
-        verbose_name_plural = _('groups managing group')
+        verbose_name = ugettext_lazy('group managing group')
+        verbose_name_plural = ugettext_lazy('groups managing group')
 
     def __repr__(self):
         return force_str('<GroupManageGroup %s %s>' % (self.subgroup_id, self.father_id))
@@ -1683,8 +1720,8 @@ class ContactInGroup(NgwModel):
     note = models.TextField(blank=True)
     class Meta:
         db_table = 'contact_in_group'
-        verbose_name = _('contact in group')
-        verbose_name_plural = _('contacts in group')
+        verbose_name = ugettext_lazy('contact in group')
+        verbose_name_plural = ugettext_lazy('contacts in group')
 
     def __repr__(self):
         return force_str('<ContactInGroup %s %s>' % (self.contact_id, self.group_id))
@@ -1709,13 +1746,13 @@ class ContactGroupNews(NgwModel):
     author = models.ForeignKey(Contact, null=True, blank=True)
     contact_group = models.ForeignKey(ContactGroup, null=True, blank=True)
     date = models.DateTimeField()
-    title = models.CharField(_('title'), max_length=64)
-    text = models.TextField(_('text'))
+    title = models.CharField(ugettext_lazy('title'), max_length=64)
+    text = models.TextField(ugettext_lazy('text'))
 
     class Meta:
         db_table = 'contact_group_news'
-        verbose_name = _('news item')
-        verbose_name_plural = _('news')
+        verbose_name = ugettext_lazy('news item')
+        verbose_name_plural = ugettext_lazy('news')
         ordering = '-date',
 
     def __str__(self):
@@ -1739,8 +1776,8 @@ class ContactMsg(NgwModel):
 
     class Meta:
         db_table = 'contact_message'
-        verbose_name = _('message')
-        verbose_name_plural = _('messages')
+        verbose_name = ugettext_lazy('message')
+        verbose_name_plural = ugettext_lazy('messages')
 
     def nice_date(self):
         return formats.date_format(self.send_date, 'DATETIME_FORMAT')

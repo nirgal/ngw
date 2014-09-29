@@ -6,7 +6,7 @@ External mailman managing views
 from __future__ import division, absolute_import, print_function, unicode_literals
 
 from django.core.exceptions import PermissionDenied
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 from django.views.generic import FormView
 from django import forms
 from ngw.core import perms
