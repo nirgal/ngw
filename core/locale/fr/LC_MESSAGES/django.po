@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-29 14:48+0000\n"
+"POT-Creation-Date: 2014-09-29 15:28+0000\n"
 "PO-Revision-Date: 2014-09-29 16:47+0200\n"
 "Last-Translator: \n"
 "Language-Team: French <>\n"
@@ -21,6 +21,50 @@ msgstr ""
 #: admin.py:65
 msgid "type"
 msgstr "type"
+
+#: contactfield.py:75
+msgid "Text"
+msgstr "Texte"
+
+#: contactfield.py:84
+msgid "Long Text"
+msgstr "Texte long"
+
+#: contactfield.py:100
+msgid "Number"
+msgstr "Nombre"
+
+#: contactfield.py:121 models.py:605 templates/group_members.html:11
+msgid "Date"
+msgstr "Date"
+
+#: contactfield.py:140
+msgid "DateTime"
+msgstr "Date heure"
+
+#: contactfield.py:162
+msgid "E.Mail"
+msgstr "Courriel"
+
+#: contactfield.py:173
+msgid "Phone"
+msgstr "Téléphone"
+
+#: contactfield.py:189
+msgid "French bank account"
+msgstr "Compte bancaire français"
+
+#: contactfield.py:214
+msgid "Choice"
+msgstr "Choix"
+
+#: contactfield.py:254
+msgid "Multiple choice"
+msgstr "Choix multiple"
+
+#: contactfield.py:271
+msgid "Password"
+msgstr "Mot de passe"
 
 #: models.py:121
 msgid "log"
@@ -101,10 +145,6 @@ msgstr "Groupe de champs"
 #: models.py:604
 msgid "Does that group yield specific fields to its members?"
 msgstr "Est ce que ce groupe fourni des champs spécifiques à ses membres"
-
-#: models.py:605 templates/group_members.html:11
-msgid "Date"
-msgstr "Date"
 
 #: models.py:606 templates/group_members.html:12
 msgid "Budget code"
@@ -711,8 +751,7 @@ msgstr "Modifier"
 msgid "VCard"
 msgstr "Carte de visite"
 
-#: templates/contact_detail.html:68 templates/admin/base_site.html:33
-#: views/contacts.py:833
+#: templates/contact_detail.html:68 views/contacts.py:833
 msgid "Change password"
 msgstr "Changer le mot de passe"
 
@@ -1141,6 +1180,10 @@ msgstr "Retour"
 #: templates/type_change.html:23
 msgid "Delete incompatible data"
 msgstr "Effacer les données incompatibles"
+
+#: templates/admin/base_site.html:33
+msgid "Profile"
+msgstr "Profil"
 
 #: templates/admin/base_site.html:34
 msgid "Log out"
