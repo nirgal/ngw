@@ -10,7 +10,7 @@ import crack
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import (
-    CompatibleStreamingHttpResponse, HttpResponse, HttpResponseRedirect,
+    StreamingHttpResponse, HttpResponse, HttpResponseRedirect,
     Http404)
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -935,7 +935,7 @@ class PassLetterView(InGroupAcl, DetailView):
             return HttpResponse(_('File generation failed'))
 
         fullpath = os.path.join('/usr/lib/ngw/mailing/generated/', filename)
-        response = CompatibleStreamingHttpResponse(open(fullpath, 'rb'), content_type='application/pdf')
+        response = StreamingHttpResponse(open(fullpath, 'rb'), content_type='application/pdf')
         os.unlink(fullpath)
         return response
 
