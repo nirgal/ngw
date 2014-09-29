@@ -18,9 +18,9 @@ if __name__ == '__main__':
     # TODO: This should be called from top level manage.py
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ngw.settings')
     sys.path.append('/usr/lib')
-from django.db import connections
+from django.db import connection, connections
 from ngw.extensions import hooks
-from ngw.core.models import (Config, Contact, ContactGroup, ContactFieldValue,
+from ngw.core.models import (Contact, ContactGroup, ContactFieldValue,
     GROUP_USER_PHPBB, FIELD_LOGIN, FIELD_PHPBB_USERID)
 from ngw.core import contactfield # Need polymorphic upgrades
 
@@ -37,9 +37,12 @@ def get_phpbb_acl_dictionary():
     returns [ (10,55), (7,5), (8,6), (9,54), (11,56) ]
     this means phpbb usergroup 10 matches ngw group 55, phpbb group 7 matches ngw 5, and so on...
     """
-    strdict = Config.objects.get(pk='phpbb acl dictionary').text
-    if not strdict:
+    cursor = connection.cursor()
+    cursor.execute("SELECT text FROM config WHERE id='phpbb acl dictionary'")
+    row = cursor.fetchone()
+    if not row or not row[0]:
         return []
+    strdict = row[0]
     return [[int(i) for i in pair.split(',')] for pair in strdict.split(';')]
 
 
