@@ -7,10 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-29 14:38+0000\n"
-"PO-Revision-Date: 2014-06-30 12:11+0200\n"
+"POT-Creation-Date: 2014-09-29 14:48+0000\n"
+"PO-Revision-Date: 2014-09-29 16:47+0200\n"
 "Last-Translator: \n"
-"Language-Team: Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>\n"
+"Language-Team: French <>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1058,7 +1058,7 @@ msgstr "Marquer comme non lu"
 #: templates/message_send.html:21
 #, python-format
 msgid "%(nbcontacts)s contact(s) selected"
-msgstr "%(nbcontacts)s contact(s) selectionnés"
+msgstr "%(nbcontacts)s contact(s) sélectionnés"
 
 #: templates/message_send.html:26
 msgid "Warning, the following people does not have any email address"
@@ -1113,7 +1113,7 @@ msgstr "Réinitialiser le mot de passe et faire une lettre"
 
 #: templates/query.html:20
 msgid "Run the selected action"
-msgstr "Executer l'action sélectionnée"
+msgstr "Exécuter l'action sélectionnée"
 
 #: templates/query.html:20
 msgid "Go"
@@ -1234,7 +1234,7 @@ msgstr "Les personnes suivantes n'ont pas d'adresse de courriel: %s"
 
 #: views/contacts.py:473
 msgid "Send email locally (thunderbird or similar)"
-msgstr "Envoyer un courriel localement (thunderbird ou simmilaire)"
+msgstr "Envoyer un courriel localement (thunderbird ou similaire)"
 
 #: views/contacts.py:481
 msgid "Vcard format export"
@@ -1524,7 +1524,8 @@ msgstr "Le groupe %s est verrouillé et ne peut PAS être effacé."
 
 #: views/groups.py:782
 msgid "You cannot have a note unless you select some flags too"
-msgstr "Vous ne pouvez pas avoir de note sans sélectionner un mode d'appartenance"
+msgstr ""
+"Vous ne pouvez pas avoir de note sans sélectionner un mode d'appartenance"
 
 #: views/groups.py:842
 #, python-format
@@ -1649,7 +1650,7 @@ msgstr "%s contacts n'ont pas d'adresse de courriel."
 #: views/messages.py:210
 msgid " The message will be kept here until you define his email address."
 msgstr ""
-" Le message sera conservé jusqu'ç ce que vous définissiez son adresse de "
+" Le message sera conservé jusqu'à ce que vous définissiez son adresse de "
 "courriel"
 
 #: views/messages.py:231
