@@ -11,13 +11,25 @@ from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
 #admin.site.disable_action('delete_selected')
 
 class ConfigAdmin(admin.ModelAdmin):
-    list_display = 'id',
+    list_display = 'id', 'text'
+    list_editable = 'text',
 admin.site.register(Config, ConfigAdmin)
 
 
+#from ngw.core.views.contacts import ContactEditForm
 class ContactAdmin(admin.ModelAdmin):
     list_display = 'name',
     search_fields = 'name',
+    #form = ContactEditForm
+    #def get_form(self, request, obj=None, **kwargs):
+    #    BaseForm = super(ContactAdmin, self).get_form(request, obj=None, **kwargs)
+    #    class TheForm(BaseForm):
+    #        def __init__(self, *args, **kwargs):
+    #            super(TheForm, self).__init__(
+    #                user=request.user,
+    #                *args, **kwargs)
+    #    return TheForm
+
 admin.site.register(Contact, ContactAdmin)
 
 class ContactGroupAdmin(admin.ModelAdmin):

@@ -603,10 +603,6 @@ class ContactEditForm(forms.ModelForm):
         user = kwargs.pop('user')  # contact making the query, not the edited one
         super(ContactEditForm, self).__init__(*args, **kwargs)
 
-        if instance:
-            cid = instance.id
-        else:
-            cid = None
         self.contactgroup = contactgroup
 
         if not perms.c_can_write_fields_cg(user.id, GROUP_EVERYBODY):
@@ -727,23 +723,15 @@ class ContactEditMixin(ModelFormMixin):
     def form_valid(self, form):
         request = self.request
         contact = form.save(request)
-        cg = self.contactgroup
 
-        messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved sucessfully!') % contact.name)
-
-        if cg:
-            base_url = cg.get_absolute_url() + 'members/' + force_text(contact.id) + '/'
-        else:
-            base_url = contact.get_class_absolute_url() + force_text(contact.id) + '/'
+        messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved.') % contact.name)
 
         if request.POST.get('_continue', None):
-            return HttpResponseRedirect(base_url + 'edit')
+            return HttpResponseRedirect('edit')
         elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect(base_url + '../add')
-        elif perms.c_can_see_members_cg(request.user.id, GROUP_EVERYBODY):
-            return HttpResponseRedirect(base_url)
+            return HttpResponseRedirect('../add')
         else:
-            return HttpResponseRedirect('/')
+            return HttpResponseRedirect('.')
 
     def get_context_data(self, **kwargs):
         context = {}

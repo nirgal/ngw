@@ -212,12 +212,13 @@ class FieldEditMixin(ModelFormMixin):
         cf = form.save()
 
         messages.add_message(request, messages.SUCCESS, _('Field %s has been saved sucessfully.') % cf.name)
+
         if request.POST.get('_continue', None):
-            return HttpResponseRedirect(cf.get_absolute_url()+'edit')
+            return HttpResponseRedirect('edit')
         elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect(cf.get_class_absolute_url()+'add')
+            return HttpResponseRedirect('add')
         else:
-            return HttpResponseRedirect(reverse('field_list'))
+            return HttpResponseRedirect('..')
 
     def get_context_data(self, **kwargs):
         context = {}
