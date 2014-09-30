@@ -74,7 +74,8 @@ class HomeView(NgwUserAcl, TemplateView):
             FROM contact_group
             JOIN (SELECT group_id, count(*) AS unread_count FROM contact_message WHERE is_answer AND read_date IS NULL GROUP BY group_id) AS msg_info
             ON contact_group.id=msg_info.group_id
-            AND perm_c_can_view_msgs_cg(%s, group_id)''' % self.request.user.id)
+            AND perm_c_can_view_msgs_cg(%s, group_id)
+            ORDER BY date DESC,name''' % self.request.user.id)
 
         context = {
             'title': _('Lastest news'),
