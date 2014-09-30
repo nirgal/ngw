@@ -24,9 +24,6 @@ Make sure all form.save() support the commit parameter
 
 Fix perms: can_read_msg => can see members (?)
 
-Get rid of view.groups.get_UContactGroup:
-django 1.7 only supports one UContactGroup class definition
-
 Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEditView
 
 Check how slicing is optimized in ContactQuerySet
