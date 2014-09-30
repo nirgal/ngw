@@ -137,7 +137,7 @@ class Log(NgwModel):
     #            }
 
     def small_date(self):
-        return self.dt.strftime('%Y-%m-%d %H:%M:%S')
+        return formats.date_format(self.dt, "SHORT_DATETIME_FORMAT")
 
     def action_txt(self):
         return {LOG_ACTION_ADD: 'Add',

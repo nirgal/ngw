@@ -124,10 +124,16 @@ class DateTimeContactField(ContactField):
     class Meta:
         proxy = True
     def get_form_fields(self):
-        return forms.DateTimeField(label=self.name, required=False, help_text='Use YYYY-MM-DD HH:MM:SS format.' + ' ' + self.hint)
+        return forms.DateTimeField(label=self.name, required=False, help_text=self.hint)
     def format_value_html(self, value):
-        value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+        value = self.db_value_to_formfield_value(value)
         return formats.date_format(value, "DATETIME_FORMAT")
+
+    def formfield_value_to_db_value(self, value):
+        return datetime.strftime(value, '%Y-%m-%d %H:%M:%S')
+    def db_value_to_formfield_value(self, value):
+        return datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         try:
@@ -137,7 +143,7 @@ class DateTimeContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(DateTimeContactField, 'DATETIME', ugettext_lazy('DateTime'), has_choice=False)
+register_contact_field_type(DateTimeContactField, 'DATETIME', ugettext_lazy('Date time'), has_choice=False)
 
 class EmailContactField(ContactField):
     class Meta:
