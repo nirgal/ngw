@@ -5,3 +5,5 @@ all:
 	mkdir -p /usr/lib/ngw/static
 	./manage collectstatic --verbosity 1 --noinput
 	./manage upgradedb --verbosity 2
+clean:
+	rm -rf static/
