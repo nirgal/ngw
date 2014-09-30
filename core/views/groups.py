@@ -38,47 +38,12 @@ from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDelet
 #
 #######################################################################
 
-def get_UContactGroup(userid):
-    '''
-    This make a user specific ContactGroup model proxy
-    with additionnal method for filtering out hidden objects
-    '''
-    LIST_PREVIEW_LEN = 5
-    def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
-        'Utility function to truncate text longer that LIST_PREVIEW_LEN'
-        if len(lst) > maxlen:
-            return lst[:maxlen] + ['…']
-        return lst
-
-    class UContactGroup(ContactGroup):
-        'User specific ContactGroup proxy'
-        class Meta(ContactGroup.Meta):
-            proxy = True
-        def visible_direct_supergroups_5(self):
-            return ', '.join(_truncate_list([sg.name_with_date() for sg in self.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
-        def visible_direct_subgroups_5(self):
-            return ', '.join(_truncate_list([sg.name_with_date() for sg in self.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % userid])[:LIST_PREVIEW_LEN+1]]))
-        def rendered_fields(self):
-            if self.field_group:
-                fields = self.contactfield_set.all()
-                if fields:
-                    return ', '.join(['<a href="' + f.get_absolute_url() + '">'+html.escape(f.name) + '</a>' for f in fields])
-                else:
-                    return 'Yes (but none yet)'
-            else:
-                return 'No'
-        def visible_member_count(self):
-            # This is totally ineficient
-            if perms.c_can_see_members_cg(userid, self.id):
-                return self.get_members_count()
-            else:
-                return 'Not available'
-
-        def can_see_messages(self):
-            return perms.c_can_view_msgs_cg(userid, self.id)
-
-    return UContactGroup
-
+LIST_PREVIEW_LEN = 5
+def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
+    'Utility function to truncate text longer that LIST_PREVIEW_LEN'
+    if len(lst) > maxlen:
+        return lst[:maxlen] + ['…']
+    return lst
 
 class ContactGroupListView(NgwUserAcl, NgwListView):
     cols = [
@@ -92,10 +57,32 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         #(ugettext_lazy('System\u00a0locked'), None, 'system', 'system'),
     ]
 
-    def get_root_queryset(self):
-        UContactGroup = get_UContactGroup(self.request.user.id)
+    def visible_direct_supergroups_5(self, group):
+        return ', '.join(_truncate_list([sg.name_with_date() for sg in group.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % self.request.user.id])[:LIST_PREVIEW_LEN+1]]))
 
-        return UContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+    def visible_direct_subgroups_5(self, group):
+        return ', '.join(_truncate_list([sg.name_with_date() for sg in group.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % self.request.user.id])[:LIST_PREVIEW_LEN+1]]))
+
+    def rendered_fields(self, group):
+        if group.field_group:
+            fields = group.contactfield_set.all()
+            if fields:
+                return ', '.join(['<a href="' + f.get_absolute_url() + '">'+html.escape(f.name) + '</a>' for f in fields])
+            else:
+                return _('Yes (but none yet)')
+        else:
+            return _('No')
+
+    def visible_member_count(self, group):
+        # This is totally ineficient
+        if perms.c_can_see_members_cg(self.request.user.id, group.id):
+            return group.get_members_count()
+        else:
+            return _('Not available')
+
+
+    def get_root_queryset(self):
+        return ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
 
 
     def get_context_data(self, **kwargs):
@@ -213,8 +200,8 @@ class EventListView(NgwUserAcl, TemplateView):
         max_date = datetime(year, month, 1) + timedelta(days=31+6)
         max_date = max_date.strftime('%Y-%m-%d')
 
-        UContactGroup = get_UContactGroup(self.request.user.id)
-        q = UContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
+        q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
+        q = q.extra(select={'can_see_messages': 'perm_c_can_view_msgs_cg(%s, "contact_group"."id")' % request.user.id})
 
         month_events = {}
         for cg in q:

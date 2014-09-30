@@ -220,17 +220,25 @@ class NgwListView(ListView):
 
     def row_to_items(self, row):
         for display_name, extrafilter, attrib_name, sortname in self.cols:
-            # if attribname is a function
+            # if attrib_name is a function
             if inspect.isfunction(attrib_name):
                 result = attrib_name(row)
             else:
                 # Else it's a string: get the matching attribute
-                result = row.__getattribute__(attrib_name)
-                if inspect.ismethod(result):
-                    result = result()
-                if result == None:
-                    yield ''
-                    continue
+                try:
+                    result = getattr(row, attrib_name)
+                    if inspect.ismethod(result):
+                        result = result()
+                    if result == None:
+                        yield ''
+                        continue
+                except AttributeError:
+                    result = getattr(self, attrib_name)
+                    result = result(row)
+                    if result == None:
+                        yield ''
+                        continue
+
                 #result = html.escape(result)
             if inspect.isfunction(extrafilter) or inspect.ismethod(extrafilter):
                 #print("ismethod/isfunction")
