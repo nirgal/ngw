@@ -723,6 +723,9 @@ class ContactInGroupForm(forms.ModelForm):
         self.contact = kargs.pop('contact')
         self.group = kargs.pop('group')
         super(ContactInGroupForm, self).__init__(*args, **kargs)
+
+        note_key, note_value = self.fields.popitem()  # tmp remove
+
         for flag, longname in six.iteritems(perms.FLAGTOTEXT):
             field_name = 'membership_' + flag
 
@@ -742,15 +745,14 @@ class ContactInGroupForm(forms.ModelForm):
                 initial = bool(perms.FLAGTOINT[flag] & instance.flags)
             else:
                 initial = False
-            self.fields.insert(
-                len(self.fields)-1,  # just before the note
-                field_name,
-                forms.BooleanField(
-                    label=longname, required=False,
-                    widget=forms.widgets.CheckboxInput(attrs={
-                        'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
-                    }),
-                    initial=initial))
+
+            self.fields[field_name] = forms.BooleanField(
+                label=longname, required=False,
+                widget=forms.widgets.CheckboxInput(attrs={
+                    'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
+                }),
+                initial=initial)
+        self.fields[note_key] = note_value  # restore
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
