@@ -9,7 +9,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import NoArgsCommand
 from django.conf import settings
 from django.db import connection
-from core.models import Config
+from ngw.core.models import Config
 
 
 def get_version():
