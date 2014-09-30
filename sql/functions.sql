@@ -138,8 +138,8 @@ LANGUAGE SQL STABLE AS $$
         UNION (SELECT 32 WHERE $1 & (8|16|32|64|128|256|512|1024|2048|4096|8192|16384|32768|65536) <> 0)
 -- 'E': if oE
         UNION (SELECT 64 WHERE $1 & (8|64) <> 0)
--- 'c'ontent: if oecC
-        UNION (SELECT 128 WHERE $1 & (8|16|128|256) <> 0)
+-- 'c'ontent: if oecCx
+        UNION (SELECT 128 WHERE $1 & (8|16|128|256|32768) <> 0)
 -- 'C': if oC
         UNION (SELECT 256 WHERE $1 & (8|256) <> 0)
 -- 'f'ields: if oefF

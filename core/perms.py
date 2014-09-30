@@ -116,7 +116,7 @@ _register_flag(
     ugettext_lazy('File uploader groups'),
     ugettext_lazy('Members of these groups will automatically be granted permission to upload files.'))
 _register_flag(
-    VIEW_MSGS, 'x', 'e', '', ugettext_lazy('Can view messages'),
+    VIEW_MSGS, 'x', 'ec', '', ugettext_lazy('Can view messages'),
     ugettext_lazy('Message viewer groups'),
     ugettext_lazy('Members of these groups will automatically be granted permission to view messages in that group.'))
 _register_flag(

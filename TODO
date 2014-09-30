@@ -22,8 +22,6 @@ CODE REFACTOR
 
 Make sure all form.save() support the commit parameter
 
-Fix perms: can_read_msg => can see members (?)
-
 Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEditView
 
 Check how slicing is optimized in ContactQuerySet
@@ -77,4 +75,4 @@ When adding someone in a group, check supergroups permission to add members.
 Or just allow supergroup inherited...
 TBD
 
-Change MailmanSyncForm into a ModelForm
+Change MailmanSyncForm into a ModelForm (?)
