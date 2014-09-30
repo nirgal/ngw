@@ -5,6 +5,7 @@ Base view class; View helpers
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
+import inspect
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext as _
@@ -216,6 +217,36 @@ class NgwListView(ListView):
                 p[k] = v
         return '?%s' % urlencode(sorted(p.items()))
 
+
+    def row_to_items(self, row):
+        for display_name, extrafilter, attrib_name, sortname in self.cols:
+            # if attribname is a function
+            if inspect.isfunction(attrib_name):
+                result = attrib_name(row)
+            else:
+                # Else it's a string: get the matching attribute
+                result = row.__getattribute__(attrib_name)
+                if inspect.ismethod(result):
+                    result = result()
+                if result == None:
+                    yield ''
+                    continue
+                #result = html.escape(result)
+            if inspect.isfunction(extrafilter) or inspect.ismethod(extrafilter):
+                #print("ismethod/isfunction")
+                result = extrafilter(result)
+                #print(result)
+                yield result
+                continue
+
+            try:
+                flink = row.__getattribute__('get_link_'+force_text(attrib_name))
+                link = flink()
+                if link:
+                    result = '<a href="'+link+'">'+result+'</a>'
+            except AttributeError as e:
+                pass 
+            yield result
 
     def get_actions(self, request):
         '''

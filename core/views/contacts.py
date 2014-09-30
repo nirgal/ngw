@@ -38,7 +38,6 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
-from ngw.core.templatetags.ngwtags import ngw_display #FIXME: not nice to import tempate tags here
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -433,8 +432,8 @@ class BaseContactListView(NgwListView):
 
     def action_csv_export(self, request, queryset):
         result = ''
-        def _quote_csv(u):
-            u = html.strip_tags(force_text(u))
+        def _quote_csv(col_html):
+            u = html.strip_tags(force_text(col_html))
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
         for i, col in enumerate(self.cols):
             if i: # not first column
@@ -442,13 +441,12 @@ class BaseContactListView(NgwListView):
             result += _quote_csv(col[0])
         result += '\n'
         for row in queryset:
-            for i, col in enumerate(self.cols):
+            for i, col_html in enumerate(self.row_to_items(row)):
                 if i: # not first column
                     result += ','
-                v = ngw_display(row, col)
-                if v == None:
+                if col_html == None:
                     continue
-                result += _quote_csv(v)
+                result += _quote_csv(col_html)
             result += '\n'
         return HttpResponse(result, content_type='text/csv; charset=utf-8')
     action_csv_export.short_description = _("CSV format export (Spreadsheet format)")

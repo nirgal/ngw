@@ -1,7 +1,7 @@
 # -*- encofing: utf8 -*-
 
 from __future__ import division, absolute_import, print_function, unicode_literals
-import inspect
+
 from django import template
 from django.utils import html
 from django.utils.safestring import mark_safe
@@ -55,41 +55,15 @@ def get_notnull(object, index):
 
 
 @register.filter
-def ngw_display(obj, coldesc):
-    #return 'ngwtags.py disabled'
-
-    # If coldesc[2] is a function
-    if inspect.isfunction(coldesc[2]):
-        result = coldesc[2](obj)
-    else:
-        # Else it's a string: get the matching attribute
-        attribute_name = coldesc[2]
-        result = obj.__getattribute__(attribute_name)
-        if inspect.ismethod(result):
-            result = result()
-        if result == None:
-            return ''
-        #result = html.escape(result)
-
-    if inspect.isfunction(coldesc[1]) or inspect.ismethod(coldesc[1]):
-        #print("ismethod/isfunction")
-        result = coldesc[1](result)
-        #print(result)
-        return result
-
-    try:
-        flink = obj.__getattribute__('get_link_'+force_text(coldesc[2]))
-        link = flink()
-        if link:
-            result = '<a href="'+link+'">'+result+'</a>'
-    except AttributeError as e:
-        pass 
-    return result
-
-@register.filter
 def group_visible_by(contact_groups_query, user_id):
     return contact_groups_query.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % user_id])
+
 
 @register.filter
 def group_with_link(contact_group):
     return mark_safe('<a href="'+contact_group.get_absolute_url()+'">'+html.escape(contact_group.name_with_date())+'</a>')
+
+
+@register.assignment_tag
+def view_row_to_items(view, row):
+    return view.row_to_items(row)

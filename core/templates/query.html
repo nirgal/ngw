@@ -57,8 +57,9 @@ Optionnal parameters:
     {% if actions %}
     <td class="action-checkbox"><input class="action-select" name="_selected_action" type="checkbox" value="{{row.pk}}" />
     {% endif %}
-    {% for col in cols %}
-        <td>{{row|ngw_display:col|safe}} {# TODO: check safe #}
+    {% view_row_to_items view row as cols_html %}
+    {% for col_html in cols_html %}
+        <td>{{ col_html|safe }} {# TODO: check safe #}
     {% endfor %}
 {% endfor %}
 </table>
