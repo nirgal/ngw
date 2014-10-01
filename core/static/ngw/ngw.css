@@ -9,6 +9,7 @@
 }
 
 #header #tabs {
+    clear: left;
     float: left;
     white-space:nowrap;
 }
