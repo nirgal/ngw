@@ -26,9 +26,6 @@ Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEd
 
 Check how slicing is optimized in ContactQuerySet
 
-Fix ejabberd cross subscribe overrides:
-Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
-
 Support Image contactfields
 
 Event selection widget (Do not load everything at once, like for column selection)
@@ -50,6 +47,10 @@ CRSF validation fails on login page if it is shown too long:
 See https://github.com/yourlabs/django-session-security/issues/29
 
 Change USE_TZ to True
+
+Fix ejabberd cross subscribe overrides:
+Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
+
 
 ====================================================================================================
 UNSORTED

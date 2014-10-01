@@ -143,7 +143,8 @@ class NewsDeleteView(InGroupAcl, NgwDeleteView):
 
     def get_context_data(self, **kwargs):
         context = {}
-    #    context['nav'] = self.contactgroup.get_smart_navbar() \
-    #             .add_component(('delete', _('delete')))
+        context['nav'] = self.contactgroup.get_smart_navbar() \
+            .add_component(('news', _('news'))) \
+            .add_component(('delete', _('delete')))
         context.update(kwargs)
         return super(NewsDeleteView, self).get_context_data(**context)
