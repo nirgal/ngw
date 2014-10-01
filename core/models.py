@@ -18,7 +18,7 @@ from django.http import Http404
 from django.utils import html
 from django.utils import formats
 from django.utils import six
-from django.contrib import auth
+from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib import messages
 import decoratedstr # Nirgal external package
@@ -206,7 +206,7 @@ class ChoiceGroup(NgwModel):
     get_link_name = NgwModel.get_absolute_url
 
 
-class MyContactManager(auth.models.BaseUserManager):
+class MyContactManager(BaseUserManager):
     def get_by_natural_key(self, username):
         try:
             login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=username)
