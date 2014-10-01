@@ -5,6 +5,11 @@
 	padding-left:20px;
 }
 
+#header #tabs {
+    clear:left;
+    white-space:nowrap;
+}
+
 #header #tabs a[href] {
     display: inline-block;
     background: #909090;

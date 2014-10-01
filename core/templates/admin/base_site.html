@@ -49,7 +49,7 @@
 
 {% block nav-global %}
 {% if user.is_authenticated %}
-<div id=tabs style="clear:both;">
+<div id=tabs>
     <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
     <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
     <a href="/events/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
