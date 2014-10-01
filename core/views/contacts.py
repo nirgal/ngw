@@ -64,58 +64,6 @@ FTYPE_PASSWORD = 'PASSWORD'
 #######################################################################
 
 
-def membership_to_text(contact_with_extra_fields, group_id):
-    flags = getattr(contact_with_extra_fields, 'group_%s_flags' % group_id)
-    if flags is None:
-        flags = 0
-    flags_inherited = getattr(contact_with_extra_fields, 'group_%s_inherited_flags' % group_id)
-    if flags_inherited is None:
-        flags_inherited = 0
-    flags_ainherited = getattr(contact_with_extra_fields, 'group_%s_inherited_aflags' % group_id)
-    if flags_ainherited is None:
-        flags_ainherited = 0
-
-    return perms.int_to_text(
-        flags,
-        (flags_inherited & ~perms.ADMIN_ALL) | (flags_ainherited & perms.ADMIN_ALL))
-
-
-def membership_to_text_factory(group_id):
-    return lambda contact_with_extra_fields: \
-        membership_to_text(contact_with_extra_fields, group_id)
-
-
-def membership_extended_widget(request, contact_with_extra_fields, contact_group):
-    flags = getattr(contact_with_extra_fields, 'group_%s_flags' % contact_group.id)
-    if flags is None:
-        flags = 0
-    if flags & perms.MEMBER:
-        membership = 'member'
-    elif flags & perms.INVITED:
-        membership = 'invited'
-    elif flags & perms.DECLINED:
-        membership = 'declined'
-    else:
-        membership = ''
-
-    return loader.render_to_string('membership_widget.html', {
-        'cid': contact_with_extra_fields.id,
-        'gid': contact_group.id,
-        'membership_str': membership_to_text(contact_with_extra_fields, contact_group.id),
-        'note': getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id),
-        'membership': membership,
-        'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
-        'title': _('%(contactname)s in group %(groupname)s') % {
-            'contactname':contact_with_extra_fields.name,
-            'groupname': contact_group.name_with_date()},
-        }, RequestContext(request))
-
-
-def membership_extended_widget_factory(request, contact_group):
-    return lambda contact_with_extra_fields: \
-        membership_extended_widget(request, contact_with_extra_fields, contact_group)
-
-
 class ContactQuerySet(RawQuerySet):
     def __init__(self, *args, **kargs):
         super(ContactQuerySet, self).__init__('', *args, **kargs)
@@ -239,59 +187,6 @@ class ContactQuerySet(RawQuerySet):
             yield x
 
 
-def contact_make_query_with_fields(request, fields, current_cg=None):
-    '''
-    Creates an iterable objects with all the required fields (including groups).
-    returns a tupple (query, columns)
-    Permissions are checked for the fields. Forbidden field/groups are skiped.
-    '''
-
-    q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
-    cols = []
-
-    user_id = request.user.id
-    for prop in fields:
-        if prop == 'name':
-            cols.append((_('Name'), None, 'name_with_relative_link', 'name'))
-        elif prop.startswith(DISP_GROUP_PREFIX):
-            groupid = int(prop[len(DISP_GROUP_PREFIX):])
-
-            if not perms.c_can_see_members_cg(user_id, groupid):
-                continue # just ignore groups that aren't allowed to be seen
-
-            q.add_group_withnote(groupid)
-
-            cg = ContactGroup.objects.get(pk=groupid)
-
-            #cols.append((cg.name, None, membership_to_text_factory(groupid), None))
-            cols.append((cg.name, None, membership_extended_widget_factory(request, cg), None))
-            #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
-
-        elif prop.startswith(DISP_FIELD_PREFIX):
-            fieldid = prop[len(DISP_FIELD_PREFIX):]
-            cf = ContactField.objects.get(pk=fieldid)
-
-            if not perms.c_can_view_fields_cg(user_id, cf.contact_group_id):
-                continue # Just ignore fields that can't be seen
-
-            q.add_field(fieldid)
-            # TODO
-            # add_field should create as_html and as_text attributes
-            # then here is the last place where col[1] is ever used
-
-            cols.append((cf.name, cf.format_value_html, prop, prop))
-        else:
-            raise ValueError('Invalid field '+prop)
-
-    if current_cg is not None:
-        q.add_group_withnote(current_cg.id)
-        cols.append((_('Status'), None, membership_extended_widget_factory(request, current_cg), None))
-        #cols.append(('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
-        #cols.append(('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
-        #cols.append(('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
-    return q, cols
-
-
 def get_default_columns(user):
     # check the field still exists
     result = []
@@ -362,6 +257,73 @@ class FieldSelectForm(forms.Form):
             choices=get_available_columns(user.id))
 
 
+
+def membership_to_text(contact_with_extra_fields, group_id):
+    flags = getattr(contact_with_extra_fields, 'group_%s_flags' % group_id)
+    if flags is None:
+        flags = 0
+    flags_inherited = getattr(contact_with_extra_fields, 'group_%s_inherited_flags' % group_id)
+    if flags_inherited is None:
+        flags_inherited = 0
+    flags_ainherited = getattr(contact_with_extra_fields, 'group_%s_inherited_aflags' % group_id)
+    if flags_ainherited is None:
+        flags_ainherited = 0
+
+    return perms.int_to_text(
+        flags,
+        (flags_inherited & ~perms.ADMIN_ALL) | (flags_ainherited & perms.ADMIN_ALL))
+
+
+def membership_to_text_factory(group_id):
+    return lambda contact_with_extra_fields: \
+        membership_to_text(contact_with_extra_fields, group_id)
+
+
+def membership_extended_widget(request, contact_with_extra_fields, contact_group):
+    flags = getattr(contact_with_extra_fields, 'group_%s_flags' % contact_group.id)
+    if flags is None:
+        flags = 0
+    if flags & perms.MEMBER:
+        membership = 'member'
+    elif flags & perms.INVITED:
+        membership = 'invited'
+    elif flags & perms.DECLINED:
+        membership = 'declined'
+    else:
+        membership = ''
+
+    return loader.render_to_string('membership_widget.html', {
+        'cid': contact_with_extra_fields.id,
+        'gid': contact_group.id,
+        'membership_str': membership_to_text(contact_with_extra_fields, contact_group.id),
+        'note': getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id),
+        'membership': membership,
+        'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
+        'title': _('%(contactname)s in group %(groupname)s') % {
+            'contactname':contact_with_extra_fields.name,
+            'groupname': contact_group.name_with_date()},
+        }, RequestContext(request))
+
+
+def membership_extended_widget_factory(request, contact_group):
+    return lambda contact_with_extra_fields: \
+        membership_extended_widget(request, contact_with_extra_fields, contact_group)
+
+
+def field_widget(contact_field, contact_with_extra_fields):
+    attrib_name = DISP_FIELD_PREFIX + force_text(contact_field.id)
+    raw_value = getattr(contact_with_extra_fields, attrib_name)
+    if raw_value:
+        return contact_field.format_value_html(raw_value)
+    else:
+        return ''
+
+def field_widget_factory(contact_field):
+    return lambda contact_with_extra_fields: \
+        field_widget(contact_field, contact_with_extra_fields)
+
+
+
 class BaseContactListView(NgwListView):
     '''
     Base view for contact list.
@@ -374,6 +336,65 @@ class BaseContactListView(NgwListView):
         'action_vcard_export',
         'action_bcc',
     )
+
+    def contact_make_query_with_fields(self, request, fields):
+        '''
+        Creates an iterable objects with all the required fields (including groups).
+        returns a tupple (query, columns)
+        Permissions are checked for the fields. Forbidden field/groups are skiped.
+        '''
+
+        q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
+        cols = []
+
+        user_id = request.user.id
+        for prop in fields:
+            if prop == 'name':
+                cols.append((_('Name'), None, 'name_with_relative_link', 'name'))
+            elif prop.startswith(DISP_GROUP_PREFIX):
+                groupid = int(prop[len(DISP_GROUP_PREFIX):])
+
+                if not perms.c_can_see_members_cg(user_id, groupid):
+                    continue # just ignore groups that aren't allowed to be seen
+
+                q.add_group_withnote(groupid)
+
+                cg = ContactGroup.objects.get(pk=groupid)
+
+                #attribute_name = 'text_'+prop
+                #setattr(self, attribute_name, membership_to_text_factory(groupid))
+                #cols.append((cg.name, None, attribute_name, None))
+
+                attribute_name = 'html_'+prop
+                setattr(self, attribute_name, membership_extended_widget_factory(request, cg))
+                cols.append((cg.name, None, attribute_name, None))
+
+                #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
+
+            elif prop.startswith(DISP_FIELD_PREFIX):
+                fieldid = prop[len(DISP_FIELD_PREFIX):]
+                cf = ContactField.objects.get(pk=fieldid)
+
+                if not perms.c_can_view_fields_cg(user_id, cf.contact_group_id):
+                    continue # Just ignore fields that can't be seen
+
+                q.add_field(fieldid)
+
+                cols.append((cf.name, None, field_widget_factory(cf), prop))
+            else:
+                raise ValueError('Invalid field '+prop)
+
+        current_cg = self.contactgroup
+        if current_cg is not None:
+            q.add_group_withnote(current_cg.id)
+            self.group_status = membership_extended_widget_factory(request, current_cg)
+            cols.append((_('Status'), None, "group_status", None))
+            #cols.append(('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
+            #cols.append(('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
+            #cols.append(('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
+
+        return q, cols
+
 
     def get_root_queryset(self):
         request = self.request
@@ -388,18 +409,15 @@ class BaseContactListView(NgwListView):
         else:
             fields = get_default_columns(request.user)
             strfields = ','.join(fields)
-        #print('contact_list:', fields)
 
         if request.REQUEST.get('savecolumns'):
             request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
 
-        view_params = self.kwargs
-        if 'gid' in view_params:
-            cg = get_object_or_404(ContactGroup, pk=view_params['gid'])
-        else:
-            cg = None
+        # Make sure self.contactgroup is defined:
+        if not hasattr(self, 'contactgroup'):
+            self.contactgroup = None
 
-        q, cols = contact_make_query_with_fields(request, fields, current_cg=cg)
+        q, cols = self.contact_make_query_with_fields(request, fields)
 
         q = filter.apply_filter_to_query(q)
 
@@ -413,7 +431,6 @@ class BaseContactListView(NgwListView):
         self.filter_html = filter.to_html()
         self.strfields = strfields
         self.fields = fields
-        self.cg = cg
         return q
 
 

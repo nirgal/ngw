@@ -263,7 +263,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     def get_root_queryset(self):
         q = super(GroupMemberListView, self).get_root_queryset()
 
-        cg = self.cg
+        cg = self.contactgroup
 
         display = self.request.REQUEST.get('display', None)
         if display is None:
@@ -307,7 +307,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 
 
     def get_context_data(self, **kwargs):
-        cg = self.cg
+        cg = self.contactgroup
         context = {}
         context['title'] = _('Contacts of group %s') % cg.name_with_date()
 
