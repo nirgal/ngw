@@ -3,7 +3,7 @@
 That file must be included in a full template.
 Context:
     query: A iterable object
-    cols: A list of 4-tuples: ("column title", "function", "property or method NAME of the row", "matching table column for sort")
+    cols: A list of 3-tuples: ("column title", "property or method NAME of the row or view", "matching table column for sort")
 Optionnal parameters:
     order: number of the column used to sort
 {% endcomment %}
@@ -36,7 +36,7 @@ Optionnal parameters:
         </th>
         {% endif %}
         {% for col in cols %}
-            <th scope="col" class="{% if col|get_notnull:3 %}sortable{% endif %} {% if order|order_absmatch:forloop.counter0 %}sorted {% if order|order_isreverted %}descending{% else %}ascending{% endif %}{% endif %}">
+            <th scope="col" class="{% if col|get_notnull:2 %}sortable{% endif %} {% if order|order_absmatch:forloop.counter0 %}sorted {% if order|order_isreverted %}descending{% else %}ascending{% endif %}{% endif %}">
             {% if order|order_absmatch:forloop.counter0 %}
             <div class="sortoptions">
                 <a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif %}{{ forloop.counter0 }}" class="toggle {% if order|order_isreverted %}descending{% else %}ascending{% endif %}"></a>
@@ -44,9 +44,9 @@ Optionnal parameters:
             {% endif %}
             <div class="text">
             <span>
-            {% if col|get_notnull:3 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif %}{{ forloop.counter0 }}">{% endif %}
+            {% if col|get_notnull:2 %}<a href="{{baseurl}}&amp;_order={% if order|order_absmatch:forloop.counter0 %}{% if not order|order_isreverted %}-{% endif %}{% endif %}{{ forloop.counter0 }}">{% endif %}
             {{col|get:0}}
-            {% if col|get_notnull:3 %}</a>{% endif %}
+            {% if col|get_notnull:2 %}</a>{% endif %}
             </span>
             </div>
             <div class=clear></div>

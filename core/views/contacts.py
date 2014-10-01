@@ -350,7 +350,7 @@ class BaseContactListView(NgwListView):
         user_id = request.user.id
         for prop in fields:
             if prop == 'name':
-                cols.append((_('Name'), None, 'name_with_relative_link', 'name'))
+                cols.append((_('Name'), 'name_with_relative_link', 'name'))
             elif prop.startswith(DISP_GROUP_PREFIX):
                 groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
@@ -363,13 +363,13 @@ class BaseContactListView(NgwListView):
 
                 #attribute_name = 'text_'+prop
                 #setattr(self, attribute_name, membership_to_text_factory(groupid))
-                #cols.append((cg.name, None, attribute_name, None))
+                #cols.append((cg.name, attribute_name, None))
 
                 attribute_name = 'html_'+prop
                 setattr(self, attribute_name, membership_extended_widget_factory(request, cg))
-                cols.append((cg.name, None, attribute_name, None))
+                cols.append((cg.name, attribute_name, None))
 
-                #cols.append( ('group_%s_flags' % groupid, None, 'group_%s_flags' % groupid, None))
+                #cols.append( ('group_%s_flags' % groupid, 'group_%s_flags' % groupid, None))
 
             elif prop.startswith(DISP_FIELD_PREFIX):
                 fieldid = prop[len(DISP_FIELD_PREFIX):]
@@ -380,7 +380,7 @@ class BaseContactListView(NgwListView):
 
                 q.add_field(fieldid)
 
-                cols.append((cf.name, None, field_widget_factory(cf), prop))
+                cols.append((cf.name, field_widget_factory(cf), prop))
             else:
                 raise ValueError('Invalid field '+prop)
 
@@ -388,10 +388,10 @@ class BaseContactListView(NgwListView):
         if current_cg is not None:
             q.add_group_withnote(current_cg.id)
             self.group_status = membership_extended_widget_factory(request, current_cg)
-            cols.append((_('Status'), None, "group_status", None))
-            #cols.append(('group_%s_flags' % current_cg.id, None, 'group_%s_flags' % current_cg.id, None))
-            #cols.append(('group_%s_inherited_flags' % current_cg.id, None, 'group_%s_inherited_flags' % current_cg.id, None))
-            #cols.append(('group_%s_inherited_aflags' % current_cg.id, None, 'group_%s_inherited_aflags' % current_cg.id, None))
+            cols.append((_('Status'), "group_status", None))
+            #cols.append(('group_%s_flags' % current_cg.id, 'group_%s_flags' % current_cg.id, None))
+            #cols.append(('group_%s_inherited_flags' % current_cg.id, 'group_%s_inherited_flags' % current_cg.id, None))
+            #cols.append(('group_%s_inherited_aflags' % current_cg.id, 'group_%s_inherited_aflags' % current_cg.id, None))
 
         return q, cols
 

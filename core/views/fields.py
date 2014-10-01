@@ -30,11 +30,11 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 class FieldListView(NgwAdminAcl, NgwListView):
     cols = [
-        (ugettext_lazy('Name'), None, 'name', 'name'),
-        (ugettext_lazy('Type'), None, 'type_as_html', 'type'),
-        (ugettext_lazy('Only for'), None, 'contact_group', 'contact_group__name'),
-        (ugettext_lazy('System locked'), None, 'system', 'system'),
-        #(ugettext_lazy('Move'), None, lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
+        (ugettext_lazy('Name'), 'name', 'name'),
+        (ugettext_lazy('Type'), 'type_as_html', 'type'),
+        (ugettext_lazy('Only for'), 'contact_group', 'contact_group__name'),
+        (ugettext_lazy('System locked'), 'system', 'system'),
+        #(ugettext_lazy('Move'), lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
     ]
     default_sort = 'sort_weight'
 

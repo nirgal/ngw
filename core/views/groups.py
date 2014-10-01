@@ -47,14 +47,14 @@ def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
 
 class ContactGroupListView(NgwUserAcl, NgwListView):
     cols = [
-        (ugettext_lazy('Name'), None, 'name', 'name'),
-        (ugettext_lazy('Description'), None, 'description_not_too_long', 'description'),
-        #(ugettext_lazy('Contact fields'), None, 'rendered_fields', 'field_group'),
-        (ugettext_lazy('Super groups'), None, 'visible_direct_supergroups_5', None),
-        (ugettext_lazy('Sub groups'), None, 'visible_direct_subgroups_5', None),
-        #(ugettext_lazy('Budget\u00a0code'), None, 'budget_code', 'budget_code'),
-        #(ugettext_lazy('Members'), None, 'visible_member_count', None),
-        #(ugettext_lazy('System\u00a0locked'), None, 'system', 'system'),
+        (ugettext_lazy('Name'), 'name', 'name'),
+        (ugettext_lazy('Description'), 'description_not_too_long', 'description'),
+        #(ugettext_lazy('Contact fields'), 'rendered_fields', 'field_group'),
+        (ugettext_lazy('Super groups'), 'visible_direct_supergroups_5', None),
+        (ugettext_lazy('Sub groups'), 'visible_direct_subgroups_5', None),
+        #(ugettext_lazy('Budget\u00a0code'), 'budget_code', 'budget_code'),
+        #(ugettext_lazy('Members'), 'visible_member_count', None),
+        #(ugettext_lazy('System\u00a0locked'), 'system', 'system'),
     ]
 
     def visible_direct_supergroups_5(self, group):

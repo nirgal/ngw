@@ -186,14 +186,14 @@ class NgwListView(ListView):
                 order = ''
                 intorder = None
                 queryset = queryset.order_by(self.default_sort)
-            elif self.cols[0][3] is not None:
+            elif self.cols[0][2] is not None:
                 order = '0'
                 intorder = 0
             else:
                 order = ''
                 intorder = None
         if intorder is not None:
-            sort_col = self.cols[abs(intorder)][3]
+            sort_col = self.cols[abs(intorder)][2]
             if not order or order[0] != '-':
                 queryset = queryset.order_by(sort_col)
             else:
@@ -219,7 +219,7 @@ class NgwListView(ListView):
 
 
     def row_to_items(self, row):
-        for display_name, extrafilter, attrib_name, sortname in self.cols:
+        for display_name, attrib_name, sortname in self.cols:
             # if attrib_name is a function
             if inspect.isfunction(attrib_name):
                 result = attrib_name(row)
@@ -240,12 +240,6 @@ class NgwListView(ListView):
                         continue
 
                 #result = html.escape(result)
-            if inspect.isfunction(extrafilter) or inspect.ismethod(extrafilter):
-                #print("ismethod/isfunction")
-                result = extrafilter(result)
-                #print(result)
-                yield result
-                continue
 
             try:
                 flink = row.__getattribute__('get_link_'+force_text(attrib_name))

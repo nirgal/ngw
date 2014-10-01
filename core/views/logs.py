@@ -18,12 +18,12 @@ class LogListView(NgwAdminAcl, NgwListView):
     template_name = 'log_list.html'
     root_queryset = Log.objects.all()
     cols = [
-        (ugettext_lazy('Date UTC'), None, 'small_date', 'dt'),
-        (ugettext_lazy('User'), None, 'contact', 'contact__name'),
-        (ugettext_lazy('Action'), None, 'action_txt', 'action'),
-        (ugettext_lazy('Target'), None, 'target_repr', 'target_repr'),
-        (ugettext_lazy('Property'), None, 'property_repr', 'property_repr'),
-        (pgettext_lazy('noun', 'Change'), None, 'change', 'change'),
+        (ugettext_lazy('Date UTC'), 'small_date', 'dt'),
+        (ugettext_lazy('User'), 'contact', 'contact__name'),
+        (ugettext_lazy('Action'), 'action_txt', 'action'),
+        (ugettext_lazy('Target'), 'target_repr', 'target_repr'),
+        (ugettext_lazy('Property'), 'property_repr', 'property_repr'),
+        (pgettext_lazy('noun', 'Change'), 'change', 'change'),
     ]
 
 

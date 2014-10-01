@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect
 from django.utils import html
 from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.six import iteritems
+from django.utils.safestring import mark_safe
 from django import forms
 from django.views.generic import UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
@@ -28,9 +29,16 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 class ChoiceListView(NgwAdminAcl, NgwListView):
     root_queryset = ChoiceGroup.objects.all()
     cols = [
-        (ugettext_lazy('Name'), None, 'name', 'name'),
-        (ugettext_lazy('Choices'), None, lambda cg: ', '.join([html.escape(c[1]) for c in cg.ordered_choices]), None),
+        (ugettext_lazy('Name'), 'name', 'name'),
+        (ugettext_lazy('Choices'), 'htmlchoices', None),
     ]
+
+
+    def htmlchoices(self, choice_group):
+        return mark_safe(', '.join([
+            html.escape(c[1])
+            for c in choice_group.ordered_choices]))
+
 
     def get_context_data(self, **kwargs):
         context = {}
