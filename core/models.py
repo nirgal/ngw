@@ -18,6 +18,7 @@ from django.http import Http404
 from django.utils import html
 from django.utils import formats
 from django.utils import six
+from django.contrib import auth
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib import messages
 import decoratedstr # Nirgal external package
@@ -208,8 +209,7 @@ class ChoiceGroup(NgwModel):
     get_link_name = NgwModel.get_absolute_url
 
 
-class MyContactManager(models.Manager):
-    # TODO: Maybe BaseUserManager is a better base class
+class MyContactManager(auth.models.BaseUserManager):
     def get_by_natural_key(self, username):
         try:
             login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=username)
@@ -505,12 +505,6 @@ class Contact(NgwModel):
                 return altlogin
             i += 1
 
-    @staticmethod
-    def generate_password():
-        random_password = get_random_string(8, 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ0123456789!@#$%&*(-_=+)')
-        return random_password
-
-
     def set_password(self, newpassword_plain, new_password_status=None, request=None):
         assert request, 'ngw version of set_password needs a request parameter'
         # TODO check password strength
@@ -535,7 +529,7 @@ class Contact(NgwModel):
             contact = Contact.objects.get(pk=uid)
             new_login = contact.generate_login()
             contact.set_fieldvalue(request, FIELD_LOGIN, new_login)
-            contact.set_password(contact.generate_password(), request=request)
+            contact.set_password(Contacts.objects.make_random_password(), request=request)
             messages.add_message(request, messages.SUCCESS, _("Login information generated for User %s.") % contact.name)
 
         for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': perms.MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):

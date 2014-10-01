@@ -910,7 +910,7 @@ class PassLetterView(InGroupAcl, DetailView):
     def post(self, request, *args, **kwargs):
         contact = self.get_object()
 
-        new_password = Contact.generate_password()
+        new_password = Contact.objects.make_random_password()
 
         # record the value
         contact.set_password(new_password, '2', request=request) # Generated and mailed
