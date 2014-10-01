@@ -1,3 +1,6 @@
+#branding h1 {
+    margin-bottom: 0;
+}
 #header .quicksearch {
 	border-color:#417690;
 	background-image:url(../admin/img/icon_searchbox.png);
@@ -6,7 +9,7 @@
 }
 
 #header #tabs {
-    clear:left;
+    float: left;
     white-space:nowrap;
 }
 
