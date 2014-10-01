@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 
 __all__ = ['login_required', 'require_group']
 
-def require_group(required_group):
+def require_group(group_id):
     '''
     Decorator to make a view only accept users from a given group.
     '''
@@ -23,7 +23,7 @@ def require_group(required_group):
                 user = request.user
             except AttributeError:
                 raise PermissionDenied
-            if not user.is_member_of(required_group):
+            if not user.is_member_of(group_id):
                 raise PermissionDenied
             return func(request, *args, **kwargs)
         return inner

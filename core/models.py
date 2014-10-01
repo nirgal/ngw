@@ -588,6 +588,7 @@ class Contact(NgwModel):
         assert len(list)%2 == 0
         return [(list[2*i], list[2*i+1]) for i in range(len(list)//2)]
 
+
 @python_2_unicode_compatible
 class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
