@@ -340,17 +340,17 @@ class BaseContactListView(NgwListView):
     def contact_make_query_with_fields(self, request, fields):
         '''
         Creates an iterable objects with all the required fields (including groups).
-        returns a tupple (query, columns)
+        returns a tupple (query, list_display)
         Permissions are checked for the fields. Forbidden field/groups are skiped.
         '''
 
         q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
-        cols = []
+        list_display = []
 
         user_id = request.user.id
         for prop in fields:
             if prop == 'name':
-                cols.append((_('Name'), 'name_with_relative_link', 'name'))
+                list_display.append('name_with_relative_link')
             elif prop.startswith(DISP_GROUP_PREFIX):
                 groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
@@ -366,8 +366,10 @@ class BaseContactListView(NgwListView):
                 #cols.append((cg.name, attribute_name, None))
 
                 attribute_name = 'html_'+prop
-                setattr(self, attribute_name, membership_extended_widget_factory(request, cg))
-                cols.append((cg.name, attribute_name, None))
+                attribute = membership_extended_widget_factory(request, cg)
+                attribute.short_description = cg.name
+                setattr(self, attribute_name, attribute)
+                list_display.append(attribute_name)
 
                 #cols.append( ('group_%s_flags' % groupid, 'group_%s_flags' % groupid, None))
 
@@ -380,7 +382,12 @@ class BaseContactListView(NgwListView):
 
                 q.add_field(fieldid)
 
-                cols.append((cf.name, field_widget_factory(cf), prop))
+                attribute_name = 'html_'+prop
+                attribute = field_widget_factory(cf)
+                attribute.short_description = cf.name
+                attribute.admin_order_field = prop
+                setattr(self, attribute_name, attribute)
+                list_display.append(attribute_name)
             else:
                 raise ValueError('Invalid field '+prop)
 
@@ -388,12 +395,12 @@ class BaseContactListView(NgwListView):
         if current_cg is not None:
             q.add_group_withnote(current_cg.id)
             self.group_status = membership_extended_widget_factory(request, current_cg)
-            cols.append((_('Status'), "group_status", None))
+            self.group_status.short_description = _('Status')
             #cols.append(('group_%s_flags' % current_cg.id, 'group_%s_flags' % current_cg.id, None))
             #cols.append(('group_%s_inherited_flags' % current_cg.id, 'group_%s_inherited_flags' % current_cg.id, None))
             #cols.append(('group_%s_inherited_aflags' % current_cg.id, 'group_%s_inherited_aflags' % current_cg.id, None))
 
-        return q, cols
+        return q, list_display
 
 
     def get_root_queryset(self):
@@ -417,7 +424,7 @@ class BaseContactListView(NgwListView):
         if not hasattr(self, 'contactgroup'):
             self.contactgroup = None
 
-        q, cols = self.contact_make_query_with_fields(request, fields)
+        q, list_display = self.contact_make_query_with_fields(request, fields)
 
         q = filter.apply_filter_to_query(q)
 
@@ -426,7 +433,7 @@ class BaseContactListView(NgwListView):
         # request.user can see:
         #q.qry_where.append('')
 
-        self.cols = cols
+        self.list_display = list_display
         self.filter = strfilter
         self.filter_html = filter.to_html()
         self.strfields = strfields
@@ -452,12 +459,15 @@ class BaseContactListView(NgwListView):
         def _quote_csv(col_html):
             u = html.strip_tags(force_text(col_html))
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
-        for i, col in enumerate(self.cols):
-            if i: # not first column
-                result += ','
-            result += _quote_csv(col[0])
-        result += '\n'
+        header_done = False
         for row in queryset:
+            if not header_done:
+                for i, header in enumerate(self.result_headers(row)):
+                    if i: # not first column
+                        result += ','
+                    result += _quote_csv(header['text'])
+                result += '\n'
+                header_done = True
             for i, col_html in enumerate(self.row_to_items(row)):
                 if i: # not first column
                     result += ','

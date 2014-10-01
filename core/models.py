@@ -12,7 +12,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext as _, ugettext_lazy
+from django.utils.translation import ugettext as _, ugettext_lazy, pgettext_lazy
 from django.db import models, connection
 from django.http import Http404
 from django.utils import html
@@ -109,14 +109,14 @@ LOG_ACTION_DEL    = 3
 
 class Log(NgwModel):
     id = models.AutoField(primary_key=True)
-    dt = models.DateTimeField(auto_now=True)
+    dt = models.DateTimeField(ugettext_lazy('Date UTC'), auto_now=True)
     contact = models.ForeignKey('Contact')
-    action = models.IntegerField()
+    action = models.IntegerField(ugettext_lazy('Action'))
     target = models.TextField()
-    target_repr = models.TextField()
+    target_repr = models.TextField(ugettext_lazy('Target'))
     property = models.TextField(blank=True, null=True)
-    property_repr = models.TextField(blank=True, null=True)
-    change = models.TextField(blank=True, null=True)
+    property_repr = models.TextField(ugettext_lazy('Property'), blank=True, null=True)
+    change = models.TextField(pgettext_lazy('noun', 'Change'), blank=True, null=True)
     class Meta:
         db_table = 'log'
         verbose_name = ugettext_lazy('log')
@@ -136,9 +136,6 @@ class Log(NgwModel):
     #            'property': self.property_repr,
     #            'change': self.change,
     #            }
-
-    def small_date(self):
-        return formats.date_format(self.dt, "SHORT_DATETIME_FORMAT")
 
     def action_txt(self):
         return {LOG_ACTION_ADD: 'Add',
@@ -303,6 +300,8 @@ class Contact(NgwModel):
     #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self):
         return '<a href="%(id)d/">%(name)s</a>' % {'id': self.id, 'name': html.escape(self.name)}
+    name_with_relative_link.short_description = ugettext_lazy('Name')
+    name_with_relative_link.admin_order_field = 'name'
 
 
     def get_directgroups_member(self):
@@ -736,6 +735,8 @@ class ContactGroup(NgwModel):
         Same as description, but truncated if too long.
         '''
         return _truncate_text(self.description)
+    description_not_too_long.short_description = ugettext_lazy('Description')
+    description_not_too_long.admin_order_field = 'description'
 
     def mailman_request_address(self):
         ''' Adds -request before the @ of the address '''
@@ -1001,7 +1002,7 @@ class ContactField(NgwModel):
     contact_group = models.ForeignKey(ContactGroup, verbose_name=ugettext_lazy('Only for'))
     sort_weight = models.IntegerField()
     choice_group = models.ForeignKey(ChoiceGroup, verbose_name=ugettext_lazy('Choice group'), null=True, blank=True)
-    system = models.BooleanField(default=False)
+    system = models.BooleanField(ugettext_lazy('System locked'), default=False)
     default = models.TextField(ugettext_lazy('Default value'), blank=True)
     class Meta:
         db_table = 'contact_field'
@@ -1037,6 +1038,8 @@ class ContactField(NgwModel):
 
     def type_as_html(self):
         return self.str_type_base()
+    type_as_html.short_description = ugettext_lazy('Type')
+    type_as_html.admin_order_field = 'type'
 
     def format_value_text(self, value):
         return value
@@ -1759,13 +1762,13 @@ class ContactGroupNews(NgwModel):
 
 class ContactMsg(NgwModel):
     id = models.AutoField(primary_key=True)
-    contact = models.ForeignKey(Contact)
+    contact = models.ForeignKey(Contact, verbose_name=ugettext_lazy('Contact'))
     group = models.ForeignKey(ContactGroup)
     send_date = models.DateTimeField()
     read_date = models.DateTimeField(null=True, blank=True)
     read_by = models.ForeignKey(Contact, null=True, related_name='msgreader')
     is_answer = models.BooleanField(default=False)
-    subject = models.CharField(max_length=64)
+    subject = models.CharField(ugettext_lazy('Subject'), max_length=64)
     text = models.TextField()
     sync_info = models.TextField(blank=True) # json data for external storage
 
@@ -1776,6 +1779,8 @@ class ContactMsg(NgwModel):
 
     def nice_date(self):
         return formats.date_format(self.send_date, 'DATETIME_FORMAT')
+    nice_date.short_description = ugettext_lazy('Date UTC')
+    nice_date.admin_order_field = 'send_date'
 
     def get_absolute_url(self):
         return self.group.get_absolute_url() + 'messages/' + force_text(self.id)
@@ -1812,3 +1817,4 @@ class ContactMsg(NgwModel):
                 else:
                     result += '<span style="color:red;" title="%s">✉</span>' % _('Notification sent but unread')
         return mark_safe(result)
+    nice_flags.short_description = ugettext_lazy('Flags')

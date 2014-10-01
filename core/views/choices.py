@@ -28,16 +28,14 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 class ChoiceListView(NgwAdminAcl, NgwListView):
     root_queryset = ChoiceGroup.objects.all()
-    cols = [
-        (ugettext_lazy('Name'), 'name', 'name'),
-        (ugettext_lazy('Choices'), 'htmlchoices', None),
-    ]
+    list_display = 'name', 'htmlchoices'
 
 
     def htmlchoices(self, choice_group):
         return mark_safe(', '.join([
             html.escape(c[1])
             for c in choice_group.ordered_choices]))
+    htmlchoices.short_description = ugettext_lazy('Choices')
 
 
     def get_context_data(self, **kwargs):

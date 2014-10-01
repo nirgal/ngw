@@ -29,17 +29,20 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 
 class FieldListView(NgwAdminAcl, NgwListView):
-    cols = [
-        (ugettext_lazy('Name'), 'name', 'name'),
-        (ugettext_lazy('Type'), 'type_as_html', 'type'),
-        (ugettext_lazy('Only for'), 'contact_group', 'contact_group__name'),
-        (ugettext_lazy('System locked'), 'system', 'system'),
-        #(ugettext_lazy('Move'), lambda cf: '<a href='+str(cf.id)+'/moveup>Up</a> <a href='+str(cf.id)+'/movedown>Down</a>', None),
-    ]
+    list_display = (
+        'name', 'type_as_html', 'contact_group', 'system', #'move_it',
+        )
     default_sort = 'sort_weight'
+
+
+    def move_it(self, field):
+        return '<a href='+str(field.id)+'/moveup>Up</a> <a href='+str(field.id)+'/movedown>Down</a>'
+    move_it.short_description = ugettext_lazy('Move')
+
 
     def get_root_queryset(self):
         return ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % self.request.user.id])
+
 
     def get_context_data(self, **kwargs):
         context = {}

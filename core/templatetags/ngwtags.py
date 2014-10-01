@@ -67,3 +67,7 @@ def group_with_link(contact_group):
 @register.assignment_tag
 def view_row_to_items(view, row):
     return view.row_to_items(row)
+
+@register.assignment_tag
+def view_headers(view, row):
+    return view.result_headers(row)

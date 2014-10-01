@@ -8,11 +8,13 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 import inspect
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
+from django.db import models
 from django.utils.translation import ugettext as _
 from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils.text import capfirst
 from django.utils.http import urlencode
+from django.utils.html import format_html
 from django.shortcuts import get_object_or_404
 from django.views.generic.base import ContextMixin
 from django.views.generic import ListView, DeleteView
@@ -166,6 +168,22 @@ class NgwListView(ListView):
     def get_paginate_by(self, queryset):
         return Config.get_object_query_page_length()
 
+    def get_ordering_field(self, queryset, field_name):
+        try:
+            field = queryset.model._meta.get_field(field_name)
+            return field.name
+        except models.FieldDoesNotExist:
+            # See whether field_name is a name of a non-field
+            # that allows sorting.
+            if callable(field_name):
+                attr = field_name
+            elif hasattr(self, field_name):
+                attr = getattr(self, field_name)
+            else:
+                attr = getattr(queryset.model, field_name)
+            return getattr(attr, 'admin_order_field', None)
+
+
     def get_queryset(self):
         queryset = self.get_root_queryset()
 
@@ -184,20 +202,24 @@ class NgwListView(ListView):
         except ValueError:
             if self.default_sort:
                 order = ''
-                intorder = None
                 queryset = queryset.order_by(self.default_sort)
-            elif self.cols[0][2] is not None:
-                order = '0'
-                intorder = 0
             else:
-                order = ''
-                intorder = None
-        if intorder is not None:
-            sort_col = self.cols[abs(intorder)][2]
-            if not order or order[0] != '-':
-                queryset = queryset.order_by(sort_col)
-            else:
-                queryset = queryset.order_by('-'+sort_col)
+                sort_fieldname = self.list_display[0]
+                ordering_field = self.get_ordering_field(queryset, sort_fieldname)
+                if ordering_field:
+                    order = '0'
+                    queryset = queryset.order_by(ordering_field)
+                else:
+                    order = ''
+        else:
+            if intorder is not None:
+                sort_fieldname = self.list_display[intorder]
+                ordering_field = self.get_ordering_field(queryset, sort_fieldname)
+                if ordering_field:
+                    if order[0] != '-':
+                        queryset = queryset.order_by(ordering_field)
+                    else:
+                        queryset = queryset.order_by('-'+ordering_field)
 
         self.order = order
 
@@ -219,7 +241,7 @@ class NgwListView(ListView):
 
 
     def row_to_items(self, row):
-        for display_name, attrib_name, sortname in self.cols:
+        for attrib_name in self.list_display:
             # if attrib_name is a function
             if inspect.isfunction(attrib_name):
                 result = attrib_name(row)
@@ -247,8 +269,40 @@ class NgwListView(ListView):
                 if link:
                     result = '<a href="'+link+'">'+result+'</a>'
             except AttributeError as e:
-                pass 
+                pass
             yield result
+
+    def result_headers(self, row):
+        from django.contrib.admin.util import label_for_field
+        for field_name in self.list_display:
+            text, attr = label_for_field(field_name, type(row), self, True)
+            if attr:
+                # Potentially not sortable
+
+                # if the field is the action checkbox: no sorting and special class
+                if field_name == 'action_checkbox':
+                    yield {
+                        "text": text,
+                        "class_attrib": mark_safe(' class="action-checkbox-column"'),
+                        "sortable": False,
+                    }
+                    continue
+
+                admin_order_field = getattr(attr, "admin_order_field", None)
+                if not admin_order_field:
+                    # Not sortable
+                    yield {
+                        "text": text,
+                        "class_attrib": format_html(' class="column-{0}"', field_name),
+                        "sortable": False,
+                    }
+                    continue
+
+            # OK, it is sortable if we got this far
+            yield {
+                'text': text,
+                "sortable": True,
+            }
 
     def get_actions(self, request):
         '''
@@ -265,7 +319,6 @@ class NgwListView(ListView):
             except AttributeError:
                 return capfirst(function.__name__.replace('_', ' '))
         context = {}
-        context['cols'] = self.cols
         context['baseurl'] = self.get_query_string()
         context['order'] = self.order
         context['simplefilters'] = [

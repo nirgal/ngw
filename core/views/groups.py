@@ -46,22 +46,19 @@ def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
     return lst
 
 class ContactGroupListView(NgwUserAcl, NgwListView):
-    cols = [
-        (ugettext_lazy('Name'), 'name', 'name'),
-        (ugettext_lazy('Description'), 'description_not_too_long', 'description'),
-        #(ugettext_lazy('Contact fields'), 'rendered_fields', 'field_group'),
-        (ugettext_lazy('Super groups'), 'visible_direct_supergroups_5', None),
-        (ugettext_lazy('Sub groups'), 'visible_direct_subgroups_5', None),
-        #(ugettext_lazy('Budget\u00a0code'), 'budget_code', 'budget_code'),
-        #(ugettext_lazy('Members'), 'visible_member_count', None),
-        #(ugettext_lazy('System\u00a0locked'), 'system', 'system'),
-    ]
+    list_display = ('name', 'description_not_too_long',
+        # 'rendered_fields',
+        'visible_direct_supergroups_5', 'visible_direct_subgroups_5',
+        # 'budget_code', 'visible_member_count' ,'system'
+        )
 
     def visible_direct_supergroups_5(self, group):
         return ', '.join(_truncate_list([sg.name_with_date() for sg in group.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % self.request.user.id])[:LIST_PREVIEW_LEN+1]]))
+    visible_direct_supergroups_5.short_description = ugettext_lazy('Super groups')
 
     def visible_direct_subgroups_5(self, group):
         return ', '.join(_truncate_list([sg.name_with_date() for sg in group.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % self.request.user.id])[:LIST_PREVIEW_LEN+1]]))
+    visible_direct_subgroups_5.short_description = ugettext_lazy('Sub groups')
 
     def rendered_fields(self, group):
         if group.field_group:
@@ -72,6 +69,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
                 return _('Yes (but none yet)')
         else:
             return _('No')
+    rendered_fields.short_description = ugettext_lazy('Contact fields')
 
     def visible_member_count(self, group):
         # This is totally ineficient
@@ -79,6 +77,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
             return group.get_members_count()
         else:
             return _('Not available')
+    visible_member_count.short_description = ugettext_lazy('Members')
 
 
     def get_root_queryset(self):

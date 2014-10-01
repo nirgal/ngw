@@ -67,12 +67,7 @@ class MessageReadFilter(BaseListFilter):
 
 
 class MessageListView(InGroupAcl, NgwListView):
-    cols = [
-        (ugettext_lazy('Flags'), 'nice_flags', None),
-        (ugettext_lazy('Date UTC'), 'nice_date', 'send_date'),
-        (ugettext_lazy('Contact'), 'contact', 'contact__name'),
-        (ugettext_lazy('Subject'), 'subject', 'subject'),
-    ]
+    list_display = 'nice_flags', 'nice_date', 'contact', 'subject'
     template_name = 'message_list.html'
     filter_list = (MessageDirectionFilter, MessageReadFilter)
 
