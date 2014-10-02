@@ -396,6 +396,7 @@ class BaseContactListView(NgwListView):
             q.add_group_withnote(current_cg.id)
             self.group_status = membership_extended_widget_factory(request, current_cg)
             self.group_status.short_description = _('Status')
+            list_display.append('group_status')
             #cols.append(('group_%s_flags' % current_cg.id, 'group_%s_flags' % current_cg.id, None))
             #cols.append(('group_%s_inherited_flags' % current_cg.id, 'group_%s_inherited_flags' % current_cg.id, None))
             #cols.append(('group_%s_inherited_aflags' % current_cg.id, 'group_%s_inherited_aflags' % current_cg.id, None))
