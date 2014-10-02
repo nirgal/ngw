@@ -20,7 +20,27 @@
 
 {% block content %}
 <div id="content-main">
-    
+    {% comment %}
+    {% block object-tools %}
+      {#{% if has_add_permission %}#}
+        <ul class="object-tools">
+          {% block object-tools-items %}
+            <li>
+              {% comment %}
+              {% url cl.opts|admin_urlname:'add' as add_url %}
+              <a href="{% add_preserved_filters add_url is_popup %}" class="addlink">
+                {% blocktrans with cl.opts.verbose_name as name %}Add {{ name }}{% endblocktrans %}
+              </a>
+              endcomment %}
+              <a href="{{ objtype.get_class_absolute_url}}add" class="addlink">{% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
+
+            </li>
+          {% endblock %}
+        </ul>
+      {#% endif %#}
+    {% endblock %}
+    {% endcomment %}
+
     {% block prequerylist %}{% endblock %}
     <div class="module {% if simplefilters %}filtered{% endif %}" id="changelist">
     {% block search %}{% endblock %}

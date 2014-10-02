@@ -8,6 +8,8 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
+Create a perm_c_can_see_c function
+Add add_to action to groupless contact list
 Add actions to contact detail page
 Top right quick search: Add a drop down select filed by ajax to quick select people
 
@@ -20,8 +22,6 @@ Show messages counts on the member list
 CODE REFACTOR
 ====================================================================================================
 
-Make sure all form.save() support the commit parameter
-
 Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEditView
 
 Check how slicing is optimized in ContactQuerySet
@@ -29,8 +29,6 @@ Check how slicing is optimized in ContactQuerySet
 Support Image contactfields
 
 Event selection widget (Do not load everything at once, like for column selection)
-
-Add add_to action to groupless contact list
 
 Global search widget (top right) should send to /contacts/
 
@@ -55,6 +53,8 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 ====================================================================================================
 UNSORTED
 ====================================================================================================
+
+Make sure all form.save() support the commit parameter
 
 Favorite groups.
 

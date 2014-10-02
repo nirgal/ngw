@@ -7,3 +7,4 @@ all:
 	./manage upgradedb --verbosity 2
 clean:
 	rm -rf static/
+	rm -f mailing/generated/*
