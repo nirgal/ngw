@@ -1602,7 +1602,7 @@ class BoundFilter(BaseBoundFilter):
         return self.filter.get_sql_where_params(*self.args)
 
     def to_html(self, indent_level=0):
-        return mark_safe(self.indent(indent_level), self.filter.to_html(*self.args))
+        return mark_safe(self.indent(indent_level) + self.filter.to_html(*self.args))
 
 
 class EmptyBoundFilter(BaseBoundFilter):
