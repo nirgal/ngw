@@ -212,14 +212,13 @@ class NgwListView(ListView):
                 else:
                     order = ''
         else:
-            if intorder is not None:
-                sort_fieldname = self.list_display[intorder]
-                ordering_field = self.get_ordering_field(queryset, sort_fieldname)
-                if ordering_field:
-                    if order[0] != '-':
-                        queryset = queryset.order_by(ordering_field)
-                    else:
-                        queryset = queryset.order_by('-'+ordering_field)
+            sort_fieldname = self.list_display[abs(intorder)]
+            ordering_field = self.get_ordering_field(queryset, sort_fieldname)
+            if ordering_field:
+                if order[0] != '-':
+                    queryset = queryset.order_by(ordering_field)
+                else:
+                    queryset = queryset.order_by('-'+ordering_field)
 
         self.order = order
 
