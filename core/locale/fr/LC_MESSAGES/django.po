@@ -271,7 +271,7 @@ msgstr "champ des contacts"
 
 #: models.py:1010
 msgid "contact fields"
-msgstr "champ des contacts"
+msgstr "champs des contacts"
 
 #: models.py:1158 models.py:1194
 msgid "has a word starting with"
