@@ -121,8 +121,9 @@ class Log(NgwModel):
         db_table = 'log'
         verbose_name = ugettext_lazy('log')
         verbose_name_plural = ugettext_lazy('logs')
+        ordering = '-dt',
 
-    #def __unicode__(self):
+    #def __str__(self):
     #    return '%(date)s: %(contactname)s %(type_and_data)s' % {
     #            'date': self.dt.isoformat(),
     #            'contactname': self.contact.name,
@@ -138,9 +139,9 @@ class Log(NgwModel):
     #            }
 
     def action_txt(self):
-        return {LOG_ACTION_ADD: 'Add',
-                LOG_ACTION_CHANGE: 'Update',
-                LOG_ACTION_DEL: 'Delete'}[self.action]
+        return {LOG_ACTION_ADD: _('Add'),
+                LOG_ACTION_CHANGE: _('Update'),
+                LOG_ACTION_DEL: _('Deletion')}[self.action]
 
 @python_2_unicode_compatible
 class Config(NgwModel):
