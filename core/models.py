@@ -256,6 +256,7 @@ class Contact(NgwModel):
         db_table = 'contact'
         verbose_name = ugettext_lazy('contact')
         verbose_name_plural = ugettext_lazy('contacts')
+        ordering = 'name',
 
     def __repr__(self):
         return force_str('<Contact %s>' % self.name)
@@ -611,6 +612,7 @@ class ContactGroup(NgwModel):
         db_table = 'contact_group'
         verbose_name = ugettext_lazy('contact group')
         verbose_name_plural = ugettext_lazy('contact groups')
+        ordering = '-date', 'name'
 
     def __str__(self):
         return self.name
