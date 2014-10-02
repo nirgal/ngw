@@ -71,7 +71,7 @@ class ChoicesWidget(forms.MultiWidget):
 
     def decompress(self, value):
         if value:
-            return value.split(',')
+            return value.split('\u001f')
         nonelist = []
         for i in range(self.ndisplay):
             nonelist.append(None)
@@ -89,13 +89,13 @@ class ChoicesField(forms.MultiValueField):
 
     def compress(self, data_list):
         if data_list:
-            return ','.join(data_list)
+            return '\u001f'.join(data_list)
         return None
 
     def clean(self, value):
         # check there is no duplicate keys
         # necessary since keys are the id used in <select>
-        possibles_values = forms.MultiValueField.clean(self, value).split(',')
+        possibles_values = forms.MultiValueField.clean(self, value).split('\u001f')
         #print('possibles_values=', repr(possibles_values))
         keys = []
         for i in range(len(possibles_values)//2):
