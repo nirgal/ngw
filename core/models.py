@@ -988,6 +988,7 @@ def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     cls.db_type_id = db_type_id
     cls.human_type_id = human_type_id
     cls.has_choice = has_choice
+    models.signals.post_save.connect(contact_field_saved, cls)
     return cls
 
 
@@ -1083,13 +1084,17 @@ class ContactField(NgwModel):
             cf.sort_weight = new_weigth
             cf.save()
 
-
 def contact_field_initialized_my_manager(sender, **kwargs):
     field = kwargs['instance']
     assert field.type is not None, 'Polymorphic abstract class must be created with type defined'
     field.polymorphic_upgrade()
 models.signals.post_init.connect(contact_field_initialized_my_manager, ContactField)
 
+def contact_field_saved(**kwargs):
+    field = kwargs['instance']
+    if field.sort_weight % 10: # To avoid recursion
+        ContactField.renumber()
+models.signals.post_save.connect(contact_field_saved, ContactField)
 
 
 class FilterHelper(object):

@@ -30,7 +30,8 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 class FieldListView(NgwAdminAcl, NgwListView):
     list_display = (
-        'name', 'type_as_html', 'contact_group', 'system', #'move_it',
+        'name', 'type_as_html', 'contact_group', 'system',
+        #'move_it', 'sort_weight',
         )
     default_sort = 'sort_weight'
 
@@ -67,7 +68,6 @@ class FieldMoveUpView(NgwAdminAcl, View):
         cf = get_object_or_404(ContactField, pk=id)
         cf.sort_weight -= 15
         cf.save()
-        ContactField.renumber()
         return HttpResponseRedirect(reverse('field_list'))
 
 
@@ -78,7 +78,6 @@ class FieldMoveDownView(NgwAdminAcl, View):
         cf = get_object_or_404(ContactField, pk=id)
         cf.sort_weight += 15
         cf.save()
-        ContactField.renumber()
         return HttpResponseRedirect(reverse('field_list'))
 
 
@@ -200,7 +199,6 @@ class FieldEditForm(forms.ModelForm):
         result = super(FieldEditForm, self).save(commit=False)
         self.instance.sort_weight = self.cleaned_data['move_after'] + 5
         self.instance.save()
-        ContactField.renumber()
         return result
 
 
