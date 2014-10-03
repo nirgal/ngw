@@ -522,12 +522,12 @@ class ContactGroupForm(forms.ModelForm):
                 choices = visible_groups_choices,
                 initial = field_initial)
 
-    def save(self):
+    def save(self, commit=True):
         is_creation = self.instance.pk is None
         data = self.cleaned_data
 
         # Save the base fields
-        cg = super(ContactGroupForm, self).save()
+        cg = super(ContactGroupForm, self).save(commit)
 
         # Update the super groups
         old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(self.user.id))
