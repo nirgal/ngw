@@ -126,10 +126,13 @@ def send_notification(msg):
 
 You can read your message at https://onetime.info/%s
 
-Warning, that message will be displayed exactly once, and then be deleted. Have
-a pen ready before clicking the link. :)
+Warning, that message will be displayed only once, and then deleted. Have a pen
+ready before clicking the link.
 
-Do not replay to that email. Use the link above.''')
+Do not reply to that email: Use the link above.
+If the link doesn't work, please try again.
+If you get an error saying the message was already read, but you were not the
+one to read it, please repport that.''')
 
     message = mail.EmailMessage(
         subject=msg.subject,
