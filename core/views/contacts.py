@@ -509,12 +509,12 @@ class BaseContactListView(NgwListView):
 
 class ContactListView(NgwUserAcl, BaseContactListView):
     '''
-    This is just like the base contact list, but with user access check.
+    Only show visible contacts
     '''
-    def check_perm_user(self, user):
-        if not perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
-            raise PermissionDenied
-
+    def get_root_queryset(self):
+        qs = super(ContactListView, self).get_root_queryset()
+        qs.filter('perm_c_can_see_c(%s, contact.id)' % self.request.user.id)
+        return qs
 
 #######################################################################
 #

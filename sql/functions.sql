@@ -326,11 +326,8 @@ LANGUAGE SQL STABLE AS $$
     SELECT cig_perm($1, $2) & 65536 <> 0;
 $$;
 
-
---  Get the list of groups whose member can be seen by contact cid:
-
--- CREATE OR REPLACE FUNCTION perm_c_can_see_c(integer, integer) RETURNS boolean
--- LANGUAGE SQL STABLE AS $$
---     SELECT EXISTS( c_ismemberof_cg($1, 8) OR c_ismemberof_cg($1, 9) OR ;
--- $$;
+CREATE OR REPLACE FUNCTION perm_c_can_see_c(integer, integer) RETURNS boolean
+LANGUAGE SQL STABLE AS $$
+     SELECT EXISTS(SELECT * FROM contact_group WHERE perm_c_can_see_members_cg($1, id) AND c_ismemberof_cg($2, id));
+$$;
 
