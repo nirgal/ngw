@@ -126,7 +126,7 @@ $$;
 -- For exemple, flag 'U' (can upload files) automatically grants 'e' (can see group) and 'u' (can upload file) permissions
 -- See perms.py for details
 CREATE OR REPLACE FUNCTION cig_add_perm_dependencies(integer) RETURNS integer
-LANGUAGE SQL STABLE AS $$
+LANGUAGE SQL IMMUTABLE AS $$
     SELECT bit_or(flag) FROM (
 -- 'm'ember / 'i'nvited / 'd'eclined
         SELECT $1 & 7 AS flag
@@ -330,4 +330,3 @@ CREATE OR REPLACE FUNCTION perm_c_can_see_c(integer, integer) RETURNS boolean
 LANGUAGE SQL STABLE AS $$
      SELECT EXISTS(SELECT * FROM contact_group WHERE perm_c_can_see_members_cg($1, id) AND c_ismemberof_cg($2, id));
 $$;
-
