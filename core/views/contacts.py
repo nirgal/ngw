@@ -642,7 +642,7 @@ class ContactEditForm(forms.ModelForm):
             cfields = ContactField.objects.filter(contact_group_id__in=contactgroupids).extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user.id]).order_by('sort_weight')
             # Here we have the fields from contact_group and all its super
             # groups, IF user can write to them
-        else: # FIXME
+        else: # FIXME (new contact without any contactgroup)
             cfields = []
 
         # store dbfields

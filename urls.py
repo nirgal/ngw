@@ -9,7 +9,7 @@ from django.conf.urls.static import static
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
-from ngw.core.models import ContactField
+from ngw.core.models import ContactField, ContactGroup
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
@@ -52,7 +52,6 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$', RedirectView.as_view(url='edit')),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', NewsEditView.as_view()),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', NewsDeleteView.as_view()),
-    #url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', 'ngw.core.views.news.contactgroup_news_delete'),
     url(r'^(?P<gid>\d+)/mailman$', MailmanSyncView.as_view()),
 )
 
@@ -100,8 +99,8 @@ urlpatterns = patterns('',
 
     url(r'^contactgroups/$', ContactGroupListView.as_view(), name='group_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),
-    #url(r'^contactgroups2/$', admin.site._registry[ContactGroup].changelist_view),
-    #url(r'^contactgroups2/(\d+)$', admin.site._registry[ContactGroup].change_view),
+    #url(r'^contactgroups2/$', admin.site.admin_view(admin.site._registry[ContactGroup].changelist_view)),
+    #url(r'^contactgroups2/(?P<object_id>\d+)/edit$', admin.site.admin_view(admin.site._registry[ContactGroup].change_view)),
     url(r'^events/$', EventListView.as_view(), name='event_list'),
     url(r'^events/', include(groups_urlpatterns)),
 
@@ -112,8 +111,10 @@ urlpatterns = patterns('',
     url(r'^contactfields/(?P<id>\d+)/moveup$', FieldMoveUpView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/movedown$', FieldMoveDownView.as_view()),
     url(r'^contactfields/(?P<id>\d+)/delete$', FieldDeleteView.as_view()),
-    #url(r'^contactfields2/$', admin.site._registry[ContactField].changelist_view),
-    #url(r'^contactfields2/(\d+)/edit$', admin.site._registry[ContactField].change_view),
+
+    #url(r'^contactfields2/$', admin.site.admin_view(admin.site._registry[ContactField].changelist_view)),
+    #url(r'^contactfields2/(\d+)/$', RedirectView.as_view(url='edit')),
+    #url(r'^contactfields2/(?P<object_id>\d+)/edit$', admin.site.admin_view(admin.site._registry[ContactField].change_view)),
 
     url(r'^choicegroups/$', ChoiceListView.as_view(), name='choice_list'),
     url(r'^choicegroups/add$', ChoiceCreateView.as_view(), name='choice_add'),

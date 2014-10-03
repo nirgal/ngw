@@ -10,41 +10,63 @@ from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
 # Globally disable delete selected
 #admin.site.disable_action('delete_selected')
 
+
 class ConfigAdmin(admin.ModelAdmin):
     list_display = 'id', 'text'
     list_editable = 'text',
 admin.site.register(Config, ConfigAdmin)
 
 
-#from ngw.core.views.contacts import ContactEditForm
+from ngw.core.views.contacts import ContactEditForm
 class ContactAdmin(admin.ModelAdmin):
     list_display = 'name',
     search_fields = 'name',
-    #form = ContactEditForm
-    #def get_form(self, request, obj=None, **kwargs):
-    #    BaseForm = super(ContactAdmin, self).get_form(request, obj=None, **kwargs)
-    #    class TheForm(BaseForm):
-    #        def __init__(self, *args, **kwargs):
-    #            super(TheForm, self).__init__(
-    #                user=request.user,
-    #                *args, **kwargs)
-    #    return TheForm
+    def get_form(self, request, obj=None, **kwargs):
+        class TheForm(ContactEditForm):
+            def __init__(self, *args, **kwargs):
+                super(TheForm, self).__init__(
+                    user=request.user,
+                    contactgroup=None,
+                    *args, **kwargs)
+        return TheForm
+
+    def get_fieldsets(self, request, obj=None):
+        Form = self.get_form(request, obj)
+        form = Form(instance=obj)
+        fields = list(form.fields) + list(self.get_readonly_fields(request, obj))
+        return [(None, {'fields': fields})]
 
 admin.site.register(Contact, ContactAdmin)
 
+from ngw.core.views.groups import ContactGroupForm
 class ContactGroupAdmin(admin.ModelAdmin):
     list_display = 'name', 'description'
     search_fields = 'name',
+    def get_form(self, request, obj=None, **kwargs):
+        class TheForm(ContactGroupForm):
+            def __init__(self, *args, **kwargs):
+                super(TheForm, self).__init__(
+                    user=request.user,
+                    *args, **kwargs)
+        return TheForm
+
+    def get_fieldsets(self, request, obj=None):
+        Form = self.get_form(request, obj)
+        form = Form(instance=obj)
+        fields = list(form.fields) + list(self.get_readonly_fields(request, obj))
+        return [(None, {'fields': fields})]
+
 admin.site.register(ContactGroup, ContactGroupAdmin)
 
 #admin.site.register(GroupInGroup)
 #admin.site.register(ContactInGroup)
 
+from ngw.core.views.choices import ChoiceListView
 class ChoiceAdminInLine(admin.TabularInline):
     model = Choice
     fields = 'value', 'key'
-class ChoiceGroupAdmin(admin.ModelAdmin):
-    list_display = 'name', 'ordered_choices'
+class ChoiceGroupAdmin(admin.ModelAdmin, ChoiceListView):
+    list_display = ChoiceListView.list_display
     inlines = [ChoiceAdminInLine]
 admin.site.register(ChoiceGroup, ChoiceGroupAdmin)
 
@@ -53,12 +75,17 @@ class ContactGroupNewsAdmin(admin.ModelAdmin):
     list_display = 'title', 'date', 'author', 'contact_group'
 admin.site.register(ContactGroupNews, ContactGroupNewsAdmin)
 
+
 from ngw.core.views.fields import FieldEditForm
 class ContactFieldAdmin(admin.ModelAdmin):
     list_display = 'name', 'nice_case_type', 'contact_group', 'system'
     #list_display_links = 'name',
-    #list_editable = 'name', 'contact_group',
     form = FieldEditForm
+
+    def get_list_display_links(self, request, list_display):
+        '''Ugly hack to disable built-in links.'''
+        # We should overwrite validator_class, this is easier
+        return 'nolinkplease',
 
     def nice_case_type(self, field):
         return field.type[0].upper() + field.type[1:].lower()
