@@ -251,6 +251,13 @@ class MessageDetailView(InGroupAcl, DetailView):
         if not perms.c_can_view_msgs_cg(user.id, group.id):
             raise PermissionDenied
 
+    def get_object(self, queryset=None):
+        msg = super(MessageDetailView, self).get_object(queryset)
+        # Check the group match the one of the url
+        if msg.group_id != self.contactgroup.id:
+            raise PermissionDenied
+        return msg
+
     def get_context_data(self, **kwargs):
         if self.object.group != self.contactgroup:
             # attempt to read an object from another group

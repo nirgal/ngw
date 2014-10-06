@@ -75,6 +75,13 @@ class NewsEditMixin(ModelFormMixin):
         if not perms.c_can_change_news_cg(user.id, group.id):
             raise PermissionDenied
 
+    def get_object(self, queryset=None):
+        news = super(NewsEditMixin, self).get_object(queryset)
+        # Check the group match the one of the url
+        if news.contact_group_id != self.contactgroup.id:
+            raise PermissionDenied
+        return news
+
     def get_context_data(self, **kwargs):
         context = {}
         if self.object:

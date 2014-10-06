@@ -9,7 +9,9 @@ VALIDATED IMPROVEMENTS
 ====================================================================================================
 
 Add actions to contact detail page
+
 Top right quick search: Add a drop down select filed by ajax to quick select people
+See django-ajax-selects package
 
 Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
 
@@ -44,6 +46,8 @@ Change USE_TZ to True
 
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
+
+Remove all sql function: Use views
 
 
 ====================================================================================================
