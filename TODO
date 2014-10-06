@@ -8,7 +8,7 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-Create a perm_c_can_see_c function
+Allow /contact/cid is c_can_c
 Add add_to action to groupless contact list
 Add actions to contact detail page
 Top right quick search: Add a drop down select filed by ajax to quick select people

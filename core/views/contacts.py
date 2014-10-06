@@ -429,11 +429,6 @@ class BaseContactListView(NgwListView):
 
         q = filter.apply_filter_to_query(q)
 
-        # TODO:
-        # We need to select only members who are in a group whose members the
-        # request.user can see:
-        #q.qry_where.append('')
-
         self.list_display = list_display
         self.filter = strfilter
         self.filter_html = filter.to_html()
@@ -513,7 +508,10 @@ class ContactListView(NgwUserAcl, BaseContactListView):
     '''
     def get_root_queryset(self):
         qs = super(ContactListView, self).get_root_queryset()
-        qs.filter('perm_c_can_see_c(%s, contact.id)' % self.request.user.id)
+
+        qs.qry_from.append('JOIN v_c_can_see_c ON contact.id=v_c_can_see_c.contact_id_2')
+        qs.filter('v_c_can_see_c.contact_id_1 = %s' % self.request.user.id)
+
         return qs
 
 #######################################################################
