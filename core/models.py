@@ -565,7 +565,6 @@ class Contact(NgwModel):
 
     def can_search_logins(self):
         login_field = ContactField.objects.get(pk=FIELD_LOGIN)
-        print ('can_search_logins', perms.c_can_view_fields_cg(self.id, login_field.contact_group_id))
         return perms.c_can_view_fields_cg(self.id, login_field.contact_group_id)
 
     def update_lastconnection(self):
