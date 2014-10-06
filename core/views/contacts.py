@@ -13,9 +13,9 @@ from django.http import (
     StreamingHttpResponse, HttpResponse, HttpResponseRedirect,
     Http404)
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
-from django.utils.six import iteritems
+from django.utils import six
 from django.utils import html
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
@@ -153,7 +153,7 @@ class ContactQuerySet(RawQuerySet):
 
     def compile(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in iteritems(self.qry_fields)])
+        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in six.iteritems(self.qry_fields)])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE ( ' + ') AND ('.join(self.qry_where) + ' )'
@@ -171,7 +171,7 @@ class ContactQuerySet(RawQuerySet):
 
     def count(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS %s' % (v, k) for k, v in iteritems(self.qry_fields)])
+        qry += ', '.join(['%s AS %s' % (v, k) for k, v in six.iteritems(self.qry_fields)])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE (' + ') AND ('.join(self.qry_where) + ')'
@@ -335,6 +335,7 @@ class BaseContactListView(NgwListView):
         'action_csv_export',
         'action_vcard_export',
         'action_bcc',
+        'add_to_group',
     )
 
     def contact_make_query_with_fields(self, request, fields):
@@ -491,7 +492,7 @@ class BaseContactListView(NgwListView):
         response = HttpResponse(status=303)
         response['Location'] = 'mailto:?bcc=' + ','.join(emails)
         return response
-    action_bcc.short_description = _("Send email locally (thunderbird or similar)")
+    action_bcc.short_description = ugettext_lazy("Send email locally (thunderbird or similar)")
 
 
     def action_vcard_export(self, request, queryset):
@@ -499,7 +500,15 @@ class BaseContactListView(NgwListView):
         for contact in queryset:
             result += contact.vcard()
         return HttpResponse(result, content_type='text/x-vcard')
-    action_vcard_export.short_description = _("Vcard format export")
+    action_vcard_export.short_description = ugettext_lazy("Vcard format export")
+
+
+    def add_to_group(self, request, queryset):
+        ids = request.POST.getlist('_selected_action')
+        return HttpResponseRedirect('/contacts/add_to_group?ids=' + ','.join(ids))
+    add_to_group.short_description = ugettext_lazy("Add to another group")
+
+
 
 
 class ContactListView(NgwUserAcl, BaseContactListView):
@@ -513,6 +522,126 @@ class ContactListView(NgwUserAcl, BaseContactListView):
         qs.filter('v_c_can_see_c.contact_id_1 = %s' % self.request.user.id)
 
         return qs
+
+
+#######################################################################
+#
+# Add to another group
+#
+#######################################################################
+
+
+class GroupAddManyForm(forms.Form):
+    ids = forms.CharField(widget=forms.widgets.HiddenInput)
+
+    def __init__(self, user, *args, **kwargs):
+        super(GroupAddManyForm, self).__init__(*args, **kwargs)
+        self.user = user
+        self.fields['group'] = forms.ChoiceField(
+            label=_('Target group'),
+            choices = [
+                ('', _('Choose a group')),
+                (_('Permanent groups'), [
+                    (group.id, group.name)
+                    for group in ContactGroup.objects.filter(date__isnull=1).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id]).order_by('name')]),
+                (_('Events'), [
+                    (group.id, group.name_with_date())
+                    for group in ContactGroup.objects.filter(date__isnull=0).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id]).order_by('-date', 'name')]),
+                ],
+            )
+        for flag, longname in six.iteritems(perms.FLAGTOTEXT):
+            field_name = 'membership_' + flag
+
+            oncheck_js = ''.join([
+                'this.form.membership_%s.checked=true;' % code
+                for code in perms.FLAGDEPENDS[flag]])
+            oncheck_js += ''.join([
+                'this.form.membership_%s.checked=false;' % code
+                for code in perms.FLAGCONFLICTS[flag]])
+
+            onuncheck_js = ''
+            for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
+                if flag in depflag1:
+                    onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
+
+            self.fields[field_name] = forms.BooleanField(
+                label=longname, required=False,
+                widget=forms.widgets.CheckboxInput(attrs={
+                    'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
+                }))
+
+
+    def clean(self):
+        if 'group' in self.cleaned_data:
+            for flag in six.iterkeys(perms.FLAGTOTEXT):
+                if self.cleaned_data['membership_' + flag]:
+                    if perms.FLAGTOINT[flag] & perms.ADMIN_ALL and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
+                        raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
+
+        for flag in six.iterkeys(perms.FLAGTOTEXT):
+            if self.cleaned_data['membership_' + flag]:
+                return super(GroupAddManyForm, self).clean()
+        raise forms.ValidationError(_('You must select at least one mode'))
+
+
+    def add_them(self, request):
+        group_id = self.cleaned_data['group']
+        target_group = get_object_or_404(ContactGroup, pk=group_id)
+
+        contact_ids = self.cleaned_data['ids'].split(',')
+        contacts = Contact.objects.filter(pk__in=contact_ids)
+
+        # Check selected contacts are visible
+        contacts = contacts.extra(
+            tables=('v_c_can_see_c',), 
+            where=(
+            'v_c_can_see_c.contact_id_1=%s' % self.user.id,
+            'v_c_can_see_c.contact_id_2=contact.id'))
+
+        modes = ''
+        for flag in six.iterkeys(perms.FLAGTOTEXT):
+            field_name = 'membership_' + flag
+            if self.cleaned_data[field_name]:
+                modes += '+' + flag
+
+        target_group.set_member_n(request, contacts, modes)
+
+
+class GroupAddManyView(NgwUserAcl, FormView):
+    form_class = GroupAddManyForm
+    template_name = 'group_add_contacts_to.html'  # TODO: rename
+
+
+    def get_initial(self):
+        return {'ids': self.request.REQUEST['ids']}
+
+    def get_form_kwargs(self):
+        kwargs = super(GroupAddManyView, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        ids = self.request.REQUEST['ids'].split(',')
+        context['title'] = _('Add %s contact(s) to a group') % len(ids)
+        context['nav'] = Navbar(Contact.get_class_navcomponent()) \
+            .add_component(('add_to_group', _('add contacts to')))
+        context['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % self.request.user.id]).order_by('-date', 'name')
+        context.update(kwargs)
+        return super(GroupAddManyView, self).get_context_data(**context)
+
+
+    def form_valid(self, form):
+        form.add_them(self.request)
+        self.form = form
+        return super(GroupAddManyView, self).form_valid(form)
+
+    def get_success_url(self):
+        group_id = self.form.cleaned_data['group']
+        target_group = get_object_or_404(ContactGroup, pk=group_id)
+        return target_group.get_absolute_url() + 'members/'
+
 
 #######################################################################
 #
@@ -535,6 +664,8 @@ class ContactDetailView(InGroupAcl, TemplateView):
                 # The user can see himself
                 pass
             elif perms.c_can_see_members_cg(user.id, GROUP_EVERYBODY):
+                pass
+            elif perms.c_can_see_c(user.id, cid):
                 pass
             else:
                 raise PermissionDenied

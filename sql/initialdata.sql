@@ -49,7 +49,7 @@ columns	name,field_7,field_8,field_10
 banner	<big>NGW</big> Group Ware
 phpbb acl dictionary	
 query_page_length	100
-db version	13
+db version	14
 \.
 
 

@@ -354,6 +354,14 @@ CREATE OR REPLACE VIEW v_c_member_of(contact_id, group_id) AS
     WHERE flags & 1 <> 0;
 
 -- View:
+-- contact_id appears in group_id
+CREATE OR REPLACE VIEW v_c_appears_in_cg(contact_id, group_id) AS
+    SELECT DISTINCT contact_in_group.contact_id, v_subgroups.father_id
+    FROM contact_in_group
+    JOIN v_subgroups ON contact_in_group.group_id=v_subgroups.child_id
+    ;
+
+-- View:
 -- What 'flags' permissions does contact_id has over group_id, just because he's member of group with group_manage_group
 CREATE OR REPLACE VIEW v_cig_perm_inherited_gmg(contact_id, group_id, flags) AS
     SELECT v_c_member_of.contact_id, group_manage_group.subgroup_id, cig_add_perm_dependencies(bit_or(flags))
@@ -417,13 +425,13 @@ CREATE OR REPLACE VIEW v_cig_perm(contact_id, group_id, flags) AS
 CREATE OR REPLACE VIEW v_c_can_see_c(contact_id_1, contact_id_2) AS
     SELECT DISTINCT v_cig_perm.contact_id AS contact_id_1, v_c_member_of.contact_id
     FROM v_cig_perm
-    JOIN v_c_member_of ON v_cig_perm.group_id=v_c_member_of.group_id
+    JOIN v_c_appears_in_cg ON v_cig_perm.group_id=v_c_appears_in_cg.group_id
     WHERE flags & 128 <> 0
     ;
 
-CREATE OR REPLACE FUNCTION perm_c_can_see_c(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-     SELECT EXISTS(SELECT * FROM v_c_can_see_c WHERE contact_id_1=$1 AND contact_id_2=$2);
-$$;
+-- CREATE OR REPLACE FUNCTION perm_c_can_see_c(integer, integer) RETURNS boolean
+-- LANGUAGE SQL STABLE AS $$
+--      SELECT EXISTS(SELECT * FROM v_c_can_see_c WHERE contact_id_1=$1 AND contact_id_2=$2);
+-- $$;
 
 -- vim: set et ts=4 ft=sql:

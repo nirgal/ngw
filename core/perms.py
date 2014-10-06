@@ -378,3 +378,13 @@ def c_can_write_msgs_cg(cid, gid):
     if row:
         return row[0]
     return False
+
+
+def c_can_see_c(cid1, cid2):
+    '''
+    Returns True if contact cid1 can see contact cid2.
+    '''
+    cursor = connection.cursor()
+    cursor.execute("SELECT EXISTS(SELECT * FROM v_c_can_see_c WHERE contact_id_1=%s AND contact_id_2=%s)", [cid1, cid2])
+    row = cursor.fetchone()
+    return row[0]

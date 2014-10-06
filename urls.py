@@ -13,8 +13,8 @@ from ngw.core.models import ContactField, ContactGroup
 admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, FilterDeleteView, DefaultGroupView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, GroupAddManyView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView, ContactInGroupDelete
+from ngw.core.views.contacts import ContactListView, GroupAddManyView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, FilterDeleteView, DefaultGroupView
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView, ContactInGroupDelete
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView, NewsDeleteView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
@@ -43,7 +43,6 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membership$', ContactInGroupView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/membershipinline$', ContactInGroupInlineView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/remove$', ContactInGroupDelete.as_view()),
-    url(r'^(?P<gid>\d+)/members/add_contacts_to$', GroupAddManyView.as_view()),
     url(r'^(?P<gid>\d+)/files(?P<path>/.*)$', FileListView.as_view()),
     url(r'^(?P<gid>\d+)/messages/$', MessageListView.as_view(), name='message_list'),
     url(r'^(?P<gid>\d+)/messages/(?P<mid>\d+)$', MessageDetailView.as_view(), name='message_detail'),
@@ -86,6 +85,7 @@ urlpatterns = patterns('',
 #    url(r'^contacts/make_login_mailing$', 'ngw.core.views.contacts.contact_make_login_mailing'),
 
     url(r'^contacts/(?P<cid>\d+)/$', ContactDetailView.as_view(), name='contact_detail'),
+    url(r'^contacts/add_to_group$', GroupAddManyView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/pass$', PasswordView.as_view(), name='contact_pass'),
     url(r'^contacts/(?P<cid>\d+)/pass_letter$', PassLetterView.as_view()),
