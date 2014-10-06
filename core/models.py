@@ -559,8 +559,14 @@ class Contact(NgwModel):
     def is_admin(self):
         return self.is_member_of(GROUP_ADMIN)
 
-    def can_see_all_contacts(self):
-        return perms.c_can_see_members_cg(self.id, GROUP_EVERYBODY)
+    def can_search_names(self):
+        return True
+        #return perms.c_can_view_fields_cg(self.id, GROUP_EVERYBODY)
+
+    def can_search_logins(self):
+        login_field = ContactField.objects.get(pk=FIELD_LOGIN)
+        print ('can_search_logins', perms.c_can_view_fields_cg(self.id, login_field.contact_group_id))
+        return perms.c_can_view_fields_cg(self.id, login_field.contact_group_id)
 
     def update_lastconnection(self):
         # see NgwAuthBackend.authenticate

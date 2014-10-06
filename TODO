@@ -8,8 +8,6 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-Allow /contact/cid is c_can_c
-Add add_to action to groupless contact list
 Add actions to contact detail page
 Top right quick search: Add a drop down select filed by ajax to quick select people
 
@@ -29,8 +27,6 @@ Check how slicing is optimized in ContactQuerySet
 Support Image contactfields
 
 Event selection widget (Do not load everything at once, like for column selection)
-
-Global search widget (top right) should send to /contacts/
 
 Files handling:
 - Improve display (mimetype, size, ...)

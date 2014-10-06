@@ -32,11 +32,12 @@
 {% block userlinks %}
 <a href="/contacts/{{user.id}}/">{% trans 'Profile' %}</a> /
 <a href="/logout">{% trans 'Log out' %}</a>
-{% if user.can_see_all_contacts %}
+{% with can_search_names=user.can_search_names can_search_logins=user.can_search_logins %}
+{% if can_search_names or can_search_logins %}
 <br>
 <div id=header_search>
-    <form id=header_quicksearch action="/contactgroups/1/members/"
-        onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); document.forms['header_quicksearch']['filter'].value='or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))'; return true;">
+    <form id=header_quicksearch action="/contacts/"
+        onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); document.forms['header_quicksearch']['filter'].value={% if can_search_names and can_search_logins %}'or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))';{% elif can_search_names %}'nfilter(startswith,'+v+')';{% else %}'ffilter(1,eq,'+v+')'{% endif %} return true;">
         <input type=hidden name=filter>
         <input name=disp_filter value="{% trans "Quick contact search" %}" size=30 class=quicksearch
             onclick="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
@@ -45,6 +46,7 @@
     </form>
 </div>
 {% endif %}
+{% endwith %}
 {% endblock %}
 
 {% block nav-global %}
