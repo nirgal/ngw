@@ -77,3 +77,5 @@ Or just allow supergroup inherited...
 TBD
 
 Change MailmanSyncForm into a ModelForm (?)
+
+Change "default group" into "default permissions"
