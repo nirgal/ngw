@@ -136,6 +136,14 @@ div.fullpagebox {
     bbackground: yellow;
 }
 
+.maxsized {
+	max-height: 500px;
+	/*overflow-y: auto;*/
+	overflow: auto;
+}
+.maxsized > li:last-child {
+   margin-bottom:0;
+}
 
 ul.onelinechoices {
     margin-left: 0 !important;
