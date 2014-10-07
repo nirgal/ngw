@@ -59,6 +59,9 @@
 
 <div class="submit-row">
   <a class="button default" href="edit">{% trans "Edit" %}</a>
+  
+  <a class=button href="/contacts/add_to_group?ids={{contact.id}}">{% trans "Add to a group" %}</a>
+  
   {% if user.is_admin %}
   <a class=button href="vcard">{% trans "VCard" %}</a>
   {# <a class=button href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
