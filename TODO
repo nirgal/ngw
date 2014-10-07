@@ -8,8 +8,6 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-Add actions to contact detail page
-
 Top right quick search: Add a drop down select filed by ajax to quick select people
 See django-ajax-selects package
 
