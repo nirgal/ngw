@@ -22,8 +22,6 @@ CODE REFACTOR
 
 Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEditView
 
-Check how slicing is optimized in ContactQuerySet
-
 Support Image contactfields
 
 Event selection widget (Do not load everything at once, like for column selection)

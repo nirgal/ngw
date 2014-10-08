@@ -71,6 +71,8 @@ class ContactQuerySet(RawQuerySet):
         self.qry_from = ['contact']
         self.qry_where = []
         self.qry_orderby = []
+        self.offset = None
+        self.limit = None
 
     def add_field(self, fieldid):
         '''
@@ -166,8 +168,15 @@ class ContactQuerySet(RawQuerySet):
                     order.append(by)
             qry += ' ORDER BY ' + ', '.join(order)
 
+        if self.offset:
+            qry += ' OFFSET %s' % self.offset
+
+        if self.limit:
+            qry += ' LIMIT %s' % self.limit
+
         self.raw_query = qry
         self.query = sql.RawQuery(sql=qry, using=self.db, params=self.params)
+        #print(repr(self.raw_query), repr(self.params))
 
     def count(self):
         qry = 'SELECT '
@@ -182,9 +191,23 @@ class ContactQuerySet(RawQuerySet):
 
     def __iter__(self):
         self.compile()
-        #print(repr(self.raw_query), repr(self.params))
         for x in RawQuerySet.__iter__(self):
             yield x
+
+    def __getitem__(self, k):
+        if isinstance(k, slice):
+            self.offset = k.start or 0
+            if k.stop is not None:
+                self.limit = k.stop - self.offset
+            if k.step:
+                raise NotImplementedError
+            return self
+
+        # return only one:
+        self.offset = k
+        self.limit = 1
+        for contact in self:
+            return contact
 
 
 def get_default_columns(user):
