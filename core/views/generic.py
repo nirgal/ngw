@@ -80,7 +80,10 @@ class InGroupAcl(ContextMixin):
         if group_id:
             try:
                 group_id = int(group_id)
-                group = ContactGroup.objects.with_user_perms(user.id).get(pk=group_id)
+                group = (ContactGroup.objects
+                    .with_user_perms(user.id)
+                    .with_counts()
+                    .get(pk=group_id))
             except (ValueError, TypeError, ContactGroup.DoesNotExist):
                 raise Http404
         else:

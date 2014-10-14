@@ -637,7 +637,22 @@ class ContactGroupQuerySet(models.QuerySet):
                 'v_c_member_of.contact_id=%s' % contact_id,
                 'v_c_member_of.group_id=contact_group.id'],
             )
-    #TODO: member_count, message_count, ...
+
+    def with_counts(self):
+        '''
+        That function adds columns:
+        "message_count" is the total number of messages in that group
+        "unread_message_count" is the number of incoming unread messages
+        "news_count" is the number of news
+        '''
+        qs = self
+        qs = self.annotate(message_count=models.Count('message_set'))
+        qs = qs.extra(select={
+            'unread_message_count': 'SELECT COUNT(*) FROM contact_message WHERE is_answer AND read_date IS NULL AND group_id=contact_group.id'})
+        qs = qs.annotate(news_count=models.Count('news_set'))
+        qs = qs.extra(select={
+            'member_count': 'SELECT COUNT(*) FROM v_c_member_of WHERE group_id=contact_group.id'})
+        return qs
 
 
 class ContactGroupManager(models.Manager):
@@ -648,6 +663,9 @@ class ContactGroupManager(models.Manager):
         qs = self.get_queryset()
         return qs.with_user_perms(*args, **kwargs)
 
+    def with_counts(self, *args, **kwargs):
+        qs = self.get_queryset()
+        return qs.with_counts(*args, **kwargs)
 
 @python_2_unicode_compatible
 class ContactGroup(NgwModel):
@@ -1849,7 +1867,7 @@ class ContactInGroup(NgwModel):
 class ContactGroupNews(NgwModel):
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Contact, null=True, blank=True)
-    contact_group = models.ForeignKey(ContactGroup, null=True, blank=True)
+    contact_group = models.ForeignKey(ContactGroup, null=True, blank=True, related_name='news_set')
     date = models.DateTimeField()
     title = models.CharField(ugettext_lazy('title'), max_length=64)
     text = models.TextField(ugettext_lazy('text'))
@@ -1870,7 +1888,7 @@ class ContactGroupNews(NgwModel):
 class ContactMsg(NgwModel):
     id = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact, verbose_name=ugettext_lazy('Contact'))
-    group = models.ForeignKey(ContactGroup)
+    group = models.ForeignKey(ContactGroup, related_name='message_set')
     send_date = models.DateTimeField()
     read_date = models.DateTimeField(null=True, blank=True)
     read_by = models.ForeignKey(Contact, null=True, related_name='msgreader')

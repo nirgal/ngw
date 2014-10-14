@@ -83,8 +83,7 @@ class HomeView(NgwUserAcl, TemplateView):
                 AND v_cig_perm.group_id = contact_group.id
                 AND v_cig_perm.flags & %s <> 0
             ORDER BY date DESC,name'''
-            % (self.request.user.id, perms.VIEW_NEWS))
-
+            % (self.request.user.id, perms.VIEW_MSGS))
         context = {
             'title': _('Lastest news'),
             'nav': Navbar(),
