@@ -41,7 +41,7 @@ $$;
 -- SELECT contact_group.id, self_and_subgroups(contact_group.id) as sg FROM contact_group;
 
 -- SELECT contact_id, group_id, member, invited, declined_invitation, group_tree.* FROM contact_in_group, (SELECT contact_group.id AS joined_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree WHERE contact_in_group.group_id=group_tree.sub_group_id ORDER BY contact_id;
---  contact_id | group_id | operator | member | invited | joined_group_id | sub_group_id 
+--  contact_id | group_id | operator | member | invited | joined_group_id | sub_group_id
 -- ------------+----------+----------+--------+---------+-----------------+--------------
 --           1 |        8 | f        | t      | f       |               8 |            8
 --           1 |        9 | f        | t      | f       |               9 |            9
@@ -73,9 +73,9 @@ $$;
 --     WHERE login_values.contact_field_id=1;
 
 -- That query is used by apache module auth_pgsql to check groups:
--- CREATE OR REPLACE VIEW auth_user_groups ( login, gid ) AS 
+-- CREATE OR REPLACE VIEW auth_user_groups ( login, gid ) AS
 --     SELECT DISTINCT login_values.value, automatic_group_id
---         FROM contact_in_group 
+--         FROM contact_in_group
 --         JOIN contact_field_value AS login_values ON (login_values.contact_id=contact_in_group.contact_id AND login_values.contact_field_id=1),
 --         (SELECT contact_group.id AS automatic_group_id, self_and_subgroups(contact_group.id) as sub_group_id FROM contact_group) AS group_tree
 --         WHERE contact_in_group.group_id=group_tree.sub_group_id AND contact_in_group.flags & 1 <> 0;
@@ -96,7 +96,7 @@ $$;
 --     FROM contact_field_value AS login_values
 --     JOIN contact_field_value AS lastconnection_values ON (login_values.contact_id=lastconnection_values.contact_id AND lastconnection_values.contact_field_id=3)
 --     WHERE login_values.contact_field_id=1;
--- 
+--
 -- CREATE OR REPLACE RULE apache_log_ins AS ON INSERT TO apache_log
 --     DO INSTEAD
 --     (
@@ -105,7 +105,7 @@ $$;
 --             SELECT login_values.contact_id, 3, NULL
 --                 FROM contact_field_value AS login_values
 --                 WHERE login_values.value = NEW.login
---                 AND NOT EXISTS ( 
+--                 AND NOT EXISTS (
 --                     SELECT *
 --                     FROM contact_field_value AS probe_login JOIN contact_field_value AS probe_lastconnection
 --                     ON (probe_login.contact_id = probe_lastconnection.contact_id AND probe_login.contact_field_id=1 AND probe_lastconnection.contact_field_id=3)
@@ -163,178 +163,6 @@ $$;
 
 
 
--- Returns true if contact $1 is member of group $2
-CREATE OR REPLACE FUNCTION c_ismemberof_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT EXISTS(
-        SELECT *
-        FROM contact_in_group
-        WHERE contact_in_group.contact_id=contact.id
-        AND contact_in_group.group_id IN (SELECT self_and_subgroups($2))
-        AND flags & 1 <> 0
-    ) FROM contact WHERE contact.id=$1;
-$$;
-
-
--- Returns the flags of contact $1 in group $2 *without* inheriteance
-CREATE OR REPLACE FUNCTION cig_flags_direct(integer, integer) RETURNS integer
-LANGUAGE SQL STABLE AS $$
-    SELECT COALESCE(
-        (SELECT flags FROM contact_in_group WHERE contact_id=$1 AND group_id=$2),
-        0);
-$$;
-
--- Returns the membership flags (1/2/4) of contact $1 in group $2
-CREATE OR REPLACE FUNCTION cig_membership(integer, integer) RETURNS integer
-LANGUAGE SQL STABLE AS $$
-    SELECT COALESCE(
-        (SELECT bit_or(flags) & 7 AS flags
-        FROM contact_in_group
-        WHERE contact_id=$1 AND group_id IN (SELECT self_and_subgroups($2))),
-    0);
-$$;
-
--- Returns the inherited membership flags (1/2/4) of contact $1 in group $2
-CREATE OR REPLACE FUNCTION cig_membership_inherited(integer, integer) RETURNS integer
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_membership($1, $2) & ~cig_flags_direct($1, $2);
-$$;
-
-
--- Returns the permissions flags (8/16/32...) of contact $1 in group $2
-CREATE OR REPLACE FUNCTION cig_perm(integer, integer) RETURNS integer
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_add_perm_dependencies(bit_or(admin_flags) & ~7) FROM
-    (
-        SELECT bit_or(gmg_perms.flags) AS admin_flags
-        FROM contact_in_group
-        JOIN (
-            SELECT self_and_subgroups(father_id) AS group_id,
-                bit_or(flags) AS flags
-            FROM group_manage_group
-            WHERE subgroup_id=$2
-            GROUP BY group_id
-        ) AS gmg_perms
-        ON contact_in_group.group_id=gmg_perms.group_id
-            AND contact_id = $1
-            AND contact_in_group.flags & 1 <> 0
-        UNION
-            (
-            SELECT contact_in_group.flags AS admin_flags
-            FROM contact_in_group
-            WHERE contact_in_group.contact_id=$1
-            AND contact_in_group.group_id=$2
-            )
-        UNION
-            (
-            SELECT 8 AS admin_flags
-            WHERE c_ismemberof_cg($1, 8)
-            )
-        UNION
-            (
-            SELECT 16 AS admin_flags
-            WHERE c_ismemberof_cg($1, 9)
-            )
-        UNION
-            SELECT 0
-    ) AS compiled
-$$;
-
-
-
-
-
-
-
-
-
--- Returns the inherited permissions flags (8/16/32...) of contact $1 in group $2
-CREATE OR REPLACE FUNCTION cig_perm_inherited(integer, integer) RETURNS integer
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & ~cig_flags_direct($1, $2);
-$$;
-
--- Returns the flags of contact $1 in group $2
-CREATE OR REPLACE FUNCTION cig_flags(integer, integer) RETURNS integer
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_membership($1, $2) | cig_perm($1, $2);
-$$;
-
-
-
--- See core/perms.py for a full description of these functions:
-
-CREATE OR REPLACE FUNCTION perm_c_operatorof_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 8 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_viewerof_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 16 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_see_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 32 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_change_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 64 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_see_members_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 128 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_change_members_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 256 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_view_fields_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 512 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_write_fields_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 1024 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_see_news_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 2048 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_change_news_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 4096 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_see_files_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 8192 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_change_files_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 16384 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_view_msgs_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 32768 <> 0;
-$$;
-
-CREATE OR REPLACE FUNCTION perm_c_can_write_msgs_cg(integer, integer) RETURNS boolean
-LANGUAGE SQL STABLE AS $$
-    SELECT cig_perm($1, $2) & 65536 <> 0;
-$$;
-
-
 -- ----------------------------------------------------------------------------------------
 -- Views
 -- ----------------------------------------------------------------------------------------
@@ -359,6 +187,15 @@ CREATE OR REPLACE VIEW v_c_appears_in_cg(contact_id, group_id) AS
     SELECT DISTINCT contact_in_group.contact_id, v_subgroups.father_id
     FROM contact_in_group
     JOIN v_subgroups ON contact_in_group.group_id=v_subgroups.child_id
+    ;
+
+-- View:
+-- contact_id member/invited/declined in group_id because of a subgroups
+CREATE OR REPLACE VIEW v_cig_membership_inherited(contact_id, group_id, flags) AS
+    SELECT contact_in_group.contact_id, v_subgroups.father_id, bit_or(flags) & 7
+    FROM contact_in_group
+    JOIN v_subgroups ON contact_in_group.group_id=v_subgroups.child_id
+    GROUP BY contact_in_group.contact_id, v_subgroups.father_id
     ;
 
 -- View:
@@ -413,10 +250,39 @@ CREATE OR REPLACE VIEW v_cig_perm(contact_id, group_id, flags) AS
             )
         UNION
             (
-            SELECT * FROM v_cig_perm_inherited_observer
+            SELECT *
+            FROM v_cig_perm_inherited_observer
             )
     ) AS compiled
     GROUP BY contact_id, group_id
+    ;
+
+CREATE OR REPLACE VIEW v_cig_flags(contact_id, group_id, flags) AS
+    SELECT contact_id, group_id, cig_add_perm_dependencies(bit_or(flags)) FROM
+    (
+        SELECT contact_in_group.contact_id, contact_in_group.group_id, flags
+        FROM contact_in_group
+        UNION
+            (
+            SELECT contact_id, group_id, flags
+            FROM v_cig_membership_inherited
+            )
+        UNION (
+            SELECT *
+            FROM v_cig_perm_inherited_gmg
+            )
+        UNION
+            (
+            SELECT *
+            FROM v_cig_perm_inherited_admin
+            )
+        UNION
+            (
+            SELECT *
+            FROM v_cig_perm_inherited_observer
+            )
+    ) AS compiled
+    GROUP by contact_id, group_id
     ;
 
 -- View:

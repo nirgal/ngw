@@ -54,9 +54,13 @@ class HomeView(NgwUserAcl, TemplateView):
                          AND contact_in_group.contact_id=%s AND contact_in_group.flags & %s <> 0)'''
             % (self.request.user.id, perms.OPERATOR)])
 
-        qry_news = ContactGroupNews.objects.extra(where=[
-            'perm_c_can_see_news_cg(%s, contact_group_news.contact_group_id)'
-            % self.request.user.id])
+        qry_news = ContactGroupNews.objects.extra(
+            tables={'v_cig_perm': 'v_cig_perm'},
+            where=[
+                'v_cig_perm.contact_id = %s'
+                ' AND v_cig_perm.group_id = contact_group_news.contact_group_id'
+                ' AND v_cig_perm.flags & %s <> 0'
+                % (self.request.user.id, perms.VIEW_NEWS)])
         paginator = Paginator(qry_news, 7)
 
         page = self.request.GET.get('page')
@@ -73,9 +77,13 @@ class HomeView(NgwUserAcl, TemplateView):
             SELECT *
             FROM contact_group
             JOIN (SELECT group_id, count(*) AS unread_count FROM contact_message WHERE is_answer AND read_date IS NULL GROUP BY group_id) AS msg_info
-            ON contact_group.id=msg_info.group_id
-            AND perm_c_can_view_msgs_cg(%s, group_id)
-            ORDER BY date DESC,name''' % self.request.user.id)
+                ON contact_group.id=msg_info.group_id
+            JOIN v_cig_perm
+                ON v_cig_perm.contact_id = %s
+                AND v_cig_perm.group_id = contact_group.id
+                AND v_cig_perm.flags & %s <> 0
+            ORDER BY date DESC,name'''
+            % (self.request.user.id, perms.VIEW_NEWS))
 
         context = {
             'title': _('Lastest news'),

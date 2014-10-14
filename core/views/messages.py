@@ -72,7 +72,7 @@ class MessageListView(InGroupAcl, NgwListView):
     filter_list = (MessageDirectionFilter, MessageReadFilter)
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_view_msgs_cg(user.id, group.id):
+        if not group.userperms & perms.VIEW_MSGS:
             raise PermissionDenied
 
     def get_root_queryset(self):
@@ -174,7 +174,7 @@ class SendMessageView(InGroupAcl, FormView):
     template_name = 'message_send.html'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_write_msgs_cg(user.id, group.id):
+        if not group.userperms & perms.WRITE_MSGS:
             raise PermissionDenied
 
     def get_form_kwargs(self):
@@ -248,7 +248,7 @@ class MessageDetailView(InGroupAcl, DetailView):
     template_name = 'message_detail.html'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_view_msgs_cg(user.id, group.id):
+        if not group.userperms & perms.VIEW_MSGS:
             raise PermissionDenied
 
     def get_object(self, queryset=None):
@@ -263,14 +263,14 @@ class MessageDetailView(InGroupAcl, DetailView):
             # attempt to read an object from another group
             raise PermissionDenied
         if self.object.is_answer and self.object.read_date is None:
-            if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
+            if self.contactgroup.userperms & perms.WRITE_MSGS:
                 self.object.read_date = now()
                 self.object.read_by = self.request.user
                 self.object.save()
             else:
                 messages.add_message(
                     self.request, messages.WARNING,
-                    _("You don't have the permission to flag that message as read."))
+                    _("You don't have the permission to mark that message as read."))
         cg = self.contactgroup
         context = {}
         if self.object.is_answer:
@@ -305,7 +305,7 @@ class MessageDetailView(InGroupAcl, DetailView):
         context['membership_title'] = _('%(contactname)s in group %(groupname)s') % {
             'contactname': self.object.contact.name,
             'groupname': cg.name_with_date()}
-        if perms.c_can_write_msgs_cg(self.request.user.id, self.contactgroup.id):
+        if self.contactgroup.userperms & perms.WRITE_MSGS:
             context['reply_url'] = "../members/send_message?ids=%s" % \
                 self.object.contact_id
         context.update(kwargs)
@@ -332,7 +332,7 @@ class MessageDetailView(InGroupAcl, DetailView):
 #from django.shortcuts import get_object_or_404
 #class MessageToggleReadView(InGroupAcl, View):
 #    def check_perm_groupuser(self, group, user):
-#        if not perms.c_can_write_msgs_cg(user.id, group.id):
+#        if not group.userperms & perms.WRITE_MSGS:
 #            raise PermissionDenied
 #
 #    def get(self, request, *args, **kwargs):

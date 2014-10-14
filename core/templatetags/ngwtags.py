@@ -6,6 +6,7 @@ from django import template
 from django.utils import html
 from django.utils.safestring import mark_safe
 from django.utils.encoding import force_text
+from ngw.core import perms
 
 register = template.Library()
 
@@ -56,13 +57,18 @@ def get_notnull(object, index):
 
 @register.filter
 def group_visible_by(contact_groups_query, user_id):
-    return contact_groups_query.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % user_id])
+    # TODO This is supposed to be better, but is actually much slower :(
+    return contact_groups_query.with_user_perms(user_id, perms.SEE_CG, add_column=False)
+    #return contact_groups_query.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % user_id])
 
 
 @register.filter
 def group_with_link(contact_group):
     return mark_safe('<a href="'+contact_group.get_absolute_url()+'">'+html.escape(contact_group.name_with_date())+'</a>')
 
+@register.filter
+def perms_int_to_flags(intperms):
+    return perms.int_to_flags(intperms)
 
 @register.assignment_tag
 def view_row_to_items(view, row):

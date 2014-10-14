@@ -31,6 +31,7 @@ from django.utils.encoding import force_bytes
 from django.contrib import auth
 from django.contrib.auth.handlers.modwsgi import check_password
 from ngw.core.models import ContactGroup
+from ngw.core import perms
 
 def groups_for_user(environ, username):
     """
@@ -46,11 +47,11 @@ def groups_for_user(environ, username):
             return []
         if not user.is_active:
             return []
-        groups = ContactGroup.objects.extra(where=[
-            'perm_c_can_see_files_cg(%s, contact_group.id)' % user.id])
+        groups = ContactGroup.objects.with_user_perms(
+            user.id, wanted_flags=perms.VIEW_FILES, add_column=False)
         return [force_bytes(group.id) for group in groups]
     finally:
-        db.close_connection()
+        db.close_old_connections()
 
 # This application object is used by any WSGI server configured to use this
 # file. This includes Django's development server, if the WSGI_APPLICATION

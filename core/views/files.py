@@ -36,7 +36,7 @@ class FileListView(InGroupAcl, FormView):
     template_name = 'group_files.html'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_see_files_cg(user.id, group.id):
+        if not group.userperms & perms.VIEW_FILES:
             raise PermissionDenied
 
     def get_context_data(self, **kwargs):
@@ -65,7 +65,7 @@ class FileListView(InGroupAcl, FormView):
     def form_valid(self, form):
         cg = self.contactgroup
         request = self.request
-        if not perms.c_can_change_files_cg(request.user.id, cg.id):
+        if not cg.userperms & perms.WRITE_FILES:
             raise PermissionDenied
         upfile = request.FILES['file_to_upload']
         # name has already been sanitized by UploadedFile._set_name
@@ -102,7 +102,7 @@ class GroupMediaFileView(InGroupAcl, View):
     That view serves a media file in a given group.
     '''
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_see_files_cg(user.id, group.id):
+        if not group.userperms & perms.VIEW_FILES:
             raise PermissionDenied
 
     def get(self, request, *args, **kwargs):

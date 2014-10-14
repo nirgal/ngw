@@ -16,27 +16,34 @@
     {% for key,value in rows %}
         {{ key }}: <b>{{ value }}</b><br>
     {% endfor %}
+
     {% for g in contact.get_directgroups_member|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Member of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
-        {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
-        {% if forloop.first %}( {% trans "implies" %} {%else%}, {% endif %}
-        {{ sg|group_with_link }}
-        {% if forloop.last %}){% endif %}
-        {% endfor %}
+        {% if not g.date %}
+            {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
+            {% if forloop.first %}( {% trans "implies" %} {%else%}, {% endif %}
+            {{ sg|group_with_link }}
+            {% if forloop.last %}){% endif %}
+            {% endfor %}
+        {% endif %}
         <br>
     {% endfor %}
+
     {% for g in contact.get_directgroups_invited|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Invited in groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
-        {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
-        {% if forloop.first %}( {% trans "implies" %} {%else%}, {% endif %}
-        {{ sg|group_with_link }}
-        {% if forloop.last %}){% endif %}
-        {% endfor %}
+        {% if not g.date %}
+            {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
+            {% if forloop.first %}( {% trans "implies" %} {%else%}, {% endif %}
+            {{ sg|group_with_link }}
+            {% if forloop.last %}){% endif %}
+            {% endfor %}
+        {% endif %}
         <br>
     {% endfor %}
-    {% for g in contact.get_directgroups_declinedinvitation|group_visible_by:request.user.id %}
+
+    {% for g in contact.get_directgroups_declined|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Declined invitation in groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>

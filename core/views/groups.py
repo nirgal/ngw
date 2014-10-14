@@ -48,16 +48,25 @@ def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
 class ContactGroupListView(NgwUserAcl, NgwListView):
     list_display = ('name', 'description_not_too_long',
         # 'rendered_fields',
-        'visible_direct_supergroups_5', 'visible_direct_subgroups_5',
-        # 'budget_code', 'visible_member_count' ,'system'
+        'visible_direct_supergroups_5',
+        'visible_direct_subgroups_5',
+        # 'budget_code',
+        # 'visible_member_count',
+        #'system'
         )
 
     def visible_direct_supergroups_5(self, group):
-        return ', '.join(_truncate_list([sg.name_with_date() for sg in group.get_direct_supergroups().extra(where=['perm_c_can_see_cg(%s, id)' % self.request.user.id])[:LIST_PREVIEW_LEN+1]]))
+        supergroups = group.get_direct_supergroups()
+        supergroups = supergroups.with_user_perms(self.request.user.id, perms.SEE_CG)
+        supergroups = supergroups[:LIST_PREVIEW_LEN+1]
+        return ', '.join(_truncate_list([sg.name_with_date() for sg in supergroups]))
     visible_direct_supergroups_5.short_description = ugettext_lazy('Super groups')
 
     def visible_direct_subgroups_5(self, group):
-        return ', '.join(_truncate_list([sg.name_with_date() for sg in group.get_direct_subgroups().extra(where=['perm_c_can_see_cg(%s, id)' % self.request.user.id])[:LIST_PREVIEW_LEN+1]]))
+        subgroups = group.get_direct_subgroups()
+        subgroups = subgroups.with_user_perms(self.request.user.id, perms.SEE_CG)
+        subgroups = subgroups[:LIST_PREVIEW_LEN+1]
+        return ', '.join(_truncate_list([sg.name_with_date() for sg in subgroups]))
     visible_direct_subgroups_5.short_description = ugettext_lazy('Sub groups')
 
     def rendered_fields(self, group):
@@ -81,7 +90,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
 
 
     def get_root_queryset(self):
-        return ContactGroup.objects.filter(date=None).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+        return ContactGroup.objects.filter(date=None).with_user_perms(self.request.user.id, perms.SEE_CG)
 
 
     def get_context_data(self, **kwargs):
@@ -199,11 +208,11 @@ class EventListView(NgwUserAcl, TemplateView):
         max_date = datetime(year, month, 1) + timedelta(days=31+6)
         max_date = max_date.strftime('%Y-%m-%d')
 
-        q = ContactGroup.objects.filter(date__gte=min_date, date__lte=max_date).extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % request.user.id])
-        q = q.extra(select={'can_see_messages': 'perm_c_can_view_msgs_cg(%s, "contact_group"."id")' % request.user.id})
+        qs = ContactGroup.objects.with_user_perms(request.user.id, perms.SEE_CG)
+        qs = qs.filter(date__gte=min_date, date__lte=max_date)
 
         month_events = {}
-        for cg in q:
+        for cg in qs:
             if cg.date not in month_events:
                 month_events[cg.date] = []
             month_events[cg.date].append(cg)
@@ -234,13 +243,13 @@ class ContactGroupView(InGroupAcl, View):
         cg = self.contactgroup
         gid = cg.id
         uid = request.user.id
-        if perms.c_can_see_members_cg(uid, gid):
+        if cg.userperms & perms.SEE_MEMBERS:
             return HttpResponseRedirect(cg.get_absolute_url() + 'members/')
-        if perms.c_can_see_news_cg(uid, gid):
+        if cg.userperms & perms.VIEW_NEWS:
             return HttpResponseRedirect(cg.get_absolute_url() + 'news/')
-        if perms.c_can_see_files_cg(uid, gid):
+        if cg.userperms & perms.VIEW_FILES:
             return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
-        if perms.c_can_view_msgs_cg(uid, gid):
+        if cg.userperms & perms.VIEW_MSGS:
             return HttpResponseRedirect(cg.get_absolute_url() + 'messages/?&_order=-1')
         raise PermissionDenied
 
@@ -255,7 +264,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_members.html'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_see_members_cg(user.id, group.id):
+        if not group.userperms & perms.SEE_MEMBERS:
             raise PermissionDenied
 
 
@@ -323,7 +332,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     def get_actions(self, request):
         for action in super(GroupMemberListView, self).get_actions(request):
             yield action
-        if perms.c_can_write_msgs_cg(request.user.id, self.contactgroup.id):
+        if self.contactgroup.userperms & perms.WRITE_MSGS:
             yield 'action_send_message'
 
 
@@ -359,9 +368,7 @@ class ContactGroupForm(forms.ModelForm):
         # Only show visible groups
         visible_groups_choices = [
             (g.id, g.name_with_date())
-            for g in ContactGroup.objects.extra(
-                where=['perm_c_can_see_cg(%s, contact_group.id)' % user.id]
-                ).order_by('-date', 'name')]
+            for g in ContactGroup.objects.with_user_perms(user.id, perms.SEE_CG)]
 
         # Super groups
         if instance:
@@ -469,7 +476,7 @@ class GroupEditMixin(ModelFormMixin):
         messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.name_with_date())
 
         cg.check_static_folder_created()
-        Contact.check_login_created(request) # subgroups change
+        Contact.objects.check_login_created(request) # subgroups change
 
         if request.POST.get('_continue', None):
             return HttpResponseRedirect(cg.get_absolute_url() + 'edit')
@@ -504,7 +511,7 @@ class GroupEditMixin(ModelFormMixin):
 
 class GroupEditView(InGroupAcl, GroupEditMixin, UpdateView):
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_change_cg(user.id, group.id):
+        if not group.userperms & perms.CHANGE_CG:
             raise PermissionDenied
 
 
@@ -543,7 +550,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
     pk_url_kwarg = 'gid'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_change_cg(user.id, group.id):
+        if not group.userperms & perms.CHANGE_CG:
             raise PermissionDenied
 
     def get_object(self, *args, **kwargs):
@@ -678,7 +685,7 @@ class ContactInGroupView(InGroupAcl, FormView):
     template_name = 'contact_in_group.html'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_change_cg(user.id, group.id):
+        if not group.userperms & perms.CHANGE_MEMBERS:
             raise PermissionDenied
 
     def get_form_kwargs(self):
@@ -711,7 +718,7 @@ class ContactInGroupView(InGroupAcl, FormView):
                 _('%(contact)s has been removed from group %(group)s.') % {
                     'contact': contact.name,
                     'group': cg.name})
-        Contact.check_login_created(self.request)
+        Contact.objects.check_login_created(self.request)
         hooks.membership_changed(self.request, contact, cg)
         return HttpResponseRedirect(cg.get_absolute_url())
 
@@ -731,11 +738,18 @@ class ContactInGroupView(InGroupAcl, FormView):
 
         automember_groups = ContactGroup.objects.extra(
             where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.MEMBER)]).exclude(id=gid).order_by('-date', 'name')
-        visible_automember_groups = automember_groups.extra(
-            where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
-        invisible_automember_groups = automember_groups.extra(
-            where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
-        #print(automember_groups.query)
+
+        visible_automember_groups = automember_groups.with_user_perms(
+            self.request.user.id, wanted_flags=perms.SEE_CG)
+
+        invisible_automember_groups = automember_groups.extra(where=[
+            'NOT EXISTS ('
+            ' SELECT * FROM v_cig_perm'
+            ' WHERE v_cig_perm.contact_id=%s'
+            ' AND v_cig_perm.group_id=contact_group.id'
+            ' AND v_cig_perm.flags & %s <> 0)'
+            % (self.request.user.id, perms.SEE_CG)])
+
         if automember_groups:
             inherited_info += _('Automatically member because member of subgroup(s)') + ':<ul>'
             for sub_cg in visible_automember_groups:
@@ -747,8 +761,18 @@ class ContactInGroupView(InGroupAcl, FormView):
             inherited_info += '</ul>'
 
         autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.INVITED)]).exclude(id=gid).order_by('-date', 'name')
-        visible_autoinvited_groups = autoinvited_groups.extra(where=['perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
-        invisible_autoinvited_groups = autoinvited_groups.extra(where=['not perm_c_can_see_cg(%s, contact_group.id)' % self.request.user.id])
+
+        visible_autoinvited_groups = autoinvited_groups.with_user_perms(
+            self.request.user.id, wanted_flags=perms.SEE_CG)
+
+        invisible_autoinvited_groups = autoinvited_groups.extra(where=[
+            'NOT EXISTS ('
+            ' SELECT * FROM v_cig_perm'
+            ' WHERE v_cig_perm.contact_id=%s'
+            ' AND v_cig_perm.group_id=contact_group.id'
+            ' AND v_cig_perm.flags & %s <> 0)'
+            % (self.request.user.id, perms.SEE_CG)])
+
         if autoinvited_groups:
             inherited_info += _('Automatically invited because invited in subgroup(s)') + ':<ul>'
             for sub_cg in visible_autoinvited_groups:
@@ -778,7 +802,7 @@ class ContactInGroupView(InGroupAcl, FormView):
 
 class ContactInGroupInlineView(InGroupAcl, View):
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_change_cg(user.id, group.id):
+        if not group.userperms & perms.CHANGE_MEMBERS:
             raise PermissionDenied
 
     def post(self, request, gid, cid):
@@ -807,7 +831,7 @@ class ContactInGroupInlineView(InGroupAcl, View):
 
 class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_change_members_cg(user.id, group.id):
+        if not group.userperms & perms.CHANGE_MEMBERS:
             raise PermissionDenied
 
     def get_object(self, *args, **kwargs):

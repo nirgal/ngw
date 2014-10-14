@@ -31,7 +31,7 @@ class NewsListView(InGroupAcl, ListView):
     page_kwarg = '_page'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_see_news_cg(user.id, group.id):
+        if not group.userperms & perms.VIEW_NEWS:
             raise PermissionDenied
 
     def get_queryset(self):
@@ -72,7 +72,7 @@ class NewsEditMixin(ModelFormMixin):
     pk_url_kwarg = 'nid'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_change_news_cg(user.id, group.id):
+        if not group.userperms & perms.WRITE_NEWS:
             raise PermissionDenied
 
     def get_object(self, queryset=None):
@@ -145,7 +145,7 @@ class NewsDeleteView(InGroupAcl, NgwDeleteView):
     pk_url_kwarg = 'nid'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_change_news_cg(user.id, group.id):
+        if not group.userperms & perms.WRITE_NEWS:
             raise PermissionDenied
 
     def get_context_data(self, **kwargs):

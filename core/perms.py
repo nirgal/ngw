@@ -203,9 +203,11 @@ def cig_flags_int(cid, gid):
     Return the integer value of flags (midoveE...)
     '''
     cursor = connection.cursor()
-    cursor.execute("SELECT cig_flags(%s, %s)", [cid, gid])
+    cursor.execute(
+        'SELECT flags FROM v_cig_flags WHERE contact_id=%s AND group_id=%s' % (
+            cid, gid))
     row = cursor.fetchone()
-    return row[0]
+    return row[0] or 0
 
 
 def cig_flags_direct_int(cid, gid):
@@ -214,56 +216,53 @@ def cig_flags_direct_int(cid, gid):
     Returns 0 if contact_in_group doesn't exists
     '''
     cursor = connection.cursor()
-    cursor.execute("SELECT cig_flags_direct(%s, %s)", [cid, gid])
+    cursor.execute(
+        'SELECT flags'
+        ' FROM contact_in_group'
+        ' WHERE contact_id=%s AND group_id=%s'
+        % (cid, gid))
     row = cursor.fetchone()
-    return row[0]
+    return row[0] or 0
+
+
+def cig_perms_int(cid, gid):
+    '''
+    Return the integer value of flags (oveE...) *excluding* m/i/d
+    '''
+    cursor = connection.cursor()
+    cursor.execute(
+        'SELECT flags FROM v_cig_perm WHERE contact_id=%s AND group_id=%s' % (
+            cid, gid))
+    row = cursor.fetchone()
+    return row[0] or 0
 
 
 def c_operatorof_cg(cid, gid):
     '''
     Returns True if contact cid is an operator of contact_group gid.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_operatorof_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & OPERATOR)
+
 
 def c_can_see_cg(cid, gid):
     '''
     Returns True if contact cid can see existence of contact_group gid.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_see_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & SEE_CG)
 
 
 def c_can_change_cg(cid, gid):
     '''
     Returns True if contact cid can change/delete contact_group gid itself.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_change_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & CHANGE_CG)
 
 
 def c_can_see_members_cg(cid, gid):
     '''
     Returns True if contact cid can view members of contact_group gid.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_see_members_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & SEE_MEMBERS)
 
 
 def c_can_change_members_cg(cid, gid):
@@ -271,12 +270,7 @@ def c_can_change_members_cg(cid, gid):
     Returns True if contact cid can change/delete memberships in contact_group
     gid.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_change_members_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & CHANGE_MEMBERS)
 
 
 def c_can_view_fields_cg(cid, gid):
@@ -286,12 +280,7 @@ def c_can_view_fields_cg(cid, gid):
     Here gid is the group that owns the fields, and grants its usage to other
     groups.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_view_fields_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & VIEW_FIELDS)
 
 
 def c_can_write_fields_cg(cid, gid):
@@ -300,84 +289,49 @@ def c_can_write_fields_cg(cid, gid):
     Here gid is the group that owns the fields, and grants its usage to other
     groups.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_write_fields_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & WRITE_FIELDS)
 
 
 def c_can_see_news_cg(cid, gid):
     '''
     Returns True if contact cid can see news of contactgroup gid.
     '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_see_news_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+    return bool(cig_perms_int(cid, gid) & VIEW_NEWS)
 
 
-def c_can_change_news_cg(cid, gid):
-    '''
-    Returns True if contact cid can add/change/delete news of contactgroup gid.
-    '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_change_news_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+#def c_can_change_news_cg(cid, gid):
+#    '''
+#    Returns True if contact cid can add/change/delete news of contactgroup gid.
+#    '''
+#    return bool(cig_perms_int(cid, gid) & WRITE_NEWS)
 
 
-def c_can_see_files_cg(cid, gid):
-    '''
-    Returns True if contact cid can see files of contactgroup gid.
-    '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_see_files_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+#def c_can_see_files_cg(cid, gid):
+#    '''
+#    Returns True if contact cid can see files of contactgroup gid.
+#    '''
+#    return bool(cig_perms_int(cid, gid) & VIEW_FILES)
 
 
-def c_can_change_files_cg(cid, gid):
-    '''
-    Returns True if contact cid can add/change/delete files of contactgroup gid.
-    '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_change_files_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+#def c_can_change_files_cg(cid, gid):
+#    '''
+#    Returns True if contact cid can add/change/delete files of contactgroup gid.
+#    '''
+#    return bool(cig_perms_int(cid, gid) & WRITE_FILES)
 
 
-def c_can_view_msgs_cg(cid, gid):
-    '''
-    Returns True if contact cid can see files of contactgroup gid.
-    '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_view_msgs_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+#def c_can_view_msgs_cg(cid, gid):
+#    '''
+#    Returns True if contact cid can see files of contactgroup gid.
+#    '''
+#    return bool(cig_perms_int(cid, gid) & VIEW_MSGS)
 
 
-def c_can_write_msgs_cg(cid, gid):
-    '''
-    Returns True if contact cid can add/change/delete files of contactgroup gid.
-    '''
-    cursor = connection.cursor()
-    cursor.execute("SELECT perm_c_can_write_msgs_cg(%s, %s)", [cid, gid])
-    row = cursor.fetchone()
-    if row:
-        return row[0]
-    return False
+#def c_can_write_msgs_cg(cid, gid):
+#    '''
+#    Returns True if contact cid can add/change/delete files of contactgroup gid.
+#    '''
+#    return bool(cig_perms_int(cid, gid) & WRITE_MSGS)
 
 
 def c_can_see_c(cid1, cid2):

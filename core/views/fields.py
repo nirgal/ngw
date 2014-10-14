@@ -42,7 +42,7 @@ class FieldListView(NgwAdminAcl, NgwListView):
 
 
     def get_root_queryset(self):
-        return ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % self.request.user.id])
+        return ContactField.objects.with_user_perms(self.request.user.id)
 
 
     def get_context_data(self, **kwargs):

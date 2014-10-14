@@ -236,6 +236,23 @@ class MyContactManager(BaseUserManager):
                              flags=perms.MEMBER|perms.OPERATOR)
         cig.save()
 
+    @staticmethod
+    def check_login_created(request):
+        # Create login for all members of GROUP_USER
+        cursor = connection.cursor()
+        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {'member_flag': perms.MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN})
+        for uid, in cursor:
+            contact = Contact.objects.get(pk=uid)
+            new_login = contact.generate_login()
+            contact.set_fieldvalue(request, FIELD_LOGIN, new_login)
+            contact.set_password(Contacts.objects.make_random_password(), request=request)
+            messages.add_message(request, messages.SUCCESS, _("Login information generated for User %s.") % contact.name)
+
+        for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': perms.MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
+            cfv.delete()
+            messages.add_message(request, messages.SUCCESS, _("Login information deleted for User %s.") % cfv.contact.name)
+
+
 
 @python_2_unicode_compatible
 class Contact(NgwModel):
@@ -299,70 +316,77 @@ class Contact(NgwModel):
             return None
         return check_password(raw_password, dbpassword, setter)
 
-    #get_link_name=NgwModel.get_absolute_url
-    def name_with_relative_link(self):
-        return '<a href="%(id)d/">%(name)s</a>' % {'id': self.id, 'name': html.escape(self.name)}
-    name_with_relative_link.short_description = ugettext_lazy('Name')
-    name_with_relative_link.admin_order_field = 'name'
+    def get_visible_directgroups(self, user, wanted_flag):
+        """
+        Returns the list of groups whose members are visible by user, and that
+        contact is a *direct* member of, with the specified flags (invited...).
+        """
+        return ContactGroup.objects.with_user_perms(user.id, perms.SEE_MEMBERS).extra(
+            where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, wanted_flag)])
 
+    def _get_directgroups_with_flag(self, wanted_flag):
+        """
+        Returns the list of groups that contact is a *direct* 'wanted_flag'
+        of. Like "member of"
+        """
+        return ContactGroup.objects.extra(where=[
+            'EXISTS ('
+            ' SELECT * FROM contact_in_group'
+            ' WHERE contact_id=%s AND group_id=contact_group.id'
+            ' AND flags & %s <> 0)' % (self.id, wanted_flag)])
 
     def get_directgroups_member(self):
-        "returns the list of groups that contact is a direct member of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.MEMBER)]).order_by('-date', 'name')
-
-    def get_allgroups_member(self):
-        "returns the list of groups that contact is a member of."
-        return ContactGroup.objects.extra(where=['id IN (SELECT self_and_supergroups(group_id) FROM contact_in_group WHERE contact_id=%s AND flags & %s <> 0)' % (self.id, perms.MEMBER)])
+        """
+        Returns the list of groups that contact is a direct member of.
+        """
+        return self._get_directgroups_with_flag(perms.MEMBER)
 
     def get_directgroups_invited(self):
-        "returns the list of groups that contact has been invited to, directly without group inheritance"
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.INVITED)]).order_by('-date', 'name')
+        """
+        Returns the list of groups that contact has been invited to, directly
+        without group inheritance
+        """
+        return self._get_directgroups_with_flag(perms.INVITED)
 
-    def get_directgroups_declinedinvitation(self):
-        "returns the list of groups that contact has been invited to and he declined the invitation."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.DECLINED)]).order_by('-date', 'name')
+    def get_directgroups_declined(self):
+        """
+        Returns the list of groups that contact has been invited to and he
+        declined the invitation.
+        """
+        return self._get_directgroups_with_flag(perms.DECLINED)
 
     def get_directgroups_operator(self):
-        "returns the list of groups that contact is an operator of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.OPERATOR)]).order_by('-date', 'name')
+        """
+        Returns the list of groups that contact is an operator of.
+        """
+        return self._get_directgroups_with_flag(perms.OPERATOR)
 
     def get_directgroups_viewer(self):
-        "returns the list of groups that contact is a viewer of."
-        return ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE contact_id=%s AND group_id=contact_group.id AND flags & %s <> 0)' % (self.id, perms.VIEWER)]).order_by('-date', 'name')
+        """
+        Returns the list of groups that contact is an viewer of.
+        """
+        return self._get_directgroups_with_flag(perms.VIEWER)
 
-    def get_allgroups_withfields(self):
-        "returns the list of groups with field_group ON that contact is member of."
-        return self.get_allgroups_member().filter(field_group=True)
-
-    def _get_allfields(self):
+    def get_contactfields(self, user_id, writable=False):
         '''
-        Returns a query with all the fields that self has gained, that is you
+        Returns a queryset with all the fields that self has gained, that is you
         will not get fields that belong to a group is not a member of.
-        You should probaly use get_all_visible_fields or get_all_writable_fields
         '''
-        contactgroupids = [g.id for g in self.get_allgroups_withfields()]
-        #print("contactgroupids=", contactgroupids)
-        return ContactField.objects.filter(contact_group_id__in=contactgroupids).order_by('sort_weight')
-
-    def get_all_visible_fields(self, user_id):
-        '''
-        Like _get_allfields() but check user_id has read permission
-        '''
-        fields = self._get_allfields()
-        if user_id == self.id:
-            return fields
+        # Get all the groups whose fields are readble / writable by user_id
+        if writable:
+            wanted_perm = perms.WRITE_FIELDS
         else:
-            return fields.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id])
-
-    def get_all_writable_fields(self, user_id):
-        '''
-        Like _get_allfields() but check user_id has write permission
-        '''
-        fields = self._get_allfields()
-        if user_id == self.id:
-            return fields
-        else:
-            return fields.extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user_id])
+            wanted_perm = perms.VIEW_FIELDS
+        groups = ContactGroup.objects.with_user_perms(user_id, wanted_perm)
+        # Limit to groups with fields
+        groups = groups.filter(field_group=True)
+        # Also limit to group in wich self is member
+        groups = groups.with_member(self.id)
+        # The line below should work, but we get an sql compiler alias error:
+        #return ContactField.objects.filter(contact_group__in=groups)
+        group_ids = [g.id for g in groups]
+        #print("group_ids=", group_ids)
+        return ContactField.objects.filter(contact_group_id__in=group_ids)
 
     def get_fieldvalues_by_type(self, type_):
         if isinstance(type_, ContactField):
@@ -508,7 +532,6 @@ class Contact(NgwModel):
 
     def set_password(self, newpassword_plain, new_password_status=None, request=None):
         assert request, 'ngw version of set_password needs a request parameter'
-        # TODO check password strength
         hash = make_password(newpassword_plain)
         self.set_fieldvalue(request, FIELD_PASSWORD, hash)
         if new_password_status is None:
@@ -519,23 +542,6 @@ class Contact(NgwModel):
         else:
             self.set_fieldvalue(request, FIELD_PASSWORD_STATUS, new_password_status)
         self.save()
-
-
-    @staticmethod
-    def check_login_created(request):
-        # Create login for all members of GROUP_USER
-        cursor = connection.cursor()
-        cursor.execute("SELECT users.contact_id FROM (SELECT DISTINCT contact_in_group.contact_id FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0) AS users LEFT JOIN contact_field_value ON (contact_field_value.contact_id=users.contact_id AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d) WHERE contact_field_value.value IS NULL" % {'member_flag': perms.MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN})
-        for uid, in cursor:
-            contact = Contact.objects.get(pk=uid)
-            new_login = contact.generate_login()
-            contact.set_fieldvalue(request, FIELD_LOGIN, new_login)
-            contact.set_password(Contacts.objects.make_random_password(), request=request)
-            messages.add_message(request, messages.SUCCESS, _("Login information generated for User %s.") % contact.name)
-
-        for cfv in ContactFieldValue.objects.extra(where=["contact_field_value.contact_field_id=%(FIELD_LOGIN)d AND NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact_field_value.contact_id AND contact_in_group.group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d)) AND contact_in_group.flags & %(member_flag)s <> 0)" % {'member_flag': perms.MEMBER, 'GROUP_USER': GROUP_USER, 'FIELD_LOGIN': FIELD_LOGIN}]):
-            cfv.delete()
-            messages.add_message(request, messages.SUCCESS, _("Login information deleted for User %s.") % cfv.contact.name)
 
 
     def is_member_of(self, group_id):
@@ -561,6 +567,7 @@ class Contact(NgwModel):
 
     def can_search_names(self):
         return True
+        # TODO
         #return perms.c_can_view_fields_cg(self.id, GROUP_EVERYBODY)
 
     def can_search_logins(self):
@@ -595,6 +602,53 @@ class Contact(NgwModel):
         return [(list[2*i], list[2*i+1]) for i in range(len(list)//2)]
 
 
+#######################################################################
+# ContactGroup
+#######################################################################
+
+class ContactGroupQuerySet(models.QuerySet):
+    def with_user_perms(self, user_id, wanted_flags=None, add_column=True):
+        '''
+        Returns a ContactGroup QuerySet with a extra colum 'userperms'
+        representing the user permissions over the groups as a integer
+        '''
+        qs = self.extra(
+            tables=['v_cig_perm'],
+            where=[
+                'v_cig_perm.contact_id=%s'%user_id,
+                'v_cig_perm.group_id=contact_group.id'],
+            )
+        if add_column:
+            qs = qs.extra(
+                select={'userperms': 'v_cig_perm.flags'})
+
+        if wanted_flags is not None:
+            qs = qs.extra(where=['v_cig_perm.flags & %s <> 0' % wanted_flags])
+        return qs
+
+
+    def with_member(self, contact_id):
+        '''
+        Filter the queryset to keep only those whose contact_id is member
+        '''
+        return self.extra(
+            tables=['v_c_member_of'],
+            where=[
+                'v_c_member_of.contact_id=%s' % contact_id,
+                'v_c_member_of.group_id=contact_group.id'],
+            )
+    #TODO: member_count, message_count, ...
+
+
+class ContactGroupManager(models.Manager):
+    def get_queryset(self):
+        return ContactGroupQuerySet(self.model, using=self._db)
+
+    def with_user_perms(self, *args, **kwargs):
+        qs = self.get_queryset()
+        return qs.with_user_perms(*args, **kwargs)
+
+
 @python_2_unicode_compatible
 class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
@@ -614,11 +668,13 @@ class ContactGroup(NgwModel):
         help_text=ugettext_lazy('If set, automatic membership because of subgroups becomes permanent. Use with caution.'))
     #direct_supergroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none1+')
     #direct_subgroups = models.ManyToManyField("self", through='GroupInGroup', symmetrical=False, related_name='none2+')
+
     class Meta:
         db_table = 'contact_group'
         verbose_name = ugettext_lazy('contact group')
         verbose_name_plural = ugettext_lazy('contact groups')
         ordering = '-date', 'name'
+    objects = ContactGroupManager()
 
     def __str__(self):
         return self.name
@@ -654,8 +710,13 @@ class ContactGroup(NgwModel):
         Returns the direct supergroup ids that are visible by contact cid
         """
         return [gig.father_id \
-            for gig in GroupInGroup.objects.filter(subgroup_id=self.id).extra(where=[
-                'perm_c_can_see_cg(%s, group_in_group.father_id)' % cid])]
+            for gig in GroupInGroup.objects.filter(subgroup_id=self.id).extra(
+                tables={'v_cig_perm': 'v_cig_perm'},
+                where=[
+                    'v_cig_perm.contact_id=%s'
+                    ' AND v_cig_perm.group_id=group_in_group.father_id'
+                    ' AND v_cig_perm.flags & %s <> 0'
+                    % (cid, perms.SEE_CG)])]
 
     def get_direct_supergroups(self):
         return ContactGroup.objects.filter(direct_gig_subgroups__subgroup_id=self.id)
@@ -686,15 +747,21 @@ class ContactGroup(NgwModel):
         return self.get_self_and_subgroups().exclude(id=self.id)
 
 
-    def get_visible_mananger_groups_ids(self, cid, flag):
+    def get_visible_mananger_groups_ids(self, cid, intflag):
         '''
         Returns a list of groups ids whose members automatically gets "flag"
         priviledges on self, and are visbile contact cid.
         '''
         return [gig.father_id \
-            for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(where=[
-                'flags & %s <> 0' % flag,
-                'perm_c_can_see_cg(%s, group_manage_group.father_id)' % cid])]
+            for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(
+                tables={'v_cig_perm': 'v_cig_perm'},
+                where=[
+                    'v_cig_perm.contact_id=%s'
+                    ' AND v_cig_perm.group_id=group_manage_group.father_id'
+                    ' AND v_cig_perm.flags & %s <> 0'
+                    ' AND group_manage_group.flags & %s <> 0'
+                    % (cid, intflag, perms.SEE_CG)])]
+
 
     def get_manager_groups(self):
         return ContactGroup.objects \
@@ -754,7 +821,7 @@ class ContactGroup(NgwModel):
 
     def static_folder(self):
         """ Returns the name of the folder for static files for that group """
-        return GROUP_STATIC_DIR+str(self.id)
+        return GROUP_STATIC_DIR + force_text(self.id)
 
 
     def check_static_folder_created(self):
@@ -809,7 +876,10 @@ class ContactGroup(NgwModel):
 
 
     def get_filters_classes(self):
-        return (GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, )
+        return (
+            GroupFilterIsMember, GroupFilterIsNotMember,
+            GroupFilterIsInvited, GroupFilterIsNotInvited,
+            GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation)
 
     def get_filters(self):
         return [cls(self.id) for cls in self.get_filters_classes()]
@@ -997,6 +1067,29 @@ def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     return cls
 
 
+class ContactFieldQuerySet(models.QuerySet):
+    def with_user_perms(self, user_id, writable=False):
+        # Note that 1.7 will support *fields in select_related
+        if writable:
+            wanted_flag = perms.WRITE_FIELDS
+        else:
+            wanted_flag = perms.VIEW_FIELDS
+        qs = self.extra(
+            tables=('v_cig_perm',),
+            where=[
+                'v_cig_perm.contact_id = %s'
+                ' AND v_cig_perm.group_id = contact_field.contact_group_id'
+                ' AND v_cig_perm.flags & %s <> 0'
+                % (user_id, wanted_flag)])
+        return qs
+
+class ContactFieldManager(models.Manager):
+    def get_queryset(self):
+        return ContactFieldQuerySet(self.model, using=self._db)
+    def with_user_perms(self, *args, **kwargs):
+        qs = self.get_queryset()
+        return qs.with_user_perms(*args, **kwargs)
+
 @python_2_unicode_compatible
 class ContactField(NgwModel):
     # This is a polymorphic class:
@@ -1018,6 +1111,7 @@ class ContactField(NgwModel):
         verbose_name = ugettext_lazy('contact field')
         verbose_name_plural = ugettext_lazy('contact fields')
         ordering = 'sort_weight',
+    objects = ContactFieldManager()
 
     @classmethod
     def get_class_urlfragment(cls):
@@ -1089,11 +1183,11 @@ class ContactField(NgwModel):
             cf.sort_weight = new_weigth
             cf.save()
 
-def contact_field_initialized_my_manager(sender, **kwargs):
+def contact_field_initialized_by_manager(sender, **kwargs):
     field = kwargs['instance']
     assert field.type is not None, 'Polymorphic abstract class must be created with type defined'
     field.polymorphic_upgrade()
-models.signals.post_init.connect(contact_field_initialized_my_manager, ContactField)
+models.signals.post_init.connect(contact_field_initialized_by_manager, ContactField)
 
 def contact_field_saved(**kwargs):
     field = kwargs['instance']

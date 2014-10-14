@@ -45,7 +45,7 @@ Ci-joint votre message original.
     template_name = 'group_mailman.html'
 
     def check_perm_groupuser(self, group, user):
-        if not perms.c_can_see_members_cg(user.id, group.id):
+        if not group.userperms & perms.SEE_MEMBERS:
             raise PermissionDenied
 
     def form_valid(self, form):

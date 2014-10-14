@@ -127,12 +127,6 @@ class ContactQuerySet(RawQuerySet):
             ) AS gmg_inherited_%(gid)s
             ON contact.id=gmg_inherited_%(gid)s.contact_id''' % {'gid': group_id})
 
-    def add_group_withnote(self, group_id):
-        '''
-        Like add_group, but also adds the note in the list of columns to be returned.
-        The caller is reponsible for checking requesting user is authorized to view that group's members.
-        '''
-        self.add_group(group_id)
         self.qry_fields['group_%s_note' % group_id] = 'cig_%s.note' % group_id
 
     def filter(self, extrawhere=None, pk__in=None):
@@ -260,9 +254,9 @@ def get_available_columns(user_id):
     Return all available columns on contact list, based on user permission. Used in column selection.
     '''
     result = [(DISP_NAME, 'Name')]
-    for cf in ContactField.objects.extra(where=['perm_c_can_view_fields_cg(%s, contact_field.contact_group_id)' % user_id]).order_by('sort_weight'):
+    for cf in ContactField.objects.with_user_perms(user_id):
         result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
-    for cg in ContactGroup.objects.extra(where=['perm_c_can_see_members_cg(%s, contact_group.id)' % user_id]).order_by('-date', 'name'):
+    for cg in ContactGroup.objects.with_user_perms(user_id, wanted_flags=perms.SEE_MEMBERS, add_column=False).order_by('-date', 'name'):
         result.append((DISP_GROUP_PREFIX+force_text(cg.id), cg.name_with_date()))
     return result
 
@@ -381,7 +375,7 @@ class BaseContactListView(NgwListView):
                 if not perms.c_can_see_members_cg(user_id, groupid):
                     continue # just ignore groups that aren't allowed to be seen
 
-                q.add_group_withnote(groupid)
+                q.add_group(groupid)
 
                 cg = ContactGroup.objects.get(pk=groupid)
 
@@ -417,7 +411,7 @@ class BaseContactListView(NgwListView):
 
         current_cg = self.contactgroup
         if current_cg is not None:
-            q.add_group_withnote(current_cg.id)
+            q.add_group(current_cg.id)
             self.group_status = membership_extended_widget_factory(request, current_cg)
             self.group_status.short_description = _('Status')
             list_display.append('group_status')
@@ -472,6 +466,13 @@ class BaseContactListView(NgwListView):
         context['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
         context.update(kwargs)
         return super(BaseContactListView, self).get_context_data(**context)
+
+
+    #get_link_name=NgwModel.get_absolute_url
+    def name_with_relative_link(self, contact):
+        return '<a href="%(id)d/">%(name)s</a>' % {'id': contact.id, 'name': html.escape(contact.name)}
+    name_with_relative_link.short_description = ugettext_lazy('Name')
+    name_with_relative_link.admin_order_field = 'name'
 
 
     def action_csv_export(self, request, queryset):
@@ -566,10 +567,11 @@ class GroupAddManyForm(forms.Form):
                 ('', _('Choose a group')),
                 (_('Permanent groups'), [
                     (group.id, group.name)
-                    for group in ContactGroup.objects.filter(date__isnull=1).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id]).order_by('name')]),
+                    for group in ContactGroup.objects.filter(date__isnull=1).with_user_perms(user.id, perms.CHANGE_MEMBERS).order_by('name')]),
                 (_('Events'), [
                     (group.id, group.name_with_date())
-                    for group in ContactGroup.objects.filter(date__isnull=0).extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % user.id]).order_by('-date', 'name')]),
+                    for group in ContactGroup.objects.filter(date__isnull=0).with_user_perms(user.id,
+ perms.CHANGE_MEMBERS).order_by('-date', 'name')]),
                 ],
             )
         for flag, longname in six.iteritems(perms.FLAGTOTEXT):
@@ -650,7 +652,6 @@ class GroupAddManyView(NgwUserAcl, FormView):
         context['title'] = _('Add %s contact(s) to a group') % len(ids)
         context['nav'] = Navbar(Contact.get_class_navcomponent()) \
             .add_component(('add_to_group', _('add contacts to')))
-        context['groups'] = ContactGroup.objects.extra(where=['perm_c_can_change_members_cg(%s, contact_group.id)' % self.request.user.id]).order_by('-date', 'name')
         context.update(kwargs)
         return super(GroupAddManyView, self).get_context_data(**context)
 
@@ -680,7 +681,7 @@ class ContactDetailView(InGroupAcl, TemplateView):
     def check_perm_groupuser(self, group, user):
         cid = int(self.kwargs['cid'])
         if self.contactgroup:
-            if not perms.c_can_see_members_cg(user.id, group.id):
+            if not self.contactgroup.userperms & perms.SEE_MEMBERS:
                 raise PermissionDenied
         else:  # No group specified
             if cid == user.id:
@@ -698,7 +699,7 @@ class ContactDetailView(InGroupAcl, TemplateView):
         contact = get_object_or_404(Contact, pk=cid)
 
         rows = []
-        for cf in contact.get_all_visible_fields(self.request.user.id):
+        for cf in contact.get_contactfields(self.request.user.id):
             try:
                 cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=cf.id)
                 rows.append((cf.name, mark_safe(cfv.as_html())))
@@ -743,7 +744,7 @@ class ContactVcardView(InGroupAcl, View):
     def check_perm_groupuser(self, group, user):
         cid = int(self.kwargs['cid'])
         if self.contactgroup:
-            if not perms.c_can_see_members_cg(user.id, group.id):
+            if not self.contactgroup.userperms & perms.SEE_MEMBERS:
                 raise PermissionDenied
         else:  # No group specified
             if cid == user.id:
@@ -786,12 +787,12 @@ class ContactEditForm(forms.ModelForm):
         if not perms.c_can_write_fields_cg(user.id, GROUP_EVERYBODY):
             del self.fields['name'] # = forms.CharField(label=_('Name'))
         if instance:
-            cfields = instance.get_all_writable_fields(user.id)
+            cfields = instance.get_contactfields(user.id, writable=True)
             # Here we have all the writable fields, including the one from
             # other groups that the user can see
         elif contactgroup:
             contactgroupids = [g.id for g in contactgroup.get_self_and_supergroups()]
-            cfields = ContactField.objects.filter(contact_group_id__in=contactgroupids).extra(where=['perm_c_can_write_fields_cg(%s, contact_field.contact_group_id)' % user.id]).order_by('sort_weight')
+            cfields = ContactField.objects.filter(contact_group_id__in=contactgroupids).with_user_perms(user.id, writable=True)
             # Here we have the fields from contact_group and all its super
             # groups, IF user can write to them
         else: # FIXME (new contact without any contactgroup)
@@ -880,7 +881,7 @@ class ContactEditMixin(ModelFormMixin):
 
     def check_perm_groupuser(self, group, user):
         if group:
-            if not perms.c_can_change_members_cg(user.id, group.id):
+            if not group.userperms & perms.CHANGE_MEMBERS:
                 raise PermissionDenied
         else:
             cid = int(self.kwargs['cid'])  # ok to crash if create & no group
@@ -1045,6 +1046,7 @@ class HookPasswordView(View):
         return super(HookPasswordView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request):
+        # TODO check password strength
         newpassword_plain = request.POST['password']
         request.user.set_password(newpassword_plain, request=request)
         return HttpResponse('OK')
@@ -1097,7 +1099,7 @@ class PassLetterView(InGroupAcl, DetailView):
         messages.add_message(request, messages.SUCCESS, _('Password has been changed sucessfully!'))
 
         fields = {}
-        for cf in contact.get_all_visible_fields(request.user.id):
+        for cf in contact.get_contactfields(request.user.id):
             try:
                 cfv = ContactFieldValue.objects.get(contact_id=contact.id, contact_field_id=cf.id)
             except ContactFieldValue.DoesNotExist:
@@ -1320,8 +1322,9 @@ class DefaultGroupForm(forms.ModelForm):
         fields = []
     def __init__(self, *args, **kwargs):
         contact = kwargs.get('instance')
+        user = contact # FIXME Problem when changing the default group for another user
         super(DefaultGroupForm, self).__init__(*args, **kwargs)
-        available_groups = contact.get_allgroups_member().filter(date__isnull=True)
+        available_groups = ContactGroup.objects.with_user_perms(user.id, wanted_flags=perms.SEE_CG).with_member(contact.id).filter(date__isnull=True)
         choices = [('', _('Create new personnal group'))] + [(cg.id, cg.name) for cg in available_groups
             if not cg.date and perms.c_can_see_cg(contact.id, cg.id)]
         default_group = contact.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)

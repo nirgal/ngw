@@ -23,6 +23,7 @@ from ngw.core.models import (
     GROUP_ADMIN, GROUP_USER_NGW,
     ContactGroup, Config, Log,
     LOG_ACTION_DEL)
+from ngw.core import perms
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 
@@ -74,17 +75,18 @@ class InGroupAcl(ContextMixin):
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
     def dispatch(self, request, *args, **kwargs):
+        user = request.user
         group_id = self.kwargs.get('gid', None)
         if group_id:
             try:
                 group_id = int(group_id)
-            except (ValueError, TypeError):
+                group = ContactGroup.objects.with_user_perms(user.id).get(pk=group_id)
+            except (ValueError, TypeError, ContactGroup.DoesNotExist):
                 raise Http404
-            group = get_object_or_404(ContactGroup, pk=group_id)
         else:
             group = None
         self.contactgroup = group
-        self.check_perm_groupuser(group, request.user)
+        self.check_perm_groupuser(group, user)
         return super(InGroupAcl, self).dispatch(request, *args, **kwargs)
 
     def check_perm_groupuser(self, group, user):
@@ -92,13 +94,16 @@ class InGroupAcl(ContextMixin):
         That function give the opportunity to specialise class to add extra
         permission checks.
         '''
+        group = self.contactgroup
+        if group and not group.userperms & perms.SEE_CG:
+            raise PermissionDenied
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
         context = {}
         context['cg'] = cg
         if cg:
-            context['cg_perms'] = cg.get_contact_perms(self.request.user.id)
+            context['cg_perms'] = perms.int_to_flags(cg.userperms)
         context.update(kwargs)
         return super(InGroupAcl, self).get_context_data(**context)
 

@@ -42,7 +42,7 @@
 
 {% block presubmitbar %}
     {{ block.super }}
-    {% ifnotequal cg.id 1 %}
+    {% ifnotequal cg.id 1 %}{# FIXME #}
     {% if "g" in display %}
         {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
             {% if forloop.first %}
@@ -51,9 +51,9 @@
                     {% trans "People in sub-groups automatically are members / invited." %}
                     <br>
             {% endif %}
-                    ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.name_with_date }}</a>
+                    ‣ {{ sg|group_with_link }}
                     {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
-                    {% if forloop.first %}( {% trans "including" %} {%else%}, {% endif %}
+                    {% if forloop.first %}( {% trans "including" %} {% else %}, {% endif %}
                     {{ ssg|group_with_link }}
                     {% if forloop.last %}){% endif %}
                     {% endfor %}
@@ -68,12 +68,12 @@
     {% if "a" in display %}
     {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
         {% if forloop.first %}
-            <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg.name_with_date }}</h1>
-            <div class=box>
+        <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg.name_with_date }}</h1>
+        <div class=box>
         {% endif %}
-                ‣ <a href="{{ sg.get_absolute_url }}">{{ sg.name_with_date }}</a><br>
+        ‣ {{ sg|group_with_link }}<br>
         {% if forloop.last %}
-            </div>
+        </div>
         {% endif %}
     {% endfor %}
     {% endif %}
@@ -95,8 +95,7 @@
 <div class="submit-row" id=submitbar>
     <a class="button default" href="javascript:show_column_selection();"> {% trans "Select displayed columns" %}</a>
     <a class=button href="{{cg.get_absolute_url}}edit">{% trans "Edit" %}</a>
-    {% if cg.date %}
-    {% else %}
+    {% if not cg.date %}
     <a class=button href="add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Create a new contact in that group" %}</a>
     {% endif %}
 </div>

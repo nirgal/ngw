@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n staticfiles %}
+{% load i18n staticfiles ngwtags %}
 
 {% block extrahead %}{{ block.super }}
 <style>
@@ -72,7 +72,7 @@
     {% if forloop.counter0 %}<br>
     {% endif %}
     • <a href="{{event.get_absolute_url}}" title="{{event.description}}">{{ event }}</a>
-      {% if event.can_see_messages %}
+      {% if 'x' in event.userperms|perms_int_to_flags %}
          {% with nbmsg=event.count_unread_messages %}
          {% if nbmsg %}<span style='color:red;'>{{nbmsg}}✉</span>{% endif %}
          {% endwith %}
