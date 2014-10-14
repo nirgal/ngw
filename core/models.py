@@ -26,7 +26,6 @@ from ngw.core.nav import Navbar
 from ngw.core import perms
 #from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
 from ngw.extensions import hooks
-from django.utils.crypto import get_random_string
 
 GROUP_EVERYBODY = 1 # Group "Contact"
 GROUP_USER = 2      # With login & password (does NOT mean it can access NGW, see bellow)
@@ -606,7 +605,7 @@ class Contact(NgwModel):
 # ContactGroup
 #######################################################################
 
-class ContactGroupQuerySet(models.QuerySet):
+class ContactGroupQuerySet(models.query.QuerySet):
     def with_user_perms(self, user_id, wanted_flags=None, add_column=True):
         '''
         Returns a ContactGroup QuerySet with a extra colum 'userperms'
@@ -1085,7 +1084,7 @@ def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
     return cls
 
 
-class ContactFieldQuerySet(models.QuerySet):
+class ContactFieldQuerySet(models.query.QuerySet):
     def with_user_perms(self, user_id, writable=False):
         # Note that 1.7 will support *fields in select_related
         if writable:
