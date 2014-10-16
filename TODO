@@ -81,3 +81,5 @@ TBD
 Change MailmanSyncForm into a ModelForm (?)
 
 Change "default group" into "default permissions"
+
+Check new migrations framework
