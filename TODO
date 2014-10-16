@@ -51,7 +51,7 @@ Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
 
-Cache ContactField.choices in contact_details
+**Cache ContactField.choices in contact_details
 
 
 ====================================================================================================

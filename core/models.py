@@ -1107,6 +1107,17 @@ class ContactFieldManager(models.Manager):
         qs = self.get_queryset()
         return qs.with_user_perms(*args, **kwargs)
 
+    def renumber(self):
+        """
+        Update all fields sort_weight so that each weight is previous + 10
+        """
+        new_weigth = 0
+        for cf in self.order_by('sort_weight'):
+            new_weigth += 10
+            cf.sort_weight = new_weigth
+            cf.save()
+
+
 @python_2_unicode_compatible
 class ContactField(NgwModel):
     # This is a polymorphic class:
@@ -1189,17 +1200,6 @@ class ContactField(NgwModel):
     def get_filter_by_name(self, name):
         return [f for f in self.get_filters() if f.__class__.internal_name == name][0]
 
-    @staticmethod
-    def renumber():
-        """
-        Update all fields sort_weight so that each weight is previous + 10
-        """
-        new_weigth = 0
-        for cf in ContactField.objects.order_by('sort_weight'):
-            new_weigth += 10
-            cf.sort_weight = new_weigth
-            cf.save()
-
 def contact_field_initialized_by_manager(sender, **kwargs):
     field = kwargs['instance']
     assert field.type is not None, 'Polymorphic abstract class must be created with type defined'
@@ -1209,7 +1209,7 @@ models.signals.post_init.connect(contact_field_initialized_by_manager, ContactFi
 def contact_field_saved(**kwargs):
     field = kwargs['instance']
     if field.sort_weight % 10: # To avoid recursion
-        ContactField.renumber()
+        ContactField.objects.renumber()
 models.signals.post_save.connect(contact_field_saved, ContactField)
 
 
