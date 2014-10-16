@@ -10,7 +10,7 @@ import logging
 import json
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.utils.encoding import force_text, smart_text, force_str, python_2_unicode_compatible
+from django.utils.encoding import force_text, force_str, python_2_unicode_compatible
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy, pgettext_lazy
 from django.db import models, connection
@@ -94,7 +94,7 @@ class NgwModel(models.Model):
         return cls.get_class_urlfragment(), cls.get_class_verbose_name_plural()
 
     def get_navcomponent(self):
-        return self.get_urlfragment(), smart_text(self)
+        return self.get_urlfragment(), force_text(self)
 
     @classmethod
     def get_class_absolute_url(cls):
@@ -405,7 +405,7 @@ class Contact(NgwModel):
             cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
         except ContactFieldValue.DoesNotExist:
             return ''
-        return smart_text(cfv)
+        return force_text(cfv)
 
     def set_fieldvalue(self, request, field, newvalue):
         """
@@ -430,9 +430,9 @@ class Contact(NgwModel):
                     log.target_repr = 'Contact ' + self.name
                     log.property = force_text(field_id)
                     log.property_repr = field.name
-                    log.change = 'change from ' + smart_text(cfv)
+                    log.change = 'change from ' + force_text(cfv)
                     cfv.value = newvalue
-                    log.change += ' to ' + smart_text(cfv)
+                    log.change += ' to ' + force_text(cfv)
                     cfv.save()
                     log.save()
                     hooks.contact_field_changed(request, field_id, self)
@@ -441,9 +441,9 @@ class Contact(NgwModel):
                 log.action = LOG_ACTION_DEL
                 log.target = 'Contact ' + force_text(self.id)
                 log.target_repr = 'Contact ' + self.name
-                log.property = smart_text(field_id)
+                log.property = force_text(field_id)
                 log.property_repr = field.name
-                log.change = 'old value was ' + smart_text(cfv)
+                log.change = 'old value was ' + force_text(cfv)
                 cfv.delete()
                 log.save()
                 hooks.contact_field_changed(request, field_id, self)
@@ -453,14 +453,14 @@ class Contact(NgwModel):
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'Contact ' + force_text(self.id)
                 log.target_repr = 'Contact ' + self.name
-                log.property = smart_text(field_id)
+                log.property = force_text(field_id)
                 log.property_repr = field.name
                 cfv = ContactFieldValue()
                 cfv.contact = self
                 cfv.contact_field = field
                 cfv.value = newvalue
                 cfv.save()
-                log.change = 'new value is ' + smart_text(cfv)
+                log.change = 'new value is ' + force_text(cfv)
                 log.save()
                 hooks.contact_field_changed(request, field_id, self)
 
@@ -1171,7 +1171,7 @@ class ContactField(NgwModel):
         raise NotImplementedError()
 
     def formfield_value_to_db_value(self, value):
-        return smart_text(value)
+        return force_text(value)
 
     def db_value_to_formfield_value(self, value):
         return value
