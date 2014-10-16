@@ -200,15 +200,11 @@ class ChoiceContactField(ContactField):
     def type_as_html(self):
         return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
     def format_value_text(self, value):
-        chg = self.choice_group
-        if chg == None:
-            return 'Error'
+        choices = self.cached_choices()
         try:
-            c = Choice.objects.get(choice_group_id=chg.id, key=value)
-        except Choice.DoesNotExist:
+            return choices[value]
+        except KeyError:
             return 'Error'
-        else:
-            return c.value
     def get_form_fields(self):
         return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[('', 'Unknown')]+self.choice_group.ordered_choices))
     @classmethod
@@ -225,21 +221,17 @@ class MultipleChoiceContactField(ContactField):
     def type_as_html(self):
         return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
     def format_value_text(self, value):
-        chg = self.choice_group
-        if chg == None:
-            return 'Error'
+        choices = self.cached_choices()
         txt_choice_list = []
-        for cid in value.split(','):
-            if cid == '':
+        for key in value.split(','):
+            if key == '':
                 txt_choice_list.append("default") # this should never occur
                 continue
             try:
-                c = Choice.objects.get(choice_group_id=chg.id, key=cid)
-            except Choice.DoesNotExist:
-                print('Choice', cid, 'in', chg, 'was lost.')
-                txt_choice_list.append("error")
-            else:
-                txt_choice_list.append(c.value)
+                value = choices[key]
+            except KeyError:
+                value = 'Error'
+            txt_choice_list.append(value)
         return ', '.join(txt_choice_list)
     def get_form_fields(self):
         return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=OnelineCheckboxSelectMultiple())

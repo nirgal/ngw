@@ -7,6 +7,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 import os
 from datetime import datetime, timedelta
 import logging
+from collections import OrderedDict
 import json
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -1199,6 +1200,19 @@ class ContactField(NgwModel):
 
     def get_filter_by_name(self, name):
         return [f for f in self.get_filters() if f.__class__.internal_name == name][0]
+
+    def cached_choices(self):
+        try:
+            return self._cached_choices
+        except AttributeError:
+            self._cached_choices = OrderedDict()
+            choice_group = self.choice_group
+            if not choice_group:
+                print("Error: %s doesn't have choices")
+            choices = self.choice_group.choices.all()
+            for choice in choices:
+                self._cached_choices[choice.key] = choice.value
+            return self._cached_choices
 
 def contact_field_initialized_by_manager(sender, **kwargs):
     field = kwargs['instance']
