@@ -225,10 +225,8 @@ class MultipleChoiceContactField(ContactField):
     def type_as_html(self):
         return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
     def format_value_text(self, value):
-        try:
-            chg = ChoiceGroup.objects.get(pk=self.choice_group_id)
-        except ChoiceGroup.DoesNotExist:
-            print("ChoiceGroup %s was lost!" % self.choice_group_id)
+        chg = self.choice_group
+        if chg == None:
             return 'Error'
         txt_choice_list = []
         for cid in value.split(','):
