@@ -319,7 +319,7 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'title': _('%(contactname)s in group %(groupname)s') % {
             'contactname':contact_with_extra_fields.name,
             'groupname': contact_group.name_with_date()},
-        }, RequestContext(request))
+        })
 
 
 def membership_extended_widget_factory(request, contact_group):
