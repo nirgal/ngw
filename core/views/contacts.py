@@ -497,7 +497,7 @@ class BaseContactListView(NgwListView):
                 result += _quote_csv(col_html)
             result += '\n'
         return HttpResponse(result, content_type='text/csv; charset=utf-8')
-    action_csv_export.short_description = _("CSV format export (Spreadsheet format)")
+    action_csv_export.short_description = ugettext_lazy("CSV format export (Spreadsheet format)")
 
 
     def action_bcc(self, request, queryset):
