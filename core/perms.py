@@ -45,6 +45,7 @@ WRITE_MSGS     = 65536 # 'X'
 
 FLAGTOINT = OrderedDict()  # dict for translation 1 letter -> int
 FLAGTOTEXT = OrderedDict()  # dict for translation 1 letter -> txt
+INTTOTEXT = OrderedDict()  # dict for translation int -> text
 FLAGDEPENDS = OrderedDict()  # flag dependencies
 FLAGCONFLICTS = OrderedDict()
 FLAGGROUPLABEL = OrderedDict()  # dict for translation 1 letter -> group label
@@ -53,6 +54,7 @@ FLAGGROUPHELP = OrderedDict()  # dict for translation 1 letter -> group label
 def _register_flag(intval, code, requires, conflicts, text, group_label, group_help):
     FLAGTOINT[code] = intval
     FLAGTOTEXT[code] = text
+    INTTOTEXT[intval] = text
     FLAGGROUPLABEL[code] = group_label
     FLAGGROUPHELP[code] = group_help
     FLAGDEPENDS[code] = requires

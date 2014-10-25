@@ -30,6 +30,7 @@ from ngw.core.nav import Navbar
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView
 from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
+from ngw.core.widgets import OnelineCheckboxSelectMultiple
 
 
 #######################################################################
@@ -593,46 +594,121 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
 #
 #######################################################################
 
+class FlagsWidget(forms.widgets.MultiWidget):
+    def __init__(self, attrs=None):
+        print('attrs:', attrs)
+        widgets = []
+        widgets.append(OnelineCheckboxSelectMultiple(choices=(('m', _('Member')), ('i', _('Invited')), ('d', _('Declined')))))
+        widgets.append(OnelineCheckboxSelectMultiple(choices=(('o', _('Operator')), ('v', _('Viewer')))))
+        for flags, longname in six.iteritems(perms.FLAGTOTEXT):
+            if flags in 'midov':
+                continue
+            widgets.append(forms.widgets.CheckboxInput())
+        super(FlagsWidget, self).__init__(widgets, attrs)
+
+    def decompress(self, value):
+        print("decompressing", value)
+
+        if value & perms.MEMBER:
+            result = ['m']
+        elif  value & perms.INVITED:
+            result = ['i']
+        elif  value & perms.DECLINED:
+            result = ['d']
+        else:
+            result = [None]
+
+        superuser = []
+        if value & perms.OPERATOR:
+            superuser.append('o')
+        if value & perms.VIEWER:
+            superuser.append('v')
+        result.append(superuser)
+
+        for flags, intval in six.iteritems(perms.FLAGTOINT):
+            if flags in 'midov':
+                continue
+            result.append(value is not None and bool(intval & value))
+        print('decompressed:', result)
+        return result
+    
+
+class FlagsField(forms.MultiValueField):
+    widget = FlagsWidget
+    def __init__(self, *args, **kwargs):
+        localize = kwargs.get('localize', False)
+        fields = []
+        fields.append(forms.ChoiceField(choices=(('m', _('Member')), ('i', _('Invited')), ('d', _('Declined')))))
+        for intval, longname in six.iteritems(perms.INTTOTEXT):
+            if not intval & perms.ADMIN_ALL:
+                continue
+            fields.append(forms.BooleanField(label=longname, localize=localize))
+        super(FlagsField, self).__init__(fields, *args, **kwargs)
+
+    def compress(self, data_list):
+        print("compressing", data_list)
+        result = 0
+        i = 0
+        for flag, intval in six.iteritems(perms.FLAGTOINT):
+            if data_list[i]:
+                result |= intval
+            i += 1
+        return result
 
 class ContactInGroupForm(forms.ModelForm):
     class Meta:
         model = ContactInGroup
         fields = ['note']
-    def __init__(self, *args, **kargs):
-        instance = kargs.get('instance', None)
-        self.user = kargs.pop('user')
-        self.contact = kargs.pop('contact')
-        self.group = kargs.pop('group')
-        super(ContactInGroupForm, self).__init__(*args, **kargs)
+        #fields = ['flags', 'note']
+        #widgets = {
+        #    'flags': FlagsWidget(),
+        #}
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance', None)
+        self.user = kwargs.pop('user')
+        self.contact = kwargs.pop('contact')
+        self.group = kwargs.pop('group')
+        super(ContactInGroupForm, self).__init__(*args, **kwargs)
 
         note_key, note_value = self.fields.popitem()  # tmp remove
 
-        for flag, longname in six.iteritems(perms.FLAGTOTEXT):
-            field_name = 'membership_' + flag
+        #for flag, longname in six.iteritems(perms.FLAGTOTEXT):
+        #    field_name = 'membership_' + flag
 
-            oncheck_js = ''.join([
-                'this.form.membership_%s.checked=true;' % code
-                for code in perms.FLAGDEPENDS[flag]])
-            oncheck_js += ''.join([
-                'this.form.membership_%s.checked=false;' % code
-                for code in perms.FLAGCONFLICTS[flag]])
+        #    oncheck_js = ''.join([
+        #        'this.form.membership_%s.checked=true;' % code
+        #        for code in perms.FLAGDEPENDS[flag]])
+        #    oncheck_js += ''.join([
+        #        'this.form.membership_%s.checked=false;' % code
+        #        for code in perms.FLAGCONFLICTS[flag]])
 
-            onuncheck_js = ''
-            for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
-                if flag in depflag1:
-                    onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
+        #    onuncheck_js = ''
+        #    for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
+        #        if flag in depflag1:
+        #            onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
-            if instance:
-                initial = bool(perms.FLAGTOINT[flag] & instance.flags)
-            else:
-                initial = False
+        #    if instance:
+        #        initial = bool(perms.FLAGTOINT[flag] & instance.flags)
+        #    else:
+        #        initial = False
 
-            self.fields[field_name] = forms.BooleanField(
-                label=longname, required=False,
-                widget=forms.widgets.CheckboxInput(attrs={
-                    'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
-                }),
-                initial=initial)
+        #    self.fields[field_name] = forms.BooleanField(
+        #        label=longname, required=False,
+        #        widget=forms.widgets.CheckboxInput(attrs={
+        #            'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
+        #        }),
+        #        initial=initial)
+
+        print('kwargs', kwargs)
+        initial = kwargs.get('initial', {})
+        if 'flags' in initial:
+            flags_initial = initial['flags']
+        elif instance:
+            flags_initial = instance.flags
+        else:
+            flags_initial = 0
+        
+        self.fields['flags'] = FlagsField(label=_('Membership'), initial=flags_initial)
         self.fields[note_key] = note_value  # restore
 
     def clean(self):
