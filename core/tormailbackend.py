@@ -62,7 +62,7 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
     def _get_socket(self, host, port, timeout):
         
         s = socks.socksocket()
-        s.setproxy(socks.PROXY_TYPE_SOCKS5, '127.0.0.1', 9050, True)
+        s.setproxy(socks.PROXY_TYPE_SOCKS5, '::1', 9050, True)
 
         s.connect((host, port))
         if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
@@ -129,9 +129,9 @@ class TorEmailBackend(EmailBackend):
         try:
             assert self.port == 465, 'Sorry we only support smtps connections right now'
 
-            if b'.onion' in self.host:
+            if '.onion' in self.host:
                 self.connection = SMTP_SSL_TOR(self.host, self.port,
-                    local_hostname='[::1]')
+                    local_hostname='127.0.0.1')
             else:
                 # If local_hostname is not specified, socket.getfqdn() gets used.
                 # For performance, we use the cached FQDN for local_hostname.
