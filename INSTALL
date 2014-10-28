@@ -40,6 +40,26 @@ cd django-session-security-2.2.0/session_security
 django-admin compilemessages
 cd -
 
+Debian repository setup (optional)
+==================================
+Using stable (wheezy):
+
+Make sure you defined wich default Debian version you want, so that backports are not installed automatically:
+#echo 'APT::Default-Release "stable";' > /etc/apt/apt.conf.d/10_defaultrelease
+
+Here's a suggested /etc/apt/sources.list:
+---8<---------------------------
+deb     http://ftp.fr.debian.org/debian/     wheezy main contrib non-free
+deb-src http://ftp.fr.debian.org/debian/     wheezy main contrib non-free
+deb     http://security.debian.org/ wheezy/updates  main contrib non-free
+deb-src http://security.debian.org/ wheezy/updates  main contrib non-free
+deb http://ftp.debian.org/debian wheezy-backports main contrib non-free
+deb-src http://ftp.debian.org/debian wheezy-backports main contrib non-free
+deb http://nirgal.com/debian wheezy main
+deb-src http://nirgal.com/debian wheezy main
+---8<---------------------------
+
+If you want automatic upgrades from nirgal, you'll need to install package nirgal-keyring.
 
 Postgres setup
 ==============
