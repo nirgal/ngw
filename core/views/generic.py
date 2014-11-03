@@ -280,7 +280,7 @@ class NgwListView(ListView):
             yield result
 
     def result_headers(self, row):
-        from django.contrib.admin.util import label_for_field
+        from django.contrib.admin.utils import label_for_field
         for field_name in self.list_display:
             text, attr = label_for_field(field_name, type(row), self, True)
             if attr:
