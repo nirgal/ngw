@@ -35,8 +35,6 @@ With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet:
 
 Add duration to events (end date)
 
-Change USE_TZ to True
-
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
 
@@ -48,12 +46,12 @@ Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
 
-See https://docs.djangoproject.com/en/1.7/releases/1.7/#custom-lookups
-
 
 ====================================================================================================
 UNSORTED
 ====================================================================================================
+
+See https://docs.djangoproject.com/en/1.7/releases/1.7/#custom-lookups
 
 Make sure all form.save() support the commit parameter
 
