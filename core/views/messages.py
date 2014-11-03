@@ -7,6 +7,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 
 import json
 from datetime import date, timedelta
+from importlib import import_module
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect, Http404
@@ -14,7 +15,6 @@ from django.utils import translation
 from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
 from django.utils.timezone import now
-from django.utils.importlib import import_module
 from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, FormView
 from django import forms

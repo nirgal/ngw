@@ -6,7 +6,6 @@ import logging
 import json
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import NoArgsCommand
-from django.utils.importlib import import_module
 from ngw.core.gpg import loadkeyring
 
 class Command(NoArgsCommand):
