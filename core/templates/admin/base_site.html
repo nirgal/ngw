@@ -1,6 +1,8 @@
 {% extends "admin/base.html" %}
 {% load i18n staticfiles ngwtags %}
 
+{% block title %}{{ title }}{% endblock %}
+
 {% block extrastyle %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
@@ -81,8 +83,6 @@
 {% endif %}
 {% block submenu %}{% endblock %}
 {% endblock %}
-
-{% block title %}{{ title }}{% endblock %}
 
 {% block footer %}
 {% if user.is_authenticated %}
