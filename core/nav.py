@@ -4,7 +4,6 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 
 from django.utils import html
 from django.utils.translation import ugettext as _
-from django.utils import six
 
 # TODO: We should realy make all the calls to Navbar from url.py
 
@@ -21,6 +20,6 @@ class Navbar(object):
         if isinstance(arg, tuple):
             self.components.append(arg)
         else:
-            assert isinstance(arg, six.text_type)
+            assert isinstance(arg, str)
             self.components.append((arg, arg))
         return self

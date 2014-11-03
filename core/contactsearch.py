@@ -2,8 +2,6 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from django.utils import six
-from django.utils.six import next
 from django.core.exceptions import PermissionDenied
 from django.utils.encoding import force_text, force_str
 from ngw.core.models import (
@@ -13,9 +11,9 @@ from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
 from ngw.core import perms
 
 
-class LexicalError(Exception if six.PY3 else StandardError):
+class LexicalError(Exception):
     pass
-class FilterSyntaxError(Exception if six.PY3 else StandardError):
+class FilterSyntaxError(Exception):
     pass
 
 class FilterLexer(object):

@@ -5,7 +5,6 @@ ajax views for building contact filter
 
 from __future__ import division, print_function, unicode_literals
 
-from django.utils import six
 from django.utils.translation import ugettext as _
 from django.utils.encoding import force_text
 from django.http import Http404
@@ -122,7 +121,7 @@ class ContactSearchFilterParamsView(NgwUserAcl, View):
         parameter_types = filter.get_param_types()
         jsparams = []
         for param_type in parameter_types:
-            if param_type == six.text_type:
+            if param_type == str:
                 jsparams.append('string')
             elif param_type == int:
                 jsparams.append('number')

@@ -85,7 +85,6 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
         if not validate_ssl_hostname(cert, expected_sslhostname):
             raise smtplib.SMTPException('Ssl certificate is valid but does not match %s.' % expected_sslhostname)
 
-        self.file = smtplib.SSLFakeFile(new_socket)
         return new_socket
 
 

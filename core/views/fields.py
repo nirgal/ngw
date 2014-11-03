@@ -9,7 +9,6 @@ from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
-from django.utils import six
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django import forms
@@ -98,7 +97,7 @@ class FieldEditForm(forms.ModelForm):
             'default': forms.widgets.Input,
         }
 
-    class IncompatibleData(Exception if six.PY3 else StandardError):
+    class IncompatibleData(Exception):
         def __init__(self, deletion_details, *args, **kwargs):
             super(FieldEditForm.IncompatibleData, self).__init__(*args, **kwargs)
             self.deletion_details = deletion_details
@@ -119,7 +118,7 @@ class FieldEditForm(forms.ModelForm):
         self.fields['contact_group'].widget.choices = [(g.id, g.name) for g in contacttypes]
 
         self.fields['type'].widget.choices = [(cls.db_type_id, cls.human_type_id)
-            for cls in six.itervalues(ContactField.types_classes)] # TODO: Sort
+            for cls in ContactField.types_classes.values()] # TODO: Sort
         js_test_type_has_choice = ' || '.join(["this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
             if cls.has_choice])

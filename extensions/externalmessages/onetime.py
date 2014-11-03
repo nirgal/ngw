@@ -8,9 +8,10 @@ import json
 import logging
 import smtplib
 import traceback
+import urllib
+import http
 from django.conf import settings
 from django.forms import ValidationError
-from django.utils.six.moves import urllib, http_client
 from django.utils.translation import ugettext as _, activate as language_activate
 from django.utils.timezone import now
 from django.utils.encoding import force_str
@@ -54,7 +55,7 @@ def send_to_onetime(msg):
     if 'otid' in sync_info:
         return # Already sent
 
-    ot_conn = http_client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
+    ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
     logger.info('Storing message for %s.', msg.contact)
 
@@ -168,7 +169,7 @@ def read_answers(msg):
         return
     # We have to open a new connection each time
     # since we can't handle keep-alive yet
-    ot_conn = http_client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
+    ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
     ot_conn.request('POST', '/'+sync_info['otid']+'/answers', urllib.parse.urlencode({
         'password': sync_info['answer_password']

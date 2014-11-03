@@ -8,7 +8,6 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.six import iteritems
 from django.utils.safestring import mark_safe
 from django import forms
 from django.views.generic import UpdateView, CreateView
@@ -182,7 +181,7 @@ class ChoiceGroupForm(forms.ModelForm):
             else: # that key has be deleted
                 #print('DELETING', k)
                 c.delete()
-        for k, v in iteritems(choices):
+        for k, v in choices.items():
             #print('ADDING', k)
             choicegroup.choices.create(key=k, value=v)
 

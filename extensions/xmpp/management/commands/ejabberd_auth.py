@@ -8,7 +8,6 @@ import struct
 from django.core.management.base import NoArgsCommand
 from django.conf import settings
 from django.utils.encoding import force_text
-from django.utils import six
 from django.contrib.auth.hashers import check_password, make_password
 from ngw.core.models import (ContactFieldValue,
     FIELD_LOGIN, FIELD_PASSWORD)
@@ -134,9 +133,9 @@ class Command(NoArgsCommand):
         hdlr.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
         logger.addHandler(hdlr)
 
-        if six.PY3:
-            sys.stdin = open(0, 'rb') # reopen stdin in binary mode
-            sys.stdout = open(1, 'wb') # reopen stdout in binary mode
+        # python3:
+        sys.stdin = open(0, 'rb') # reopen stdin in binary mode
+        sys.stdout = open(1, 'wb') # reopen stdout in binary mode
 
         while True:
             process_line()

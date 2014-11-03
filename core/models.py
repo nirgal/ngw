@@ -18,7 +18,6 @@ from django.db import models, connection
 from django.http import Http404
 from django.utils import html
 from django.utils import formats
-from django.utils import six
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib import messages
@@ -391,7 +390,7 @@ class Contact(NgwModel):
     def get_fieldvalues_by_type(self, type_):
         if isinstance(type_, ContactField):
             type_ = type_.db_type_id
-        assert isinstance(type_, six.text_type)
+        assert isinstance(type_, str)
         fields = ContactField.objects.filter(type=type_).order_by('sort_weight')
         # TODO: check authority
         result = []
@@ -951,7 +950,7 @@ class ContactGroup(NgwModel):
                     newflags &= ~perms.FLAGTOINT[conflict]
             else:  # operation == '-'
                 newflags &= ~perms.FLAGTOINT[letter]
-                for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
+                for flag1, depflag1 in perms.FLAGDEPENDS.items():
                     if letter in depflag1:
                         newflags &= ~perms.FLAGTOINT[flag1]
 
@@ -991,7 +990,7 @@ class ContactGroup(NgwModel):
         else:
             result = LOG_ACTION_CHANGE
 
-        for flag, intflag in six.iteritems(perms.FLAGTOINT):
+        for flag, intflag in perms.FLAGTOINT.items():
             if cig.flags & intflag and not newflags & intflag:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
@@ -1222,10 +1221,10 @@ class FilterHelper(object):
         # integers are expanded inline
         params_where = {}
         params_sql = {}
-        for k, v in six.iteritems(kargs):
+        for k, v in kargs.items():
             #print(k, "=", v)
             auto_param_name = 'autoparam_' + force_text(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
-            if isinstance(v, six.text_type):
+            if isinstance(v, 'str'):
                 params_where[k] = '%(' + auto_param_name + k + ')s'
                 params_sql[auto_param_name+k] = v
             elif isinstance(v, int):
@@ -1272,7 +1271,7 @@ class NameFilterStartsWith(Filter):
             'value': value})
 
     def get_param_types(self):
-        return (six.text_type,)
+        return (str,)
 NameFilterStartsWith.internal_name = 'startswith'
 NameFilterStartsWith.human_name = ugettext_lazy('has a word starting with')
 
@@ -1293,7 +1292,7 @@ class FieldFilterOp1(FieldFilter):
     """ Helper abstract class for field filters that takes 1 parameter """
     def to_html(self, value):
         field = ContactField.objects.get(pk=self.field_id)
-        if isinstance(value, six.text_type):
+        if isinstance(value, str):
             formt = '<b>%(fieldname)s</b> %(filtername)s "%(value)s"'
         else:
             formt = '<b>%(fieldname)s</b> %(filtername)s %(value)s'
@@ -1308,7 +1307,7 @@ class FieldFilterStartsWith(FieldFilterOp1):
         value = decoratedstr.decorated_match(value)
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value1)s OR (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ~* %(value2)s', {'field_id':self.field_id, 'value1': '^'+value, 'value2': ' '+value}
     def get_param_types(self):
-        return (six.text_type,)
+        return (str,)
 FieldFilterStartsWith.internal_name = 'startswith'
 FieldFilterStartsWith.human_name = ugettext_lazy('has a word starting with')
 
@@ -1317,7 +1316,7 @@ class FieldFilterEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) = %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
-        return (six.text_type,)
+        return (str,)
 FieldFilterEQ.internal_name = 'eq'
 FieldFilterEQ.human_name = '='
 
@@ -1326,7 +1325,7 @@ class FieldFilterNEQ(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND contact_field_value.value = %(value)s)', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
-        return (six.text_type,)
+        return (str,)
 FieldFilterNEQ.internal_name = 'neq'
 FieldFilterNEQ.human_name = '≠'
 
@@ -1335,7 +1334,7 @@ class FieldFilterLE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) <= %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
-        return (six.text_type,)
+        return (str)
 FieldFilterLE.internal_name = 'le'
 FieldFilterLE.human_name = '≤'
 
@@ -1344,7 +1343,7 @@ class FieldFilterGE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) >= %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
-        return (six.text_type,)
+        return (str,)
 FieldFilterGE.internal_name = 'ge'
 FieldFilterGE.human_name = '≥'
 
@@ -1353,7 +1352,7 @@ class FieldFilterLIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) LIKE %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
-        return (six.text_type,)
+        return (str,)
 FieldFilterLIKE.internal_name = 'like'
 FieldFilterLIKE.human_name = 'SQL LIKE'
 
@@ -1362,7 +1361,7 @@ class FieldFilterILIKE(FieldFilterOp1):
     def get_sql_where_params(self, value):
         return '(SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i ) ILIKE %(value)s', {'field_id':self.field_id, 'value':value}
     def get_param_types(self):
-        return (six.text_type,)
+        return (str,)
 FieldFilterILIKE.internal_name = 'ilike'
 FieldFilterILIKE.human_name = 'SQL ILIKE'
 
@@ -1658,7 +1657,7 @@ class AllEventsNotReactedSince(Filter):
             'filtername': html.escape(self.__class__.human_name),
             'value': html.escape(value)})
     def get_param_types(self):
-        return (six.text_type,) # TODO: Accept date parameters
+        return (str,) # TODO: Accept date parameters
 AllEventsNotReactedSince.internal_name = 'notreactedsince'
 AllEventsNotReactedSince.human_name = ugettext_lazy('has not reacted to any invitation since')
 

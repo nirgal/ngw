@@ -13,7 +13,6 @@ from django.utils import html
 from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
 from django.utils import formats
-from django.utils import six
 from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
@@ -607,7 +606,7 @@ class ContactInGroupForm(forms.ModelForm):
 
         note_key, note_value = self.fields.popitem()  # tmp remove
 
-        for flag, longname in six.iteritems(perms.FLAGTOTEXT):
+        for flag, longname in perms.FLAGTOTEXT.items():
             field_name = 'membership_' + flag
 
             oncheck_js = ''.join([
@@ -618,7 +617,7 @@ class ContactInGroupForm(forms.ModelForm):
                 for code in perms.FLAGCONFLICTS[flag]])
 
             onuncheck_js = ''
-            for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
+            for flag1, depflag1 in perms.FLAGDEPENDS.items():
                 if flag in depflag1:
                     onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
@@ -645,7 +644,7 @@ class ContactInGroupForm(forms.ModelForm):
             raise forms.ValidationError('Invalid flags combinaison')
 
         newflags = 0
-        for flag, intvalue in six.iteritems(perms.FLAGTOINT):
+        for flag, intvalue in perms.FLAGTOINT.items():
             if data['membership_' + flag]:
                 newflags |= intvalue
         if newflags == 0 and data['note']:
@@ -664,7 +663,7 @@ class ContactInGroupForm(forms.ModelForm):
         data = self.cleaned_data
 
         newflags = 0
-        for flag, intvalue in six.iteritems(perms.FLAGTOINT):
+        for flag, intvalue in perms.FLAGTOINT.items():
             if data['membership_' + flag]:
                 newflags |= intvalue
         if (oldflags ^ newflags) & perms.ADMIN_ALL \

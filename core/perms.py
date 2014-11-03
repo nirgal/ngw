@@ -20,7 +20,6 @@ c_can_change_files_cg     C can change/delete files of CG
 from __future__ import division, absolute_import, print_function, unicode_literals
 from collections import OrderedDict
 from django.db import connection
-from django.utils import six
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _, ugettext_lazy
 
@@ -140,7 +139,7 @@ def int_to_flags(intflags):
     into a flag string such as 'meE'
     '''
     result = ''
-    for flag, intflag in six.iteritems(FLAGTOINT):
+    for flag, intflag in FLAGTOINT.items():
         if intflags & intflag:
             result += flag
     return result

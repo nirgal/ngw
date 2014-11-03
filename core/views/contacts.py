@@ -15,7 +15,6 @@ from django.http import (
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_text
-from django.utils import six
 from django.utils import html
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
@@ -149,7 +148,7 @@ class ContactQuerySet(RawQuerySet):
 
     def compile(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in six.iteritems(self.qry_fields)])
+        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in self.qry_fields.items()])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE ( ' + ') AND ('.join(self.qry_where) + ' )'
@@ -174,7 +173,7 @@ class ContactQuerySet(RawQuerySet):
 
     def count(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS %s' % (v, k) for k, v in six.iteritems(self.qry_fields)])
+        qry += ', '.join(['%s AS %s' % (v, k) for k, v in self.qry_fields.items()])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE (' + ') AND ('.join(self.qry_where) + ')'
@@ -574,7 +573,7 @@ class GroupAddManyForm(forms.Form):
  perms.CHANGE_MEMBERS).order_by('-date', 'name')]),
                 ],
             )
-        for flag, longname in six.iteritems(perms.FLAGTOTEXT):
+        for flag, longname in perms.FLAGTOTEXT.items():
             field_name = 'membership_' + flag
 
             oncheck_js = ''.join([
@@ -585,7 +584,7 @@ class GroupAddManyForm(forms.Form):
                 for code in perms.FLAGCONFLICTS[flag]])
 
             onuncheck_js = ''
-            for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
+            for flag1, depflag1 in perms.FLAGDEPENDS.items():
                 if flag in depflag1:
                     onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
@@ -598,12 +597,12 @@ class GroupAddManyForm(forms.Form):
 
     def clean(self):
         if 'group' in self.cleaned_data:
-            for flag in six.iterkeys(perms.FLAGTOTEXT):
+            for flag in perms.FLAGTOTEXT.keys():
                 if self.cleaned_data['membership_' + flag]:
                     if perms.FLAGTOINT[flag] & perms.ADMIN_ALL and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
                         raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
 
-        for flag in six.iterkeys(perms.FLAGTOTEXT):
+        for flag in perms.FLAGTOTEXT.keys():
             if self.cleaned_data['membership_' + flag]:
                 return super(GroupAddManyForm, self).clean()
         raise forms.ValidationError(_('You must select at least one mode'))
@@ -624,7 +623,7 @@ class GroupAddManyForm(forms.Form):
             'v_c_can_see_c.contact_id_2=contact.id'))
 
         modes = ''
-        for flag in six.iterkeys(perms.FLAGTOTEXT):
+        for flag in perms.FLAGTOTEXT.keys():
             field_name = 'membership_' + flag
             if self.cleaned_data[field_name]:
                 modes += '+' + flag
