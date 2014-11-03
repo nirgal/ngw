@@ -10,7 +10,7 @@ import http
 from django.conf import settings
 from django.forms import ValidationError
 from django.utils.translation import ugettext as _, activate as language_activate
-from django.utils.timezone import now
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django.core import mail
 from ngw.core.models import ContactMsg
@@ -62,7 +62,7 @@ def send_to_onetime(msg):
         logger.warning("Message %s doesn't have an expiration date." % msg.id)
         dt = msg.group.date
         if dt:
-            days = (dt - now().date()).days
+            days = (dt - timezone.now().date()).days
         else:
             days = 21
     ot_conn.request('POST', '/', urllib.parse.urlencode({
@@ -192,14 +192,18 @@ def read_answers(msg):
     jresponse = json.loads(force_str(sresponse))
     logger.debug(jresponse)
     if 'read_date' in jresponse and not msg.read_date:
-        msg.read_date = jresponse.get('read_date', None)
+        read_date = jresponse.get('read_date', None)
+        read_date = datetime.datetime.strptime(read_date, '%Y-%m-%d %H:%M:%S')
+        if settings.USE_TZ:
+            read_date = timezone.make_aware(read_date, timezone.get_default_timezone())
+        msg.read_date = read_date
         msg.save()
     for response_text in jresponse['answers']:
         logger.info('Received answer from %s.', msg.contact)
         answer_msg = ContactMsg(
             group_id=msg.group_id,
             contact_id=msg.contact_id,
-            send_date=datetime.datetime.utcnow(),
+            send_date=timezone.now(),
             subject=jresponse['subject'],
             text=response_text,
             is_answer=True,
