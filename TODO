@@ -80,5 +80,3 @@ Change MailmanSyncForm into a ModelForm (?)
 Change "default group" into "default permissions"
 
 Check new migrations framework
-
-Drop python2 support (?)
