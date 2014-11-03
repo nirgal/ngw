@@ -31,6 +31,8 @@ logger = logging.getLogger('msgsync')
 # email_sent: True if notification email was sent
 # deleted: True if remote server returns 404 (deleted on remote end)
 
+TIMEOUT = 30 # seconds
+
 def clean_expiration_date(expiration_date):
     MAXEXPIRATION = 90
     if expiration_date <= datetime.date.today():
@@ -52,7 +54,7 @@ def send_to_onetime(msg):
     if 'otid' in sync_info:
         return # Already sent
 
-    ot_conn = http_client.HTTPSConnection('onetime.info')
+    ot_conn = http_client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
     logger.info('Storing message for %s.', msg.contact)
 
@@ -166,7 +168,7 @@ def read_answers(msg):
         return
     # We have to open a new connection each time
     # since we can't handle keep-alive yet
-    ot_conn = http_client.HTTPSConnection('onetime.info')
+    ot_conn = http_client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
     ot_conn.request('POST', '/'+sync_info['otid']+'/answers', urllib.parse.urlencode({
         'password': sync_info['answer_password']
