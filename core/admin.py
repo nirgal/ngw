@@ -79,13 +79,8 @@ admin.site.register(ContactGroupNews, ContactGroupNewsAdmin)
 from ngw.core.views.fields import FieldEditForm
 class ContactFieldAdmin(admin.ModelAdmin):
     list_display = 'name', 'nice_case_type', 'contact_group', 'system'
-    #list_display_links = 'name',
+    list_display_links = None
     form = FieldEditForm
-
-    def get_list_display_links(self, request, list_display):
-        '''Ugly hack to disable built-in links.'''
-        # We should overwrite validator_class, this is easier
-        return 'nolinkplease',
 
     def nice_case_type(self, field):
         return field.type[0].upper() + field.type[1:].lower()

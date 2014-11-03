@@ -51,6 +51,8 @@ Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
 
+See https://docs.djangoproject.com/en/1.7/releases/1.7/#custom-lookups
+
 
 ====================================================================================================
 UNSORTED
