@@ -62,7 +62,7 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
     def _get_socket(self, host, port, timeout):
         
         s = socks.socksocket()
-        s.setproxy(socks.PROXY_TYPE_SOCKS5, '::1', 9050, True)
+        s.setproxy(socks.PROXY_TYPE_SOCKS5, '127.0.0.1', 9050, True)
 
         s.connect((host, port))
         if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
