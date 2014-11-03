@@ -66,7 +66,7 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
             s.settimeout(timeout)
 
         new_socket = ssl.wrap_socket(s, self.keyfile, self.certfile,
-            ssl_version=ssl.PROTOCOL_SSLv3, # v2 is insecure
+            ssl_version=ssl.PROTOCOL_TLSv1_2,
             ca_certs='/etc/ssl/certs/ca-certificates.crt',
             cert_reqs=ssl.CERT_REQUIRED)
         cert = new_socket.getpeercert()
