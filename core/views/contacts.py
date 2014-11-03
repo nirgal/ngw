@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 '''
 Contact managing views
 '''

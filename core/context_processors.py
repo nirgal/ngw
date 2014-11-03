@@ -1,5 +1,3 @@
-# -*- encoding utf-8 -*-
-
 from ngw.core.models import Config, Contact
 
 def banner(request):

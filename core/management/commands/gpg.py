@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 import logging
 import json
 from django.core.exceptions import ImproperlyConfigured

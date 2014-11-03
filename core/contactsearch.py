@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 from django.core.exceptions import PermissionDenied
 from ngw.core.models import (
     ContactField, ContactGroup,

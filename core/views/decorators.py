@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 '''
 decorators for checking views access rights
 '''

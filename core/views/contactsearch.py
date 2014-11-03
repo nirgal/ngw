@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 '''
 ajax views for building contact filter
 '''

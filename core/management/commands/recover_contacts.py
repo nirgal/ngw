@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 import logging
 from django.core.management.base import NoArgsCommand
 from ngw.core.models import Contact, GROUP_EVERYBODY

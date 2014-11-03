@@ -1,5 +1,3 @@
-# -*- encofing: utf8 -*-
-
 from django import template
 from django.utils import html
 from django.utils.safestring import mark_safe

@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 """
 Permission read functions.
 This is a simple proxy to the permission system implemented in SQL.

@@ -1,6 +1,4 @@
-# -*- encoding: utf-8 -*-
-#
-# Also note: You'll have to insert the output of 'manage.py sqlall core'
+# Note: You'll have to insert the output of 'manage.py sqlall core'
 # into your database.
 
 import os

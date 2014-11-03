@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 '''
 ChoiceGroup & Choice managing views
 '''

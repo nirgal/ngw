@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 import sys
 
 # __hooks_group_hierarchy_changed__ = []

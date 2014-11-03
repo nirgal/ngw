@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
 #
 # Database settings is defined in ~/.pgpass
 
