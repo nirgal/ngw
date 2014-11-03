@@ -3,8 +3,6 @@
 Messages managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 import json
 from datetime import date, timedelta
 from importlib import import_module
@@ -13,7 +11,6 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect, Http404
 from django.utils import translation
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, FormView
@@ -285,7 +282,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             }
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('messages', _('messages')))
-        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + force_text(self.object.contact_id)
+        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + str(self.object.contact_id)
         context['active_submenu'] = 'messages'
 
         flags = perms.cig_flags_int(self.object.contact.id, cg.id)

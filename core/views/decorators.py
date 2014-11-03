@@ -3,8 +3,6 @@
 decorators for checking views access rights
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 from functools import wraps
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import available_attrs

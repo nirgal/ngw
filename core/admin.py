@@ -1,6 +1,5 @@
 # This file is unused
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy
 from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,

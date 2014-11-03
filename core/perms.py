@@ -17,10 +17,8 @@ c_can_see_files_cg        C can view files of CG
 c_can_change_files_cg     C can change/delete files of CG
 """
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from collections import OrderedDict
 from django.db import connection
-from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _, ugettext_lazy
 
 MEMBER         =     1 # 'm'ember
@@ -194,7 +192,7 @@ def int_to_text(flags, inherited_flags):
                 if code == 'o':
                     break # Don't show more details then
 
-    return ', '.join([force_text(membership) for membership in memberships]) or _('Nil')
+    return ', '.join(memberships) or _('Nil')
 
 
 def cig_flags_int(cid, gid):

@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import logging
 from django.core.management.base import NoArgsCommand
 from ngw.core.models import Contact, GROUP_EVERYBODY

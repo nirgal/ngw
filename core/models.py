@@ -3,7 +3,6 @@
 # Also note: You'll have to insert the output of 'manage.py sqlall core'
 # into your database.
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from datetime import datetime, timedelta
 import logging
@@ -11,7 +10,6 @@ from collections import OrderedDict
 import json
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.utils.encoding import force_text, force_str, python_2_unicode_compatible
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy, pgettext_lazy
 from django.db import models, connection
@@ -81,20 +79,20 @@ class NgwModel(models.Model):
 
     @classmethod
     def get_class_urlfragment(cls):
-        return force_text(cls.__name__.lower()) + 's'
+        return cls.__name__.lower() + 's'
 
     def get_urlfragment(self):
-        return force_text(self.id)
+        return str(self.id)
 
     def get_absolute_url(self):
-        return self.get_class_absolute_url() + force_text(self.id) + '/'
+        return self.get_class_absolute_url() + str(self.id) + '/'
 
     @classmethod
     def get_class_navcomponent(cls):
         return cls.get_class_urlfragment(), cls.get_class_verbose_name_plural()
 
     def get_navcomponent(self):
-        return self.get_urlfragment(), force_text(self)
+        return self.get_urlfragment(), str(self)
 
     @classmethod
     def get_class_absolute_url(cls):
@@ -142,7 +140,6 @@ class Log(NgwModel):
                 LOG_ACTION_CHANGE: _('Update'),
                 LOG_ACTION_DEL: _('Deletion')}[self.action]
 
-@python_2_unicode_compatible
 class Config(NgwModel):
     id = models.CharField(max_length=32, primary_key=True)
     text = models.TextField(blank=True)
@@ -163,7 +160,6 @@ class Config(NgwModel):
             return 200
 
 
-@python_2_unicode_compatible
 class Choice(NgwModel):
     oid = models.AutoField(primary_key=True)
     choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
@@ -178,7 +174,6 @@ class Choice(NgwModel):
         unique_together = 'choice_group', 'key'
 
 
-@python_2_unicode_compatible
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(ugettext_lazy('Name'), max_length=255)
@@ -253,7 +248,6 @@ class MyContactManager(BaseUserManager):
 
 
 
-@python_2_unicode_compatible
 class Contact(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(verbose_name=ugettext_lazy('Name'), max_length=255, unique=True)
@@ -276,7 +270,7 @@ class Contact(NgwModel):
         ordering = 'name',
 
     def __repr__(self):
-        return force_str('<Contact %s>' % self.name)
+        return '<Contact %s>' % self.name
 
     def __str__(self):
         return self.name
@@ -405,7 +399,7 @@ class Contact(NgwModel):
             cfv = ContactFieldValue.objects.get(contact_id=self.id, contact_field_id=field_id)
         except ContactFieldValue.DoesNotExist:
             return ''
-        return force_text(cfv)
+        return str(cfv)
 
     def set_fieldvalue(self, request, field, newvalue):
         """
@@ -426,24 +420,24 @@ class Contact(NgwModel):
                 if cfv.value != newvalue:
                     log = Log(contact_id=user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = 'Contact ' + force_text(self.id)
+                    log.target = 'Contact ' + str(self.id)
                     log.target_repr = 'Contact ' + self.name
-                    log.property = force_text(field_id)
+                    log.property = str(field_id)
                     log.property_repr = field.name
-                    log.change = 'change from ' + force_text(cfv)
+                    log.change = 'change from ' + str(cfv)
                     cfv.value = newvalue
-                    log.change += ' to ' + force_text(cfv)
+                    log.change += ' to ' + str(cfv)
                     cfv.save()
                     log.save()
                     hooks.contact_field_changed(request, field_id, self)
             else:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_DEL
-                log.target = 'Contact ' + force_text(self.id)
+                log.target = 'Contact ' + str(self.id)
                 log.target_repr = 'Contact ' + self.name
-                log.property = force_text(field_id)
+                log.property = str(field_id)
                 log.property_repr = field.name
-                log.change = 'old value was ' + force_text(cfv)
+                log.change = 'old value was ' + str(cfv)
                 cfv.delete()
                 log.save()
                 hooks.contact_field_changed(request, field_id, self)
@@ -451,16 +445,16 @@ class Contact(NgwModel):
             if newvalue:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = 'Contact ' + force_text(self.id)
+                log.target = 'Contact ' + str(self.id)
                 log.target_repr = 'Contact ' + self.name
-                log.property = force_text(field_id)
+                log.property = str(field_id)
                 log.property_repr = field.name
                 cfv = ContactFieldValue()
                 cfv.contact = self
                 cfv.contact_field = field
                 cfv.value = newvalue
                 cfv.save()
-                log.change = 'new value is ' + force_text(cfv)
+                log.change = 'new value is ' + str(cfv)
                 log.save()
                 hooks.contact_field_changed(request, field_id, self)
 
@@ -498,7 +492,7 @@ class Contact(NgwModel):
 
         bday = self.get_fieldvalue_by_id(FIELD_BIRTHDAY)
         if bday:
-            vcf += line('BDAY', force_text(bday))
+            vcf += line('BDAY', str(bday))
 
         vcf += line('END', 'VCARD')
         return vcf
@@ -524,7 +518,7 @@ class Contact(NgwModel):
             return login
         i = 1
         while True:
-            altlogin = login + force_text(i)
+            altlogin = login + str(i)
             if not get_logincfv_by_login(self.id, altlogin):
                 return altlogin
             i += 1
@@ -654,7 +648,6 @@ class ContactGroupQuerySet(models.query.QuerySet):
         return qs
 
 
-@python_2_unicode_compatible
 class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(ugettext_lazy('Name'), max_length=255)
@@ -685,7 +678,7 @@ class ContactGroup(NgwModel):
         return self.name
 
     def __repr__(self):
-        return force_str('<ContactGroup %s %s>' % (self.id, self.name))
+        return '<ContactGroup %s %s>' % (self.id, self.name)
 
     def get_smart_navbar(self):
         nav = Navbar()
@@ -698,9 +691,9 @@ class ContactGroup(NgwModel):
 
     def get_absolute_url(self):
         if self.date:
-            return '/events/' + force_text(self.id) + '/'
+            return '/events/' + str(self.id) + '/'
         else:
-            return '/contactgroups/' + force_text(self.id) + '/'
+            return '/contactgroups/' + str(self.id) + '/'
 
 
     def get_direct_supergroups_ids(self):
@@ -826,7 +819,7 @@ class ContactGroup(NgwModel):
 
     def static_folder(self):
         """ Returns the name of the folder for static files for that group """
-        return GROUP_STATIC_DIR + force_text(self.id)
+        return GROUP_STATIC_DIR + str(self.id)
 
 
     def check_static_folder_created(self):
@@ -862,16 +855,17 @@ class ContactGroup(NgwModel):
         '''
         folder = self.get_fullfilename(path)
         try:
-            files = os.listdir(force_str(folder))
+            files = os.listdir(str(folder))
         except OSError as err:
             logging.error(_('Error while reading shared files list in %(folder)s: %(err)s') % {
                 'folder': folder,
                 'err': err})
             return []
 
+        # probably fixed by python3
         # listdir() returns some data in utf-8, we want everything in unicode:
-        files = [force_text(file, errors='replace')
-            for file in files]
+        #files = [str(file, errors='replace')
+        #    for file in files]
 
         # hide files starting with a dot:
         files = [file for file in files if file[0] != '.']
@@ -975,7 +969,7 @@ class ContactGroup(NgwModel):
 
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_DEL
-            log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
+            log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
             log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
 
             hooks.membership_changed(request, contact, self)
@@ -985,7 +979,7 @@ class ContactGroup(NgwModel):
         if result == LOG_ACTION_ADD:
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_ADD
-            log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
+            log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
             log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
         else:
             result = LOG_ACTION_CHANGE
@@ -994,7 +988,7 @@ class ContactGroup(NgwModel):
             if cig.flags & intflag and not newflags & intflag:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
+                log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
                 log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
                 log.property = 'membership_' + flag
                 log.property_repr = perms.FLAGTOTEXT[flag]
@@ -1003,7 +997,7 @@ class ContactGroup(NgwModel):
             if not cig.flags & intflag and newflags & intflag:
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
-                log.target = 'ContactInGroup ' + force_text(contact.id) + ' ' + force_text(self.id)
+                log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
                 log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
                 log.property = 'membership_' + flag
                 log.property_repr = perms.FLAGTOTEXT[flag]
@@ -1099,7 +1093,6 @@ class ContactFieldQuerySet(models.query.QuerySet):
             cf.save()
 
 
-@python_2_unicode_compatible
 class ContactField(NgwModel):
     # This is a polymorphic class:
     # When it's ready, it's "upgraded" into one of its subclass
@@ -1127,7 +1120,7 @@ class ContactField(NgwModel):
         return 'contactfields'
 
     def __repr__(self):
-        return force_str('<ContactField %s %s %s>' % (self.id, self.name, self.type))
+        return '<ContactField %s %s %s>' % (self.id, self.name, self.type)
 
     def __str__(self):
         return self.name
@@ -1163,7 +1156,7 @@ class ContactField(NgwModel):
         raise NotImplementedError()
 
     def formfield_value_to_db_value(self, value):
-        return force_text(value)
+        return str(value)
 
     def db_value_to_formfield_value(self, value):
         return value
@@ -1223,14 +1216,14 @@ class FilterHelper(object):
         params_sql = {}
         for k, v in kargs.items():
             #print(k, "=", v)
-            auto_param_name = 'autoparam_' + force_text(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
-            if isinstance(v, 'str'):
+            auto_param_name = 'autoparam_' + str(len(query.params)) + '_' # resolve conflicts in sucessive calls to apply_where_to_query
+            if isinstance(v, str):
                 params_where[k] = '%(' + auto_param_name + k + ')s'
                 params_sql[auto_param_name+k] = v
             elif isinstance(v, int):
                 params_where[k] = v
             else:
-                raise Exception('Unsupported type ' + force_text(type(v)))
+                raise Exception('Unsupported type ' + str(type(v)))
         where = where % params_where
         return where, params_sql
 
@@ -1299,7 +1292,7 @@ class FieldFilterOp1(FieldFilter):
         return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value)s"' % {
             'fieldname': html.escape(field.name),
             'filtername': html.escape(self.__class__.human_name),
-            'value': html.escape(force_text(value))})
+            'value': html.escape(str(value))})
 
 
 class FieldFilterStartsWith(FieldFilterOp1):
@@ -1663,7 +1656,7 @@ AllEventsNotReactedSince.human_name = ugettext_lazy('has not reacted to any invi
 
 class AllEventsReactionYearRatioLess(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) < ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': (datetime.today() - timedelta(365)).strftime('%Y-%m-%d')}
     def to_html(self, value):
         return mark_safe('%(filtername)s "%(value)s"' % {
             'filtername': html.escape(self.__class__.human_name),
@@ -1675,7 +1668,7 @@ AllEventsReactionYearRatioLess.human_name = ugettext_lazy('1 year invitation rea
 
 class AllEventsReactionYearRatioMore(Filter):
     def get_sql_where_params(self, value):
-        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': force_text((datetime.today() - timedelta(365)).strftime('%Y-%m-%d'))}
+        return '(SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0) > ' + str(value/100) + ' * (SELECT COUNT(*) from contact_in_group JOIN contact_group ON (contact_in_group.group_id = contact_group.id) WHERE contact_in_group.contact_id=contact.id AND contact_group.date >= %(refdate)s AND flags & ' + str(perms.MEMBER | perms.INVITED | perms.DECLINED) + ' <> 0)', {'refdate': (datetime.today() - timedelta(365)).strftime('%Y-%m-%d')}
     def to_html(self, value):
         return mark_safe('%(filtername)s "%(value)s"' % {
             'filtername': html.escape(self.__class__.human_name),
@@ -1711,10 +1704,9 @@ class BoundFilter(BaseBoundFilter):
         self.args = args
 
     def __repr__(self):
-        return force_str(
-            '<BoundFilter ' + \
-            ','.join([force_str(repr(self.filter))] + [force_str(repr(arg)) for arg in self.args]) \
-            + '>')
+        return '<BoundFilter ' + \
+               ','.join([repr(self.filter)] + [repr(arg) for arg in self.args]) \
+               + '>'
 
     def get_sql_where_params(self):
         return self.filter.get_sql_where_params(*self.args)
@@ -1776,7 +1768,6 @@ class OrBoundFilter(BaseBoundFilter):
         return mark_safe(html)
 
 
-@python_2_unicode_compatible
 class ContactFieldValue(NgwModel):
     oid = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact, related_name='values')
@@ -1789,7 +1780,7 @@ class ContactFieldValue(NgwModel):
 
     def __repr__(self):
         cf = self.contact_field
-        return force_str('<ContactFieldValue %s %s %s>' % (self.contact, cf, self))
+        return '<ContactFieldValue %s %s %s>' % (self.contact, cf, self)
 
     def __str__(self):
         cf = self.contact_field
@@ -1810,7 +1801,7 @@ class GroupInGroup(NgwModel):
         verbose_name_plural = ugettext_lazy('groups in group')
 
     def __repr__(self):
-        return force_str('<GroupInGroup %s %s>' % (self.subgroup_id, self.father_id))
+        return '<GroupInGroup %s %s>' % (self.subgroup_id, self.father_id)
 
 
 class GroupManageGroup(NgwModel):
@@ -1824,10 +1815,9 @@ class GroupManageGroup(NgwModel):
         verbose_name_plural = ugettext_lazy('groups managing group')
 
     def __repr__(self):
-        return force_str('<GroupManageGroup %s %s>' % (self.subgroup_id, self.father_id))
+        return '<GroupManageGroup %s %s>' % (self.subgroup_id, self.father_id)
 
 
-@python_2_unicode_compatible
 class ContactInGroup(NgwModel):
     id = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact)
@@ -1840,7 +1830,7 @@ class ContactInGroup(NgwModel):
         verbose_name_plural = ugettext_lazy('contacts in group')
 
     def __repr__(self):
-        return force_str('<ContactInGroup %s %s>' % (self.contact_id, self.group_id))
+        return '<ContactInGroup %s %s>' % (self.contact_id, self.group_id)
 
     def __str__(self):
         return _('contact %(contactname)s in group %(groupname)s') % {'contactname': self.contact.name, 'groupname': self.group.name_with_date()}
@@ -1856,7 +1846,6 @@ class ContactInGroup(NgwModel):
         return self.contact_group.get_absolute_url() + 'members/' + str(self.contact_id) + '/membership'
 
 
-@python_2_unicode_compatible
 class ContactGroupNews(NgwModel):
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Contact, null=True, blank=True)
@@ -1901,7 +1890,7 @@ class ContactMsg(NgwModel):
     nice_date.admin_order_field = 'send_date'
 
     def get_absolute_url(self):
-        return self.group.get_absolute_url() + 'messages/' + force_text(self.id)
+        return self.group.get_absolute_url() + 'messages/' + str(self.id)
 
     get_link_subject = get_absolute_url
 

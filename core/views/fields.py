@@ -3,12 +3,10 @@
 ContactField managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django import forms
@@ -169,7 +167,7 @@ class FieldEditForm(forms.ModelForm):
             deletion_details = []
             for cfv in self.instance.values.all():
                 if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
-                    deletion_details.append((cfv.contact, force_text(cfv)))
+                    deletion_details.append((cfv.contact, str(cfv)))
             if deletion_details:
                 raise FieldEditForm.IncompatibleData(deletion_details)
 

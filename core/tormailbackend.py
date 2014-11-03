@@ -3,8 +3,6 @@
 This module provides TorEmailBackend, a backend to send mail through a SMTPS
 server available through TOR.
 '''
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 import os
 import time
 import random

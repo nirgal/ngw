@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import subprocess
 from django.conf import settings
-from django.utils.encoding import force_text
 from django.http import HttpResponse
 from django.views.generic import View
 
@@ -16,7 +14,7 @@ def subprocess_run(*args):
     args = [arg.encode('utf8') for arg in args]
     process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     out, err = process.communicate()
-    return process.returncode, force_text(out, errors='replace'), force_text(err, errors='replace')
+    return process.returncode, str(out, errors='replace'), str(err, errors='replace')
 
 #def _split_uid(uid):
 #    p1 = uid.find('<')

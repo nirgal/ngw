@@ -3,7 +3,6 @@
 Miscalaneous views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from django.conf import settings
 from django.utils.safestring import mark_safe

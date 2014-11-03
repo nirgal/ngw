@@ -3,8 +3,6 @@
 Response subclasses
 '''
 
-from __future__ import division, print_function, unicode_literals
-
 import json
 from django.http import HttpResponse, Http404
 

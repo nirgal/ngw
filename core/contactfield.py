@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from datetime import datetime
 from django import forms
 from django.utils import http

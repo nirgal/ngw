@@ -1,9 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 #
 # Database settings is defined in ~/.pgpass
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import sys
 import os
 import logging

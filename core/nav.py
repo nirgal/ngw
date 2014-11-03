@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 from django.utils import html
 from django.utils.translation import ugettext as _
 

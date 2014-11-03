@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import sys
 
 # __hooks_group_hierarchy_changed__ = []

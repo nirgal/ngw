@@ -3,15 +3,12 @@
 ContactGroup managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 from datetime import date, datetime, timedelta
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
 from django.utils import formats
 from django.shortcuts import get_object_or_404
 from django import forms
@@ -729,7 +726,7 @@ class ContactInGroupView(InGroupAcl, FormView):
 
         context = {}
         context['title'] = _('Contact %(contact)s in group %(group)s') % {
-            'contact': force_text(contact),
+            'contact': str(contact),
             'group': cg.name_with_date()}
         context['contact'] = contact
         context['objtype'] = ContactInGroup
@@ -846,7 +843,7 @@ class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
         context = {}
         context['nav'] = self.contactgroup.get_smart_navbar() \
             .add_component(('members', _('members'))) \
-            .add_component((force_text(contact.id), contact.name)) \
+            .add_component((str(contact.id), contact.name)) \
             .add_component(('remove', _('delete')))
         context.update(kwargs)
         return super(ContactInGroupDelete, self).get_context_data(**context)

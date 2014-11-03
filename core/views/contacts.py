@@ -3,7 +3,6 @@
 Contact managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from datetime import date
 import crack
@@ -14,7 +13,6 @@ from django.http import (
     Http404)
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
 from django.utils import html
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
@@ -254,9 +252,9 @@ def get_available_columns(user_id):
     '''
     result = [(DISP_NAME, 'Name')]
     for cf in ContactField.objects.with_user_perms(user_id):
-        result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
+        result.append((DISP_FIELD_PREFIX+str(cf.id), cf.name))
     for cg in ContactGroup.objects.with_user_perms(user_id, wanted_flags=perms.SEE_MEMBERS, add_column=False).order_by('-date', 'name'):
-        result.append((DISP_GROUP_PREFIX+force_text(cg.id), cg.name_with_date()))
+        result.append((DISP_GROUP_PREFIX+str(cg.id), cg.name_with_date()))
     return result
 
 
@@ -314,7 +312,7 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'membership_str': membership_to_text(contact_with_extra_fields, contact_group.id),
         'note': getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id),
         'membership': membership,
-        'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
+        'cig_url': contact_group.get_absolute_url()+'members/'+str(contact_with_extra_fields.id),
         'title': _('%(contactname)s in group %(groupname)s') % {
             'contactname':contact_with_extra_fields.name,
             'groupname': contact_group.name_with_date()},
@@ -327,7 +325,7 @@ def membership_extended_widget_factory(request, contact_group):
 
 
 def field_widget(contact_field, contact_with_extra_fields):
-    attrib_name = DISP_FIELD_PREFIX + force_text(contact_field.id)
+    attrib_name = DISP_FIELD_PREFIX + str(contact_field.id)
     raw_value = getattr(contact_with_extra_fields, attrib_name)
     if raw_value:
         return contact_field.format_value_html(raw_value)
@@ -477,7 +475,7 @@ class BaseContactListView(NgwListView):
     def action_csv_export(self, request, queryset):
         result = ''
         def _quote_csv(col_html):
-            u = html.strip_tags(force_text(col_html))
+            u = html.strip_tags(str(col_html))
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
         header_done = False
         for row in queryset:
@@ -811,7 +809,7 @@ class ContactEditForm(forms.ModelForm):
                     if cf.type == FTYPE_DATE and initial == 'today':
                         initial = date.today()
                     f.initial = initial
-                self.fields[force_text(cf.id)] = f
+                self.fields[str(cf.id)] = f
 
 
     def save(self, request):
@@ -829,13 +827,13 @@ class ContactEditForm(forms.ModelForm):
 
             log = Log(contact_id=request.user.id)
             log.action = LOG_ACTION_ADD
-            log.target = 'Contact ' + force_text(contact.id)
+            log.target = 'Contact ' + str(contact.id)
             log.target_repr = 'Contact ' + contact.name
             log.save()
 
             log = Log(contact_id=request.user.id)
             log.action = LOG_ACTION_CHANGE
-            log.target = 'Contact ' + force_text(contact.id)
+            log.target = 'Contact ' + str(contact.id)
             log.target_repr = 'Contact ' + contact.name
             log.property = 'Name'
             log.property_repr = 'Name'
@@ -852,7 +850,7 @@ class ContactEditForm(forms.ModelForm):
                 if contact.name != data['name']:
                     log = Log(contact_id=request.user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = 'Contact ' + force_text(contact.id)
+                    log.target = 'Contact ' + str(contact.id)
                     log.target_repr = 'Contact ' + contact.name
                     log.property = 'Name'
                     log.property_repr = 'Name'
@@ -864,7 +862,7 @@ class ContactEditForm(forms.ModelForm):
             if cf.type == FTYPE_PASSWORD:
                 continue
             #cfname = cf.name
-            newvalue = data[force_text(cf.id)]
+            newvalue = data[str(cf.id)]
             if newvalue != None:
                 newvalue = cf.formfield_value_to_db_value(newvalue)
             contact.set_fieldvalue(request, cf, newvalue)
@@ -1001,7 +999,7 @@ class PasswordView(InGroupAcl, UpdateView):
             _('Password has been changed sucessfully!'))
         if self.contactgroup:
             return HttpResponseRedirect(
-                self.contactgroup.get_absolute_url() + 'members/' + force_text(contact.id) + '/')
+                self.contactgroup.get_absolute_url() + 'members/' + str(contact.id) + '/')
         else:
             return HttpResponseRedirect(contact.get_absolute_url())
 
@@ -1103,7 +1101,7 @@ class PassLetterView(InGroupAcl, DetailView):
                 cfv = ContactFieldValue.objects.get(contact_id=contact.id, contact_field_id=cf.id)
             except ContactFieldValue.DoesNotExist:
                 continue
-            fields[cf.name] = force_text(cfv).replace('\r', '')
+            fields[cf.name] = str(cfv).replace('\r', '')
             #if cfv:
             #    rows.append((cf.name, mark_safe(cfv.as_html())))
         fields['name'] = contact.name
@@ -1165,7 +1163,7 @@ class FilterAddView(NgwUserAcl, View):
         filter_str = request.GET['filterstr']
         filter_list = contact.get_customfilters()
         filter_list.append((_('No name'), filter_str))
-        filter_list_str = ','.join(['"' + force_text(name) + '","' + force_text(filterstr) + '"' for name, filterstr in filter_list])
+        filter_list_str = ','.join(['"' + str(name) + '","' + str(filterstr) + '"' for name, filterstr in filter_list])
         contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
         messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
         return HttpResponseRedirect(reverse('filter_edit', args=(cid, len(filter_list)-1)))

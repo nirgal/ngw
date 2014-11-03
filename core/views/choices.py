@@ -3,7 +3,6 @@
 ChoiceGroup & Choice managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html

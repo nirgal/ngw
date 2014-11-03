@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 import os
 import logging
 from django.core.exceptions import ImproperlyConfigured

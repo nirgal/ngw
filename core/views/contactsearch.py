@@ -3,10 +3,7 @@
 ajax views for building contact filter
 '''
 
-from __future__ import division, print_function, unicode_literals
-
 from django.utils.translation import ugettext as _
-from django.utils.encoding import force_text
 from django.http import Http404
 from django.views.generic import View
 from ngw.core.models import (
@@ -22,9 +19,9 @@ class ContactSearchColumnsView(NgwUserAcl, View):
         column_type = self.kwargs['column_type']
         if column_type == 'fields':
             fields = ContactField.objects.with_user_perms(request.user.id)
-            choices = [{'id': 'name', 'text': force_text(_('Name'))}]
+            choices = [{'id': 'name', 'text': _('Name')}]
             for field in fields:
-                choices.append({'id': force_text(field.id), 'text': field.name})
+                choices.append({'id': str(field.id), 'text': field.name})
 
         elif column_type == 'groups':
             groups = ContactGroup.objects.filter(date=None)
@@ -34,7 +31,7 @@ class ContactSearchColumnsView(NgwUserAcl, View):
             #groups = groups.order_by('name')
             choices = []
             for group in groups:
-                choices.append({'id': force_text(group.id), 'text': group.name})
+                choices.append({'id': str(group.id), 'text': group.name})
 
         elif column_type == 'events':
             groups = ContactGroup.objects.exclude(date=None)
@@ -43,9 +40,9 @@ class ContactSearchColumnsView(NgwUserAcl, View):
                 wanted_flags=perms.SEE_MEMBERS)
             #groups = groups.order_by('-date', 'name')
             choices = []
-            choices.append({'id': 'allevents', 'text': force_text(_('All events'))})
+            choices.append({'id': 'allevents', 'text': str(_('All events'))})
             for group in groups:
-                choices.append({'id': force_text(group.id), 'text': group.name_with_date()})
+                choices.append({'id': str(group.id), 'text': group.name_with_date()})
 
         elif column_type == 'custom':
             choices = [{'id': 'user', 'text': request.user.name}]
@@ -93,7 +90,7 @@ class ContactSearchColumnFiltersView(NgwUserAcl, View):
 
         choices = []
         for filter in filters:
-            choices.append({'id': filter.internal_name, 'text': force_text(filter.human_name)})
+            choices.append({'id': filter.internal_name, 'text': str(filter.human_name)})
         return JsonHttpResponse({'params' : [choices]})
 
 
@@ -106,7 +103,7 @@ class ContactSearchCustomFiltersView(NgwUserAcl, View):
         choices = []
         for i, filterpair in enumerate(filter_list):
             filtername, filterstr = filterpair
-            choices.append({'id': force_text(i), 'text': filtername})
+            choices.append({'id': str(i), 'text': filtername})
         return JsonHttpResponse({'params' : [choices]})
 
 
@@ -131,7 +128,7 @@ class ContactSearchFilterParamsView(NgwUserAcl, View):
                     choices.append({'id': key, 'text': value})
                 jsparams.append(choices)
             else:
-                assert False, "Unsupported filter parameter of type " + force_text(param_type)
+                assert False, "Unsupported filter parameter of type " + str(param_type)
         if submit_prefix[-1] != '(':
             submit_prefix += ','
         submit_prefix += filter_id

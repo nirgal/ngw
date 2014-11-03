@@ -3,14 +3,11 @@
 Base view class; View helpers
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 import inspect
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils.translation import ugettext as _
-from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils.text import capfirst
 from django.utils.http import urlencode
@@ -271,7 +268,7 @@ class NgwListView(ListView):
                 #result = html.escape(result)
 
             try:
-                flink = row.__getattribute__('get_link_'+force_text(attrib_name))
+                flink = row.__getattribute__('get_link_'+str(attrib_name))
                 link = flink()
                 if link:
                     result = '<a href="'+link+'">'+result+'</a>'
@@ -381,12 +378,12 @@ class NgwDeleteView(DeleteView):
         obj = self.object = self.get_object()
         success_url = self.get_success_url()
 
-        name = force_text(obj)
+        name = str(obj)
         log = Log()
         log.contact_id = self.request.user.id
         log.action = LOG_ACTION_DEL
         pk_names = (obj._meta.pk.attname,)  # default django pk name
-        log.target = force_text(obj.__class__.__name__) + ' ' + ' '.join([force_text(obj.__getattribute__(fieldname)) for fieldname in pk_names])
+        log.target = obj.__class__.__name__ + ' ' + ' '.join([str(obj.__getattribute__(fieldname)) for fieldname in pk_names])
         log.target_repr = obj.get_class_verbose_name() + ' '+name
         log.save()
 

@@ -1,13 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import sys
 import logging
 import struct
 from django.core.management.base import NoArgsCommand
 from django.conf import settings
-from django.utils.encoding import force_text
 from django.contrib.auth.hashers import check_password, make_password
 from ngw.core.models import (ContactFieldValue,
     FIELD_LOGIN, FIELD_PASSWORD)
@@ -97,7 +95,7 @@ def process_line():
     bindata = sys.stdin.read(cmdlength)
 
     logger.debug('Received command: %s', repr(bindata))
-    data = force_text(bindata)
+    data = str(bindata)
 
     data = data.split(':', 1)
     if len(data) != 2:

@@ -3,7 +3,6 @@
 Log managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django.utils.translation import ugettext as _, ugettext_lazy, pgettext_lazy
 from django.utils import formats
 from ngw.core.models import Log

@@ -3,7 +3,6 @@
 files managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
