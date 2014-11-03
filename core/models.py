@@ -655,18 +655,6 @@ class ContactGroupQuerySet(models.query.QuerySet):
         return qs
 
 
-class ContactGroupManager(models.Manager):
-    def get_queryset(self):
-        return ContactGroupQuerySet(self.model, using=self._db)
-
-    def with_user_perms(self, *args, **kwargs):
-        qs = self.get_queryset()
-        return qs.with_user_perms(*args, **kwargs)
-
-    def with_counts(self, *args, **kwargs):
-        qs = self.get_queryset()
-        return qs.with_counts(*args, **kwargs)
-
 @python_2_unicode_compatible
 class ContactGroup(NgwModel):
     id = models.AutoField(primary_key=True)
@@ -692,7 +680,7 @@ class ContactGroup(NgwModel):
         verbose_name = ugettext_lazy('contact group')
         verbose_name_plural = ugettext_lazy('contact groups')
         ordering = '-date', 'name'
-    objects = ContactGroupManager()
+    objects = ContactGroupQuerySet.as_manager()
 
     def __str__(self):
         return self.name
@@ -1101,13 +1089,6 @@ class ContactFieldQuerySet(models.query.QuerySet):
                 % (user_id, wanted_flag)])
         return qs
 
-class ContactFieldManager(models.Manager):
-    def get_queryset(self):
-        return ContactFieldQuerySet(self.model, using=self._db)
-    def with_user_perms(self, *args, **kwargs):
-        qs = self.get_queryset()
-        return qs.with_user_perms(*args, **kwargs)
-
     def renumber(self):
         """
         Update all fields sort_weight so that each weight is previous + 10
@@ -1140,7 +1121,7 @@ class ContactField(NgwModel):
         verbose_name = ugettext_lazy('contact field')
         verbose_name_plural = ugettext_lazy('contact fields')
         ordering = 'sort_weight',
-    objects = ContactFieldManager()
+    objects = ContactFieldQuerySet.as_manager()
 
     @classmethod
     def get_class_urlfragment(cls):
