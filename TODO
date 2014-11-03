@@ -35,9 +35,6 @@ With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet:
 
 Add duration to events (end date)
 
-CRSF validation fails on login page if it is shown too long:
-See https://github.com/yourlabs/django-session-security/issues/29
-
 Change USE_TZ to True
 
 Fix ejabberd cross subscribe overrides:

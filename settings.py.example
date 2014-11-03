@@ -151,6 +151,7 @@ SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
 SESSION_COOKIE_SECURE = True # We are not using http, only https
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # We have short time sessions anyways
 
+CSRF_COOKIE_AGE = 24*3600 # One day
 CSRF_COOKIE_SECURE = True # We are not using http, only https
 
 # Output the "Etag" header for caching
