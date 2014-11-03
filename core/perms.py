@@ -190,7 +190,7 @@ def int_to_text(flags, inherited_flags):
                 if code == 'o':
                     break # Don't show more details then
 
-    return ', '.join(memberships) or _('Nil')
+    return ', '.join(str(membership) for membership in memberships) or _('Nil')
 
 
 def cig_flags_int(cid, gid):
