@@ -4,12 +4,12 @@ ajax views for building contact filter
 
 from django.utils.translation import ugettext as _
 from django.http import Http404
+from django.http.response import JsonResponse
 from django.views.generic import View
 from ngw.core.models import (
     ContactField, ContactGroup, ChoiceGroup)
 from ngw.core import perms
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
-from ngw.core.response import JsonHttpResponse
 from ngw.core.views.generic import NgwUserAcl
 
 
@@ -49,7 +49,7 @@ class ContactSearchColumnsView(NgwUserAcl, View):
         else:
             raise Http404
 
-        return JsonHttpResponse({'params' : [choices]})
+        return JsonResponse({'params' : [choices]})
 
 
 def get_column(column_type, column_id):
@@ -90,7 +90,7 @@ class ContactSearchColumnFiltersView(NgwUserAcl, View):
         choices = []
         for filter in filters:
             choices.append({'id': filter.internal_name, 'text': str(filter.human_name)})
-        return JsonHttpResponse({'params' : [choices]})
+        return JsonResponse({'params' : [choices]})
 
 
 class ContactSearchCustomFiltersView(NgwUserAcl, View):
@@ -103,7 +103,7 @@ class ContactSearchCustomFiltersView(NgwUserAcl, View):
         for i, filterpair in enumerate(filter_list):
             filtername, filterstr = filterpair
             choices.append({'id': str(i), 'text': filtername})
-        return JsonHttpResponse({'params' : [choices]})
+        return JsonResponse({'params' : [choices]})
 
 
 class ContactSearchFilterParamsView(NgwUserAcl, View):
@@ -131,7 +131,7 @@ class ContactSearchFilterParamsView(NgwUserAcl, View):
         if submit_prefix[-1] != '(':
             submit_prefix += ','
         submit_prefix += filter_id
-        return JsonHttpResponse({'submit_prefix': submit_prefix, 'params' : jsparams})
+        return JsonResponse({'submit_prefix': submit_prefix, 'params' : jsparams})
 
 
 class ContactSearchCustomFilterParamsView(NgwUserAcl, View):
@@ -144,4 +144,4 @@ class ContactSearchCustomFilterParamsView(NgwUserAcl, View):
         filter_id = int(filter_id)
         customname, filter = filter_list[filter_id]
         assert filter[-1] == ')', "Custom filter %s should end with a ')'" % customname
-        return JsonHttpResponse({'submit_prefix': filter[:-1], 'params' : []})
+        return JsonResponse({'submit_prefix': filter[:-1], 'params' : []})
