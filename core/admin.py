@@ -29,11 +29,10 @@ class ContactAdmin(admin.ModelAdmin):
                     *args, **kwargs)
         return TheForm
 
-    def get_fieldsets(self, request, obj=None):
+    def get_fields(self, request, obj=None):
         Form = self.get_form(request, obj)
         form = Form(instance=obj)
-        fields = list(form.fields) + list(self.get_readonly_fields(request, obj))
-        return [(None, {'fields': fields})]
+        return list(form.fields)
 
 admin.site.register(Contact, ContactAdmin)
 
@@ -49,11 +48,10 @@ class ContactGroupAdmin(admin.ModelAdmin):
                     *args, **kwargs)
         return TheForm
 
-    def get_fieldsets(self, request, obj=None):
+    def get_fields(self, request, obj=None):
         Form = self.get_form(request, obj)
         form = Form(instance=obj)
-        fields = list(form.fields) + list(self.get_readonly_fields(request, obj))
-        return [(None, {'fields': fields})]
+        return list(form.fields)
 
 admin.site.register(ContactGroup, ContactGroupAdmin)
 
