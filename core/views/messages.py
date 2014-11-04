@@ -325,7 +325,7 @@ class MessageDetailView(InGroupAcl, DetailView):
 #######################################################################
 
 
-#from ngw.core.response import JsonHttpResponse
+#from django.http.response import JsonResponse
 #from django.shortcuts import get_object_or_404
 #class MessageToggleReadView(InGroupAcl, View):
 #    def check_perm_groupuser(self, group, user):
@@ -342,4 +342,4 @@ class MessageDetailView(InGroupAcl, DetailView):
 #        if message.group_id != self.contactgroup.id:
 #            return HttpResponse('Bad group')
 #
-#        return JsonHttpResponse({'test': 'ok'})
+#        return JsonResponse({'test': 'ok'})
