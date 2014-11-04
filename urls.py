@@ -7,7 +7,6 @@ from django.conf.urls.static import static
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 from ngw.core.models import ContactField, ContactGroup
-admin.autodiscover()
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, GroupAddManyView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, FilterDeleteView, DefaultGroupView
