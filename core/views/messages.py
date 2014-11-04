@@ -16,6 +16,7 @@ from django.views.generic import DetailView, FormView
 from django import forms
 from django.contrib import messages
 from django.contrib.admin.widgets import AdminDateWidget
+from django.contrib.admin import filters
 from ngw.core.models import Contact, ContactMsg
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
@@ -28,7 +29,7 @@ from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
 #######################################################################
 
 
-class MessageDirectionFilter(BaseListFilter):
+class MessageDirectionFilter(filters.SimpleListFilter):
     title = ugettext_lazy('direction')
     parameter_name = 'answer'
     def lookups(self, request, view):
@@ -45,7 +46,7 @@ class MessageDirectionFilter(BaseListFilter):
         return queryset.filter(is_answer=filter_answer)
 
 
-class MessageReadFilter(BaseListFilter):
+class MessageReadFilter(filters.SimpleListFilter):
     title = ugettext_lazy('read status')
     parameter_name = 'unread'
     def lookups(self, request, view):

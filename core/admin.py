@@ -103,9 +103,11 @@ class ContactFieldValueAdmin(admin.ModelAdmin):
     list_display = 'contact', 'contact_field', 'value'
 admin.site.register(ContactFieldValue, ContactFieldValueAdmin)
 
+from ngw.core.views.messages import MessageDirectionFilter, MessageReadFilter
 class ContactMsgAdmin(admin.ModelAdmin):
     list_display = 'nice_flags', 'group', 'send_date', 'contact', 'subject'
-    list_filter = 'is_answer', 'contact'
+    #list_filter = 'is_answer', 'contact'
+    list_filter = MessageDirectionFilter, MessageReadFilter
     search_fields = 'subject', 'text'
 admin.site.register(ContactMsg, ContactMsgAdmin)
 

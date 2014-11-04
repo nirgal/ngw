@@ -192,8 +192,9 @@ class NgwListView(ListView):
         queryset = self.get_root_queryset()
 
         # Handle admin-like filters
+        params = dict(self.request.GET.items())
         for filter_class in self.filter_list:
-            filter = filter_class(self.request)
+            filter = filter_class(self.request, params, queryset.model, self)
             self.simplefilters.append(filter)
             queryset = filter.queryset(self.request, queryset)
             if filter.value() is not None:
