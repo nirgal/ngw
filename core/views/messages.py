@@ -19,7 +19,7 @@ from django.contrib.admin.widgets import AdminDateWidget
 from django.contrib.admin import filters
 from ngw.core.models import Contact, ContactMsg
 from ngw.core import perms
-from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
+from ngw.core.views.generic import InGroupAcl, NgwListView
 
 
 #######################################################################
@@ -63,10 +63,38 @@ class MessageReadFilter(filters.SimpleListFilter):
         return queryset.filter(read_date__isnull=filter_unread)
 
 
+class MessageContactFilter(filters.SimpleListFilter):
+    title = ugettext_lazy('contact')
+    parameter_name = 'contact'
+    template = 'admin/filter_select.html'
+    def lookups(self, request, view):
+        result = []
+        contacts = Contact.objects.all()
+        try:
+            group_id = view.kwargs.get('gid', None)
+        except AttributeError:
+            group_id = None
+        if group_id:
+            contacts = contacts.extra(
+                tables=('v_c_appears_in_cg',),
+                where=(
+                    'v_c_appears_in_cg.contact_id=contact.id',
+                    'v_c_appears_in_cg.group_id=%s' % group_id))
+        for contact in contacts:
+            result.append((contact.id, contact.name))
+        return result
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val is None:
+            return queryset
+        return queryset.filter(contact_id = val)
+
+
 class MessageListView(InGroupAcl, NgwListView):
     list_display = 'nice_flags', 'nice_date', 'contact', 'subject'
     template_name = 'message_list.html'
-    filter_list = (MessageDirectionFilter, MessageReadFilter)
+    list_filter = (
+        MessageDirectionFilter, MessageReadFilter, MessageContactFilter)
 
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.VIEW_MSGS:

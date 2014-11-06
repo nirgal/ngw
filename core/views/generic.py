@@ -113,40 +113,6 @@ class InGroupAcl(ContextMixin):
 #
 #######################################################################
 
-class BaseListFilter(object):
-    '''
-    This is a basic filter, with a admin-like compatible interface
-    '''
-    def __init__(self, request):
-        param = request.GET.get(self.parameter_name, None)
-        if param == '':
-            param = None
-        self.thevalue = param
-        self.request = request
-
-    def value(self):
-        return self.thevalue
-
-    def choices(self, view):
-        # we preserver the order, but not the page
-        extra_params = {}
-        if view.order:
-            extra_params['_order'] = view.order
-        yield {
-            'selected': self.value() is None,
-            'query_string': view.get_query_string(extra_params, remove=(self.parameter_name,)),
-            'display': _('All'),
-        }
-        for value, display_value in self.lookups(self.request, view):
-            ep = extra_params.copy()
-            ep[self.parameter_name] = value
-            yield {
-                'selected': self.value() == value,
-                'query_string': view.get_query_string(ep),
-                'display': display_value,
-            }
-
-
 class NgwListView(ListView):
     '''
     This function renders the query, paginated.
@@ -156,7 +122,7 @@ class NgwListView(ListView):
     context_object_name = 'query'
     page_kwarg = '_page'
     default_sort = None
-    filter_list = ()
+    list_filter = ()
     actions = ()
 
     def __init__(self, *args, **kwargs):
@@ -164,7 +130,6 @@ class NgwListView(ListView):
         # keep track of parameters that need to be given back after
         # page/order change:
         self.url_params = {}
-        self.simplefilters = []
 
     def get_root_queryset(self):
         return self.root_queryset
@@ -188,17 +153,30 @@ class NgwListView(ListView):
             return getattr(attr, 'admin_order_field', None)
 
 
+    def get_filters(self, model):
+        filter_specs = []
+        if self.list_filter:
+            for list_filter in self.list_filter:
+                if callable(list_filter):
+                    spec = list_filter(
+                        self.request, dict(self.request.GET.items()),
+                        self.model, self)
+                else:
+                    raise NotImplemented
+                if spec and spec.has_output():
+                    filter_specs.append(spec)
+        return filter_specs, bool(filter_specs), self.request.GET.items(), False
+
+
     def get_queryset(self):
         queryset = self.get_root_queryset()
 
         # Handle admin-like filters
-        params = dict(self.request.GET.items())
-        for filter_class in self.filter_list:
-            filter = filter_class(self.request, params, queryset.model, self)
-            self.simplefilters.append(filter)
-            queryset = filter.queryset(self.request, queryset)
-            if filter.value() is not None:
-                self.url_params[filter_class.parameter_name] = filter.value()
+        self.filter_specs, self.has_filters, X, X = self.get_filters(queryset.model)
+        for filter_spec in self.filter_specs:
+            queryset = filter_spec.queryset(self.request, queryset)
+            if filter_spec.value():
+                self.url_params[filter_spec.parameter_name] = filter_spec.value()
 
         # Handle sorts
         order = self.request.REQUEST.get('_order', '')
@@ -325,8 +303,6 @@ class NgwListView(ListView):
         context = {}
         context['baseurl'] = self.get_query_string()
         context['order'] = self.order
-        context['simplefilters'] = [
-            (filter, filter.choices(self)) for filter in self.simplefilters]
         context['actions'] = [
             (funcname, _get_action_desc(getattr(self, funcname)))
             for funcname in self.get_actions(self.request)]

@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n staticfiles %}
+{% load i18n staticfiles admin_list %}
 
 {% block extrahead %}{{ block.super }}
 {% if actions %}
@@ -42,26 +42,15 @@
     {% endcomment %}
 
     {% block prequerylist %}{% endblock %}
-    <div class="module {% if simplefilters %}filtered{% endif %}" id="changelist">
+    <div class="module {% if view.has_filters %}filtered{% endif %}" id="changelist">
     {% block search %}{% endblock %}
     {% block filters %}
-        {% for filter, choices in simplefilters %}
-            {% if forloop.first %}
+        {% if view.has_filters %}
             <div id="changelist-filter">
             <h2>{% trans 'Filter' %}</h2>
-            {% endif %}
-            <h3>{% trans 'By' %} {{ filter.title }}</h3>
-            <ul>
-            {% for choice in choices %}
-                <li {% if choice.selected %}class="selected"{% endif %}>
-                    <a href="{{choice.query_string}}">{{ choice.display }}</a>
-                </li>
-            {% endfor %}
-            </ul>
-            {% if forloop.last %}
+            {% for spec in view.filter_specs %}{% admin_list_filter view spec %}{% endfor %}
             </div>
-            {% endif %}
-        {% endfor %}
+        {% endif %}
     {% endblock %}
     {% include "query.html" %}
     </div>

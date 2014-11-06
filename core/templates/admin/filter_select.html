@@ -1,0 +1,8 @@
+{% load i18n %}
+<h3>{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}</h3>
+<select onchange="document.location=this.options[this.selectedIndex].value;">
+{% for choice in choices %}
+    <option{% if choice.selected %} selected{% endif %} value="{{ choice.query_string|iriencode }}">{{ choice.display }}
+{% endfor %}
+</select>
+{# vim: set et ts=4 ft=htmldjango: #}
