@@ -196,6 +196,9 @@ class ChoiceContactField(ContactField):
         proxy = True
     def type_as_html(self):
         return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
+    type_as_html.short_description = ugettext_lazy('Type')
+    type_as_html.admin_order_field = 'type'
+    type_as_html.allow_tags = True
     def format_value_text(self, value):
         choices = self.cached_choices()
         try:
@@ -217,6 +220,9 @@ class MultipleChoiceContactField(ContactField):
         proxy = True
     def type_as_html(self):
         return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
+    type_as_html.short_description = ugettext_lazy('Type')
+    type_as_html.admin_order_field = 'type'
+    type_as_html.allow_tags = True
     def format_value_text(self, value):
         choices = self.cached_choices()
         txt_choice_list = []
