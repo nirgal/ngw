@@ -9,16 +9,35 @@ from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
 # Globally disable delete selected
 admin.site.disable_action('delete_selected')
 
+from django.contrib.admin.views.main import ChangeList
+class MyChangeList(ChangeList):
+    '''
+    This is a clone of ChangeList, but urls are relative
+    '''
+    def url_for_result(self, result):
+        pk = getattr(result, self.pk_attname)
+        return str(pk)+'/'
+
+
+class MyModelAdmin(admin.ModelAdmin):
+    '''
+    This is a clone of admin.ModelAdmin, but uses MyChangeList
+    '''
+    def get_changelist(self, request, **kwargs):
+        return MyChangeList
+
+#######################################################################
 
 @admin.register(Config)
-class ConfigAdmin(admin.ModelAdmin):
+class ConfigAdmin(MyModelAdmin):
     list_display = 'id', 'text'
     list_editable = 'text',
 
+#######################################################################
 
 from ngw.core.views.contacts import ContactEditForm
 @admin.register(Contact)
-class ContactAdmin(admin.ModelAdmin):
+class ContactAdmin(MyModelAdmin):
     list_display = 'name',
     search_fields = 'name',
     def get_form(self, request, obj=None, **kwargs):
@@ -35,11 +54,19 @@ class ContactAdmin(admin.ModelAdmin):
         form = Form(instance=obj)
         return list(form.fields)
 
+#######################################################################
 
-from ngw.core.views.groups import ContactGroupForm
+from ngw.core.views.groups import ContactGroupListView, ContactGroupForm
 @admin.register(ContactGroup)
-class ContactGroupAdmin(admin.ModelAdmin):
-    list_display = 'name', 'description'
+class ContactGroupAdmin(MyModelAdmin, ContactGroupListView):
+    list_display = ('name', 'description_not_too_long',
+        # 'rendered_fields',
+        'visible_direct_supergroups_5',
+        'visible_direct_subgroups_5',
+        # 'budget_code',
+        # 'visible_member_count',
+        #'system'
+        )
     search_fields = 'name',
     def get_form(self, request, obj=None, **kwargs):
         class TheForm(ContactGroupForm):
@@ -54,27 +81,34 @@ class ContactGroupAdmin(admin.ModelAdmin):
         form = Form(instance=obj)
         return list(form.fields)
 
+    def get_queryset(self, request):
+        self.request = request
+        return self.get_root_queryset()
+
+#######################################################################
 
 from ngw.core.views.choices import ChoiceListView
 class ChoiceAdminInLine(admin.TabularInline):
     model = Choice
     fields = 'value', 'key'
 @admin.register(ChoiceGroup)
-class ChoiceGroupAdmin(admin.ModelAdmin, ChoiceListView):
+class ChoiceGroupAdmin(MyModelAdmin, ChoiceListView):
     list_display = ChoiceListView.list_display
     inlines = [ChoiceAdminInLine]
 
+#######################################################################
 
 @admin.register(ContactGroupNews)
-class ContactGroupNewsAdmin(admin.ModelAdmin):
+class ContactGroupNewsAdmin(MyModelAdmin):
     list_display = 'title', 'date', 'author', 'contact_group'
 
+#######################################################################
 
-from ngw.core.views.fields import FieldEditForm
+from ngw.core.views.fields import FieldListView, FieldEditForm
 @admin.register(ContactField)
-class ContactFieldAdmin(admin.ModelAdmin):
-    list_display = 'name', 'nice_case_type', 'contact_group', 'system'
-    list_display_links = None
+class ContactFieldAdmin(MyModelAdmin, FieldListView):
+    list_display = 'name', 'type_as_html', 'contact_group', 'system'
+    #list_display_links = None
     form = FieldEditForm
 
     def nice_case_type(self, field):
@@ -95,16 +129,17 @@ class ContactFieldAdmin(admin.ModelAdmin):
     #    # custom view which should return an HttpResponse
     #    pass
 
+#######################################################################
 
 @admin.register(ContactFieldValue)
-class ContactFieldValueAdmin(admin.ModelAdmin):
+class ContactFieldValueAdmin(MyModelAdmin):
     list_display = 'contact', 'contact_field', 'value'
 
-################################
+#######################################################################
 
 from ngw.core.views.messages import MessageDirectionFilter, MessageReadFilter, MessageContactFilter
 @admin.register(ContactMsg)
-class ContactMsgAdmin(admin.ModelAdmin):
+class ContactMsgAdmin(MyModelAdmin):
     list_display = 'nice_flags', 'group', 'send_date', 'contact', 'subject'
     #list_filter = 'is_answer', 'contact'
     list_filter = MessageDirectionFilter, MessageReadFilter, MessageContactFilter
