@@ -113,6 +113,24 @@ class InGroupAcl(ContextMixin):
 #
 #######################################################################
 
+# List of things to do in order to use admin.views.main.ChangeList:
+# model_admin.get_queryset
+# model_admin.get_preserved_filters
+# model_admin.to_field_allowed
+# model_admin.lookup_allowed
+# Check filter __init__ last parameter
+# model_admin.get_paginator
+# model_admin.ordering
+# model_admin.get_ordering
+# model_admin.get_search_results
+# changelist.url_for_result
+
+#class NgwListView2(View):
+#    template_name = 'list2.html'
+#    def get(self, request, *args, **kwargs):
+#        qs = self.root_queryset
+#        cl = ChangeList(request, qs.model, ...
+    
 class NgwListView(ListView):
     '''
     This function renders the query, paginated.

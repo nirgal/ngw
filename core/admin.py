@@ -7,16 +7,17 @@ from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
     ContactFieldValue, ContactMsg)
 
 # Globally disable delete selected
-#admin.site.disable_action('delete_selected')
+admin.site.disable_action('delete_selected')
 
 
+@admin.register(Config)
 class ConfigAdmin(admin.ModelAdmin):
     list_display = 'id', 'text'
     list_editable = 'text',
-admin.site.register(Config, ConfigAdmin)
 
 
 from ngw.core.views.contacts import ContactEditForm
+@admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
     list_display = 'name',
     search_fields = 'name',
@@ -34,9 +35,9 @@ class ContactAdmin(admin.ModelAdmin):
         form = Form(instance=obj)
         return list(form.fields)
 
-admin.site.register(Contact, ContactAdmin)
 
 from ngw.core.views.groups import ContactGroupForm
+@admin.register(ContactGroup)
 class ContactGroupAdmin(admin.ModelAdmin):
     list_display = 'name', 'description'
     search_fields = 'name',
@@ -53,27 +54,24 @@ class ContactGroupAdmin(admin.ModelAdmin):
         form = Form(instance=obj)
         return list(form.fields)
 
-admin.site.register(ContactGroup, ContactGroupAdmin)
-
-#admin.site.register(GroupInGroup)
-#admin.site.register(ContactInGroup)
 
 from ngw.core.views.choices import ChoiceListView
 class ChoiceAdminInLine(admin.TabularInline):
     model = Choice
     fields = 'value', 'key'
+@admin.register(ChoiceGroup)
 class ChoiceGroupAdmin(admin.ModelAdmin, ChoiceListView):
     list_display = ChoiceListView.list_display
     inlines = [ChoiceAdminInLine]
-admin.site.register(ChoiceGroup, ChoiceGroupAdmin)
 
 
+@admin.register(ContactGroupNews)
 class ContactGroupNewsAdmin(admin.ModelAdmin):
     list_display = 'title', 'date', 'author', 'contact_group'
-admin.site.register(ContactGroupNews, ContactGroupNewsAdmin)
 
 
 from ngw.core.views.fields import FieldEditForm
+@admin.register(ContactField)
 class ContactFieldAdmin(admin.ModelAdmin):
     list_display = 'name', 'nice_case_type', 'contact_group', 'system'
     list_display_links = None
@@ -97,20 +95,18 @@ class ContactFieldAdmin(admin.ModelAdmin):
     #    # custom view which should return an HttpResponse
     #    pass
 
-admin.site.register(ContactField, ContactFieldAdmin)
 
+@admin.register(ContactFieldValue)
 class ContactFieldValueAdmin(admin.ModelAdmin):
     list_display = 'contact', 'contact_field', 'value'
-admin.site.register(ContactFieldValue, ContactFieldValueAdmin)
 
 ################################
 
 from ngw.core.views.messages import MessageDirectionFilter, MessageReadFilter, MessageContactFilter
-
+@admin.register(ContactMsg)
 class ContactMsgAdmin(admin.ModelAdmin):
     list_display = 'nice_flags', 'group', 'send_date', 'contact', 'subject'
     #list_filter = 'is_answer', 'contact'
     list_filter = MessageDirectionFilter, MessageReadFilter, MessageContactFilter
     search_fields = 'subject', 'text'
-admin.site.register(ContactMsg, ContactMsgAdmin)
 
