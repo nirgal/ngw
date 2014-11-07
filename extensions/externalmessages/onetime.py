@@ -236,3 +236,15 @@ def sync_msg(msg):
     except BaseException as err:
         logger.critical(err)
         logger.critical(traceback.format_exc())
+
+def get_related_messages(msg):
+    sync_info = json.loads(msg.sync_info)
+    if 'otid' not in sync_info:
+        return ()
+    otid = sync_info['otid']
+    results = ContactMsg.objects
+    results = results.filter(sync_info__contains=json.dumps({'otid': otid})[1:-1])
+    results = results.filter(sync_info__contains=json.dumps({'backend': __name__})[1:-1])
+    results = results.exclude(pk=msg.pk)
+    results = results.order_by('-send_date')
+    return results

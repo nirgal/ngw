@@ -1941,3 +1941,16 @@ class ContactMsg(NgwModel):
         sync_info = json.loads(self.sync_info)
         backend_name = sync_info['backend']
         return ContactMsg.objects.get_backend_by_name(backend_name)
+
+    def get_related_messages(self):
+        '''
+        Find the list of related messages, delegating the question to the
+        matching backend.
+        '''
+        backend = self.get_backend()
+        func_name = 'get_related_messages'
+        try:
+            func = getattr(backend, func_name)
+        except AttributeError:
+            return ()
+        return func(self)
