@@ -28,12 +28,12 @@ Event selection widget (Do not load everything at once, like for column selectio
 
 Files handling:
 - Improve display (mimetype, size, ...)
-- Check cache/no cache
+- Check cache/no cache.
 - Improve previews (tumbler package with d-bus commands and ajax integration?)
 
 With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet: See internal cache in o2o sql compiler.
 
-Add duration to events (end date)
+Add duration to events (end date).
 
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
@@ -45,8 +45,6 @@ In group_members.html, show detailed permissions for get_manager_groups|group_vi
 Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
-
-gpg: use gnupg python module
 
 
 ====================================================================================================
@@ -81,4 +79,4 @@ Change "default group" into "default permissions"
 
 Check new migrations framework
 
-Setup a "favicon"
+Setup a "favicon".
