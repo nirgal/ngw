@@ -80,14 +80,7 @@ class Command(NoArgsCommand):
 
     def process_all_messages(self):
         for msg in ContactMsg.objects.filter():
-            sync_info = json.loads(msg.sync_info)
-            backend_name = sync_info['backend']
-            try:
-                backend = ContactMsg.objects.get_backend_by_name(backend_name)
-            except ImportError as e:
-                raise ImproperlyConfigured(('Error importing external messages backend module %s: "%s"'
-                    % (mod_name, e)))
-
+            backend = msg.get_backend()
             func_name = 'sync_msg'
             try:
                 func = getattr(backend, func_name)

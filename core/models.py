@@ -1933,3 +1933,11 @@ class ContactMsg(NgwModel):
                     result += '<span style="color:red;" title="%s">✉</span>' % _('Notification sent but unread')
         return mark_safe(result)
     nice_flags.short_description = ugettext_lazy('Flags')
+
+    def get_backend(self):
+        '''
+        Returns the backend python module for that message
+        '''
+        sync_info = json.loads(self.sync_info)
+        backend_name = sync_info['backend']
+        return ContactMsg.objects.get_backend_by_name(backend_name)
