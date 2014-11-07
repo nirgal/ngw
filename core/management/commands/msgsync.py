@@ -3,7 +3,6 @@ import os
 import fcntl
 import logging
 import json
-from importlib import import_module
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import NoArgsCommand
@@ -80,20 +79,14 @@ class Command(NoArgsCommand):
         os.unlink(self.get_pid_filename())
 
     def process_all_messages(self):
-        known_backends = {}
-
         for msg in ContactMsg.objects.filter():
             sync_info = json.loads(msg.sync_info)
             backend_name = sync_info['backend']
             try:
-                backend = known_backends[backend_name]
-            except KeyError:
-                try:
-                    backend = import_module(backend_name)
-                except ImportError as e:
-                    raise ImproperlyConfigured(('Error importing external messages backend module %s: "%s"'
-                        % (mod_name, e)))
-                known_backends[backend_name] = backend
+                backend = ContactMsg.objects.get_backend_by_name(backend_name)
+            except ImportError as e:
+                raise ImproperlyConfigured(('Error importing external messages backend module %s: "%s"'
+                    % (mod_name, e)))
 
             func_name = 'sync_msg'
             try:

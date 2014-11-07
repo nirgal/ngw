@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import logging
 from collections import OrderedDict
 import json
+from importlib import import_module
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils.safestring import mark_safe
@@ -1865,6 +1866,14 @@ class ContactGroupNews(NgwModel):
         return self.contact_group.get_absolute_url() + 'news/' + str(self.id) + '/'
 
 
+class ContactMsgManager(models.Manager):
+    known_backends = {}
+    def get_backend_by_name(self, name):
+        if name not in self.known_backends:
+            backend = import_module(name)
+            self.known_backends[name] = backend
+        return self.known_backends[name]
+
 class ContactMsg(NgwModel):
     id = models.AutoField(primary_key=True)
     contact = models.ForeignKey(Contact, verbose_name=ugettext_lazy('Contact'))
@@ -1881,6 +1890,7 @@ class ContactMsg(NgwModel):
         db_table = 'contact_message'
         verbose_name = ugettext_lazy('message')
         verbose_name_plural = ugettext_lazy('messages')
+    objects = ContactMsgManager()
 
     def nice_date(self):
         return formats.date_format(self.send_date, 'DATETIME_FORMAT')

@@ -134,4 +134,3 @@ class ContactMsgAdmin(MyModelAdmin, MessageListView):
     #list_filter = 'is_answer', 'contact'
     list_filter = MessageDirectionFilter, MessageReadFilter, MessageContactFilter
     search_fields = 'subject', 'text'
-
