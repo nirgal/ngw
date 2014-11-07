@@ -46,6 +46,8 @@ Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
 
+gpg: use gnupg python module
+
 
 ====================================================================================================
 UNSORTED
