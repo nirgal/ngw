@@ -59,14 +59,7 @@ class ContactAdmin(MyModelAdmin):
 from ngw.core.views.groups import ContactGroupListView, ContactGroupForm
 @admin.register(ContactGroup)
 class ContactGroupAdmin(MyModelAdmin, ContactGroupListView):
-    list_display = ('name', 'description_not_too_long',
-        # 'rendered_fields',
-        'visible_direct_supergroups_5',
-        'visible_direct_subgroups_5',
-        # 'budget_code',
-        # 'visible_member_count',
-        #'system'
-        )
+    list_display = ContactGroupListView.list_display
     search_fields = 'name',
     def get_form(self, request, obj=None, **kwargs):
         class TheForm(ContactGroupForm):
@@ -107,14 +100,8 @@ class ContactGroupNewsAdmin(MyModelAdmin):
 from ngw.core.views.fields import FieldListView, FieldEditForm
 @admin.register(ContactField)
 class ContactFieldAdmin(MyModelAdmin, FieldListView):
-    list_display = 'name', 'type_as_html', 'contact_group', 'system'
-    #list_display_links = None
+    list_display = FieldListView.list_display
     form = FieldEditForm
-
-    def nice_case_type(self, field):
-        return field.type[0].upper() + field.type[1:].lower()
-    nice_case_type.short_description = ugettext_lazy('type')
-    nice_case_type.admin_order_field = 'type'
 
     def changelist_view(self, request):
         return super(ContactFieldAdmin, self).changelist_view(request)
@@ -137,10 +124,13 @@ class ContactFieldValueAdmin(MyModelAdmin):
 
 #######################################################################
 
-from ngw.core.views.messages import MessageDirectionFilter, MessageReadFilter, MessageContactFilter
+from ngw.core.views.messages import (
+    MessageListView,
+    MessageDirectionFilter, MessageReadFilter, MessageContactFilter)
 @admin.register(ContactMsg)
-class ContactMsgAdmin(MyModelAdmin):
-    list_display = 'nice_flags', 'group', 'send_date', 'contact', 'subject'
+class ContactMsgAdmin(MyModelAdmin, MessageListView):
+    list_display = MessageListView.list_display
+    list_display_links = 'subject',
     #list_filter = 'is_answer', 'contact'
     list_filter = MessageDirectionFilter, MessageReadFilter, MessageContactFilter
     search_fields = 'subject', 'text'
