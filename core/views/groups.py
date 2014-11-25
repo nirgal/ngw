@@ -49,6 +49,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         # 'visible_member_count',
         #'system'
         )
+    list_display_links = 'name',
 
     def visible_direct_supergroups_5(self, group):
         supergroups = group.get_direct_supergroups()
@@ -245,7 +246,7 @@ class ContactGroupView(InGroupAcl, View):
         if cg.userperms & perms.VIEW_FILES:
             return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
         if cg.userperms & perms.VIEW_MSGS:
-            return HttpResponseRedirect(cg.get_absolute_url() + 'messages/?&_order=-1')
+            return HttpResponseRedirect(cg.get_absolute_url() + 'messages/')
         raise PermissionDenied
 
 
@@ -255,23 +256,33 @@ class ContactGroupView(InGroupAcl, View):
 #
 #######################################################################
 
-class GroupMemberListView(InGroupAcl, BaseContactListView):
-    template_name = 'group_members.html'
+from django.contrib.admin import filters
+class MemberFilter(filters.ListFilter):
+    '''
+    This is not really a filter. This acutally adds columns to the query.
+    '''
+    title = ugettext_lazy('Change columns')
+    template = 'empty.html'
 
-    def check_perm_groupuser(self, group, user):
-        if not group.userperms & perms.SEE_MEMBERS:
-            raise PermissionDenied
-
-
-    def get_root_queryset(self):
-        q = super(GroupMemberListView, self).get_root_queryset()
-
-        cg = self.contactgroup
-
-        display = self.request.REQUEST.get('display', None)
+    def __init__(self, request, params, model, view):
+        super().__init__(request, params, model, view)
+        self.view = view
+        self.contactgroup = view.contactgroup
+        display = params.pop('display', None)
         if display is None:
-            display = cg.get_default_display()
+            display = self.contactgroup.get_default_display()
         self.display = display
+
+
+    def has_output(self):
+        return True # This is required so that queryset is called
+
+    def choices(self, cl):
+        return ()
+
+    def queryset(self, request, q):
+        display = self.view.display = self.display
+        cg = self.contactgroup
 
         wanted_flags = 0
         if 'm' in display:
@@ -304,9 +315,64 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
                 % (cg.id, wanted_flags & perms.ADMIN_ALL))
 
             q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
+            return q
 
-        self.url_params['display'] = self.display
-        return q
+    def expected_parameters(self):
+        return [ 'display' ]
+
+
+class GroupMemberListView(InGroupAcl, BaseContactListView):
+    template_name = 'group_members.html'
+    list_filter = BaseContactListView.list_filter + (MemberFilter,)
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.SEE_MEMBERS:
+            raise PermissionDenied
+
+
+    #def get_root_queryset(self):
+    #    q = super(GroupMemberListView, self).get_root_queryset()
+
+    #    cg = self.contactgroup
+
+    #    display = self.request.REQUEST.get('display', None)
+    #    if display is None:
+    #        display = cg.get_default_display()
+    #    self.display = display
+
+    #    wanted_flags = 0
+    #    if 'm' in display:
+    #        wanted_flags |= perms.MEMBER
+    #    if 'i' in display:
+    #        wanted_flags |= perms.INVITED
+    #    if 'd' in display:
+    #        wanted_flags |= perms.DECLINED
+    #    if 'a' in display:
+    #        wanted_flags |= perms.ADMIN_ALL
+
+    #    if not wanted_flags:
+    #        # Show nothing
+    #        q = q.filter('FALSE')
+    #    elif not 'g' in display:
+    #        # Not interested in inheritance:
+    #        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+    #            % (cg.id, wanted_flags))
+    #    else:
+    #        # We want inherited people
+    #        or_conditions = []
+    #        # The local flags
+    #        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+    #            % (cg.id, wanted_flags))
+    #        # The inherited memberships/invited/declined
+    #        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
+    #            % (cg.id, wanted_flags & (perms.MEMBER|perms.INVITED|perms.DECLINED)))
+    #        # The inherited admins
+    #        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
+    #            % (cg.id, wanted_flags & perms.ADMIN_ALL))
+
+    #        q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
+
+    #    self.url_params['display'] = self.display
+    #    return q
 
 
     def get_context_data(self, **kwargs):
@@ -318,17 +384,17 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
                            .add_component(('members', _('members')))
         context['active_submenu'] = 'members'
 
-        context['display'] = self.display
-
         context.update(kwargs)
-        return super(GroupMemberListView, self).get_context_data(**context)
+        result = super(GroupMemberListView, self).get_context_data(**context)
+        result['display'] = self.display
+        return result
 
 
     def get_actions(self, request):
-        for action in super(GroupMemberListView, self).get_actions(request):
-            yield action
-        if self.contactgroup.userperms & perms.WRITE_MSGS:
-            yield 'action_send_message'
+        actions = super().get_actions(request)
+        send_message = self.get_action('action_send_message')
+        actions[send_message[1]] = send_message
+        return actions
 
 
     def action_send_message(self, request, queryset):

@@ -29,6 +29,7 @@ class FieldListView(NgwAdminAcl, NgwListView):
         'name', 'type_as_html', 'contact_group', 'system',
         #'move_it', 'sort_weight',
         )
+    list_display_links = 'name',
     default_sort = 'sort_weight'
 
 
@@ -47,7 +48,7 @@ class FieldListView(NgwAdminAcl, NgwListView):
         context['objtype'] = ContactField
         context['nav'] = Navbar(ContactField.get_class_navcomponent())
         context.update(kwargs)
-        return super(FieldListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 ###############################################################################

@@ -92,15 +92,18 @@ class MessageContactFilter(filters.SimpleListFilter):
 
 class MessageListView(InGroupAcl, NgwListView):
     list_display = 'nice_flags', 'nice_date', 'contact', 'subject'
+    list_display_links = 'subject',
     template_name = 'message_list.html'
     list_filter = (
         MessageDirectionFilter, MessageReadFilter, MessageContactFilter)
+    append_slash = False
 
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.VIEW_MSGS:
             raise PermissionDenied
 
     def get_root_queryset(self):
+        return ContactMsg.objects.all()
         return ContactMsg.objects \
             .filter(group_id=self.contactgroup.id) \
             .order_by('-send_date')
@@ -113,7 +116,7 @@ class MessageListView(InGroupAcl, NgwListView):
                          .add_component(('messages', _('messages')))
         context['active_submenu'] = 'messages'
         context.update(kwargs)
-        return super(MessageListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -342,7 +345,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             self.object.read_date = None
             self.object.read_by = None
             self.object.save()
-            return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/?&_order=-1')
+            return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/')
         raise Http404
 
 

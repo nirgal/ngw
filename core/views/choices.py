@@ -24,9 +24,11 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 
 class ChoiceListView(NgwAdminAcl, NgwListView):
-    root_queryset = ChoiceGroup.objects.all()
     list_display = 'name', 'html_choices'
+    list_display_links = 'name',
 
+    def get_root_queryset(self):
+        return ChoiceGroup.objects.all()
 
     def html_choices(self, choice_group):
         return mark_safe(', '.join([

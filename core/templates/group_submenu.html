@@ -62,7 +62,7 @@
 
 {% spaceless %}
 {% if 'x' in cg_perms %}
-    <a href="{{cg.get_absolute_url}}messages/?&_order=-1">
+    <a href="{{cg.get_absolute_url}}messages/">
 {% endif %}
     <div class="submenuitem {% if active_submenu == "messages" %}activesubmenuitem{% endif %}"{% if not 'x' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
     {% if 'x' in cg_perms %}

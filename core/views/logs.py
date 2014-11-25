@@ -15,7 +15,6 @@ class LogListView(NgwAdminAcl, NgwListView):
     Display full log list (history).
     '''
     template_name = 'log_list.html'
-    root_queryset = Log.objects.all()
     list_display = (
         'small_date', 'contact', 'action_txt', 'target_repr', 'property_repr',
         'change')
@@ -25,6 +24,9 @@ class LogListView(NgwAdminAcl, NgwListView):
     small_date.short_description = ugettext_lazy('Date UTC')
     small_date.admin_order_field = 'dt'
 
+
+    def get_root_queryset(self):
+        return Log.objects.all()
 
     def get_context_data(self, **kwargs):
         context = {}

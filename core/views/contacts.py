@@ -34,6 +34,8 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
+from django.contrib.admin.utils import (lookup_field, display_for_field,
+    display_for_value, label_for_field)
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -69,6 +71,21 @@ class ContactQuerySet(RawQuerySet):
         self.qry_orderby = []
         self.offset = None
         self.limit = None
+        self.__hack_for_changelist()
+
+    def __hack_for_changelist(self):
+        self.query.select_related = True
+        #raw_query = self
+        #def get_order_by(self, value):
+        #    return raw_query.qry_orderby
+        #def set_order_by(self, value):
+        #    raw_query.qry_orderby = value
+        #self.query.order_by = property(get_order_by, set_order_by)
+        self.query.order_by = []
+
+    def __repr__(self):
+        self.compile()
+        return super().__repr__()
 
     def add_field(self, fieldid):
         '''
@@ -139,8 +156,11 @@ class ContactQuerySet(RawQuerySet):
             self.params = params
         return self
 
-    def order_by(self, name):
-        self.qry_orderby.append(name)
+    def order_by(self, *names):
+        print('qs.order_by', repr(names))
+        for name in names:
+            if name != 'pk' and name != '-pk':
+                self.qry_orderby.append(name)
         return self
 
     def compile(self):
@@ -166,6 +186,7 @@ class ContactQuerySet(RawQuerySet):
 
         self.raw_query = qry
         self.query = sql.RawQuery(sql=qry, using=self.db, params=self.params)
+        self.__hack_for_changelist()
         #print(repr(self.raw_query), repr(self.params))
 
     def count(self):
@@ -199,6 +220,8 @@ class ContactQuerySet(RawQuerySet):
         for contact in self:
             return contact
 
+    def _clone(self):
+        return self # FIXME ugly hack for ChangeList
 
 def get_default_columns(user):
     # check the field still exists
@@ -337,12 +360,71 @@ def field_widget_factory(contact_field):
 
 
 
+
+from django.contrib.admin import filters
+class CustomColumnsFilter(filters.ListFilter):
+    '''
+    This is not really a filter. This acutally adds columns to the query.
+    '''
+    title = ugettext_lazy('Change columns')
+    template = 'empty.html'
+
+    def __init__(self, request, params, model, view):
+        super().__init__(request, params, model, view)
+        params.pop('fields', None)
+        params.pop('savecolumns', None)
+
+    def has_output(self):
+        return True # This is required so that queryset is called
+
+    def choices(self, cl):
+        return ()
+
+    def queryset(self, request, q):
+        return q
+
+    def expected_parameters(self):
+        return [ 'fields' ]
+
+
+class ContactCustomFilter(filters.ListFilter):
+    '''
+    Special filter for contact rawquery
+    '''
+    title = ugettext_lazy('contact field')
+    template = 'empty.html'
+
+    def __init__(self, request, params, model, view):
+        super().__init__(request, params, model, view)
+        self.view = view
+        self.filter_str = params.pop('filter', '')
+        params.pop('disp_filter', None)
+        self.filter = parse_filterstring(self.filter_str, request.user.id)
+        self.filter_html = self.filter.to_html()
+        view.filter_str = self.filter_str
+        view.filter_html = self.filter_html
+
+
+    def has_output(self):
+        return True # This is required so that queryset is called
+
+    def choices(self, cl):
+        return ()
+
+    def queryset(self, request, q):
+        return self.filter.apply_filter_to_query(q)
+
+    def expected_parameters(self):
+        return [ 'filter' ]
+
+
 class BaseContactListView(NgwListView):
     '''
     Base view for contact list.
     That view should NOT be called directly since there is no user check.
     '''
     template_name = 'contact_list.html'
+    list_filter = CustomColumnsFilter, ContactCustomFilter
 
     actions = (
         'action_csv_export',
@@ -351,24 +433,43 @@ class BaseContactListView(NgwListView):
         'add_to_group',
     )
 
-    def contact_make_query_with_fields(self, request, fields):
-        '''
-        Creates an iterable objects with all the required fields (including groups).
-        returns a tupple (query, list_display)
-        Permissions are checked for the fields. Forbidden field/groups are skiped.
-        '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.list_display = []
+
+
+    def get_root_queryset(self):
+        # Make sure self.contactgroup is defined:
+        if not hasattr(self, 'contactgroup'):
+            self.contactgroup = None
 
         q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
+
         list_display = []
 
-        user_id = request.user.id
-        for prop in fields:
+        request = self.request
+        user = request.user
+
+        strfields = request.GET.get('fields', None)
+        if strfields:
+            if request.GET.get('savecolumns', False):
+                user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
+            fields = strfields.split(',')
+            #TODO check in url, like self.url_params['fields'] = strfields
+        else:
+            fields = get_default_columns(user)
+            strfields = ','.join(fields)
+
+        self.strfields = strfields
+        self.fields = fields
+
+        for prop in self.fields:
             if prop == 'name':
                 list_display.append('name_with_relative_link')
             elif prop.startswith(DISP_GROUP_PREFIX):
                 groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
-                if not perms.c_can_see_members_cg(user_id, groupid):
+                if not perms.c_can_see_members_cg(user.id, groupid):
                     continue # just ignore groups that aren't allowed to be seen
 
                 q.add_group(groupid)
@@ -391,7 +492,7 @@ class BaseContactListView(NgwListView):
                 fieldid = prop[len(DISP_FIELD_PREFIX):]
                 cf = ContactField.objects.get(pk=fieldid)
 
-                if not perms.c_can_view_fields_cg(user_id, cf.contact_group_id):
+                if not perms.c_can_view_fields_cg(user.id, cf.contact_group_id):
                     continue # Just ignore fields that can't be seen
 
                 q.add_field(fieldid)
@@ -400,6 +501,7 @@ class BaseContactListView(NgwListView):
                 attribute = field_widget_factory(cf)
                 attribute.short_description = cf.name
                 attribute.admin_order_field = prop
+                attribute.allow_tags = True
                 setattr(self, attribute_name, attribute)
                 list_display.append(attribute_name)
             else:
@@ -415,39 +517,7 @@ class BaseContactListView(NgwListView):
             #cols.append(('group_%s_inherited_flags' % current_cg.id, 'group_%s_inherited_flags' % current_cg.id, None))
             #cols.append(('group_%s_inherited_aflags' % current_cg.id, 'group_%s_inherited_aflags' % current_cg.id, None))
 
-        return q, list_display
-
-
-    def get_root_queryset(self):
-        request = self.request
-        strfilter = request.REQUEST.get('filter', '')
-        filter = parse_filterstring(strfilter, request.user.id)
-        self.url_params['filter'] = strfilter
-
-        strfields = request.REQUEST.get('fields', None)
-        if strfields:
-            fields = strfields.split(',')
-            self.url_params['fields'] = strfields
-        else:
-            fields = get_default_columns(request.user)
-            strfields = ','.join(fields)
-
-        if request.REQUEST.get('savecolumns'):
-            request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
-
-        # Make sure self.contactgroup is defined:
-        if not hasattr(self, 'contactgroup'):
-            self.contactgroup = None
-
-        q, list_display = self.contact_make_query_with_fields(request, fields)
-
-        q = filter.apply_filter_to_query(q)
-
         self.list_display = list_display
-        self.filter = strfilter
-        self.filter_html = filter.to_html()
-        self.strfields = strfields
-        self.fields = fields
         return q
 
 
@@ -456,12 +526,13 @@ class BaseContactListView(NgwListView):
         context['title'] = _('Contact list')
         context['objtype'] = Contact
         context['nav'] = Navbar(Contact.get_class_navcomponent())
-        context['filter'] = self.filter
-        context['filter_html'] = self.filter_html
-        context['fields'] = self.strfields
-        context['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
         context.update(kwargs)
-        return super(BaseContactListView, self).get_context_data(**context)
+        result = super().get_context_data(**context)
+        result['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
+        result['filter'] = self.filter_str
+        result['filter_html'] = self.filter_html
+        result['reset_filter_link'] = self.cl.get_query_string({}, 'filter')
+        return result
 
 
     #get_link_name=NgwModel.get_absolute_url
@@ -469,27 +540,38 @@ class BaseContactListView(NgwListView):
         return '<a href="%(id)d/">%(name)s</a>' % {'id': contact.id, 'name': html.escape(contact.name)}
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'
+    name_with_relative_link.allow_tags = True
 
 
     def action_csv_export(self, request, queryset):
+        from django.contrib.admin.utils import label_for_field
         result = ''
         def _quote_csv(col_html):
             u = html.strip_tags(str(col_html))
+            u = u.rstrip('\n\r')
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
         header_done = False
         for row in queryset:
             if not header_done:
-                for i, header in enumerate(self.result_headers(row)):
+                for i, field_name in enumerate(self.list_display):
+                    text, attr = label_for_field(field_name, type(row), self, True)
                     if i: # not first column
                         result += ','
-                    result += _quote_csv(header['text'])
+                    result += _quote_csv(text)
                 result += '\n'
                 header_done = True
-            for i, col_html in enumerate(self.row_to_items(row)):
+            first_col = True
+            for i, field_name in enumerate(self.list_display):
                 if i: # not first column
                     result += ','
-                if col_html == None:
+                f, attr, value = lookup_field(field_name, row, self)
+                if value == None:
                     continue
+                if f is None:
+                    col_html = display_for_value(value, False)
+                else:
+                    col_html = display_for_field(value, f)
+                    
                 result += _quote_csv(col_html)
             result += '\n'
         return HttpResponse(result, content_type='text/csv; charset=utf-8')
