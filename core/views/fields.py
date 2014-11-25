@@ -97,7 +97,7 @@ class FieldEditForm(forms.ModelForm):
 
     class IncompatibleData(Exception):
         def __init__(self, deletion_details, *args, **kwargs):
-            super(FieldEditForm.IncompatibleData, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
             self.deletion_details = deletion_details
 
     move_after = forms.IntegerField(label=ugettext_lazy('Move after'), widget=forms.Select)
@@ -108,7 +108,7 @@ class FieldEditForm(forms.ModelForm):
         if instance:
             initial['move_after'] = instance.sort_weight-10
         kargs['initial'] = initial
-        super(FieldEditForm, self).__init__(*args, **kargs)
+        super().__init__(*args, **kargs)
 
         self.delete_incompatible = bool(self.data.get('confirm', None))
 
@@ -193,7 +193,7 @@ class FieldEditForm(forms.ModelForm):
                 if deletion_details:
                     raise FieldEditForm.IncompatibleData(deletion_details)
 
-        result = super(FieldEditForm, self).save(commit=False)
+        result = super().save(commit=False)
         self.instance.sort_weight = self.cleaned_data['move_after'] + 5
         self.instance.save()
         return result
@@ -237,7 +237,7 @@ class FieldEditMixin(ModelFormMixin):
             context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(FieldEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class FieldEditView(NgwAdminAcl, FieldEditMixin, UpdateView):
@@ -282,7 +282,7 @@ class FieldDeleteView(NgwAdminAcl, NgwDeleteView):
     pk_url_kwarg = 'id'
 
     def get_object(self, *args, **kwargs):
-        field = super(FieldDeleteView, self).get_object(*args, **kwargs)
+        field = super().get_object(*args, **kwargs)
         if field.system:
             messages.add_message(
                 self.request, messages.ERROR,

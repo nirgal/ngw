@@ -35,4 +35,4 @@ class LogListView(NgwAdminAcl, NgwListView):
         context['nav'] = Navbar(Log.get_class_navcomponent())
 
         context.update(kwargs)
-        return super(LogListView, self).get_context_data(**context)
+        return super().get_context_data(**context)

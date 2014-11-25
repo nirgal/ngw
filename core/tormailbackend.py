@@ -152,4 +152,4 @@ class TorEmailBackend(EmailBackend):
         qualified domain name.
         '''
         email_message.extra_headers['Message-ID'] = make_msgid_noFQDN()
-        return super(TorEmailBackend, self)._send(email_message)
+        return super()._send(email_message)

@@ -40,7 +40,7 @@ class NgwUserAcl(object):
     @method_decorator(require_group(GROUP_USER_NGW))
     def dispatch(self, request, *args, **kwargs):
         self.check_perm_user(request.user)
-        return super(NgwUserAcl, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def check_perm_user(self, user):
         '''
@@ -54,7 +54,7 @@ class NgwAdminAcl(NgwUserAcl):
     This simple mixin check the user is authenticated and member of GROUP_ADMIN
     '''
     def check_perm_user(self, user):
-        super(NgwAdminAcl, self).check_perm_user(user)
+        super().check_perm_user(user)
         if not user.is_member_of(GROUP_ADMIN):
             raise PermissionDenied
 
@@ -88,7 +88,7 @@ class InGroupAcl(ContextMixin):
             group = None
         self.contactgroup = group
         self.check_perm_groupuser(group, user)
-        return super(InGroupAcl, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def check_perm_groupuser(self, group, user):
         '''
@@ -106,7 +106,7 @@ class InGroupAcl(ContextMixin):
         if cg:
             context['cg_perms'] = perms.int_to_flags(cg.userperms)
         context.update(kwargs)
-        return super(InGroupAcl, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -516,7 +516,7 @@ class NgwDeleteView(DeleteView):
                 .add_component(self.object.get_navcomponent()) \
                 .add_component(('delete', _('delete')))
         context.update(kwargs)
-        return super(NgwDeleteView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def delete(self, request, *args, **kwargs):
         obj = self.object = self.get_object()

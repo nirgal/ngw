@@ -44,7 +44,7 @@ class ChoiceListView(NgwAdminAcl, NgwListView):
         context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
 
         context.update(kwargs)
-        return super(ChoiceListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -65,7 +65,7 @@ class ChoicesWidget(forms.MultiWidget):
         for i in range(ndisplay):
             widgets.append(forms.TextInput(attrs=attrs_value))
             widgets.append(forms.TextInput(attrs=attrs_key))
-        super(ChoicesWidget, self).__init__(widgets, attrs)
+        super().__init__(widgets, attrs)
         self.ndisplay = ndisplay
 
     def decompress(self, value):
@@ -83,7 +83,7 @@ class ChoicesField(forms.MultiValueField):
         for i in range(ndisplay):
             fields.append(forms.CharField())
             fields.append(forms.CharField())
-        super(ChoicesField, self).__init__(fields, *args, **kwargs)
+        super().__init__(fields, *args, **kwargs)
         self.ndisplay = ndisplay
 
     def compress(self, data_list):
@@ -116,7 +116,7 @@ class ChoiceGroupForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         choicegroup = kwargs.get('instance', None)
-        super(ChoiceGroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         ndisplay = 0
         self.initial['possible_values'] = []
@@ -139,7 +139,7 @@ class ChoiceGroupForm(forms.ModelForm):
             ndisplay=ndisplay)
 
     def save(self):
-        choicegroup = super(ChoiceGroupForm, self).save()
+        choicegroup = super().save()
 
         possibles_values = self.cleaned_data['possible_values']
         choices = {}
@@ -225,7 +225,7 @@ class ChoiceEditMixin(ModelFormMixin):
             context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(ChoiceEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class ChoiceEditView(NgwAdminAcl, ChoiceEditMixin, UpdateView):

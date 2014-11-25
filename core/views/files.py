@@ -58,7 +58,7 @@ class FileListView(InGroupAcl, FormView):
         context['path'] = path
         context['files'] = cg.get_filenames(path)
         context.update(kwargs)
-        return super(FileListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def form_valid(self, form):
         cg = self.contactgroup

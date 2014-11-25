@@ -1698,7 +1698,7 @@ class BoundFilter(BaseBoundFilter):
     # TODO: Rename to FieldBoundFilter
 
     def __init__(self, filter, *args):
-        super(BoundFilter, self).__init__()
+        super().__init__()
         self.filter = filter
         self.args = args
 
@@ -1723,7 +1723,7 @@ class EmptyBoundFilter(BaseBoundFilter):
 
 class AndBoundFilter(BaseBoundFilter):
     def __init__(self, *subfilters):
-        super(AndBoundFilter, self).__init__()
+        super().__init__()
         self.subfilters = subfilters
     def get_sql_query_where(self, query, *args, **kargs):
         wheres = []
@@ -1746,7 +1746,7 @@ class AndBoundFilter(BaseBoundFilter):
 
 class OrBoundFilter(BaseBoundFilter):
     def __init__(self, *subfilters):
-        super(OrBoundFilter, self).__init__()
+        super().__init__()
         self.subfilters = subfilters
     def get_sql_query_where(self, query, *args, **kargs):
         wheres = []

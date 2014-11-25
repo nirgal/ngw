@@ -43,7 +43,7 @@ class ContactAdmin(MyModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         class TheForm(ContactEditForm):
             def __init__(self, *args, **kwargs):
-                super(TheForm, self).__init__(
+                super().__init__(
                     user=request.user,
                     contactgroup=None,
                     *args, **kwargs)
@@ -64,7 +64,7 @@ class ContactGroupAdmin(MyModelAdmin, ContactGroupListView):
     def get_form(self, request, obj=None, **kwargs):
         class TheForm(ContactGroupForm):
             def __init__(self, *args, **kwargs):
-                super(TheForm, self).__init__(
+                super().__init__(
                     user=request.user,
                     *args, **kwargs)
         return TheForm
@@ -104,9 +104,9 @@ class ContactFieldAdmin(MyModelAdmin, FieldListView):
     form = FieldEditForm
 
     def changelist_view(self, request):
-        return super(ContactFieldAdmin, self).changelist_view(request)
+        return super().changelist_view(request)
     #def get_urls(self):
-    #    urls = super(MyModelAdmin, self).get_urls()
+    #    urls = super().get_urls()
     #    my_urls = patterns('',
     #        (r'^my_view/$', self.my_view)
     #    )

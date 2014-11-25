@@ -30,7 +30,7 @@ class RibField(forms.Field):
         """
         Validate the RIB key
         """
-        super(RibField, self).clean(value)
+        super().clean(value)
         if value in (None, ""):
             return None
         iso_value = ""

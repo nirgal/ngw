@@ -96,7 +96,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
 
         context.update(kwargs)
-        return super(ContactGroupListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -220,7 +220,7 @@ class EventListView(NgwUserAcl, TemplateView):
         context['today'] = date.today()
 
         context.update(kwargs)
-        return super(EventListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 
@@ -330,7 +330,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 
 
     #def get_root_queryset(self):
-    #    q = super(GroupMemberListView, self).get_root_queryset()
+    #    q = super().get_root_queryset()
 
     #    cg = self.contactgroup
 
@@ -385,7 +385,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         context['active_submenu'] = 'members'
 
         context.update(kwargs)
-        result = super(GroupMemberListView, self).get_context_data(**context)
+        result = super().get_context_data(**context)
         result['display'] = self.display
         return result
 
@@ -424,7 +424,7 @@ class ContactGroupForm(forms.ModelForm):
         self.user = user
         instance = kwargs.get('instance', None)
 
-        super(ContactGroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Only show visible groups
         visible_groups_choices = [
@@ -470,7 +470,7 @@ class ContactGroupForm(forms.ModelForm):
         data = self.cleaned_data
 
         # Save the base fields
-        cg = super(ContactGroupForm, self).save(commit)
+        cg = super().save(commit)
 
         # Update the super groups
         old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(self.user.id))
@@ -526,7 +526,7 @@ class GroupEditMixin(ModelFormMixin):
     pk_url_kwarg = 'gid'
 
     def get_form_kwargs(self):
-        kwargs = super(GroupEditMixin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
 
@@ -567,7 +567,7 @@ class GroupEditMixin(ModelFormMixin):
                              .add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(GroupEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class GroupEditView(InGroupAcl, GroupEditMixin, UpdateView):
@@ -596,7 +596,7 @@ class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
                 _('You no longer are authorized to see your default group. Please define a new default group.'))
             return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
 
-        return super(GroupCreateView, self).get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
 
 #######################################################################
@@ -615,7 +615,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
             raise PermissionDenied
 
     def get_object(self, *args, **kwargs):
-        cg = super(GroupDeleteView, self).get_object(*args, **kwargs)
+        cg = super().get_object(*args, **kwargs)
         if cg.system:
             messages.add_message(
                 self.request, messages.ERROR,
@@ -629,7 +629,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
             context['nav'] = self.contactgroup.get_smart_navbar() \
                      .add_component(('delete', _('delete')))
         context.update(kwargs)
-        return super(GroupDeleteView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def delete(self, request, *args, **kwargs):
         cg = self.get_object()
@@ -645,7 +645,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
             subcg.set_direct_supergroups_ids(sub_super)
             #print(repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids())
         # TODO: delete static folder
-        return super(GroupDeleteView, self).delete(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
 
 #######################################################################
@@ -664,7 +664,7 @@ class ContactInGroupForm(forms.ModelForm):
         self.user = kargs.pop('user')
         self.contact = kargs.pop('contact')
         self.group = kargs.pop('group')
-        super(ContactInGroupForm, self).__init__(*args, **kargs)
+        super().__init__(*args, **kargs)
 
         note_key, note_value = self.fields.popitem()  # tmp remove
 
@@ -717,7 +717,7 @@ class ContactInGroupForm(forms.ModelForm):
     def save(self):
         oldflags = self.instance.flags or 0
         is_creation = self.instance.pk is None
-        cig = super(ContactInGroupForm, self).save(commit=False)
+        cig = super().save(commit=False)
         if is_creation:
             cig.contact = self.contact
             cig.group = self.group
@@ -750,7 +750,7 @@ class ContactInGroupView(InGroupAcl, FormView):
             raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(ContactInGroupView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['group'] = self.contactgroup
         kwargs['contact'] = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
         kwargs['user'] = self.request.user
@@ -851,7 +851,7 @@ class ContactInGroupView(InGroupAcl, FormView):
                          .add_component(contact.get_navcomponent()) \
                          .add_component(('membership', _('membership')))
         context.update(kwargs)
-        return super(ContactInGroupView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -911,11 +911,11 @@ class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
             .add_component((str(contact.id), contact.name)) \
             .add_component(('remove', _('delete')))
         context.update(kwargs)
-        return super(ContactInGroupDelete, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def get(self, request, gid, cid):
         try:
             self.get_object()
         except ContactInGroup.DoesNotExist:
             return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
-        return super(ContactInGroupDelete, self).get(self, request, gid, cid)
+        return super().get(self, request, gid, cid)

@@ -64,7 +64,7 @@ FTYPE_PASSWORD = 'PASSWORD'
 
 class ContactQuerySet(RawQuerySet):
     def __init__(self, *args, **kargs):
-        super(ContactQuerySet, self).__init__('', *args, **kargs)
+        super().__init__('', *args, **kargs)
         self.qry_fields = {'id':'contact.id', 'name':'name'}
         self.qry_from = ['contact']
         self.qry_where = []
@@ -287,7 +287,7 @@ class FieldSelectForm(forms.Form):
     - groups whose members can be viewed
     '''
     def __init__(self, user, *args, **kargs):
-        super(FieldSelectForm, self).__init__(*args, **kargs)
+        super().__init__(*args, **kargs)
         self.fields['selected_fields'] = forms.MultipleChoiceField(
             required=False, widget=FilteredSelectMultiple(_('Fields'), False),
             choices=get_available_columns(user.id))
@@ -618,7 +618,7 @@ class ContactListView(NgwUserAcl, BaseContactListView):
     Only show visible contacts
     '''
     def get_root_queryset(self):
-        qs = super(ContactListView, self).get_root_queryset()
+        qs = super().get_root_queryset()
 
         qs.qry_from.append('JOIN v_c_can_see_c ON contact.id=v_c_can_see_c.contact_id_2')
         qs.filter('v_c_can_see_c.contact_id_1 = %s' % self.request.user.id)
@@ -637,7 +637,7 @@ class GroupAddManyForm(forms.Form):
     ids = forms.CharField(widget=forms.widgets.HiddenInput)
 
     def __init__(self, user, *args, **kwargs):
-        super(GroupAddManyForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.user = user
         self.fields['group'] = forms.ChoiceField(
             label=_('Target group'),
@@ -683,7 +683,7 @@ class GroupAddManyForm(forms.Form):
 
         for flag in perms.FLAGTOTEXT.keys():
             if self.cleaned_data['membership_' + flag]:
-                return super(GroupAddManyForm, self).clean()
+                return super().clean()
         raise forms.ValidationError(_('You must select at least one mode'))
 
 
@@ -719,7 +719,7 @@ class GroupAddManyView(NgwUserAcl, FormView):
         return {'ids': self.request.REQUEST['ids']}
 
     def get_form_kwargs(self):
-        kwargs = super(GroupAddManyView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
 
@@ -731,13 +731,13 @@ class GroupAddManyView(NgwUserAcl, FormView):
         context['nav'] = Navbar(Contact.get_class_navcomponent()) \
             .add_component(('add_to_group', _('add contacts to')))
         context.update(kwargs)
-        return super(GroupAddManyView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
     def form_valid(self, form):
         form.add_them(self.request)
         self.form = form
-        return super(GroupAddManyView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         group_id = self.form.cleaned_data['group']
@@ -802,7 +802,7 @@ class ContactDetailView(InGroupAcl, TemplateView):
         context['group_user_ngw_perms'] = ContactGroup.objects.get(pk=GROUP_USER_NGW).get_contact_perms(self.request.user.id)
 
         context.update(kwargs)
-        return super(ContactDetailView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -858,7 +858,7 @@ class ContactEditForm(forms.ModelForm):
         instance = kwargs.get('instance', None)
         contactgroup = kwargs.pop('contactgroup')
         user = kwargs.pop('user')  # contact making the query, not the edited one
-        super(ContactEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.contactgroup = contactgroup
 
@@ -896,7 +896,7 @@ class ContactEditForm(forms.ModelForm):
     def save(self, request):
         is_creation = self.instance.pk is None
 
-        contact = super(ContactEditForm, self).save()
+        contact = super().save()
         data = self.cleaned_data
 
         # 1/ The contact name
@@ -972,7 +972,7 @@ class ContactEditMixin(ModelFormMixin):
                 raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(ContactEditMixin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         kwargs['contactgroup'] = self.contactgroup
         return kwargs
@@ -1014,7 +1014,7 @@ class ContactEditMixin(ModelFormMixin):
             context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(ContactEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class ContactEditView(InGroupAcl, ContactEditMixin, UpdateView):
@@ -1102,7 +1102,7 @@ class PasswordView(InGroupAcl, UpdateView):
         except AttributeError:
             pass # it's ok not to have a letter
         context.update(kwargs)
-        return super(PasswordView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -1121,7 +1121,7 @@ class HookPasswordView(View):
     def dispatch(self, request, *args, **kwargs):
         username = request.META['REMOTE_USER']  # Apache external auth
         request.user = Contact.objects.get_by_natural_key(username)
-        return super(HookPasswordView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request):
         # TODO check password strength
@@ -1165,7 +1165,7 @@ class PassLetterView(InGroupAcl, DetailView):
         context['nav'].add_component(contact.get_navcomponent()) \
                   .add_component(('password letter', _('password letter')))
         context.update(kwargs)
-        return super(PassLetterView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def post(self, request, *args, **kwargs):
         contact = self.get_object()
@@ -1221,7 +1221,7 @@ class ContactDeleteView(InGroupAcl, NgwDeleteView):
                      .add_component(('members', _('members'))) \
                      .add_component(('delete', _('delete')))
         context.update(kwargs)
-        return super(ContactDeleteView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -1284,7 +1284,7 @@ class FilterListView(InGroupAcl, TemplateView):
                          .add_component(('filters', _('custom filters')))
 
         context.update(kwargs)
-        return super(FilterListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -1301,7 +1301,7 @@ class FilterEditForm(forms.Form):
         user = kwargs.pop('user')
         contact = kwargs.pop('contact')
         fid = int(kwargs.pop('fid'))
-        super(FilterEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.contact = contact
         self.fid = fid
@@ -1335,7 +1335,7 @@ class FilterEditView(NgwUserAcl, FormView):
             raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(FilterEditView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         kwargs['contact'] = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
         kwargs['fid'] = self.kwargs['fid']
@@ -1350,12 +1350,12 @@ class FilterEditView(NgwUserAcl, FormView):
                          .add_component(('filters', _('custom filters')))
         #                 .add_component((self.kwargs['fid'], self.form.filtername))
         context.update(kwargs)
-        return super(FilterEditView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def form_valid(self, form):
         form.save(self.request)
         messages.add_message(self.request, messages.SUCCESS, _('Filter has been renamed.'))
-        return super(FilterEditView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('contact_detail', args=(self.kwargs['cid'],))
@@ -1401,7 +1401,7 @@ class DefaultGroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         contact = kwargs.get('instance')
         user = contact # FIXME Problem when changing the default group for another user
-        super(DefaultGroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         available_groups = ContactGroup.objects.with_user_perms(user.id, wanted_flags=perms.SEE_CG).with_member(contact.id).filter(date__isnull=True)
         choices = [('', _('Create new personnal group'))] + [(cg.id, cg.name) for cg in available_groups
             if not cg.date and perms.c_can_see_cg(contact.id, cg.id)]
@@ -1463,7 +1463,7 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
                          .add_component(('default_group', _('default group')))
 
         context.update(kwargs)
-        return super(DefaultGroupView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################

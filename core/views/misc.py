@@ -27,14 +27,14 @@ class LogoutView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         auth_logout(request)
-        return super(LogoutView, self).get(self, request, *args, **kwargs)
+        return super().get(self, request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = {
             'message': mark_safe(_('Have a nice day!<br><br><a href="%s">Login again</a>.') % settings.LOGIN_URL)
         }
         context.update(kwargs)
-        return super(LogoutView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class HomeView(NgwUserAcl, TemplateView):
@@ -90,7 +90,7 @@ class HomeView(NgwUserAcl, TemplateView):
             'unread_groups': unread_groups,
         }
         context.update(kwargs)
-        return super(HomeView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class TestView(NgwUserAcl, TemplateView):
@@ -109,4 +109,4 @@ class TestView(NgwUserAcl, TemplateView):
             'nav': Navbar('test'),
         }
         context.update(kwargs)
-        return super(TestView, self).get_context_data(**context)
+        return super().get_context_data(**context)

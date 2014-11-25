@@ -139,7 +139,7 @@ except ImportError as e:
 
 class SendMessageForm(forms.Form):
     def __init__(self, contactgroup, *args, **kwargs):
-        super(SendMessageForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields['ids'] = forms.CharField(widget=forms.widgets.HiddenInput)
         if self.support_expiration_date():
@@ -206,7 +206,7 @@ class SendMessageView(InGroupAcl, FormView):
             raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(SendMessageView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['contactgroup'] = self.contactgroup
         return kwargs
 
@@ -231,7 +231,7 @@ class SendMessageView(InGroupAcl, FormView):
             messages.add_message(self.request, messages.WARNING,
                 translation.string_concat(error_msg,
                     _(" The message will be kept here until you define his email address.")))
-        return super(SendMessageView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return self.contactgroup.get_absolute_url()+'messages/'
@@ -260,7 +260,7 @@ class SendMessageView(InGroupAcl, FormView):
         context['active_submenu'] = 'messages'
 
         context.update(kwargs)
-        return super(SendMessageView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -280,7 +280,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             raise PermissionDenied
 
     def get_object(self, queryset=None):
-        msg = super(MessageDetailView, self).get_object(queryset)
+        msg = super().get_object(queryset)
         # Check the group match the one of the url
         if msg.group_id != self.contactgroup.id:
             raise PermissionDenied
@@ -337,7 +337,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             context['reply_url'] = "../members/send_message?ids=%s" % \
                 self.object.contact_id
         context.update(kwargs)
-        return super(MessageDetailView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
