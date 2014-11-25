@@ -94,7 +94,7 @@ def process_line():
     bindata = sys.stdin.read(cmdlength)
 
     logger.debug('Received command: %s', repr(bindata))
-    data = str(bindata)
+    data = str(bindata, 'utf-8')
 
     data = data.split(':', 1)
     if len(data) != 2:
@@ -108,6 +108,7 @@ def process_line():
     elif cmd == 'setpass':
         send_result(cmd_setpass(*args))
     else:
+        logger.warning('Unknown command %s', repr(cmd))
         send_result(False)
     
 
