@@ -51,6 +51,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         'locked'
         )
     list_display_links = 'name',
+    search_fields = 'name', 'description'
 
     def visible_direct_supergroups_5(self, group):
         supergroups = group.get_direct_supergroups()

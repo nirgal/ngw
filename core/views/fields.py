@@ -31,6 +31,7 @@ class FieldListView(NgwAdminAcl, NgwListView):
         #'move_it', 'sort_weight',
         )
     list_display_links = 'name',
+    search_fields = 'name', 'hint'
     default_sort = 'sort_weight'
 
 

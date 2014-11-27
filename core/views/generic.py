@@ -4,6 +4,8 @@ Base view class; View helpers
 
 import inspect
 from collections import OrderedDict
+from functools import reduce
+import operator
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -128,6 +130,7 @@ from django.http.response import HttpResponseBase
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin import helpers
 from django.contrib.admin.templatetags.admin_static import static
+from django.contrib.admin.utils import lookup_needs_distinct
 
 class MyChangeList(ChangeList):
     '''
@@ -321,11 +324,11 @@ class NgwListView(TemplateView):
                 or_queries = [models.Q(**{orm_lookup: bit})
                               for orm_lookup in orm_lookups]
                 queryset = queryset.filter(reduce(operator.or_, or_queries))
-            if not use_distinct:
-                for search_spec in orm_lookups:
-                    if lookup_needs_distinct(self.opts, search_spec):
-                        use_distinct = True
-                        break
+            #if not use_distinct:
+            #    for search_spec in orm_lookups:
+            #        if lookup_needs_distinct(self.opts, search_spec):
+            #            use_distinct = True
+            #            break
 
         return queryset, use_distinct
 

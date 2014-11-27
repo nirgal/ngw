@@ -97,6 +97,7 @@ class MessageListView(InGroupAcl, NgwListView):
     list_filter = (
         MessageDirectionFilter, MessageReadFilter, MessageContactFilter)
     append_slash = False
+    search_fields = 'subject', 'text',
 
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.VIEW_MSGS:
