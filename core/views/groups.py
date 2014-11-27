@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
+from django.contrib.admin import filters
 from django.contrib.admin.widgets import FilteredSelectMultiple, AdminDateWidget
 from django.contrib import messages
 from ngw.core.models import (
@@ -266,13 +267,12 @@ class ContactGroupView(InGroupAcl, View):
 #
 #######################################################################
 
-from django.contrib.admin import filters
-class MemberFilter(filters.ListFilter):
+class MemberFilter(filters.SimpleListFilter):
     '''
-    This is not really a filter. This acutally adds columns to the query.
+    Filter people according to their membership (invited/declined...)
     '''
-    title = ugettext_lazy('Change columns')
-    template = 'empty.html'
+    title = ugettext_lazy('membership')
+    parameter_name = 'display'
 
     def __init__(self, request, params, model, view):
         super().__init__(request, params, model, view)
@@ -284,14 +284,38 @@ class MemberFilter(filters.ListFilter):
         self.display = display
 
 
-    def has_output(self):
-        return True # This is required so that queryset is called
+    def lookups(self, request, view):
+        return (
+            ('m', _('Members')),
+            ('i', _('Invited people')),
+            ('d', _('Declined invitations')),
+            ('g', _('Include subgroups')),
+            ('a', _('Admins')),
+        )
+
+    def value(self):
+        value = super().value()
+        if value is None:
+            value = self.contactgroup.get_default_display()
+        return value
 
     def choices(self, cl):
-        return ()
+        display = self.value()
+        for flag, title in self.lookup_choices:
+            selected = flag in display
+            if selected:
+                newdisplay = display.replace(flag, '')
+            else:
+                newdisplay = display + flag
+            yield {
+                'selected': selected,
+                'query_string': cl.get_query_string({
+                    'display': newdisplay }),
+                'display': title,
+            }
 
     def queryset(self, request, q):
-        display = self.view.display = self.display
+        display = self.value()
         cg = self.contactgroup
 
         wanted_flags = 0
@@ -327,9 +351,6 @@ class MemberFilter(filters.ListFilter):
             q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
             return q
 
-    def expected_parameters(self):
-        return [ 'display' ]
-
 
 class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_members.html'
@@ -337,52 +358,6 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.SEE_MEMBERS:
             raise PermissionDenied
-
-
-    #def get_root_queryset(self):
-    #    q = super().get_root_queryset()
-
-    #    cg = self.contactgroup
-
-    #    display = self.request.REQUEST.get('display', None)
-    #    if display is None:
-    #        display = cg.get_default_display()
-    #    self.display = display
-
-    #    wanted_flags = 0
-    #    if 'm' in display:
-    #        wanted_flags |= perms.MEMBER
-    #    if 'i' in display:
-    #        wanted_flags |= perms.INVITED
-    #    if 'd' in display:
-    #        wanted_flags |= perms.DECLINED
-    #    if 'a' in display:
-    #        wanted_flags |= perms.ADMIN_ALL
-
-    #    if not wanted_flags:
-    #        # Show nothing
-    #        q = q.filter('FALSE')
-    #    elif not 'g' in display:
-    #        # Not interested in inheritance:
-    #        q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
-    #            % (cg.id, wanted_flags))
-    #    else:
-    #        # We want inherited people
-    #        or_conditions = []
-    #        # The local flags
-    #        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
-    #            % (cg.id, wanted_flags))
-    #        # The inherited memberships/invited/declined
-    #        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
-    #            % (cg.id, wanted_flags & (perms.MEMBER|perms.INVITED|perms.DECLINED)))
-    #        # The inherited admins
-    #        or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
-    #            % (cg.id, wanted_flags & perms.ADMIN_ALL))
-
-    #        q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
-
-    #    self.url_params['display'] = self.display
-    #    return q
 
 
     def get_context_data(self, **kwargs):
@@ -396,7 +371,6 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
 
         context.update(kwargs)
         result = super().get_context_data(**context)
-        result['display'] = self.display
         return result
 
 
