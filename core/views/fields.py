@@ -2,6 +2,7 @@
 ContactField managing views
 '''
 
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
@@ -26,7 +27,7 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 class FieldListView(NgwAdminAcl, NgwListView):
     list_display = (
-        'name', 'type_as_html', 'contact_group', 'system',
+        'name', 'type_as_html', 'contact_group', 'locked',
         #'move_it', 'sort_weight',
         )
     list_display_links = 'name',
@@ -36,6 +37,7 @@ class FieldListView(NgwAdminAcl, NgwListView):
     def move_it(self, field):
         return '<a href='+str(field.id)+'/moveup>Up</a> <a href='+str(field.id)+'/movedown>Down</a>'
     move_it.short_description = ugettext_lazy('Move')
+    move_it.allow_tags = True
 
 
     def get_root_queryset(self):
@@ -50,6 +52,13 @@ class FieldListView(NgwAdminAcl, NgwListView):
         context.update(kwargs)
         return super().get_context_data(**context)
 
+    def locked(self, field):
+        if field.system:
+            return '<img src="%sngw/lock.png" alt="locked" width="10" height="10">' % settings.STATIC_URL
+        return ''
+    locked.short_description = ugettext_lazy('Locked')
+    locked.admin_order_field = 'system'
+    locked.allow_tags = True
 
 ###############################################################################
 #

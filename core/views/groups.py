@@ -3,6 +3,7 @@ ContactGroup managing views
 '''
 
 from datetime import date, datetime, timedelta
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
@@ -47,7 +48,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         'visible_direct_subgroups_5',
         # 'budget_code',
         # 'visible_member_count',
-        #'system'
+        'locked'
         )
     list_display_links = 'name',
 
@@ -84,6 +85,14 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
             return _('Not available')
     visible_member_count.short_description = ugettext_lazy('Members')
 
+
+    def locked(self, group):
+        if group.system:
+            return '<img src="%sngw/lock.png" alt="locked" width="10" height="10">' % settings.STATIC_URL
+        return ''
+    locked.short_description = ugettext_lazy('Locked')
+    locked.admin_order_field = 'system'
+    locked.allow_tags = True
 
     def get_root_queryset(self):
         return ContactGroup.objects.filter(date=None).with_user_perms(self.request.user.id, perms.SEE_CG)
