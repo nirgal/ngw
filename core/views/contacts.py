@@ -157,7 +157,7 @@ class ContactQuerySet(RawQuerySet):
         return self
 
     def order_by(self, *names):
-        print('qs.order_by', repr(names))
+        #print('qs.order_by', repr(names))
         for name in names:
             if name != 'pk' and name != '-pk':
                 self.qry_orderby.append(name)
