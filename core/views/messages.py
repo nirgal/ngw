@@ -104,7 +104,6 @@ class MessageListView(InGroupAcl, NgwListView):
             raise PermissionDenied
 
     def get_root_queryset(self):
-        return ContactMsg.objects.all()
         return ContactMsg.objects \
             .filter(group_id=self.contactgroup.id) \
             .order_by('-send_date')
