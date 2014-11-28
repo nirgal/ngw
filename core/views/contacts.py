@@ -982,12 +982,17 @@ class ContactEditMixin(ModelFormMixin):
 
         messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved.') % contact.name)
 
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect('edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect('../add')
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect('.')
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(contact.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url)
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -1076,7 +1081,7 @@ class PasswordView(InGroupAcl, UpdateView):
         contact = form.save(self.request)
         messages.add_message(
             self.request, messages.SUCCESS,
-            _('Password has been changed sucessfully!'))
+            _('Password has been changed successfully!'))
         if self.contactgroup:
             return HttpResponseRedirect(
                 self.contactgroup.get_absolute_url() + 'members/' + str(contact.id) + '/')
@@ -1173,7 +1178,7 @@ class PassLetterView(InGroupAcl, DetailView):
 
         # record the value
         contact.set_password(new_password, '2', request=request) # Generated and mailed
-        messages.add_message(request, messages.SUCCESS, _('Password has been changed sucessfully!'))
+        messages.add_message(request, messages.SUCCESS, _('Password has been changed successfully!'))
 
         fields = {}
         for cf in contact.get_contactfields(request.user.id):
@@ -1245,7 +1250,7 @@ class FilterAddView(NgwUserAcl, View):
         filter_list.append((_('No name'), filter_str))
         filter_list_str = ','.join(['"' + str(name) + '","' + str(filterstr) + '"' for name, filterstr in filter_list])
         contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-        messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
+        messages.add_message(request, messages.SUCCESS, _('Filter has been added successfully!'))
         return HttpResponseRedirect(reverse('filter_edit', args=(cid, len(filter_list)-1)))
 
 
@@ -1449,7 +1454,7 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
 
     def form_valid(self, form):
         contact = form.save(self.request)
-        messages.add_message(self.request, messages.SUCCESS, _('Default group has been changed sucessfully.'))
+        messages.add_message(self.request, messages.SUCCESS, _('Default group has been changed successfully.'))
         return HttpResponseRedirect(contact.get_absolute_url())
 
     def get_context_data(self, **kwargs):

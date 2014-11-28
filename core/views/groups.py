@@ -518,17 +518,22 @@ class GroupEditMixin(ModelFormMixin):
         request = self.request
         cg = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.name_with_date())
+        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed successfully!') % cg.name_with_date())
 
         cg.check_static_folder_created()
         Contact.objects.check_login_created(request) # subgroups change
 
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect(cg.get_absolute_url() + 'edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect(cg.get_class_absolute_url() + 'add')
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect(cg.get_absolute_url())
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(cg.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url + '/' + str(cg.id) + '/')
 
     def get_context_data(self, **kwargs):
         context = {}

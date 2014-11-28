@@ -76,7 +76,7 @@ class FileListView(InGroupAcl, FormView):
                 destination.write(chunk)
             messages.add_message(
                 request, messages.SUCCESS,
-                _('File %s has been uploaded sucessfully.') % upfile.name)
+                _('File %s has been uploaded successfully.') % upfile.name)
         except IOError as err:
             messages.add_message(
                 request, messages.ERROR,

@@ -197,14 +197,20 @@ class ChoiceEditMixin(ModelFormMixin):
     def form_valid(self, form):
         request = self.request
         choicegroup = form.save()
-        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved sucessfully.') % choicegroup.name)
-        choicegroup = self.object
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect(choicegroup.get_absolute_url()+'edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect(choicegroup.get_class_absolute_url()+'add')
+
+        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved successfully.') % choicegroup.name)
+
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect(reverse('choice_list'))
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(choicegroup.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url)
 
     def get_context_data(self, **kwargs):
         context = {}

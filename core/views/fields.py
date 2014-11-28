@@ -219,14 +219,19 @@ class FieldEditMixin(ModelFormMixin):
         request = self.request
         cf = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Field %s has been saved sucessfully.') % cf.name)
+        messages.add_message(request, messages.SUCCESS, _('Field %s has been saved successfully.') % cf.name)
 
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect('edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect('add')
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect('..')
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(cf.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url)
 
     def get_context_data(self, **kwargs):
         context = {}
