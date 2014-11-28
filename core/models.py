@@ -655,6 +655,8 @@ class ContactGroup(NgwModel):
         ugettext_lazy('Field group'), default=False,
         help_text=ugettext_lazy('Does that group yield specific fields to its members?'))
     date = models.DateField(ugettext_lazy('Date'), null=True, blank=True)
+    end_date = models.DateField(ugettext_lazy('End date'), null=True, blank=True,
+        help_text=ugettext_lazy('Included. Last day.'))
     budget_code = models.CharField(ugettext_lazy('Budget code'), max_length=10, blank=True)
     system = models.BooleanField(ugettext_lazy('System locked'), default=False)
     mailman_address = models.CharField(

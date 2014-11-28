@@ -31,8 +31,7 @@ Files handling:
 - Improve previews (tumbler package with d-bus commands and ajax integration?)
 
 With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet: See internal cache in o2o sql compiler.
-
-Add duration to events (end date).
+See also https://docs.djangoproject.com/en/1.7/ref/models/lookups/
 
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables

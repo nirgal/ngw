@@ -41,6 +41,7 @@ CREATE TABLE contact_group (
     description text,
     field_group boolean DEFAULT false NOT NULL,
     date date,
+    end_date date,
     budget_code character varying(10) DEFAULT ''::character varying NOT NULL,
     system boolean DEFAULT false NOT NULL,
     mailman_address character varying(255),

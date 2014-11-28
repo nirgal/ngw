@@ -5,6 +5,7 @@ ContactGroup managing views
 from datetime import date, datetime, timedelta
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
@@ -210,19 +211,30 @@ class EventListView(NgwUserAcl, TemplateView):
             month = now.month
             year = now.year
 
-        min_date = datetime(year, month, 1) - timedelta(days=6)
-        min_date = min_date.strftime('%Y-%m-%d')
-        max_date = datetime(year, month, 1) + timedelta(days=31+6)
-        max_date = max_date.strftime('%Y-%m-%d')
+        min_date = date(year, month, 1) - timedelta(days=6)
+        str_min_date = min_date.strftime('%Y-%m-%d')
+        max_date = date(year, month, 1) + timedelta(days=31+6)
+        str_max_date = max_date.strftime('%Y-%m-%d')
 
         qs = ContactGroup.objects.with_user_perms(request.user.id, perms.SEE_CG)
-        qs = qs.filter(date__gte=min_date, date__lte=max_date)
+        qs = qs.filter(Q(date__gte=str_min_date, date__lte=str_max_date)
+            | Q(end_date__gte=str_min_date, end_date__lte=str_max_date))
 
         month_events = {}
+        dt = min_date
+        while dt <= max_date:
+            month_events[dt] = []
+            dt += timedelta(days=1)
+
         for cg in qs:
-            if cg.date not in month_events:
-                month_events[cg.date] = []
-            month_events[cg.date].append(cg)
+            if cg.end_date:
+                dt = cg.date
+                while dt <= cg.end_date:
+                    if dt >= min_date and dt <= max_date:
+                        month_events[dt].append(cg)
+                    dt += timedelta(days=1)
+            else:
+                month_events[cg.date].append(cg)
 
         context = {}
         context['title'] = _('Events')
@@ -397,10 +409,11 @@ class ContactGroupForm(forms.ModelForm):
     class Meta:
         model = ContactGroup
         fields = [
-            'name', 'description', 'date', 'budget_code', #'sticky',
+            'name', 'description', 'date', 'end_date', 'budget_code', #'sticky',
             'field_group', 'mailman_address']
         widgets = {
             'date': AdminDateWidget,
+            'end_date': AdminDateWidget,
         }
 
     def __init__(self, *args, **kwargs):
@@ -448,6 +461,16 @@ class ContactGroupForm(forms.ModelForm):
                 widget=FilteredSelectMultiple(_('groups'), False),
                 choices = visible_groups_choices,
                 initial = field_initial)
+
+    def clean(self):
+        data = super().clean()
+        start_date = data.get('date', None)
+        end_date = data.get('end_date', None)
+        if end_date:
+            if not start_date:
+                self.add_error('date', _('That field is required when you have an end date.'))
+            elif end_date < start_date:
+                self.add_error('end_date', _('The end date must be after the start date.'))
 
     def save(self, commit=True):
         is_creation = self.instance.pk is None

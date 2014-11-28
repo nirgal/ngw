@@ -57,13 +57,13 @@ db version	14
 -- Data for Name: contact_group; Type: TABLE DATA; Schema: public; Owner: ngw
 --
 
-COPY contact_group (id, name, description, field_group, date, budget_code, system, mailman_address, sticky) FROM stdin;
+COPY contact_group (id, name, description, field_group, date, end_date, budget_code, system, mailman_address, sticky) FROM stdin;
 1	Contacts	Ensemble des contacts	t	\N		t		f
-2	Utilisateurs	Ensemble des personnes qui ont un identifiant et un mot de passe.\r\nVoir aussi "Utilisateurs NGW" et "Utilisateurs Forum".	t	\N		t	\N	f
-8	Admins	Ils peuvent ajouter des contacts dans n'importe quel groupe, et tout voir.	f	\N		t		f
-9	Observateurs	Ils peuvent tout voir, mais n'ont pas accès en écriture sur les groupes.	f	\N		t		f
-52	NGW Users	People in that group can connect to NGW interface.	t	\N		t	\N	f
-53	Utilisateurs Forum	Les personnes de ce groupe peuvent se connecter au forum (non disponible).	t	\N		t	\N	f
+2	Utilisateurs	Ensemble des personnes qui ont un identifiant et un mot de passe.\r\nVoir aussi "Utilisateurs NGW" et "Utilisateurs Forum".	t	\N	\N		t	\N	f
+8	Admins	Ils peuvent ajouter des contacts dans n'importe quel groupe, et tout voir.	f	\N	\N		t		f
+9	Observateurs	Ils peuvent tout voir, mais n'ont pas accès en écriture sur les groupes.	f	\N	\N		t		f
+52	NGW Users	People in that group can connect to NGW interface.	t	\N	\N		t	\N	f
+53	Utilisateurs Forum	Les personnes de ce groupe peuvent se connecter au forum (non disponible).	t	\N	\N		t	\N	f
 \.
 
 SELECT pg_catalog.setval('contact_group_id_seq', 100, true);
