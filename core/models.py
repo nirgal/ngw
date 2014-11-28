@@ -1890,6 +1890,7 @@ class ContactMsg(NgwModel):
         db_table = 'contact_message'
         verbose_name = ugettext_lazy('message')
         verbose_name_plural = ugettext_lazy('messages')
+        ordering = '-send_date',
     objects = ContactMsgManager()
 
     def nice_date(self):

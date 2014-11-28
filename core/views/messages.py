@@ -105,8 +105,7 @@ class MessageListView(InGroupAcl, NgwListView):
 
     def get_root_queryset(self):
         return ContactMsg.objects \
-            .filter(group_id=self.contactgroup.id) \
-            .order_by('-send_date')
+            .filter(group_id=self.contactgroup.id)
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
