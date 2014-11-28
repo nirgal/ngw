@@ -288,7 +288,7 @@ class FieldSelectForm(forms.Form):
     '''
     def __init__(self, user, *args, **kargs):
         super().__init__(*args, **kargs)
-        self.fields['selected_fields'] = forms.MultipleChoiceField(
+        self.fields['fields'] = forms.MultipleChoiceField(
             required=False, widget=FilteredSelectMultiple(_('Fields'), False),
             choices=get_available_columns(user.id))
 
@@ -450,15 +450,14 @@ class BaseContactListView(NgwListView):
         request = self.request
         user = request.user
 
-        strfields = request.GET.get('fields', None)
-        if strfields:
-            if request.GET.get('savecolumns', False):
-                user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
-            fields = strfields.split(',')
-            #TODO check in url, like self.url_params['fields'] = strfields
-        else:
+        fields = request.GET.getlist('fields', None)
+        if not fields:
             fields = get_default_columns(user)
-            strfields = ','.join(fields)
+
+        strfields = ','.join(fields)
+
+        if request.GET.get('savecolumns', False):
+            user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
 
         self.strfields = strfields
         self.fields = fields
@@ -528,7 +527,7 @@ class BaseContactListView(NgwListView):
         context['nav'] = Navbar(Contact.get_class_navcomponent())
         context.update(kwargs)
         result = super().get_context_data(**context)
-        result['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
+        result['fields_form'] = FieldSelectForm(self.request.user, initial={'fields': self.fields})
         result['filter'] = self.filter_str
         result['filter_html'] = self.filter_html
         result['reset_filter_link'] = self.cl.get_query_string({}, 'filter')
