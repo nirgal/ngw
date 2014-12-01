@@ -19,7 +19,7 @@ Show messages counts on the member list
 CODE REFACTOR
 ====================================================================================================
 
-Make a nice MultiWidget for flags for use in GroupAddManyView & ContactInGroupEditView
+Use the nice MultiWidget flags in GroupAddManyView
 
 Support Image contactfields
 

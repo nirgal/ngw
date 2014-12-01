@@ -669,7 +669,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
 
 class FlagsWidget(forms.widgets.MultiWidget):
     def __init__(self, attrs=None):
-        print('attrs:', attrs)
+        #print('attrs:', attrs)
         widgets = []
         if attrs is None:
             attrs = {}
@@ -678,13 +678,10 @@ class FlagsWidget(forms.widgets.MultiWidget):
         super().__init__(widgets, attrs)
 
     def decompress(self, value):
-        print("decompressing", value)
-        result = [
+        return [
             bool(value & intval)
             for intval in perms.FLAGTOINT.values()]
 
-        print('decompressed:', result)
-        return result
 
     def render(self, name, value, attrs=None):
         if self.is_localized:
@@ -706,6 +703,13 @@ class FlagsWidget(forms.widgets.MultiWidget):
             else:
                 return 'anonflag_%s' % i
 
+        def name_of_flag(flag):
+            'Returns the internal name of the input, 0-based'
+            for i, aflag in enumerate(perms.FLAGTOINT.keys()):
+                if flag == aflag:
+                    return name + '_%s' % i
+                
+
         for i, widget in enumerate(self.widgets):
             try:
                 widget_value = value[i]
@@ -715,8 +719,24 @@ class FlagsWidget(forms.widgets.MultiWidget):
                 final_attrs = dict(final_attrs, id=id_of(i))
 
             flag = enumerated_flags[i]
+            field_name = name + '_%s' % i
+
+            oncheck_js = ''.join([
+                'this.form.%s.checked=true;' % name_of_flag(code)
+                for code in perms.FLAGDEPENDS[flag]])
+            oncheck_js += ''.join([
+                'this.form.%s.checked=false;' % name_of_flag(code)
+                for code in perms.FLAGCONFLICTS[flag]])
+
+            onuncheck_js = ''
+            for flag1, depflag1 in perms.FLAGDEPENDS.items():
+                if flag in depflag1:
+                    onuncheck_js += 'this.form.%s.checked=false;' % name_of_flag(flag1)
+
+            final_attrs['onchange'] = 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js)
+
             output.append('<label for="%(id)s">%(widget)s %(label)s</label> ' % {
-                'widget': widget.render(name + '_%s' % i, widget_value, final_attrs),
+                'widget': widget.render(field_name, widget_value, final_attrs),
                 'label': html.escape(str(perms.FLAGTOTEXT[flag])),
                 'id': '%s_%s' % (id_, i)
                 })
@@ -735,24 +755,23 @@ class FlagsField(forms.MultiValueField):
         super().__init__(fields, *args, **kwargs)
 
     def compress(self, data_list):
-        print("compressing", data_list)
+        #print("compressing", data_list)
         result = 0
         i = 0
         for flag, intval in perms.FLAGTOINT.items():
             if data_list[i]:
                 result |= intval
             i += 1
-        print("compressed", result)
+        #print("compressed", result)
         return result
 
 class ContactInGroupForm(forms.ModelForm):
     class Meta:
         model = ContactInGroup
-        #fields = ['note']
         fields = ['flags', 'note']
-        widgets = {
-            'flags': FlagsWidget,
-        }
+        #widgets = {
+        #    'flags': FlagsWidget,
+        #}
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance', None)
@@ -761,56 +780,25 @@ class ContactInGroupForm(forms.ModelForm):
         self.group = kwargs.pop('group')
         super().__init__(*args, **kwargs)
 
-        #note_key, note_value = self.fields.popitem()  # tmp remove
+        print('kwargs', kwargs)
+        initial = kwargs.get('initial', {})
+        if 'flags' in initial:
+            flags_initial = initial['flags']
+        elif instance:
+            flags_initial = instance.flags
+        else:
+            flags_initial = 0
+        self.fields['flags'] = FlagsField(label=_('Membership'), initial=flags_initial)
 
-        #for flag, longname in perms.FLAGTOTEXT.items():
-        #    field_name = 'membership_' + flag
-
-        #    oncheck_js = ''.join([
-        #        'this.form.membership_%s.checked=true;' % code
-        #        for code in perms.FLAGDEPENDS[flag]])
-        #    oncheck_js += ''.join([
-        #        'this.form.membership_%s.checked=false;' % code
-        #        for code in perms.FLAGCONFLICTS[flag]])
-
-        #    onuncheck_js = ''
-        #    for flag1, depflag1 in perms.FLAGDEPENDS.items():
-        #        if flag in depflag1:
-        #            onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
-
-        #    if instance:
-        #        initial = bool(perms.FLAGTOINT[flag] & instance.flags)
-        #    else:
-        #        initial = False
-
-        #    self.fields[field_name] = forms.BooleanField(
-        #        label=longname, required=False,
-        #        widget=forms.widgets.CheckboxInput(attrs={
-        #            'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
-        #        }),
-        #        initial=initial)
-
-        #print('kwargs', kwargs)
-        #initial = kwargs.get('initial', {})
-        #if 'flags' in initial:
-        #    flags_initial = initial['flags']
-        #elif instance:
-        #    flags_initial = instance.flags
-        #else:
-        #    flags_initial = 0
-        #
-        #self.fields['flags'] = FlagsField(label=_('Membership'), initial=flags_initial)
-
-        #self.fields[note_key] = note_value  # restore
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
         # Currently gets best resolution in set_member_1
         data = super().clean()
         flags = data['flags']
-        if (flags & (perms.INVITED | perms.DECLINED)
-            or flags & (perms.DECLINED | perms.MEMBER)
-            or flags & (perms.INVITED | perms.MEMBER)):
+        if ((flags & perms.INVITED and flags & perms.DECLINED)
+            or (flags & perms.DECLINED and flags & perms.MEMBER)
+            or (flags & perms.INVITED and flags & perms.MEMBER)):
             raise forms.ValidationError('Invalid flags combinaison')
 
         if flags == 0 and data['note']:
