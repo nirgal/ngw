@@ -40,6 +40,10 @@ Remove ContactGroup.name_with_date for __str__
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 
+Make a double-choice contactfield
+
+Attach a choice to a field and only one (usefull for permissions)
+
 Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
