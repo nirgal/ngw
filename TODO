@@ -19,8 +19,6 @@ Show messages counts on the member list
 CODE REFACTOR
 ====================================================================================================
 
-Use the nice MultiWidget flags in GroupAddManyView
-
 Support Image contactfields
 
 Event selection widget (Do not load everything at once, like for column selection)

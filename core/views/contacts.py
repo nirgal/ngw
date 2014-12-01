@@ -29,13 +29,14 @@ from ngw.core.models import (
     ContactInGroup, Log,
     LOG_ACTION_ADD, LOG_ACTION_CHANGE,
     FIELD_COLUMNS, FIELD_FILTERS, FIELD_DEFAULT_GROUP)
+from django.contrib.admin.utils import (lookup_field, display_for_field,
+    display_for_value, label_for_field)
 from ngw.core.nav import Navbar
 from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
-from django.contrib.admin.utils import (lookup_field, display_for_field,
-    display_for_value, label_for_field)
+from ngw.core.widgets import FlagsField
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -651,39 +652,18 @@ class GroupAddManyForm(forms.Form):
  perms.CHANGE_MEMBERS).order_by('-date', 'name')]),
                 ],
             )
-        for flag, longname in perms.FLAGTOTEXT.items():
-            field_name = 'membership_' + flag
-
-            oncheck_js = ''.join([
-                'this.form.membership_%s.checked=true;' % code
-                for code in perms.FLAGDEPENDS[flag]])
-            oncheck_js += ''.join([
-                'this.form.membership_%s.checked=false;' % code
-                for code in perms.FLAGCONFLICTS[flag]])
-
-            onuncheck_js = ''
-            for flag1, depflag1 in perms.FLAGDEPENDS.items():
-                if flag in depflag1:
-                    onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
-
-            self.fields[field_name] = forms.BooleanField(
-                label=longname, required=False,
-                widget=forms.widgets.CheckboxInput(attrs={
-                    'onchange': 'if (this.checked) {%s} else {%s}' % (oncheck_js, onuncheck_js),
-                }))
+        self.fields['flags'] = FlagsField(label=ugettext_lazy('Membership'))
 
 
     def clean(self):
-        if 'group' in self.cleaned_data:
-            for flag in perms.FLAGTOTEXT.keys():
-                if self.cleaned_data['membership_' + flag]:
-                    if perms.FLAGTOINT[flag] & perms.ADMIN_ALL and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
-                        raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
+        data = super().clean()
+        if 'group' in data:
+            flags = data['flags']
+            if flags & perms.ADMIN_ALL and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
+                raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
 
-        for flag in perms.FLAGTOTEXT.keys():
-            if self.cleaned_data['membership_' + flag]:
-                return super().clean()
-        raise forms.ValidationError(_('You must select at least one mode'))
+        if data['flags'] == 0:
+            self.add_error('flags', _('You must select at least one mode'))
 
 
     def add_them(self, request):
@@ -701,9 +681,9 @@ class GroupAddManyForm(forms.Form):
             'v_c_can_see_c.contact_id_2=contact.id'))
 
         modes = ''
-        for flag in perms.FLAGTOTEXT.keys():
-            field_name = 'membership_' + flag
-            if self.cleaned_data[field_name]:
+        intvalue = self.cleaned_data['flags']
+        for flag, anint in perms.FLAGTOINT.items():
+            if anint & intvalue:
                 modes += '+' + flag
 
         target_group.set_member_n(request, contacts, modes)
