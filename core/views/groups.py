@@ -1,23 +1,21 @@
-# -*- encoding: utf-8 -*-
 '''
 ContactGroup managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 from datetime import date, datetime, timedelta
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
 from django.utils import formats
-from django.utils import six
 from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
+from django.contrib.admin import filters
 from django.contrib.admin.widgets import FilteredSelectMultiple, AdminDateWidget
 from django.contrib import messages
 from ngw.core.models import (
@@ -53,8 +51,10 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         'visible_direct_subgroups_5',
         # 'budget_code',
         # 'visible_member_count',
-        #'system'
+        'locked'
         )
+    list_display_links = 'name',
+    search_fields = 'name', 'description'
 
     def visible_direct_supergroups_5(self, group):
         supergroups = group.get_direct_supergroups()
@@ -90,6 +90,14 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
     visible_member_count.short_description = ugettext_lazy('Members')
 
 
+    def locked(self, group):
+        if group.system:
+            return '<img src="%sngw/lock.png" alt="locked" width="10" height="10">' % settings.STATIC_URL
+        return ''
+    locked.short_description = ugettext_lazy('Locked')
+    locked.admin_order_field = 'system'
+    locked.allow_tags = True
+
     def get_root_queryset(self):
         return ContactGroup.objects.filter(date=None).with_user_perms(self.request.user.id, perms.SEE_CG)
 
@@ -101,7 +109,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
 
         context.update(kwargs)
-        return super(ContactGroupListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -204,19 +212,30 @@ class EventListView(NgwUserAcl, TemplateView):
             month = now.month
             year = now.year
 
-        min_date = datetime(year, month, 1) - timedelta(days=6)
-        min_date = min_date.strftime('%Y-%m-%d')
-        max_date = datetime(year, month, 1) + timedelta(days=31+6)
-        max_date = max_date.strftime('%Y-%m-%d')
+        min_date = date(year, month, 1) - timedelta(days=6)
+        str_min_date = min_date.strftime('%Y-%m-%d')
+        max_date = date(year, month, 1) + timedelta(days=31+6)
+        str_max_date = max_date.strftime('%Y-%m-%d')
 
         qs = ContactGroup.objects.with_user_perms(request.user.id, perms.SEE_CG)
-        qs = qs.filter(date__gte=min_date, date__lte=max_date)
+        qs = qs.filter(Q(date__gte=str_min_date, date__lte=str_max_date)
+            | Q(end_date__gte=str_min_date, end_date__lte=str_max_date))
 
         month_events = {}
+        dt = min_date
+        while dt <= max_date:
+            month_events[dt] = []
+            dt += timedelta(days=1)
+
         for cg in qs:
-            if cg.date not in month_events:
-                month_events[cg.date] = []
-            month_events[cg.date].append(cg)
+            if cg.end_date:
+                dt = cg.date
+                while dt <= cg.end_date:
+                    if dt >= min_date and dt <= max_date:
+                        month_events[dt].append(cg)
+                    dt += timedelta(days=1)
+            else:
+                month_events[cg.date].append(cg)
 
         context = {}
         context['title'] = _('Events')
@@ -225,7 +244,7 @@ class EventListView(NgwUserAcl, TemplateView):
         context['today'] = date.today()
 
         context.update(kwargs)
-        return super(EventListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 
@@ -251,7 +270,7 @@ class ContactGroupView(InGroupAcl, View):
         if cg.userperms & perms.VIEW_FILES:
             return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
         if cg.userperms & perms.VIEW_MSGS:
-            return HttpResponseRedirect(cg.get_absolute_url() + 'messages/?&_order=-1')
+            return HttpResponseRedirect(cg.get_absolute_url() + 'messages/')
         raise PermissionDenied
 
 
@@ -261,23 +280,56 @@ class ContactGroupView(InGroupAcl, View):
 #
 #######################################################################
 
-class GroupMemberListView(InGroupAcl, BaseContactListView):
-    template_name = 'group_members.html'
+class MemberFilter(filters.SimpleListFilter):
+    '''
+    Filter people according to their membership (invited/declined...)
+    '''
+    title = ugettext_lazy('membership')
+    parameter_name = 'display'
 
-    def check_perm_groupuser(self, group, user):
-        if not group.userperms & perms.SEE_MEMBERS:
-            raise PermissionDenied
-
-
-    def get_root_queryset(self):
-        q = super(GroupMemberListView, self).get_root_queryset()
-
-        cg = self.contactgroup
-
-        display = self.request.REQUEST.get('display', None)
+    def __init__(self, request, params, model, view):
+        super().__init__(request, params, model, view)
+        self.view = view
+        self.contactgroup = view.contactgroup
+        display = params.pop('display', None)
         if display is None:
-            display = cg.get_default_display()
+            display = self.contactgroup.get_default_display()
         self.display = display
+
+
+    def lookups(self, request, view):
+        return (
+            ('m', _('Members')),
+            ('i', _('Invited people')),
+            ('d', _('Declined invitations')),
+            ('g', _('Include subgroups')),
+            ('a', _('Admins')),
+        )
+
+    def value(self):
+        value = super().value()
+        if value is None:
+            value = self.contactgroup.get_default_display()
+        return value
+
+    def choices(self, cl):
+        display = self.value()
+        for flag, title in self.lookup_choices:
+            selected = flag in display
+            if selected:
+                newdisplay = display.replace(flag, '')
+            else:
+                newdisplay = display + flag
+            yield {
+                'selected': selected,
+                'query_string': cl.get_query_string({
+                    'display': newdisplay }),
+                'display': title,
+            }
+
+    def queryset(self, request, q):
+        display = self.value()
+        cg = self.contactgroup
 
         wanted_flags = 0
         if 'm' in display:
@@ -310,9 +362,15 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
                 % (cg.id, wanted_flags & perms.ADMIN_ALL))
 
             q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
+            return q
 
-        self.url_params['display'] = self.display
-        return q
+
+class GroupMemberListView(InGroupAcl, BaseContactListView):
+    template_name = 'group_members.html'
+    list_filter = BaseContactListView.list_filter + (MemberFilter,)
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.SEE_MEMBERS:
+            raise PermissionDenied
 
 
     def get_context_data(self, **kwargs):
@@ -324,17 +382,16 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
                            .add_component(('members', _('members')))
         context['active_submenu'] = 'members'
 
-        context['display'] = self.display
-
         context.update(kwargs)
-        return super(GroupMemberListView, self).get_context_data(**context)
+        result = super().get_context_data(**context)
+        return result
 
 
     def get_actions(self, request):
-        for action in super(GroupMemberListView, self).get_actions(request):
-            yield action
-        if self.contactgroup.userperms & perms.WRITE_MSGS:
-            yield 'action_send_message'
+        actions = super().get_actions(request)
+        send_message = self.get_action('action_send_message')
+        actions[send_message[1]] = send_message
+        return actions
 
 
     def action_send_message(self, request, queryset):
@@ -353,10 +410,11 @@ class ContactGroupForm(forms.ModelForm):
     class Meta:
         model = ContactGroup
         fields = [
-            'name', 'description', 'date', 'budget_code', #'sticky',
+            'name', 'description', 'date', 'end_date', 'budget_code', #'sticky',
             'field_group', 'mailman_address']
         widgets = {
             'date': AdminDateWidget,
+            'end_date': AdminDateWidget,
         }
 
     def __init__(self, *args, **kwargs):
@@ -364,7 +422,7 @@ class ContactGroupForm(forms.ModelForm):
         self.user = user
         instance = kwargs.get('instance', None)
 
-        super(ContactGroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Only show visible groups
         visible_groups_choices = [
@@ -405,12 +463,22 @@ class ContactGroupForm(forms.ModelForm):
                 choices = visible_groups_choices,
                 initial = field_initial)
 
+    def clean(self):
+        data = super().clean()
+        start_date = data.get('date', None)
+        end_date = data.get('end_date', None)
+        if end_date:
+            if not start_date:
+                self.add_error('date', _('That field is required when you have an end date.'))
+            elif end_date < start_date:
+                self.add_error('end_date', _('The end date must be after the start date.'))
+
     def save(self, commit=True):
         is_creation = self.instance.pk is None
         data = self.cleaned_data
 
         # Save the base fields
-        cg = super(ContactGroupForm, self).save(commit)
+        cg = super().save(commit)
 
         # Update the super groups
         old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(self.user.id))
@@ -466,7 +534,7 @@ class GroupEditMixin(ModelFormMixin):
     pk_url_kwarg = 'gid'
 
     def get_form_kwargs(self):
-        kwargs = super(GroupEditMixin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
 
@@ -474,17 +542,22 @@ class GroupEditMixin(ModelFormMixin):
         request = self.request
         cg = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed sucessfully!') % cg.name_with_date())
+        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed successfully!') % cg.name_with_date())
 
         cg.check_static_folder_created()
         Contact.objects.check_login_created(request) # subgroups change
 
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect(cg.get_absolute_url() + 'edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect(cg.get_class_absolute_url() + 'add')
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect(cg.get_absolute_url())
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(cg.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url + '/' + str(cg.id) + '/')
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -507,7 +580,7 @@ class GroupEditMixin(ModelFormMixin):
                              .add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(GroupEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class GroupEditView(InGroupAcl, GroupEditMixin, UpdateView):
@@ -536,7 +609,7 @@ class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
                 _('You no longer are authorized to see your default group. Please define a new default group.'))
             return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
 
-        return super(GroupCreateView, self).get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
 
 #######################################################################
@@ -555,7 +628,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
             raise PermissionDenied
 
     def get_object(self, *args, **kwargs):
-        cg = super(GroupDeleteView, self).get_object(*args, **kwargs)
+        cg = super().get_object(*args, **kwargs)
         if cg.system:
             messages.add_message(
                 self.request, messages.ERROR,
@@ -569,7 +642,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
             context['nav'] = self.contactgroup.get_smart_navbar() \
                      .add_component(('delete', _('delete')))
         context.update(kwargs)
-        return super(GroupDeleteView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def delete(self, request, *args, **kwargs):
         cg = self.get_object()
@@ -585,7 +658,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
             subcg.set_direct_supergroups_ids(sub_super)
             #print(repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids())
         # TODO: delete static folder
-        return super(GroupDeleteView, self).delete(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
 
 #######################################################################
@@ -598,81 +671,99 @@ class FlagsWidget(forms.widgets.MultiWidget):
     def __init__(self, attrs=None):
         print('attrs:', attrs)
         widgets = []
-        widgets.append(OnelineCheckboxSelectMultiple(choices=(('m', _('Member')), ('i', _('Invited')), ('d', _('Declined')))))
-        widgets.append(OnelineCheckboxSelectMultiple(choices=(('o', _('Operator')), ('v', _('Viewer')))))
-        for flags, longname in six.iteritems(perms.FLAGTOTEXT):
-            if flags in 'midov':
-                continue
-            widgets.append(forms.widgets.CheckboxInput())
-        super(FlagsWidget, self).__init__(widgets, attrs)
+        if attrs is None:
+            attrs = {}
+        for flag, longname in perms.FLAGTOTEXT.items():
+            widgets.append(forms.widgets.CheckboxInput)
+        super().__init__(widgets, attrs)
 
     def decompress(self, value):
         print("decompressing", value)
+        result = [
+            bool(value & intval)
+            for intval in perms.FLAGTOINT.values()]
 
-        if value & perms.MEMBER:
-            result = ['m']
-        elif  value & perms.INVITED:
-            result = ['i']
-        elif  value & perms.DECLINED:
-            result = ['d']
-        else:
-            result = [None]
-
-        superuser = []
-        if value & perms.OPERATOR:
-            superuser.append('o')
-        if value & perms.VIEWER:
-            superuser.append('v')
-        result.append(superuser)
-
-        for flags, intval in six.iteritems(perms.FLAGTOINT):
-            if flags in 'midov':
-                continue
-            result.append(value is not None and bool(intval & value))
         print('decompressed:', result)
         return result
-    
+
+    def render(self, name, value, attrs=None):
+        if self.is_localized:
+            for widget in self.widgets:
+                widget.is_localized = self.is_localized
+        # value is a list of values, each corresponding to a widget
+        # in self.widgets.
+        if not isinstance(value, list):
+            value = self.decompress(value)
+        output = []
+        final_attrs = self.build_attrs(attrs)
+        id_ = final_attrs.get('id', None)
+
+        enumerated_flags = list(perms.FLAGTOINT.keys())
+
+        def id_of(i):
+            if id_:
+                return '%s_%s' % (id_, i)
+            else:
+                return 'anonflag_%s' % i
+
+        for i, widget in enumerate(self.widgets):
+            try:
+                widget_value = value[i]
+            except IndexError:
+                widget_value = None
+            if id_:
+                final_attrs = dict(final_attrs, id=id_of(i))
+
+            flag = enumerated_flags[i]
+            output.append('<label for="%(id)s">%(widget)s %(label)s</label> ' % {
+                'widget': widget.render(name + '_%s' % i, widget_value, final_attrs),
+                'label': html.escape(str(perms.FLAGTOTEXT[flag])),
+                'id': '%s_%s' % (id_, i)
+                })
+            if flag == 'd':
+                output.append('<br style="clear:both;">')
+        return mark_safe(self.format_output(output))
+
 
 class FlagsField(forms.MultiValueField):
     widget = FlagsWidget
     def __init__(self, *args, **kwargs):
         localize = kwargs.get('localize', False)
         fields = []
-        fields.append(forms.ChoiceField(choices=(('m', _('Member')), ('i', _('Invited')), ('d', _('Declined')))))
-        for intval, longname in six.iteritems(perms.INTTOTEXT):
-            if not intval & perms.ADMIN_ALL:
-                continue
-            fields.append(forms.BooleanField(label=longname, localize=localize))
-        super(FlagsField, self).__init__(fields, *args, **kwargs)
+        for intval, longname in perms.INTTOTEXT.items():
+            fields.append(forms.BooleanField(label=longname, localize=localize, required=False))
+        super().__init__(fields, *args, **kwargs)
 
     def compress(self, data_list):
         print("compressing", data_list)
         result = 0
         i = 0
-        for flag, intval in six.iteritems(perms.FLAGTOINT):
+        for flag, intval in perms.FLAGTOINT.items():
             if data_list[i]:
                 result |= intval
             i += 1
+        print("compressed", result)
         return result
 
 class ContactInGroupForm(forms.ModelForm):
     class Meta:
         model = ContactInGroup
-        fields = ['note']
-        #fields = ['flags', 'note']
-        #widgets = {
-        #    'flags': FlagsWidget(),
-        #}
+        #fields = ['note']
+        fields = ['flags', 'note']
+        widgets = {
+            'flags': FlagsWidget,
+        }
+
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance', None)
         self.user = kwargs.pop('user')
         self.contact = kwargs.pop('contact')
         self.group = kwargs.pop('group')
-        super(ContactInGroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        note_key, note_value = self.fields.popitem()  # tmp remove
+        #note_key, note_value = self.fields.popitem()  # tmp remove
 
-        #for flag, longname in six.iteritems(perms.FLAGTOTEXT):
+        #for flag, longname in perms.FLAGTOTEXT.items():
         #    field_name = 'membership_' + flag
 
         #    oncheck_js = ''.join([
@@ -683,7 +774,7 @@ class ContactInGroupForm(forms.ModelForm):
         #        for code in perms.FLAGCONFLICTS[flag]])
 
         #    onuncheck_js = ''
-        #    for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
+        #    for flag1, depflag1 in perms.FLAGDEPENDS.items():
         #        if flag in depflag1:
         #            onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
@@ -699,32 +790,30 @@ class ContactInGroupForm(forms.ModelForm):
         #        }),
         #        initial=initial)
 
-        print('kwargs', kwargs)
-        initial = kwargs.get('initial', {})
-        if 'flags' in initial:
-            flags_initial = initial['flags']
-        elif instance:
-            flags_initial = instance.flags
-        else:
-            flags_initial = 0
-        
-        self.fields['flags'] = FlagsField(label=_('Membership'), initial=flags_initial)
-        self.fields[note_key] = note_value  # restore
+        #print('kwargs', kwargs)
+        #initial = kwargs.get('initial', {})
+        #if 'flags' in initial:
+        #    flags_initial = initial['flags']
+        #elif instance:
+        #    flags_initial = instance.flags
+        #else:
+        #    flags_initial = 0
+        #
+        #self.fields['flags'] = FlagsField(label=_('Membership'), initial=flags_initial)
+
+        #self.fields[note_key] = note_value  # restore
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
         # Currently gets best resolution in set_member_1
-        data = self.cleaned_data
-        if   (data['membership_i'] and data['membership_d']) \
-          or (data['membership_d'] and data['membership_m']) \
-          or (data['membership_i'] and data['membership_m']):
+        data = super().clean()
+        flags = data['flags']
+        if (flags & (perms.INVITED | perms.DECLINED)
+            or flags & (perms.DECLINED | perms.MEMBER)
+            or flags & (perms.INVITED | perms.MEMBER)):
             raise forms.ValidationError('Invalid flags combinaison')
 
-        newflags = 0
-        for flag, intvalue in six.iteritems(perms.FLAGTOINT):
-            if data['membership_' + flag]:
-                newflags |= intvalue
-        if newflags == 0 and data['note']:
+        if flags == 0 and data['note']:
             raise forms.ValidationError(_('You cannot have a note unless you select some flags too'))
         return data
 
@@ -732,17 +821,14 @@ class ContactInGroupForm(forms.ModelForm):
     def save(self):
         oldflags = self.instance.flags or 0
         is_creation = self.instance.pk is None
-        cig = super(ContactInGroupForm, self).save(commit=False)
+        cig = super().save(commit=False)
         if is_creation:
             cig.contact = self.contact
             cig.group = self.group
 
         data = self.cleaned_data
 
-        newflags = 0
-        for flag, intvalue in six.iteritems(perms.FLAGTOINT):
-            if data['membership_' + flag]:
-                newflags |= intvalue
+        newflags = self.cleaned_data['flags']
         if (oldflags ^ newflags) & perms.ADMIN_ALL \
             and not perms.c_operatorof_cg(self.user.id, self.group.id):
             # If you change any permission flags of that group, you must be a group operator
@@ -765,7 +851,7 @@ class ContactInGroupView(InGroupAcl, FormView):
             raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(ContactInGroupView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['group'] = self.contactgroup
         kwargs['contact'] = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
         kwargs['user'] = self.request.user
@@ -806,7 +892,7 @@ class ContactInGroupView(InGroupAcl, FormView):
 
         context = {}
         context['title'] = _('Contact %(contact)s in group %(group)s') % {
-            'contact': force_text(contact),
+            'contact': str(contact),
             'group': cg.name_with_date()}
         context['contact'] = contact
         context['objtype'] = ContactInGroup
@@ -866,7 +952,7 @@ class ContactInGroupView(InGroupAcl, FormView):
                          .add_component(contact.get_navcomponent()) \
                          .add_component(('membership', _('membership')))
         context.update(kwargs)
-        return super(ContactInGroupView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -923,14 +1009,14 @@ class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
         context = {}
         context['nav'] = self.contactgroup.get_smart_navbar() \
             .add_component(('members', _('members'))) \
-            .add_component((force_text(contact.id), contact.name)) \
+            .add_component((str(contact.id), contact.name)) \
             .add_component(('remove', _('delete')))
         context.update(kwargs)
-        return super(ContactInGroupDelete, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def get(self, request, gid, cid):
         try:
             self.get_object()
         except ContactInGroup.DoesNotExist:
             return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
-        return super(ContactInGroupDelete, self).get(self, request, gid, cid)
+        return super().get(self, request, gid, cid)

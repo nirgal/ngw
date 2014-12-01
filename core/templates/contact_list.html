@@ -252,11 +252,9 @@ function submit_fields() {
 
 {% block search %}
 {% include "membership_inlineform.html" %}
-<form id="mainform">
+<form id="mainform" action="{{reset_filter_link}}">
     <div style="text-align:left; display:none;">{% trans "Internal representation of the filter" %}:</div>
     <input type=hidden id=filter name=filter value="{{filter}}">
-    <input type=hidden id=fields name=fields value="{{fields}}">
-    <input type=hidden id=display name=display value="{{display}}">
 </form>
 
 <div id=toolbar style="border-bottom:1px solid #eee">
@@ -288,7 +286,7 @@ function submit_fields() {
 
 <div id=search_submitrow {% if not filter %}style="display:none;"{% endif %}>
     <a href="javascript:advanced_search();">{% trans "Add condition" %}</a>
-    - <a href="javascript:reset_filter();">{% trans "Remove filter" %}</a>
+    - <a href="{{reset_filter_link}}">{% trans "Remove filter" %}</a>
     - <a href="javascript:save_filter();">{% trans "Save filter" %}</a>
 </div>
 </div>
@@ -318,7 +316,6 @@ add_filter_breadcrumb({
 </script>
 
 {% endblock %}
-
 
 {% block presubmitbar %}
 <h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>

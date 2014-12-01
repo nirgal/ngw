@@ -192,3 +192,10 @@ ul.onelinechoices li {
 .membership_edit_modal input[type=radio] {
     margin-left: 2ex;
 }
+
+.right-list {
+	max-width: 100%;
+	direction: rtl;
+	text-align: left;
+}
+

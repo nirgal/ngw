@@ -1,11 +1,6 @@
-# -*- encofing: utf8 -*-
-
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 from django import template
 from django.utils import html
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_text
 from ngw.core import perms
 
 register = template.Library()

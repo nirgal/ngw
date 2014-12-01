@@ -3,7 +3,6 @@ BUGS
 ====================================================================================================
 
 
-
 ====================================================================================================
 VALIDATED IMPROVEMENTS
 ====================================================================================================
@@ -28,17 +27,11 @@ Event selection widget (Do not load everything at once, like for column selectio
 
 Files handling:
 - Improve display (mimetype, size, ...)
-- Check cache/no cache
+- Check cache/no cache.
 - Improve previews (tumbler package with d-bus commands and ajax integration?)
 
 With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet: See internal cache in o2o sql compiler.
-
-Add duration to events (end date)
-
-CRSF validation fails on login page if it is shown too long:
-See https://github.com/yourlabs/django-session-security/issues/29
-
-Change USE_TZ to True
+See also https://docs.djangoproject.com/en/1.7/ref/models/lookups/
 
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
@@ -46,6 +39,10 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 Remove ContactGroup.name_with_date for __str__
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
+
+Make a double-choice contactfield
+
+Attach a choice to a field and only one (usefull for permissions)
 
 Allow group operator to modify their fields without being site-wide admin
 
@@ -55,6 +52,8 @@ Extensions: Change hooks for signals
 ====================================================================================================
 UNSORTED
 ====================================================================================================
+
+See https://docs.djangoproject.com/en/1.7/releases/1.7/#custom-lookups
 
 Make sure all form.save() support the commit parameter
 

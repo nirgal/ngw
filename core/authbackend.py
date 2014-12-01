@@ -1,6 +1,3 @@
-# -*- encoding: utf-8 -*-
-
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.auth.models import update_last_login
 from ngw.core.models import Contact

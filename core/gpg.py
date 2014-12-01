@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import subprocess
+from gnupg import GPG
 from django.conf import settings
-from django.utils.encoding import force_text
 from django.http import HttpResponse
 from django.views.generic import View
 
@@ -12,66 +10,27 @@ GPG_HOME = getattr(settings, 'GPG_HOME', None)
 
 # TODO: use --edit-key deluid to keep only one uid per key ?
 
-def subprocess_run(*args):
-    args = [arg.encode('utf8') for arg in args]
-    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
-    out, err = process.communicate()
-    return process.returncode, force_text(out, errors='replace'), force_text(err, errors='replace')
-
-#def _split_uid(uid):
-#    p1 = uid.find('<')
-#    p2 = uid.find('>')
-#    #print(p1, p2, len(uid))
-#    if p1==-1 or p2==-1 or p2!=len(uid)-1:
-#        print('Error parsing uid uid in gpg --list-keys')
-#        continue
-#    mail = uid[p1+1:p2]
-#    name = uid[:p1].strip()
-#    #print('*', mail, '*', name, '*', id)
-#    return name, mail
-
-
-def parse_pgp_listkey(output):
-    keyring = {}
-    for line in output.split('\n'):
-        #print(repr(line))
-        items = line.split(':')
-        #print(items)
-        if items[0] == 'pub':
-            id = items[4]
-            keyring[id] = {'uids': [items[9]], 'length': items[2], 'algo': items[3], 'date': items[5]}
-        elif items[0] == 'uid':
-            keyring[id]['uids'].append(items[9])
-    return keyring
-
+def get_instance():
+    return GPG(gnupghome=GPG_HOME, options=['--no-auto-check-trustdb'], verbose=False)
 
 def is_email_secure(mail_address):
     '''
     Returns True if a GPG public key is available in the local keyring.
     '''
-    if not GPG_HOME:
-        return False
-    ret, out, err = subprocess_run('gpg', '--homedir', GPG_HOME, '--list-keys', '--with-colons', '--no-auto-check-trustdb', '<'+mail_address+'>')
-    if ret:
-        return False # gpg error
-    keyring_1 = parse_pgp_listkey(out)
-    return len(keyring_1) > 0
-    
+    gpg = get_instance()
+    return bool(gpg.export_keys(mail_address))
+
 def loadkeyring():
     if not GPG_HOME:
         print('WARNING: No keyring available')
         return {}
-    ret, out, err = subprocess_run('gpg', '--homedir', GPG_HOME, '--list-keys', '--with-colons', '--no-auto-check-trustdb')
-    if ret:
-        print(err)
-        print('gpg failed.')
-    return parse_pgp_listkey(out)
+    return get_instance().list_keys()
 
-
-def _build_content(title, body):
-    return '<title>'+title+'</title><p><h1>'+title+'</h1><p>'+body
 
 class GpgLookupView(View):
+    def _build_content(title, body):
+        return '<title>'+title+'</title><p><h1>'+title+'</h1><p>'+body
+
     def get(self, request):
         if not GPG_HOME:
             return HttpResponse('Keyring is disabled. Check your GPG_HOME settings', 'text/html', 404)
@@ -90,13 +49,11 @@ class GpgLookupView(View):
             if request.GET.get('exact', '') == 'on':
                 title += ' exact'
                 search = '=' + search
-            ret, out, err = subprocess_run('gpg', '--homedir', GPG_HOME, '--export', '--armor', search)
-            if ret:
-                return HttpResponse(_build_content(title, 'Internal error running gpg'), 'text/html', 500)
-            if not out:
+            key = get_instance().export_keys(search)
+            if not key:
                 return HttpResponse(_build_content(title, 'No matching keys in database'), 'text/html', 404)
             if 'mr' in options:
-                return HttpResponse(out, 'application/pgp-keys', 200)
-            return HttpResponse(_build_content(title, '<pre>'+out+'</pre>'), 'text/html', 200)
+                return HttpResponse(key, 'application/pgp-keys', 200)
+            return HttpResponse(_build_content(title, '<pre>'+key+'</pre>'), 'text/html', 200)
     
         return HttpResponse(_build_content(title, 'pks request had an invalid <b>op</b> property'), 'text/html', 501)

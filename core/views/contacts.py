@@ -1,9 +1,7 @@
-# -*- encoding: utf-8 -*-
 '''
 Contact managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from datetime import date
 import crack
@@ -14,8 +12,6 @@ from django.http import (
     Http404)
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
-from django.utils import six
 from django.utils import html
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
@@ -38,6 +34,8 @@ from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core import perms
 from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
+from django.contrib.admin.utils import (lookup_field, display_for_field,
+    display_for_value, label_for_field)
 
 from django.db.models.query import RawQuerySet, sql
 
@@ -66,13 +64,28 @@ FTYPE_PASSWORD = 'PASSWORD'
 
 class ContactQuerySet(RawQuerySet):
     def __init__(self, *args, **kargs):
-        super(ContactQuerySet, self).__init__('', *args, **kargs)
+        super().__init__('', *args, **kargs)
         self.qry_fields = {'id':'contact.id', 'name':'name'}
         self.qry_from = ['contact']
         self.qry_where = []
         self.qry_orderby = []
         self.offset = None
         self.limit = None
+        self.__hack_for_changelist()
+
+    def __hack_for_changelist(self):
+        self.query.select_related = True
+        #raw_query = self
+        #def get_order_by(self, value):
+        #    return raw_query.qry_orderby
+        #def set_order_by(self, value):
+        #    raw_query.qry_orderby = value
+        #self.query.order_by = property(get_order_by, set_order_by)
+        self.query.order_by = []
+
+    def __repr__(self):
+        self.compile()
+        return super().__repr__()
 
     def add_field(self, fieldid):
         '''
@@ -143,13 +156,16 @@ class ContactQuerySet(RawQuerySet):
             self.params = params
         return self
 
-    def order_by(self, name):
-        self.qry_orderby.append(name)
+    def order_by(self, *names):
+        #print('qs.order_by', repr(names))
+        for name in names:
+            if name != 'pk' and name != '-pk':
+                self.qry_orderby.append(name)
         return self
 
     def compile(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in six.iteritems(self.qry_fields)])
+        qry += ', '.join(['%s AS "%s"' % (v, k) for k, v in self.qry_fields.items()])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE ( ' + ') AND ('.join(self.qry_where) + ' )'
@@ -170,11 +186,12 @@ class ContactQuerySet(RawQuerySet):
 
         self.raw_query = qry
         self.query = sql.RawQuery(sql=qry, using=self.db, params=self.params)
+        self.__hack_for_changelist()
         #print(repr(self.raw_query), repr(self.params))
 
     def count(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS %s' % (v, k) for k, v in six.iteritems(self.qry_fields)])
+        qry += ', '.join(['%s AS %s' % (v, k) for k, v in self.qry_fields.items()])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
             qry += ' WHERE (' + ') AND ('.join(self.qry_where) + ')'
@@ -203,6 +220,8 @@ class ContactQuerySet(RawQuerySet):
         for contact in self:
             return contact
 
+    def _clone(self):
+        return self # FIXME ugly hack for ChangeList
 
 def get_default_columns(user):
     # check the field still exists
@@ -255,9 +274,9 @@ def get_available_columns(user_id):
     '''
     result = [(DISP_NAME, 'Name')]
     for cf in ContactField.objects.with_user_perms(user_id):
-        result.append((DISP_FIELD_PREFIX+force_text(cf.id), cf.name))
+        result.append((DISP_FIELD_PREFIX+str(cf.id), cf.name))
     for cg in ContactGroup.objects.with_user_perms(user_id, wanted_flags=perms.SEE_MEMBERS, add_column=False).order_by('-date', 'name'):
-        result.append((DISP_GROUP_PREFIX+force_text(cg.id), cg.name_with_date()))
+        result.append((DISP_GROUP_PREFIX+str(cg.id), cg.name_with_date()))
     return result
 
 
@@ -268,8 +287,8 @@ class FieldSelectForm(forms.Form):
     - groups whose members can be viewed
     '''
     def __init__(self, user, *args, **kargs):
-        super(FieldSelectForm, self).__init__(*args, **kargs)
-        self.fields['selected_fields'] = forms.MultipleChoiceField(
+        super().__init__(*args, **kargs)
+        self.fields['fields'] = forms.MultipleChoiceField(
             required=False, widget=FilteredSelectMultiple(_('Fields'), False),
             choices=get_available_columns(user.id))
 
@@ -315,7 +334,7 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'membership_str': membership_to_text(contact_with_extra_fields, contact_group.id),
         'note': getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id),
         'membership': membership,
-        'cig_url': contact_group.get_absolute_url()+'members/'+force_text(contact_with_extra_fields.id),
+        'cig_url': contact_group.get_absolute_url()+'members/'+str(contact_with_extra_fields.id),
         'title': _('%(contactname)s in group %(groupname)s') % {
             'contactname':contact_with_extra_fields.name,
             'groupname': contact_group.name_with_date()},
@@ -328,7 +347,7 @@ def membership_extended_widget_factory(request, contact_group):
 
 
 def field_widget(contact_field, contact_with_extra_fields):
-    attrib_name = DISP_FIELD_PREFIX + force_text(contact_field.id)
+    attrib_name = DISP_FIELD_PREFIX + str(contact_field.id)
     raw_value = getattr(contact_with_extra_fields, attrib_name)
     if raw_value:
         return contact_field.format_value_html(raw_value)
@@ -341,12 +360,71 @@ def field_widget_factory(contact_field):
 
 
 
+
+from django.contrib.admin import filters
+class CustomColumnsFilter(filters.ListFilter):
+    '''
+    This is not really a filter. This acutally adds columns to the query.
+    '''
+    title = ugettext_lazy('Change columns')
+    template = 'empty.html'
+
+    def __init__(self, request, params, model, view):
+        super().__init__(request, params, model, view)
+        params.pop('fields', None)
+        params.pop('savecolumns', None)
+
+    def has_output(self):
+        return True # This is required so that queryset is called
+
+    def choices(self, cl):
+        return ()
+
+    def queryset(self, request, q):
+        return q
+
+    def expected_parameters(self):
+        return [ 'fields' ]
+
+
+class ContactCustomFilter(filters.ListFilter):
+    '''
+    Special filter for contact rawquery
+    '''
+    title = ugettext_lazy('contact field')
+    template = 'empty.html'
+
+    def __init__(self, request, params, model, view):
+        super().__init__(request, params, model, view)
+        self.view = view
+        self.filter_str = params.pop('filter', '')
+        params.pop('disp_filter', None)
+        self.filter = parse_filterstring(self.filter_str, request.user.id)
+        self.filter_html = self.filter.to_html()
+        view.filter_str = self.filter_str
+        view.filter_html = self.filter_html
+
+
+    def has_output(self):
+        return True # This is required so that queryset is called
+
+    def choices(self, cl):
+        return ()
+
+    def queryset(self, request, q):
+        return self.filter.apply_filter_to_query(q)
+
+    def expected_parameters(self):
+        return [ 'filter' ]
+
+
 class BaseContactListView(NgwListView):
     '''
     Base view for contact list.
     That view should NOT be called directly since there is no user check.
     '''
     template_name = 'contact_list.html'
+    list_filter = CustomColumnsFilter, ContactCustomFilter
 
     actions = (
         'action_csv_export',
@@ -355,24 +433,42 @@ class BaseContactListView(NgwListView):
         'add_to_group',
     )
 
-    def contact_make_query_with_fields(self, request, fields):
-        '''
-        Creates an iterable objects with all the required fields (including groups).
-        returns a tupple (query, list_display)
-        Permissions are checked for the fields. Forbidden field/groups are skiped.
-        '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.list_display = []
+
+
+    def get_root_queryset(self):
+        # Make sure self.contactgroup is defined:
+        if not hasattr(self, 'contactgroup'):
+            self.contactgroup = None
 
         q = ContactQuerySet(Contact._default_manager.model, using=Contact._default_manager._db)
+
         list_display = []
 
-        user_id = request.user.id
-        for prop in fields:
+        request = self.request
+        user = request.user
+
+        fields = request.GET.getlist('fields', None)
+        if not fields:
+            fields = get_default_columns(user)
+
+        strfields = ','.join(fields)
+
+        if request.GET.get('savecolumns', False):
+            user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
+
+        self.strfields = strfields
+        self.fields = fields
+
+        for prop in self.fields:
             if prop == 'name':
                 list_display.append('name_with_relative_link')
             elif prop.startswith(DISP_GROUP_PREFIX):
                 groupid = int(prop[len(DISP_GROUP_PREFIX):])
 
-                if not perms.c_can_see_members_cg(user_id, groupid):
+                if not perms.c_can_see_members_cg(user.id, groupid):
                     continue # just ignore groups that aren't allowed to be seen
 
                 q.add_group(groupid)
@@ -395,7 +491,7 @@ class BaseContactListView(NgwListView):
                 fieldid = prop[len(DISP_FIELD_PREFIX):]
                 cf = ContactField.objects.get(pk=fieldid)
 
-                if not perms.c_can_view_fields_cg(user_id, cf.contact_group_id):
+                if not perms.c_can_view_fields_cg(user.id, cf.contact_group_id):
                     continue # Just ignore fields that can't be seen
 
                 q.add_field(fieldid)
@@ -404,6 +500,7 @@ class BaseContactListView(NgwListView):
                 attribute = field_widget_factory(cf)
                 attribute.short_description = cf.name
                 attribute.admin_order_field = prop
+                attribute.allow_tags = True
                 setattr(self, attribute_name, attribute)
                 list_display.append(attribute_name)
             else:
@@ -419,39 +516,7 @@ class BaseContactListView(NgwListView):
             #cols.append(('group_%s_inherited_flags' % current_cg.id, 'group_%s_inherited_flags' % current_cg.id, None))
             #cols.append(('group_%s_inherited_aflags' % current_cg.id, 'group_%s_inherited_aflags' % current_cg.id, None))
 
-        return q, list_display
-
-
-    def get_root_queryset(self):
-        request = self.request
-        strfilter = request.REQUEST.get('filter', '')
-        filter = parse_filterstring(strfilter, request.user.id)
-        self.url_params['filter'] = strfilter
-
-        strfields = request.REQUEST.get('fields', None)
-        if strfields:
-            fields = strfields.split(',')
-            self.url_params['fields'] = strfields
-        else:
-            fields = get_default_columns(request.user)
-            strfields = ','.join(fields)
-
-        if request.REQUEST.get('savecolumns'):
-            request.user.set_fieldvalue(request, FIELD_COLUMNS, strfields)
-
-        # Make sure self.contactgroup is defined:
-        if not hasattr(self, 'contactgroup'):
-            self.contactgroup = None
-
-        q, list_display = self.contact_make_query_with_fields(request, fields)
-
-        q = filter.apply_filter_to_query(q)
-
         self.list_display = list_display
-        self.filter = strfilter
-        self.filter_html = filter.to_html()
-        self.strfields = strfields
-        self.fields = fields
         return q
 
 
@@ -460,12 +525,13 @@ class BaseContactListView(NgwListView):
         context['title'] = _('Contact list')
         context['objtype'] = Contact
         context['nav'] = Navbar(Contact.get_class_navcomponent())
-        context['filter'] = self.filter
-        context['filter_html'] = self.filter_html
-        context['fields'] = self.strfields
-        context['fields_form'] = FieldSelectForm(self.request.user, initial={'selected_fields': self.fields})
         context.update(kwargs)
-        return super(BaseContactListView, self).get_context_data(**context)
+        result = super().get_context_data(**context)
+        result['fields_form'] = FieldSelectForm(self.request.user, initial={'fields': self.fields})
+        result['filter'] = self.filter_str
+        result['filter_html'] = self.filter_html
+        result['reset_filter_link'] = self.cl.get_query_string({}, 'filter')
+        return result
 
 
     #get_link_name=NgwModel.get_absolute_url
@@ -473,31 +539,42 @@ class BaseContactListView(NgwListView):
         return '<a href="%(id)d/">%(name)s</a>' % {'id': contact.id, 'name': html.escape(contact.name)}
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'
+    name_with_relative_link.allow_tags = True
 
 
     def action_csv_export(self, request, queryset):
+        from django.contrib.admin.utils import label_for_field
         result = ''
         def _quote_csv(col_html):
-            u = html.strip_tags(force_text(col_html))
+            u = html.strip_tags(str(col_html))
+            u = u.rstrip('\n\r')
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
         header_done = False
         for row in queryset:
             if not header_done:
-                for i, header in enumerate(self.result_headers(row)):
+                for i, field_name in enumerate(self.list_display):
+                    text, attr = label_for_field(field_name, type(row), self, True)
                     if i: # not first column
                         result += ','
-                    result += _quote_csv(header['text'])
+                    result += _quote_csv(text)
                 result += '\n'
                 header_done = True
-            for i, col_html in enumerate(self.row_to_items(row)):
+            first_col = True
+            for i, field_name in enumerate(self.list_display):
                 if i: # not first column
                     result += ','
-                if col_html == None:
+                f, attr, value = lookup_field(field_name, row, self)
+                if value == None:
                     continue
+                if f is None:
+                    col_html = display_for_value(value, False)
+                else:
+                    col_html = display_for_field(value, f)
+                    
                 result += _quote_csv(col_html)
             result += '\n'
         return HttpResponse(result, content_type='text/csv; charset=utf-8')
-    action_csv_export.short_description = _("CSV format export (Spreadsheet format)")
+    action_csv_export.short_description = ugettext_lazy("CSV format export (Spreadsheet format)")
 
 
     def action_bcc(self, request, queryset):
@@ -540,7 +617,7 @@ class ContactListView(NgwUserAcl, BaseContactListView):
     Only show visible contacts
     '''
     def get_root_queryset(self):
-        qs = super(ContactListView, self).get_root_queryset()
+        qs = super().get_root_queryset()
 
         qs.qry_from.append('JOIN v_c_can_see_c ON contact.id=v_c_can_see_c.contact_id_2')
         qs.filter('v_c_can_see_c.contact_id_1 = %s' % self.request.user.id)
@@ -559,7 +636,7 @@ class GroupAddManyForm(forms.Form):
     ids = forms.CharField(widget=forms.widgets.HiddenInput)
 
     def __init__(self, user, *args, **kwargs):
-        super(GroupAddManyForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.user = user
         self.fields['group'] = forms.ChoiceField(
             label=_('Target group'),
@@ -574,7 +651,7 @@ class GroupAddManyForm(forms.Form):
  perms.CHANGE_MEMBERS).order_by('-date', 'name')]),
                 ],
             )
-        for flag, longname in six.iteritems(perms.FLAGTOTEXT):
+        for flag, longname in perms.FLAGTOTEXT.items():
             field_name = 'membership_' + flag
 
             oncheck_js = ''.join([
@@ -585,7 +662,7 @@ class GroupAddManyForm(forms.Form):
                 for code in perms.FLAGCONFLICTS[flag]])
 
             onuncheck_js = ''
-            for flag1, depflag1 in six.iteritems(perms.FLAGDEPENDS):
+            for flag1, depflag1 in perms.FLAGDEPENDS.items():
                 if flag in depflag1:
                     onuncheck_js += 'this.form.membership_%s.checked=false;' % flag1
 
@@ -598,14 +675,14 @@ class GroupAddManyForm(forms.Form):
 
     def clean(self):
         if 'group' in self.cleaned_data:
-            for flag in six.iterkeys(perms.FLAGTOTEXT):
+            for flag in perms.FLAGTOTEXT.keys():
                 if self.cleaned_data['membership_' + flag]:
                     if perms.FLAGTOINT[flag] & perms.ADMIN_ALL and not perms.c_operatorof_cg(self.user.id, self.cleaned_data['group']):
                         raise forms.ValidationError(_('You need to be operator of the target group to add this kind of membership.'))
 
-        for flag in six.iterkeys(perms.FLAGTOTEXT):
+        for flag in perms.FLAGTOTEXT.keys():
             if self.cleaned_data['membership_' + flag]:
-                return super(GroupAddManyForm, self).clean()
+                return super().clean()
         raise forms.ValidationError(_('You must select at least one mode'))
 
 
@@ -624,7 +701,7 @@ class GroupAddManyForm(forms.Form):
             'v_c_can_see_c.contact_id_2=contact.id'))
 
         modes = ''
-        for flag in six.iterkeys(perms.FLAGTOTEXT):
+        for flag in perms.FLAGTOTEXT.keys():
             field_name = 'membership_' + flag
             if self.cleaned_data[field_name]:
                 modes += '+' + flag
@@ -641,7 +718,7 @@ class GroupAddManyView(NgwUserAcl, FormView):
         return {'ids': self.request.REQUEST['ids']}
 
     def get_form_kwargs(self):
-        kwargs = super(GroupAddManyView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
 
@@ -653,13 +730,13 @@ class GroupAddManyView(NgwUserAcl, FormView):
         context['nav'] = Navbar(Contact.get_class_navcomponent()) \
             .add_component(('add_to_group', _('add contacts to')))
         context.update(kwargs)
-        return super(GroupAddManyView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
     def form_valid(self, form):
         form.add_them(self.request)
         self.form = form
-        return super(GroupAddManyView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         group_id = self.form.cleaned_data['group']
@@ -724,7 +801,7 @@ class ContactDetailView(InGroupAcl, TemplateView):
         context['group_user_ngw_perms'] = ContactGroup.objects.get(pk=GROUP_USER_NGW).get_contact_perms(self.request.user.id)
 
         context.update(kwargs)
-        return super(ContactDetailView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -780,7 +857,7 @@ class ContactEditForm(forms.ModelForm):
         instance = kwargs.get('instance', None)
         contactgroup = kwargs.pop('contactgroup')
         user = kwargs.pop('user')  # contact making the query, not the edited one
-        super(ContactEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.contactgroup = contactgroup
 
@@ -812,13 +889,13 @@ class ContactEditForm(forms.ModelForm):
                     if cf.type == FTYPE_DATE and initial == 'today':
                         initial = date.today()
                     f.initial = initial
-                self.fields[force_text(cf.id)] = f
+                self.fields[str(cf.id)] = f
 
 
     def save(self, request):
         is_creation = self.instance.pk is None
 
-        contact = super(ContactEditForm, self).save()
+        contact = super().save()
         data = self.cleaned_data
 
         # 1/ The contact name
@@ -830,13 +907,13 @@ class ContactEditForm(forms.ModelForm):
 
             log = Log(contact_id=request.user.id)
             log.action = LOG_ACTION_ADD
-            log.target = 'Contact ' + force_text(contact.id)
+            log.target = 'Contact ' + str(contact.id)
             log.target_repr = 'Contact ' + contact.name
             log.save()
 
             log = Log(contact_id=request.user.id)
             log.action = LOG_ACTION_CHANGE
-            log.target = 'Contact ' + force_text(contact.id)
+            log.target = 'Contact ' + str(contact.id)
             log.target_repr = 'Contact ' + contact.name
             log.property = 'Name'
             log.property_repr = 'Name'
@@ -853,7 +930,7 @@ class ContactEditForm(forms.ModelForm):
                 if contact.name != data['name']:
                     log = Log(contact_id=request.user.id)
                     log.action = LOG_ACTION_CHANGE
-                    log.target = 'Contact ' + force_text(contact.id)
+                    log.target = 'Contact ' + str(contact.id)
                     log.target_repr = 'Contact ' + contact.name
                     log.property = 'Name'
                     log.property_repr = 'Name'
@@ -865,7 +942,7 @@ class ContactEditForm(forms.ModelForm):
             if cf.type == FTYPE_PASSWORD:
                 continue
             #cfname = cf.name
-            newvalue = data[force_text(cf.id)]
+            newvalue = data[str(cf.id)]
             if newvalue != None:
                 newvalue = cf.formfield_value_to_db_value(newvalue)
             contact.set_fieldvalue(request, cf, newvalue)
@@ -894,7 +971,7 @@ class ContactEditMixin(ModelFormMixin):
                 raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(ContactEditMixin, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         kwargs['contactgroup'] = self.contactgroup
         return kwargs
@@ -905,12 +982,17 @@ class ContactEditMixin(ModelFormMixin):
 
         messages.add_message(request, messages.SUCCESS, _('Contact %s has been saved.') % contact.name)
 
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect('edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect('../add')
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect('.')
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(contact.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url)
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -936,7 +1018,7 @@ class ContactEditMixin(ModelFormMixin):
             context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(ContactEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class ContactEditView(InGroupAcl, ContactEditMixin, UpdateView):
@@ -999,10 +1081,10 @@ class PasswordView(InGroupAcl, UpdateView):
         contact = form.save(self.request)
         messages.add_message(
             self.request, messages.SUCCESS,
-            _('Password has been changed sucessfully!'))
+            _('Password has been changed successfully!'))
         if self.contactgroup:
             return HttpResponseRedirect(
-                self.contactgroup.get_absolute_url() + 'members/' + force_text(contact.id) + '/')
+                self.contactgroup.get_absolute_url() + 'members/' + str(contact.id) + '/')
         else:
             return HttpResponseRedirect(contact.get_absolute_url())
 
@@ -1024,7 +1106,7 @@ class PasswordView(InGroupAcl, UpdateView):
         except AttributeError:
             pass # it's ok not to have a letter
         context.update(kwargs)
-        return super(PasswordView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -1043,7 +1125,7 @@ class HookPasswordView(View):
     def dispatch(self, request, *args, **kwargs):
         username = request.META['REMOTE_USER']  # Apache external auth
         request.user = Contact.objects.get_by_natural_key(username)
-        return super(HookPasswordView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request):
         # TODO check password strength
@@ -1087,7 +1169,7 @@ class PassLetterView(InGroupAcl, DetailView):
         context['nav'].add_component(contact.get_navcomponent()) \
                   .add_component(('password letter', _('password letter')))
         context.update(kwargs)
-        return super(PassLetterView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def post(self, request, *args, **kwargs):
         contact = self.get_object()
@@ -1096,7 +1178,7 @@ class PassLetterView(InGroupAcl, DetailView):
 
         # record the value
         contact.set_password(new_password, '2', request=request) # Generated and mailed
-        messages.add_message(request, messages.SUCCESS, _('Password has been changed sucessfully!'))
+        messages.add_message(request, messages.SUCCESS, _('Password has been changed successfully!'))
 
         fields = {}
         for cf in contact.get_contactfields(request.user.id):
@@ -1104,7 +1186,7 @@ class PassLetterView(InGroupAcl, DetailView):
                 cfv = ContactFieldValue.objects.get(contact_id=contact.id, contact_field_id=cf.id)
             except ContactFieldValue.DoesNotExist:
                 continue
-            fields[cf.name] = force_text(cfv).replace('\r', '')
+            fields[cf.name] = str(cfv).replace('\r', '')
             #if cfv:
             #    rows.append((cf.name, mark_safe(cfv.as_html())))
         fields['name'] = contact.name
@@ -1143,7 +1225,7 @@ class ContactDeleteView(InGroupAcl, NgwDeleteView):
                      .add_component(('members', _('members'))) \
                      .add_component(('delete', _('delete')))
         context.update(kwargs)
-        return super(ContactDeleteView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -1166,9 +1248,9 @@ class FilterAddView(NgwUserAcl, View):
         filter_str = request.GET['filterstr']
         filter_list = contact.get_customfilters()
         filter_list.append((_('No name'), filter_str))
-        filter_list_str = ','.join(['"' + force_text(name) + '","' + force_text(filterstr) + '"' for name, filterstr in filter_list])
+        filter_list_str = ','.join(['"' + str(name) + '","' + str(filterstr) + '"' for name, filterstr in filter_list])
         contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
-        messages.add_message(request, messages.SUCCESS, _('Filter has been added sucessfully!'))
+        messages.add_message(request, messages.SUCCESS, _('Filter has been added successfully!'))
         return HttpResponseRedirect(reverse('filter_edit', args=(cid, len(filter_list)-1)))
 
 
@@ -1206,7 +1288,7 @@ class FilterListView(InGroupAcl, TemplateView):
                          .add_component(('filters', _('custom filters')))
 
         context.update(kwargs)
-        return super(FilterListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -1223,7 +1305,7 @@ class FilterEditForm(forms.Form):
         user = kwargs.pop('user')
         contact = kwargs.pop('contact')
         fid = int(kwargs.pop('fid'))
-        super(FilterEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.contact = contact
         self.fid = fid
@@ -1257,7 +1339,7 @@ class FilterEditView(NgwUserAcl, FormView):
             raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(FilterEditView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         kwargs['contact'] = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
         kwargs['fid'] = self.kwargs['fid']
@@ -1272,12 +1354,12 @@ class FilterEditView(NgwUserAcl, FormView):
                          .add_component(('filters', _('custom filters')))
         #                 .add_component((self.kwargs['fid'], self.form.filtername))
         context.update(kwargs)
-        return super(FilterEditView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def form_valid(self, form):
         form.save(self.request)
         messages.add_message(self.request, messages.SUCCESS, _('Filter has been renamed.'))
-        return super(FilterEditView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('contact_detail', args=(self.kwargs['cid'],))
@@ -1323,7 +1405,7 @@ class DefaultGroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         contact = kwargs.get('instance')
         user = contact # FIXME Problem when changing the default group for another user
-        super(DefaultGroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         available_groups = ContactGroup.objects.with_user_perms(user.id, wanted_flags=perms.SEE_CG).with_member(contact.id).filter(date__isnull=True)
         choices = [('', _('Create new personnal group'))] + [(cg.id, cg.name) for cg in available_groups
             if not cg.date and perms.c_can_see_cg(contact.id, cg.id)]
@@ -1372,7 +1454,7 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
 
     def form_valid(self, form):
         contact = form.save(self.request)
-        messages.add_message(self.request, messages.SUCCESS, _('Default group has been changed sucessfully.'))
+        messages.add_message(self.request, messages.SUCCESS, _('Default group has been changed successfully.'))
         return HttpResponseRedirect(contact.get_absolute_url())
 
     def get_context_data(self, **kwargs):
@@ -1385,7 +1467,7 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
                          .add_component(('default_group', _('default group')))
 
         context.update(kwargs)
-        return super(DefaultGroupView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################

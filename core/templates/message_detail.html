@@ -25,6 +25,17 @@
     {{ object.text|linebreaksbr }}
 </div>
 
+{% for message in object.get_related_messages %}
+{% if forloop.first %}
+<h3>{% trans "Related messages" %}</h3>
+<ul>
+{% endif %}
+<li><a href={{message.id}}>{{ message.nice_flags}} {{ message.send_date }} - {{ message.subject }}</a>
+{% if forloop.last %}
+</ul>
+{% endif %}
+{% endfor %}
+
 {% if 'X' in cg_perms and object.is_answer %}
 <div class="submit-row">
 <form method=post>

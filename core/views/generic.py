@@ -1,20 +1,20 @@
-# -*- encoding: utf-8 -*-
 '''
 Base view class; View helpers
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 import inspect
+from collections import OrderedDict
+from functools import reduce
+import operator
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils.translation import ugettext as _
-from django.utils.encoding import force_text
 from django.utils.decorators import method_decorator
 from django.utils.text import capfirst
 from django.utils.http import urlencode
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.shortcuts import get_object_or_404
 from django.views.generic.base import ContextMixin
 from django.views.generic import ListView, DeleteView
@@ -42,7 +42,7 @@ class NgwUserAcl(object):
     @method_decorator(require_group(GROUP_USER_NGW))
     def dispatch(self, request, *args, **kwargs):
         self.check_perm_user(request.user)
-        return super(NgwUserAcl, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def check_perm_user(self, user):
         '''
@@ -56,7 +56,7 @@ class NgwAdminAcl(NgwUserAcl):
     This simple mixin check the user is authenticated and member of GROUP_ADMIN
     '''
     def check_perm_user(self, user):
-        super(NgwAdminAcl, self).check_perm_user(user)
+        super().check_perm_user(user)
         if not user.is_member_of(GROUP_ADMIN):
             raise PermissionDenied
 
@@ -90,7 +90,7 @@ class InGroupAcl(ContextMixin):
             group = None
         self.contactgroup = group
         self.check_perm_groupuser(group, user)
-        return super(InGroupAcl, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def check_perm_groupuser(self, group, user):
         '''
@@ -108,7 +108,7 @@ class InGroupAcl(ContextMixin):
         if cg:
             context['cg_perms'] = perms.int_to_flags(cg.userperms)
         context.update(kwargs)
-        return super(InGroupAcl, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -117,243 +117,387 @@ class InGroupAcl(ContextMixin):
 #
 #######################################################################
 
-class BaseListFilter(object):
-    '''
-    This is a basic filter, with a admin-like compatible interface
-    '''
-    def __init__(self, request):
-        param = request.GET.get(self.parameter_name, None)
-        if param == '':
-            param = None
-        self.thevalue = param
-        self.request = request
+# List of things to do in order to use admin.views.main.ChangeList:
+# model_admin.get_preserved_filters
+# model_admin.to_field_allowed
 
-    def value(self):
-        return self.thevalue
+from django.conf import settings
+from django import forms
+from django.core.paginator import Paginator
+from django.db.models.fields import BLANK_CHOICE_DASH
+from django.views.generic import TemplateView
+from django.http.response import HttpResponseBase
+from django.contrib.admin.views.main import ChangeList
+from django.contrib.admin import helpers
+from django.contrib.admin.templatetags.admin_static import static
+from django.contrib.admin.utils import lookup_needs_distinct
 
-    def choices(self, view):
-        # we preserver the order, but not the page
-        extra_params = {}
-        if view.order:
-            extra_params['_order'] = view.order
-        yield {
-            'selected': self.value() is None,
-            'query_string': view.get_query_string(extra_params, remove=(self.parameter_name,)),
-            'display': _('All'),
-        }
-        for value, display_value in self.lookups(self.request, view):
-            ep = extra_params.copy()
-            ep[self.parameter_name] = value
-            yield {
-                'selected': self.value() == value,
-                'query_string': view.get_query_string(ep),
-                'display': display_value,
-            }
+class MyChangeList(ChangeList):
+    '''
+    This is a clone of ChangeList, but urls are relative
+    '''
+    def __init__(self, append_slash=True, *args, **kwargs):
+        self.append_slash = append_slash
+        super().__init__(*args, **kwargs)
+
+    def url_for_result(self, result):
+        pk = getattr(result, self.pk_attname)
+        url = str(pk)
+        if self.append_slash:
+            url += '/'
+        return url
 
 
-class NgwListView(ListView):
-    '''
-    This function renders the query, paginated.
-    http query parameter _order is used to sort on a column
-    '''
+class NgwListView(TemplateView):
+#    '''
+#    This function renders the query, paginated.
+#    http query parameter _order is used to sort on a column
+#    '''
     template_name = 'list.html'
-    context_object_name = 'query'
-    page_kwarg = '_page'
-    default_sort = None
-    filter_list = ()
-    actions = ()
 
-    def __init__(self, *args, **kwargs):
-        super(NgwListView, self).__init__(*args, **kwargs)
-        # keep track of parameters that need to be given back after
-        # page/order change:
-        self.url_params = {}
-        self.simplefilters = []
+    list_display = ('__str__',)
+    list_display_links = None
+    list_filter = ()
+    date_hierarchy = None
+    search_fields = ()
+    list_select_related = False
+    list_per_page = None
+    list_max_show_all = 1000
+    list_editable = ()
+    ordering = None
+    paginator = Paginator
+    preserve_filters = True
 
-    def get_root_queryset(self):
-        return self.root_queryset
+    # Actions
+    actions = []
+    action_form = helpers.ActionForm
+    actions_on_top = True
+    actions_on_bottom = False
+    actions_selection_counter = True
 
-    def get_paginate_by(self, queryset):
-        return Config.get_object_query_page_length()
+    append_slash = True
 
-    def get_ordering_field(self, queryset, field_name):
-        try:
-            field = queryset.model._meta.get_field(field_name)
-            return field.name
-        except models.FieldDoesNotExist:
-            # See whether field_name is a name of a non-field
-            # that allows sorting.
-            if callable(field_name):
-                attr = field_name
-            elif hasattr(self, field_name):
-                attr = getattr(self, field_name)
-            else:
-                attr = getattr(queryset.model, field_name)
-            return getattr(attr, 'admin_order_field', None)
+    @property
+    def media(self):
+        extra = '' if settings.DEBUG else '.min'
+        js = []
+        if self.actions is not None:
+            js.append('actions%s.js' % extra)
+        return forms.Media(js=[static('admin/js/%s' % url) for url in js])
 
+    def get_ordering(self, request):
+        # This method is copied exactly fom BaseModelAdmin
+        return self.ordering or ()
 
-    def get_queryset(self):
-        queryset = self.get_root_queryset()
+    def get_paginator(self, request, queryset, per_page, orphans=0, allow_empty_first_page=True):
+        # This method is copied exactly fom BaseModelAdmin
+        return self.paginator(queryset, per_page, orphans, allow_empty_first_page)
 
-        # Handle admin-like filters
-        for filter_class in self.filter_list:
-            filter = filter_class(self.request)
-            self.simplefilters.append(filter)
-            queryset = filter.queryset(self.request, queryset)
-            if filter.value() is not None:
-                self.url_params[filter_class.parameter_name] = filter.value()
+    def action_checkbox(self, obj):
+        """
+        A list_display column containing a checkbox widget.
+        """
+        return helpers.checkbox.render(helpers.ACTION_CHECKBOX_NAME, str(obj.pk))
+    action_checkbox.short_description = mark_safe('<input type="checkbox" id="action-toggle" />')
+    action_checkbox.allow_tags = True
 
-        # Handle sorts
-        order = self.request.REQUEST.get('_order', '')
-        try:
-            intorder = int(order)
-        except ValueError:
-            if self.default_sort:
-                order = ''
-                queryset = queryset.order_by(self.default_sort)
-            else:
-                sort_fieldname = self.list_display[0]
-                ordering_field = self.get_ordering_field(queryset, sort_fieldname)
-                if ordering_field:
-                    order = '0'
-                    queryset = queryset.order_by(ordering_field)
-                else:
-                    order = ''
-        else:
-            sort_fieldname = self.list_display[abs(intorder)]
-            ordering_field = self.get_ordering_field(queryset, sort_fieldname)
-            if ordering_field:
-                if order[0] != '-':
-                    queryset = queryset.order_by(ordering_field)
-                else:
-                    queryset = queryset.order_by('-'+ordering_field)
-
-        self.order = order
-
-        return queryset
-
-    def get_query_string(self, new_params={}, remove=[]):
-        p = self.url_params.copy()
-        for r in remove:
-            for k in list(p):
-                if k.startswith(r):
-                    del p[k]
-        for k, v in new_params.items():
-            if v is None:
-                if k in p:
-                    del p[k]
-            else:
-                p[k] = v
-        return '?%s' % urlencode(sorted(p.items()))
-
-
-    def row_to_items(self, row):
-        for attrib_name in self.list_display:
-            # if attrib_name is a function
-            if inspect.isfunction(attrib_name):
-                result = attrib_name(row)
-            else:
-                # Else it's a string: get the matching attribute
-                try:
-                    result = getattr(row, attrib_name)
-                    if inspect.ismethod(result):
-                        result = result()
-                    if result == None:
-                        yield ''
-                        continue
-                except AttributeError:
-                    result = getattr(self, attrib_name)
-                    result = result(row)
-                    if result == None:
-                        yield ''
-                        continue
-
-                #result = html.escape(result)
-
-            try:
-                flink = row.__getattribute__('get_link_'+force_text(attrib_name))
-                link = flink()
-                if link:
-                    result = '<a href="'+link+'">'+result+'</a>'
-            except AttributeError as e:
-                pass
-            yield result
-
-    def result_headers(self, row):
-        from django.contrib.admin.util import label_for_field
-        for field_name in self.list_display:
-            text, attr = label_for_field(field_name, type(row), self, True)
-            if attr:
-                # Potentially not sortable
-
-                # if the field is the action checkbox: no sorting and special class
-                if field_name == 'action_checkbox':
-                    yield {
-                        "text": text,
-                        "class_attrib": mark_safe(' class="action-checkbox-column"'),
-                        "sortable": False,
-                    }
-                    continue
-
-                admin_order_field = getattr(attr, "admin_order_field", None)
-                if not admin_order_field:
-                    # Not sortable
-                    yield {
-                        "text": text,
-                        "class_attrib": format_html(' class="column-{0}"', field_name),
-                        "sortable": False,
-                    }
-                    continue
-
-            # OK, it is sortable if we got this far
-            yield {
-                'text': text,
-                "sortable": True,
-            }
+    def get_action_choices(self, request, default_choices=BLANK_CHOICE_DASH):
+        """
+        Return a list of choices for use in a form object.  Each choice is a
+        tuple (name, description).
+        """
+        choices = [] + default_choices
+        for func, name, description in self.get_actions(request).values():
+            choice = (name, description) # % model_format_dict(self.opts))
+            choices.append(choice)
+        return choices
 
     def get_actions(self, request):
-        '''
-        Get the list of available action names. Specific classes may overwrite
-        that method to yield user-specfic list.
-        '''
-        return self.actions
+        """
+        Return a dictionary mapping the names of all actions for this
+        ModelAdmin to a tuple of (callable, name, description) for each action.
+        """
+        # If self.actions is explicitly set to None that means that we don't
+        # want *any* actions enabled on this page.
+        from django.contrib.admin.views.main import _is_changelist_popup
+        if self.actions is None or _is_changelist_popup(request):
+            return OrderedDict()
 
+        actions = []
 
-    def get_context_data(self, **kwargs):
-        def _get_action_desc(function):
-            try:
-                return function.short_description
-            except AttributeError:
-                return capfirst(function.__name__.replace('_', ' '))
-        context = {}
-        context['baseurl'] = self.get_query_string()
-        context['order'] = self.order
-        context['simplefilters'] = [
-            (filter, filter.choices(self)) for filter in self.simplefilters]
-        context['actions'] = [
-            (funcname, _get_action_desc(getattr(self, funcname)))
-            for funcname in self.get_actions(self.request)]
-        context.update(kwargs)
-        return super(NgwListView, self).get_context_data(**context)
+        # Gather actions from the admin site first
+        #for (name, func) in self.admin_site.actions:
+        #    description = getattr(func, 'short_description', name.replace('_', ' '))
+        #    actions.append((func, name, description))
 
+        # Then gather them from the model admin and all parent classes,
+        # starting with self and working back up.
+        for klass in self.__class__.mro()[::-1]:
+            class_actions = getattr(klass, 'actions', [])
+            # Avoid trying to iterate over None
+            if not class_actions:
+                continue
+            actions.extend(self.get_action(action) for action in class_actions)
 
-    def post(self, request, *args, **kwargs):
-        selected_pk = request.POST.getlist('_selected_action')
-        if selected_pk:
-            action_name = request.POST['action']
-            if action_name not in self.get_actions(request):
-                raise PermissionDenied
-            action_func = getattr(self, action_name)
+        # get_action might have returned None, so filter any of those out.
+        actions = filter(None, actions)
 
-            queryset = self.get_queryset()
-            queryset = queryset.filter(pk__in=selected_pk)
+        # Convert the actions into an OrderedDict keyed by name.
+        actions = OrderedDict(
+            (name, (func, name, desc))
+            for func, name, desc in actions
+        )
 
-            result = action_func(request, queryset)
-            if result is not None:
-                return result
+        return actions
+
+    def get_action(self, action):
+        """
+        Return a given action from a parameter, which can either be a callable,
+        or the name of a method on the ModelAdmin.  Return is a tuple of
+        (callable, name, description).
+        """
+        # If the action is a callable, just use it.
+        if callable(action):
+            func = action
+            action = action.__name__
+
+        # Next, look for a method. Grab it off self.__class__ to get an unbound
+        # method instead of a bound one; this ensures that the calling
+        # conventions are the same for functions and methods.
+        elif hasattr(self.__class__, action):
+            func = getattr(self.__class__, action)
+
+        # Here was some code for global admin site actions
+
+        if hasattr(func, 'short_description'):
+            description = func.short_description
         else:
-            messages.add_message(request, messages.ERROR, _('You must select some items in order to perform the action.'))
-        return self.get(self, request, *args, **kwargs)
+            description = capfirst(action.replace('_', ' '))
+        return func, action, description
+
+
+    def get_list_display(self, request):
+        '''
+        Overridable method. Returns self.list_display
+        '''
+        return self.list_display
+
+    def get_queryset(self, request):
+        # Used by ChangeList
+        qs = self.get_root_queryset()
+        ordering = self.get_ordering(request)
+        if ordering:
+            qs = qs.order_by(*ordering)
+        return qs
+
+    def get_search_fields(self, request):
+        # This method is copied exactly fom ModelAdmin
+        """
+        Returns a sequence containing the fields to be searched whenever
+        somebody submits a search query.
+        """
+        return self.search_fields
+
+    def get_search_results(self, request, queryset, search_term):
+        # This method is copied exactly fom ModelAdmin
+        """
+        Returns a tuple containing a queryset to implement the search,
+        and a boolean indicating if the results may contain duplicates.
+        """
+        # Apply keyword searches.
+        def construct_search(field_name):
+            if field_name.startswith('^'):
+                return "%s__istartswith" % field_name[1:]
+            elif field_name.startswith('='):
+                return "%s__iexact" % field_name[1:]
+            elif field_name.startswith('@'):
+                return "%s__search" % field_name[1:]
+            else:
+                return "%s__icontains" % field_name
+
+        use_distinct = False
+        search_fields = self.get_search_fields(request)
+        if search_fields and search_term:
+            orm_lookups = [construct_search(str(search_field))
+                           for search_field in search_fields]
+            for bit in search_term.split():
+                or_queries = [models.Q(**{orm_lookup: bit})
+                              for orm_lookup in orm_lookups]
+                queryset = queryset.filter(reduce(operator.or_, or_queries))
+            #if not use_distinct:
+            #    for search_spec in orm_lookups:
+            #        if lookup_needs_distinct(self.opts, search_spec):
+            #            use_distinct = True
+            #            break
+
+        return queryset, use_distinct
+
+    def get_preserved_filters(self, request):
+        # Used by ChangeList
+        return ''
+
+
+    def lookup_allowed(self, lookup, value):
+        # TODO
+        return True
+
+    def response_action(self, request, queryset):
+        """
+        Handle an admin action. This is called if a request is POSTed to the
+        changelist; it returns an HttpResponse if the action was handled, and
+        None otherwise.
+        """
+
+        # There can be multiple action forms on the page (at the top
+        # and bottom of the change list, for example). Get the action
+        # whose button was pushed.
+        try:
+            action_index = int(request.POST.get('index', 0))
+        except ValueError:
+            action_index = 0
+
+        # Construct the action form.
+        data = request.POST.copy()
+        data.pop(helpers.ACTION_CHECKBOX_NAME, None)
+        data.pop("index", None)
+
+        # Use the action whose button was pushed
+        try:
+            data.update({'action': data.getlist('action')[action_index]})
+        except IndexError:
+            # If we didn't get an action from the chosen form that's invalid
+            # POST data, so by deleting action it'll fail the validation check
+            # below. So no need to do anything here
+            pass
+
+        action_form = self.action_form(data, auto_id=None)
+        action_form.fields['action'].choices = self.get_action_choices(request)
+
+        # If the form's valid we can handle the action.
+        if action_form.is_valid():
+            action = action_form.cleaned_data['action']
+            select_across = action_form.cleaned_data['select_across']
+            func = self.get_actions(request)[action][0]
+
+            # Get the list of selected PKs. If nothing's selected, we can't
+            # perform an action on it, so bail. Except we want to perform
+            # the action explicitly on all objects.
+            selected = request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
+            if not selected and not select_across:
+                # Reminder that something needs to be selected or nothing will happen
+                msg = _("Items must be selected in order to perform "
+                        "actions on them. No items have been changed.")
+                messages.add_message(request, messages.WARNING, msg)
+                return None
+
+            if not select_across:
+                # Perform the action only on the selected objects
+                queryset = queryset.filter(pk__in=selected)
+
+            response = func(self, request, queryset)
+
+            # Actions may return an HttpResponse-like object, which will be
+            # used as the response from the POST. If not, we'll be a good
+            # little HTTP citizen and redirect back to the changelist page.
+            if isinstance(response, HttpResponseBase):
+                return response
+            else:
+                return HttpResponseRedirect(request.get_full_path())
+        else:
+            msg = _("No action selected.")
+            messages.add_message(request, messages.WARNING, msg)
+            return None
+
+
+    def theview(self, request, *args, **kwargs):
+        qs = self.get_root_queryset()
+        request = self.request
+
+        list_display = self.get_list_display(request)
+        list_per_page = self.list_per_page
+        if list_per_page is None:
+            list_per_page = Config.get_object_query_page_length()
+
+        # Check actions to see if any are available on this changelist
+        actions = self.get_actions(request)
+        if actions:
+            # Add the action checkboxes if there are any actions available.
+            list_display = [ 'action_checkbox' ] + list(list_display)
+
+        self.cl = cl = MyChangeList(
+            self.append_slash,
+            self.request, qs.model,
+            list_display, self.list_display_links, self.list_filter,
+            self.date_hierarchy, self.search_fields, self.list_select_related,
+            list_per_page, self.list_max_show_all, self.list_editable,
+            self)
+
+        # If the request was POSTed, this might be a bulk action or a bulk
+        # edit. Try to look up an action or confirmation first, but if this
+        # isn't an action the POST will fall through to the bulk edit check,
+        # below.
+        action_failed = False
+        selected = request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
+
+        # Actions with no confirmation
+        if (actions and request.method == 'POST' and
+                'index' in request.POST and '_save' not in request.POST):
+            if selected:
+                response = self.response_action(request, queryset=cl.get_queryset(request))
+                if response:
+                    return response
+                else:
+                    action_failed = True
+            else:
+                msg = _("Items must be selected in order to perform "
+                        "actions on them. No items have been changed.")
+                messages.add_message(request, messages.WARNING, msg)
+                action_failed = True
+
+        # Actions with confirmation
+        if (actions and request.method == 'POST' and
+                helpers.ACTION_CHECKBOX_NAME in request.POST and
+                'index' not in request.POST and '_save' not in request.POST):
+            if selected:
+                response = self.response_action(request, qs) #queryset=cl.get_queryset(request))
+                if response:
+                    return response
+                else:
+                    action_failed = True
+
+        # Build the list of media to be used by the formset.
+        #if formset:
+        #    media = self.media + formset.media
+        #else:
+        #    media = self.media
+        media = self.media
+
+        # Build the action form and populate it with available actions.
+        if actions:
+            action_form = self.action_form(auto_id=None)
+            action_form.fields['action'].choices = self.get_action_choices(request)
+        else:
+            action_form = None
+
+        context = {}
+        context['cl'] = cl
+        context['media'] = media
+        context['action_form'] = action_form
+        context['actions_on_top'] = self.actions_on_top
+        context['actions_on_bottom'] = self.actions_on_bottom
+
+
+        cl.formset = None
+        context.update(kwargs)
+        context = self.get_context_data(**context)
+        return self.render_to_response(context)
+
+    get = post = theview
+
+
+
+
+
 
 #######################################################################
 #
@@ -375,18 +519,18 @@ class NgwDeleteView(DeleteView):
                 .add_component(self.object.get_navcomponent()) \
                 .add_component(('delete', _('delete')))
         context.update(kwargs)
-        return super(NgwDeleteView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def delete(self, request, *args, **kwargs):
         obj = self.object = self.get_object()
         success_url = self.get_success_url()
 
-        name = force_text(obj)
+        name = str(obj)
         log = Log()
         log.contact_id = self.request.user.id
         log.action = LOG_ACTION_DEL
         pk_names = (obj._meta.pk.attname,)  # default django pk name
-        log.target = force_text(obj.__class__.__name__) + ' ' + ' '.join([force_text(obj.__getattribute__(fieldname)) for fieldname in pk_names])
+        log.target = obj.__class__.__name__ + ' ' + ' '.join([str(obj.__getattribute__(fieldname)) for fieldname in pk_names])
         log.target_repr = obj.get_class_verbose_name() + ' '+name
         log.save()
 

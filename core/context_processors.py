@@ -1,6 +1,3 @@
-# -*- encoding utf-8 -*-
-
-from __future__ import division, absolute_import, print_function, unicode_literals
 from ngw.core.models import Config, Contact
 
 def banner(request):

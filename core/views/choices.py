@@ -1,14 +1,11 @@
-# -*- encoding: utf-8 -*-
 '''
 ChoiceGroup & Choice managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.six import iteritems
 from django.utils.safestring import mark_safe
 from django import forms
 from django.views.generic import UpdateView, CreateView
@@ -27,9 +24,11 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 
 class ChoiceListView(NgwAdminAcl, NgwListView):
-    root_queryset = ChoiceGroup.objects.all()
     list_display = 'name', 'html_choices'
+    list_display_links = 'name',
 
+    def get_root_queryset(self):
+        return ChoiceGroup.objects.all()
 
     def html_choices(self, choice_group):
         return mark_safe(', '.join([
@@ -45,7 +44,7 @@ class ChoiceListView(NgwAdminAcl, NgwListView):
         context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
 
         context.update(kwargs)
-        return super(ChoiceListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -66,7 +65,7 @@ class ChoicesWidget(forms.MultiWidget):
         for i in range(ndisplay):
             widgets.append(forms.TextInput(attrs=attrs_value))
             widgets.append(forms.TextInput(attrs=attrs_key))
-        super(ChoicesWidget, self).__init__(widgets, attrs)
+        super().__init__(widgets, attrs)
         self.ndisplay = ndisplay
 
     def decompress(self, value):
@@ -84,7 +83,7 @@ class ChoicesField(forms.MultiValueField):
         for i in range(ndisplay):
             fields.append(forms.CharField())
             fields.append(forms.CharField())
-        super(ChoicesField, self).__init__(fields, *args, **kwargs)
+        super().__init__(fields, *args, **kwargs)
         self.ndisplay = ndisplay
 
     def compress(self, data_list):
@@ -117,7 +116,7 @@ class ChoiceGroupForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         choicegroup = kwargs.get('instance', None)
-        super(ChoiceGroupForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         ndisplay = 0
         self.initial['possible_values'] = []
@@ -140,7 +139,7 @@ class ChoiceGroupForm(forms.ModelForm):
             ndisplay=ndisplay)
 
     def save(self):
-        choicegroup = super(ChoiceGroupForm, self).save()
+        choicegroup = super().save()
 
         possibles_values = self.cleaned_data['possible_values']
         choices = {}
@@ -182,7 +181,7 @@ class ChoiceGroupForm(forms.ModelForm):
             else: # that key has be deleted
                 #print('DELETING', k)
                 c.delete()
-        for k, v in iteritems(choices):
+        for k, v in choices.items():
             #print('ADDING', k)
             choicegroup.choices.create(key=k, value=v)
 
@@ -198,14 +197,20 @@ class ChoiceEditMixin(ModelFormMixin):
     def form_valid(self, form):
         request = self.request
         choicegroup = form.save()
-        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved sucessfully.') % choicegroup.name)
-        choicegroup = self.object
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect(choicegroup.get_absolute_url()+'edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect(choicegroup.get_class_absolute_url()+'add')
+
+        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved successfully.') % choicegroup.name)
+
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect(reverse('choice_list'))
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(choicegroup.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url)
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -226,7 +231,7 @@ class ChoiceEditMixin(ModelFormMixin):
             context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(ChoiceEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class ChoiceEditView(NgwAdminAcl, ChoiceEditMixin, UpdateView):

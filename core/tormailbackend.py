@@ -1,10 +1,7 @@
-# -*- encoding: utf-8 -*-
 '''
 This module provides TorEmailBackend, a backend to send mail through a SMTPS
 server available through TOR.
 '''
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 import os
 import time
 import random
@@ -69,7 +66,7 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
             s.settimeout(timeout)
 
         new_socket = ssl.wrap_socket(s, self.keyfile, self.certfile,
-            ssl_version=ssl.PROTOCOL_SSLv3, # v2 is insecure
+            ssl_version=ssl.PROTOCOL_TLSv1,
             ca_certs='/etc/ssl/certs/ca-certificates.crt',
             cert_reqs=ssl.CERT_REQUIRED)
         cert = new_socket.getpeercert()
@@ -85,7 +82,6 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
         if not validate_ssl_hostname(cert, expected_sslhostname):
             raise smtplib.SMTPException('Ssl certificate is valid but does not match %s.' % expected_sslhostname)
 
-        self.file = smtplib.SSLFakeFile(new_socket)
         return new_socket
 
 
@@ -129,9 +125,9 @@ class TorEmailBackend(EmailBackend):
         try:
             assert self.port == 465, 'Sorry we only support smtps connections right now'
 
-            if b'.onion' in self.host:
+            if '.onion' in self.host:
                 self.connection = SMTP_SSL_TOR(self.host, self.port,
-                    local_hostname='[::1]')
+                    local_hostname='127.0.0.1')
             else:
                 # If local_hostname is not specified, socket.getfqdn() gets used.
                 # For performance, we use the cached FQDN for local_hostname.
@@ -156,4 +152,4 @@ class TorEmailBackend(EmailBackend):
         qualified domain name.
         '''
         email_message.extra_headers['Message-ID'] = make_msgid_noFQDN()
-        return super(TorEmailBackend, self)._send(email_message)
+        return super()._send(email_message)

@@ -1,15 +1,12 @@
-# -*- encoding: utf-8 -*-
 '''
 ContactField managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
-from django.utils import six
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django import forms
@@ -30,15 +27,18 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 
 class FieldListView(NgwAdminAcl, NgwListView):
     list_display = (
-        'name', 'type_as_html', 'contact_group', 'system',
+        'name', 'type_as_html', 'contact_group', 'locked',
         #'move_it', 'sort_weight',
         )
+    list_display_links = 'name',
+    search_fields = 'name', 'hint'
     default_sort = 'sort_weight'
 
 
     def move_it(self, field):
         return '<a href='+str(field.id)+'/moveup>Up</a> <a href='+str(field.id)+'/movedown>Down</a>'
     move_it.short_description = ugettext_lazy('Move')
+    move_it.allow_tags = True
 
 
     def get_root_queryset(self):
@@ -51,8 +51,15 @@ class FieldListView(NgwAdminAcl, NgwListView):
         context['objtype'] = ContactField
         context['nav'] = Navbar(ContactField.get_class_navcomponent())
         context.update(kwargs)
-        return super(FieldListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
+    def locked(self, field):
+        if field.system:
+            return '<img src="%sngw/lock.png" alt="locked" width="10" height="10">' % settings.STATIC_URL
+        return ''
+    locked.short_description = ugettext_lazy('Locked')
+    locked.admin_order_field = 'system'
+    locked.allow_tags = True
 
 ###############################################################################
 #
@@ -98,9 +105,9 @@ class FieldEditForm(forms.ModelForm):
             'default': forms.widgets.Input,
         }
 
-    class IncompatibleData(Exception if six.PY3 else StandardError):
+    class IncompatibleData(Exception):
         def __init__(self, deletion_details, *args, **kwargs):
-            super(FieldEditForm.IncompatibleData, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
             self.deletion_details = deletion_details
 
     move_after = forms.IntegerField(label=ugettext_lazy('Move after'), widget=forms.Select)
@@ -111,7 +118,7 @@ class FieldEditForm(forms.ModelForm):
         if instance:
             initial['move_after'] = instance.sort_weight-10
         kargs['initial'] = initial
-        super(FieldEditForm, self).__init__(*args, **kargs)
+        super().__init__(*args, **kargs)
 
         self.delete_incompatible = bool(self.data.get('confirm', None))
 
@@ -119,7 +126,7 @@ class FieldEditForm(forms.ModelForm):
         self.fields['contact_group'].widget.choices = [(g.id, g.name) for g in contacttypes]
 
         self.fields['type'].widget.choices = [(cls.db_type_id, cls.human_type_id)
-            for cls in six.itervalues(ContactField.types_classes)] # TODO: Sort
+            for cls in ContactField.types_classes.values()] # TODO: Sort
         js_test_type_has_choice = ' || '.join(["this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
             if cls.has_choice])
@@ -170,7 +177,7 @@ class FieldEditForm(forms.ModelForm):
             deletion_details = []
             for cfv in self.instance.values.all():
                 if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
-                    deletion_details.append((cfv.contact, force_text(cfv)))
+                    deletion_details.append((cfv.contact, str(cfv)))
             if deletion_details:
                 raise FieldEditForm.IncompatibleData(deletion_details)
 
@@ -196,7 +203,7 @@ class FieldEditForm(forms.ModelForm):
                 if deletion_details:
                     raise FieldEditForm.IncompatibleData(deletion_details)
 
-        result = super(FieldEditForm, self).save(commit=False)
+        result = super().save(commit=False)
         self.instance.sort_weight = self.cleaned_data['move_after'] + 5
         self.instance.save()
         return result
@@ -212,14 +219,19 @@ class FieldEditMixin(ModelFormMixin):
         request = self.request
         cf = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Field %s has been saved sucessfully.') % cf.name)
+        messages.add_message(request, messages.SUCCESS, _('Field %s has been saved successfully.') % cf.name)
 
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect('edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect('add')
+        if self.pk_url_kwarg not in self.kwargs: # new added instance
+            base_url = '.'
         else:
-            return HttpResponseRedirect('..')
+            base_url = '..'
+        if request.POST.get('_continue', None):
+            return HttpResponseRedirect(
+                base_url + '/' + str(cf.id) + '/edit')
+        elif request.POST.get('_addanother', None):
+            return HttpResponseRedirect(base_url + '/add')
+        else:
+            return HttpResponseRedirect(base_url)
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -240,7 +252,7 @@ class FieldEditMixin(ModelFormMixin):
             context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(FieldEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 class FieldEditView(NgwAdminAcl, FieldEditMixin, UpdateView):
@@ -285,7 +297,7 @@ class FieldDeleteView(NgwAdminAcl, NgwDeleteView):
     pk_url_kwarg = 'id'
 
     def get_object(self, *args, **kwargs):
-        field = super(FieldDeleteView, self).get_object(*args, **kwargs)
+        field = super().get_object(*args, **kwargs)
         if field.system:
             messages.add_message(
                 self.request, messages.ERROR,

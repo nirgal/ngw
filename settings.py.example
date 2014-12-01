@@ -121,7 +121,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -151,6 +151,7 @@ SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
 SESSION_COOKIE_SECURE = True # We are not using http, only https
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # We have short time sessions anyways
 
+CSRF_COOKIE_AGE = 24*3600 # One day
 CSRF_COOKIE_SECURE = True # We are not using http, only https
 
 # Output the "Etag" header for caching

@@ -1,6 +1,3 @@
-# -*- encoding: utf-8 -*-
-
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.views.generic.base import RedirectView
@@ -10,7 +7,7 @@ from django.conf.urls.static import static
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 from ngw.core.models import ContactField, ContactGroup
-admin.autodiscover()
+from ngw.core.admin import ContactGroupAdmin
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, GroupAddManyView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, FilterDeleteView, DefaultGroupView
@@ -100,7 +97,6 @@ urlpatterns = patterns('',
     url(r'^contactgroups/$', ContactGroupListView.as_view(), name='group_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),
     #url(r'^contactgroups2/$', admin.site.admin_view(admin.site._registry[ContactGroup].changelist_view)),
-    #url(r'^contactgroups2/(?P<object_id>\d+)/edit$', admin.site.admin_view(admin.site._registry[ContactGroup].change_view)),
     url(r'^events/$', EventListView.as_view(), name='event_list'),
     url(r'^events/', include(groups_urlpatterns)),
 

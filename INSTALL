@@ -2,13 +2,12 @@ Installation
 ============
 It is recommanded to use Debian 6 (Squeeze) or above
 
-aptitude install python-django python-psycopg2 postgresql libapache2-mod-wsgi gettext python-uno python-cracklib tor python-socksipy make oomailing python-decoratedstr
+aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-uno python3-cracklib tor make python3-socksipy oomailing python3-decoratedstr python3-django-session-security python3-gnupg
 
-oomailing and python-decoratedstr packages can be downloaded at:
+oomailing, python-decoratedstr, python3-socksipy and python3-django-session-security packages can be downloaded at:
 http://www.nirgal.com/debian/
-or built from https://github.com/nirgal/decoratedstr
 
-You need python-django version 1.6, available in Debian stable-backports at:
+You need python-django version 1.7, available in Debian stable-backports at:
 http://packages.qa.debian.org/python-django
 
 Base directory must be /usr/lib/ngw (make a symlink)
@@ -38,6 +37,26 @@ cd django-session-security-2.2.0/session_security
 django-admin compilemessages
 cd -
 
+Debian repository setup (optional)
+==================================
+Using stable (wheezy):
+
+Make sure you defined wich default Debian version you want, so that backports are not installed automatically:
+#echo 'APT::Default-Release "stable";' > /etc/apt/apt.conf.d/10_defaultrelease
+
+Here's a suggested /etc/apt/sources.list:
+---8<---------------------------
+deb     http://ftp.fr.debian.org/debian/     wheezy main contrib non-free
+deb-src http://ftp.fr.debian.org/debian/     wheezy main contrib non-free
+deb     http://security.debian.org/ wheezy/updates  main contrib non-free
+deb-src http://security.debian.org/ wheezy/updates  main contrib non-free
+deb http://ftp.debian.org/debian wheezy-backports main contrib non-free
+deb-src http://ftp.debian.org/debian wheezy-backports main contrib non-free
+deb http://nirgal.com/debian wheezy main
+deb-src http://nirgal.com/debian wheezy main
+---8<---------------------------
+
+If you want automatic upgrades from nirgal, you'll need to install package nirgal-keyring.
 
 Postgres setup
 ==============

@@ -1,12 +1,9 @@
-# -*- encoding: utf-8 -*-
 '''
 Custom widgets for use in forms.
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from django import forms
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_text
 from django.utils.html import format_html
 
 class OnelineCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
@@ -25,7 +22,7 @@ class OnelineCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
             start_tag = format_html('<ul class=onelinechoices id="{0}">', id_) if id_ else '<ul class=onelinechoices>'
             output = [start_tag]
             for widget in self:
-                output.append(format_html('<li>{0}</li>', force_text(widget)))
+                output.append(format_html('<li>{0}</li>', str(widget)))
             output.append('</ul>')
             return mark_safe('\n'.join(output))
     renderer = NgwCheckboxFieldRenderer

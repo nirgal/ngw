@@ -1,18 +1,16 @@
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
-
-from __future__ import division, absolute_import, print_function, unicode_literals
+#!/usr/bin/env python3
 
 import datetime
 import json
 import logging
 import smtplib
 import traceback
+import urllib
+import http
 from django.conf import settings
 from django.forms import ValidationError
-from django.utils.six.moves import urllib, http_client
 from django.utils.translation import ugettext as _, activate as language_activate
-from django.utils.timezone import now
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django.core import mail
 from ngw.core.models import ContactMsg
@@ -30,6 +28,8 @@ logger = logging.getLogger('msgsync')
 # answer_password: Onetime password to get answers
 # email_sent: True if notification email was sent
 # deleted: True if remote server returns 404 (deleted on remote end)
+
+TIMEOUT = 30 # seconds
 
 def clean_expiration_date(expiration_date):
     MAXEXPIRATION = 90
@@ -52,7 +52,7 @@ def send_to_onetime(msg):
     if 'otid' in sync_info:
         return # Already sent
 
-    ot_conn = http_client.HTTPSConnection('onetime.info')
+    ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
     logger.info('Storing message for %s.', msg.contact)
 
@@ -62,7 +62,7 @@ def send_to_onetime(msg):
         logger.warning("Message %s doesn't have an expiration date." % msg.id)
         dt = msg.group.date
         if dt:
-            days = (dt - now().date()).days
+            days = (dt - timezone.now().date()).days
         else:
             days = 21
     ot_conn.request('POST', '/', urllib.parse.urlencode({
@@ -166,7 +166,7 @@ def read_answers(msg):
         return
     # We have to open a new connection each time
     # since we can't handle keep-alive yet
-    ot_conn = http_client.HTTPSConnection('onetime.info')
+    ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
     ot_conn.request('POST', '/'+sync_info['otid']+'/answers', urllib.parse.urlencode({
         'password': sync_info['answer_password']
@@ -192,14 +192,18 @@ def read_answers(msg):
     jresponse = json.loads(force_str(sresponse))
     logger.debug(jresponse)
     if 'read_date' in jresponse and not msg.read_date:
-        msg.read_date = jresponse.get('read_date', None)
+        read_date = jresponse.get('read_date', None)
+        read_date = datetime.datetime.strptime(read_date, '%Y-%m-%d %H:%M:%S')
+        if settings.USE_TZ:
+            read_date = timezone.make_aware(read_date, timezone.get_default_timezone())
+        msg.read_date = read_date
         msg.save()
     for response_text in jresponse['answers']:
         logger.info('Received answer from %s.', msg.contact)
         answer_msg = ContactMsg(
             group_id=msg.group_id,
             contact_id=msg.contact_id,
-            send_date=datetime.datetime.utcnow(),
+            send_date=timezone.now(),
             subject=jresponse['subject'],
             text=response_text,
             is_answer=True,
@@ -232,3 +236,15 @@ def sync_msg(msg):
     except BaseException as err:
         logger.critical(err)
         logger.critical(traceback.format_exc())
+
+def get_related_messages(msg):
+    sync_info = json.loads(msg.sync_info)
+    if 'otid' not in sync_info:
+        return ()
+    otid = sync_info['otid']
+    results = ContactMsg.objects
+    results = results.filter(sync_info__contains=json.dumps({'otid': otid})[1:-1])
+    results = results.filter(sync_info__contains=json.dumps({'backend': __name__})[1:-1])
+    results = results.exclude(pk=msg.pk)
+    results = results.order_by('-send_date')
+    return results

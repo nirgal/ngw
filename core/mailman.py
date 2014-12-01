@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import sys
 import os
 import logging
@@ -90,7 +88,6 @@ if __name__ == '__main__':
 
     from ngw.core.models import ContactGroup
     from optparse import OptionParser
-    from django.utils.encoding import force_text
     parser = OptionParser(usage='%prog [options] filename dump|normalize|check')
     parser.add_option('-g', '--group', action='store', dest='groupid', type='int', help='specify groupid')
 
@@ -104,7 +101,6 @@ if __name__ == '__main__':
     action = args[1]
 
     filecontent = open(args[0]).read()
-    filecontent = force_text(filecontent)
 
     if action == 'dump':
         mailman_members = parse_who_result(filecontent)

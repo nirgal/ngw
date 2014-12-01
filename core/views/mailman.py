@@ -1,9 +1,6 @@
-# -*- encoding: utf-8 -*-
 '''
 External mailman managing views
 '''
-
-from __future__ import division, absolute_import, print_function, unicode_literals
 
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext as _
@@ -62,4 +59,4 @@ Ci-joint votre message original.
                          .add_component(('mailman', _('mailman')))
         context['active_submenu'] = 'mailman'
         context.update(kwargs)
-        return super(MailmanSyncView, self).get_context_data(**context)
+        return super().get_context_data(**context)

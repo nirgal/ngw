@@ -1,9 +1,7 @@
-# -*- encoding: utf-8 -*-
 '''
 ContactGroupNews managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 from datetime import datetime
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
@@ -49,7 +47,7 @@ class NewsListView(InGroupAcl, ListView):
         context['active_submenu'] = 'news'
         context['baseurl'] = '?'  # for paginator
         context.update(kwargs)
-        return super(NewsListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -76,7 +74,7 @@ class NewsEditMixin(ModelFormMixin):
             raise PermissionDenied
 
     def get_object(self, queryset=None):
-        news = super(NewsEditMixin, self).get_object(queryset)
+        news = super().get_object(queryset)
         # Check the group match the one of the url
         if news.contact_group_id != self.contactgroup.id:
             raise PermissionDenied
@@ -103,12 +101,12 @@ class NewsEditMixin(ModelFormMixin):
             context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
-        return super(NewsEditMixin, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def form_valid(self, form):
         request = self.request
         cg = self.contactgroup
-        response = super(NewsEditMixin, self).form_valid(form)
+        response = super().form_valid(form)
         messages.add_message(
             request, messages.SUCCESS,
             _('News %s has been saved.') % self.object)
@@ -130,7 +128,7 @@ class NewsCreateView(InGroupAcl, NewsEditMixin, CreateView):
         form.instance.date = datetime.now()
         form.instance.author = self.request.user
         form.instance.contact_group = self.contactgroup
-        return super(NewsCreateView, self).form_valid(form)
+        return super().form_valid(form)
 
 
 #######################################################################
@@ -154,4 +152,4 @@ class NewsDeleteView(InGroupAcl, NgwDeleteView):
             .add_component(('news', _('news'))) \
             .add_component(('delete', _('delete')))
         context.update(kwargs)
-        return super(NewsDeleteView, self).get_context_data(**context)
+        return super().get_context_data(**context)

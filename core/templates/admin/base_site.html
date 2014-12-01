@@ -1,6 +1,8 @@
 {% extends "admin/base.html" %}
 {% load i18n staticfiles ngwtags %}
 
+{% block title %}{{ title }}{% endblock %}
+
 {% block extrastyle %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
@@ -10,6 +12,7 @@
 
 {% block extrahead %}
 {{ block.super }}
+<link rel="shortcut icon" type="image/png"  href="{% static "ngw/favicon.png" %}">
 <script src="{% static "admin/js/core.js" %}" type="text/javascript"></script>
 <script src="{% static "admin/js/admin/RelatedObjectLookups.js" %}" type="text/javascript"></script>
 <script src="{% static "admin/js/jquery.js" %}" type="text/javascript"></script>
@@ -58,7 +61,7 @@
     {% if user.is_admin %}
     <a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>{% trans "fields" %}</a>
     <a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>{% trans "choices" %}</a>
-    <a href="/logs?_order=-0" {{ nav|nav_is_active:"logs"}}>{% trans "logs" %}</a>
+    <a href="/logs" {{ nav|nav_is_active:"logs"}}>{% trans "logs" %}</a>
     {% endif %}
 </div>
 {% endif %}
@@ -81,8 +84,6 @@
 {% endif %}
 {% block submenu %}{% endblock %}
 {% endblock %}
-
-{% block title %}{{ title }}{% endblock %}
 
 {% block footer %}
 {% if user.is_authenticated %}

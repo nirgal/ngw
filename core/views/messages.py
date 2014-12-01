@@ -1,28 +1,25 @@
-# -*- encoding: utf-8 -*-
 '''
 Messages managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-
 import json
 from datetime import date, timedelta
+from importlib import import_module
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect, Http404
 from django.utils import translation
 from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.encoding import force_text
 from django.utils.timezone import now
-from django.utils.importlib import import_module
 from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, FormView
 from django import forms
 from django.contrib import messages
 from django.contrib.admin.widgets import AdminDateWidget
+from django.contrib.admin import filters
 from ngw.core.models import Contact, ContactMsg
 from ngw.core import perms
-from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
+from ngw.core.views.generic import InGroupAcl, NgwListView
 
 
 #######################################################################
@@ -32,7 +29,7 @@ from ngw.core.views.generic import InGroupAcl, NgwListView, BaseListFilter
 #######################################################################
 
 
-class MessageDirectionFilter(BaseListFilter):
+class MessageDirectionFilter(filters.SimpleListFilter):
     title = ugettext_lazy('direction')
     parameter_name = 'answer'
     def lookups(self, request, view):
@@ -49,7 +46,7 @@ class MessageDirectionFilter(BaseListFilter):
         return queryset.filter(is_answer=filter_answer)
 
 
-class MessageReadFilter(BaseListFilter):
+class MessageReadFilter(filters.SimpleListFilter):
     title = ugettext_lazy('read status')
     parameter_name = 'unread'
     def lookups(self, request, view):
@@ -66,10 +63,41 @@ class MessageReadFilter(BaseListFilter):
         return queryset.filter(read_date__isnull=filter_unread)
 
 
+class MessageContactFilter(filters.SimpleListFilter):
+    title = ugettext_lazy('contact')
+    parameter_name = 'contact'
+    template = 'admin/filter_select.html'
+    def lookups(self, request, view):
+        result = []
+        contacts = Contact.objects.all()
+        try:
+            group_id = view.kwargs.get('gid', None)
+        except AttributeError:
+            group_id = None
+        if group_id:
+            contacts = contacts.extra(
+                tables=('v_c_appears_in_cg',),
+                where=(
+                    'v_c_appears_in_cg.contact_id=contact.id',
+                    'v_c_appears_in_cg.group_id=%s' % group_id))
+        for contact in contacts:
+            result.append((contact.id, contact.name))
+        return result
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val is None:
+            return queryset
+        return queryset.filter(contact_id = val)
+
+
 class MessageListView(InGroupAcl, NgwListView):
     list_display = 'nice_flags', 'nice_date', 'contact', 'subject'
+    list_display_links = 'subject',
     template_name = 'message_list.html'
-    filter_list = (MessageDirectionFilter, MessageReadFilter)
+    list_filter = (
+        MessageDirectionFilter, MessageReadFilter, MessageContactFilter)
+    append_slash = False
+    search_fields = 'subject', 'text',
 
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.VIEW_MSGS:
@@ -77,8 +105,7 @@ class MessageListView(InGroupAcl, NgwListView):
 
     def get_root_queryset(self):
         return ContactMsg.objects \
-            .filter(group_id=self.contactgroup.id) \
-            .order_by('-send_date')
+            .filter(group_id=self.contactgroup.id)
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
@@ -88,7 +115,7 @@ class MessageListView(InGroupAcl, NgwListView):
                          .add_component(('messages', _('messages')))
         context['active_submenu'] = 'messages'
         context.update(kwargs)
-        return super(MessageListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -111,7 +138,7 @@ except ImportError as e:
 
 class SendMessageForm(forms.Form):
     def __init__(self, contactgroup, *args, **kwargs):
-        super(SendMessageForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.fields['ids'] = forms.CharField(widget=forms.widgets.HiddenInput)
         if self.support_expiration_date():
@@ -178,7 +205,7 @@ class SendMessageView(InGroupAcl, FormView):
             raise PermissionDenied
 
     def get_form_kwargs(self):
-        kwargs = super(SendMessageView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs['contactgroup'] = self.contactgroup
         return kwargs
 
@@ -203,7 +230,7 @@ class SendMessageView(InGroupAcl, FormView):
             messages.add_message(self.request, messages.WARNING,
                 translation.string_concat(error_msg,
                     _(" The message will be kept here until you define his email address.")))
-        return super(SendMessageView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return self.contactgroup.get_absolute_url()+'messages/'
@@ -232,7 +259,7 @@ class SendMessageView(InGroupAcl, FormView):
         context['active_submenu'] = 'messages'
 
         context.update(kwargs)
-        return super(SendMessageView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
 
 #######################################################################
@@ -252,7 +279,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             raise PermissionDenied
 
     def get_object(self, queryset=None):
-        msg = super(MessageDetailView, self).get_object(queryset)
+        msg = super().get_object(queryset)
         # Check the group match the one of the url
         if msg.group_id != self.contactgroup.id:
             raise PermissionDenied
@@ -285,7 +312,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             }
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('messages', _('messages')))
-        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + force_text(self.object.contact_id)
+        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + str(self.object.contact_id)
         context['active_submenu'] = 'messages'
 
         flags = perms.cig_flags_int(self.object.contact.id, cg.id)
@@ -309,7 +336,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             context['reply_url'] = "../members/send_message?ids=%s" % \
                 self.object.contact_id
         context.update(kwargs)
-        return super(MessageDetailView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -317,7 +344,7 @@ class MessageDetailView(InGroupAcl, DetailView):
             self.object.read_date = None
             self.object.read_by = None
             self.object.save()
-            return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/?&_order=-1')
+            return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/')
         raise Http404
 
 
@@ -328,7 +355,7 @@ class MessageDetailView(InGroupAcl, DetailView):
 #######################################################################
 
 
-#from ngw.core.response import JsonHttpResponse
+#from django.http.response import JsonResponse
 #from django.shortcuts import get_object_or_404
 #class MessageToggleReadView(InGroupAcl, View):
 #    def check_perm_groupuser(self, group, user):
@@ -345,4 +372,4 @@ class MessageDetailView(InGroupAcl, DetailView):
 #        if message.group_id != self.contactgroup.id:
 #            return HttpResponse('Bad group')
 #
-#        return JsonHttpResponse({'test': 'ok'})
+#        return JsonResponse({'test': 'ok'})

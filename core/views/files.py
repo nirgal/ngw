@@ -1,9 +1,7 @@
-# -*- encoding: utf-8 -*-
 '''
 files managing views
 '''
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
@@ -60,7 +58,7 @@ class FileListView(InGroupAcl, FormView):
         context['path'] = path
         context['files'] = cg.get_filenames(path)
         context.update(kwargs)
-        return super(FileListView, self).get_context_data(**context)
+        return super().get_context_data(**context)
 
     def form_valid(self, form):
         cg = self.contactgroup
@@ -78,7 +76,7 @@ class FileListView(InGroupAcl, FormView):
                 destination.write(chunk)
             messages.add_message(
                 request, messages.SUCCESS,
-                _('File %s has been uploaded sucessfully.') % upfile.name)
+                _('File %s has been uploaded successfully.') % upfile.name)
         except IOError as err:
             messages.add_message(
                 request, messages.ERROR,
