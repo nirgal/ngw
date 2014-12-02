@@ -421,7 +421,6 @@ class ContactGroupForm(forms.ModelForm):
         user = kwargs.pop('user')
         self.user = user
         instance = kwargs.get('instance', None)
-
         super().__init__(*args, **kwargs)
 
         # Only show visible groups
@@ -472,6 +471,7 @@ class ContactGroupForm(forms.ModelForm):
                 self.add_error('date', _('That field is required when you have an end date.'))
             elif end_date < start_date:
                 self.add_error('end_date', _('The end date must be after the start date.'))
+        return data
 
     def save(self, commit=True):
         is_creation = self.instance.pk is None
@@ -502,6 +502,8 @@ class ContactGroupForm(forms.ModelForm):
             intflag = perms.FLAGTOINT[flag]
             old_groups_ids = set(cg.get_visible_mananger_groups_ids(self.user.id, intflag))
             new_groups_ids = set([int(ogid) for ogid in data[field_name]])
+            #print('flag', flag, 'old_groups_ids', old_groups_ids)
+            #print('flag', flag, 'new_groups_ids', new_groups_ids)
             groups_added = new_groups_ids - old_groups_ids
             groups_removed = old_groups_ids - new_groups_ids
             print('flag', flag, 'groups_added=', groups_added)

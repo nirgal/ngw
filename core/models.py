@@ -755,13 +755,13 @@ class ContactGroup(NgwModel):
         '''
         return [gig.father_id \
             for gig in GroupManageGroup.objects.filter(subgroup_id=self.id).extra(
-                tables={'v_cig_perm': 'v_cig_perm'},
+                tables=[ 'v_cig_perm' ],
                 where=[
-                    'v_cig_perm.contact_id=%s'
-                    ' AND v_cig_perm.group_id=group_manage_group.father_id'
-                    ' AND v_cig_perm.flags & %s <> 0'
-                    ' AND group_manage_group.flags & %s <> 0'
-                    % (cid, intflag, perms.SEE_CG)])]
+                    'v_cig_perm.contact_id=%s' % cid,
+                    'v_cig_perm.group_id=group_manage_group.father_id',
+                    'v_cig_perm.flags & %s <> 0' % perms.SEE_CG,
+                    'group_manage_group.flags & %s <> 0' % intflag,
+                ])]
 
 
     def get_manager_groups(self):
