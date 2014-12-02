@@ -1,4 +1,4 @@
-/*$=django.jQuery;
+/*$=django.jQuery;*/
 
 function dump(o) {
     var txt = "";
