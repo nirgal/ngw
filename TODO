@@ -63,7 +63,7 @@ Sticky groups:
 Invite groups (?):
 - Disable invitation buttons when a group doesn't support the feature.
 
-Check date is not null when creating an event
+Check date is not null when creating an event.
 
 Add support for attachements in externals messages (?)
 

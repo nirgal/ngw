@@ -29,6 +29,7 @@ from ngw.core.models import (
     ContactInGroup, Log,
     LOG_ACTION_ADD, LOG_ACTION_CHANGE,
     FIELD_COLUMNS, FIELD_FILTERS, FIELD_DEFAULT_GROUP)
+from django.contrib.admin import filters
 from django.contrib.admin.utils import (lookup_field, display_for_field,
     display_for_value, label_for_field)
 from ngw.core.nav import Navbar
@@ -362,7 +363,6 @@ def field_widget_factory(contact_field):
 
 
 
-from django.contrib.admin import filters
 class CustomColumnsFilter(filters.ListFilter):
     '''
     This is not really a filter. This acutally adds columns to the query.
@@ -535,9 +535,8 @@ class BaseContactListView(NgwListView):
         return result
 
 
-    #get_link_name=NgwModel.get_absolute_url
     def name_with_relative_link(self, contact):
-        return '<a href="%(id)d/">%(name)s</a>' % {'id': contact.id, 'name': html.escape(contact.name)}
+        return '<a href="%(id)d/"><b>%(name)s</a></b>' % {'id': contact.id, 'name': html.escape(contact.name)}
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'
     name_with_relative_link.allow_tags = True
