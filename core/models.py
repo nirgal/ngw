@@ -197,8 +197,6 @@ class ChoiceGroup(NgwModel):
             q = q.order_by('value')
         return [(c.key, c.value) for c in q]
 
-    get_link_name = NgwModel.get_absolute_url
-
 
 class MyContactManager(BaseUserManager):
     def get_by_natural_key(self, username):
@@ -784,10 +782,6 @@ class ContactGroup(NgwModel):
         return perms.int_to_flags(perm)
 
 
-    def get_link_name(self):
-        "Name will then be clickable in the list"
-        return self.get_absolute_url()
-
     # See group_add_contacts_to.html
     def is_event(self):
         '''
@@ -1127,8 +1121,6 @@ class ContactField(NgwModel):
         into one of its subtypes.
         """
         self.__class__ = self.types_classes[self.type]
-
-    get_link_name = NgwModel.get_absolute_url
 
     def str_type_base(self):
         return self.human_type_id
@@ -1893,8 +1885,6 @@ class ContactMsg(NgwModel):
 
     def get_absolute_url(self):
         return self.group.get_absolute_url() + 'messages/' + str(self.id)
-
-    get_link_subject = get_absolute_url
 
     def nice_flags(self):
         if self.sync_info:
