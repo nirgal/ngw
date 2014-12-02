@@ -7,12 +7,14 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-Top right quick search: Add a drop down select filed by ajax to quick select people
-See django-ajax-selects package
+Top right quick search:
+- Limit list length.
+- Go to contact when a contact was selected (mouse and keyboard).
+- Improve search: case insensitive, accentuated characters(?), any begining of a word, logins.
 
 Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
 
-Show messages counts on the member list
+Show messages counts on the member list.
 
 
 ====================================================================================================
@@ -39,9 +41,7 @@ Remove ContactGroup.name_with_date for __str__
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 
 Make a double-choice contactfield
-
 Attach a choice to a field and only one (usefull for permissions)
-
 Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
