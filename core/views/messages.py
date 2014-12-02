@@ -110,7 +110,7 @@ class MessageListView(InGroupAcl, NgwListView):
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
         context = {}
-        context['title'] = _('Messages for %s') % cg.name_with_date()
+        context['title'] = _('Messages for %s') % cg
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('messages', _('messages')))
         context['active_submenu'] = 'messages'
@@ -250,7 +250,7 @@ class SendMessageView(InGroupAcl, FormView):
                 noemails.append(contact)
 
         context = {}
-        context['title'] = _('Send message in %s') % cg.name_with_date()
+        context['title'] = _('Send message in %s') % cg
         context['nbcontacts'] = nbcontacts
         context['noemails'] = noemails
         context['nav'] = cg.get_smart_navbar() \
@@ -303,12 +303,12 @@ class MessageDetailView(InGroupAcl, DetailView):
         if self.object.is_answer:
             context['title'] = _('Message from %(contactname)s in group %(groupname)s') % {
                 'contactname': self.object.contact.name,
-                'groupname': cg.name_with_date(),
+                'groupname': cg,
             }
         else:
             context['title'] = _('Message to %(contactname)s in group %(groupname)s') % {
                 'contactname': self.object.contact.name,
-                'groupname': cg.name_with_date(),
+                'groupname': cg,
             }
         context['nav'] = cg.get_smart_navbar() \
                          .add_component(('messages', _('messages')))
@@ -331,7 +331,7 @@ class MessageDetailView(InGroupAcl, DetailView):
         context['membership_str'] = membership_str
         context['membership_title'] = _('%(contactname)s in group %(groupname)s') % {
             'contactname': self.object.contact.name,
-            'groupname': cg.name_with_date()}
+            'groupname': cg}
         if self.contactgroup.userperms & perms.WRITE_MSGS:
             context['reply_url'] = "../members/send_message?ids=%s" % \
                 self.object.contact_id

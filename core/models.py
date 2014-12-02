@@ -676,7 +676,11 @@ class ContactGroup(NgwModel):
     objects = ContactGroupQuerySet.as_manager()
 
     def __str__(self):
-        return self.name
+        """ Returns the name of the group, and the date if there's one"""
+        result = self.name
+        if self.date:
+            result += ' ‧ ' + formats.date_format(self.date, "DATE_FORMAT")
+        return result
 
     def __repr__(self):
         return '<ContactGroup %s %s>' % (self.id, self.name)
@@ -790,19 +794,6 @@ class ContactGroup(NgwModel):
         Is this group an event or a permanent group?
         '''
         return self.date is not None
-
-    def html_date(self):
-        if self.date:
-            return formats.date_format(self.date, "DATE_FORMAT")
-        else:
-            return ''
-
-    def name_with_date(self):
-        """ Returns the name of the group, and the date if there's one"""
-        result = self.name
-        if self.date:
-            result += ' ‧ ' + formats.date_format(self.date, "DATE_FORMAT")
-        return result
 
     def description_not_too_long(self):
         '''
@@ -971,7 +962,7 @@ class ContactGroup(NgwModel):
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_DEL
             log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
-            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
+            log.target_repr = 'Membership contact %s in group %s' % ( contact, self )
 
             hooks.membership_changed(request, contact, self)
 
@@ -981,7 +972,7 @@ class ContactGroup(NgwModel):
             log = Log(contact_id=user.id)
             log.action = LOG_ACTION_ADD
             log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
-            log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
+            log.target_repr = 'Membership contact %s in group %s' % ( contact, self )
         else:
             result = LOG_ACTION_CHANGE
 
@@ -990,7 +981,7 @@ class ContactGroup(NgwModel):
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
+                log.target_repr = 'Membership contact %s in group %s' % ( contact, self )
                 log.property = 'membership_' + flag
                 log.property_repr = perms.FLAGTOTEXT[flag]
                 log.change = 'new value is false'
@@ -999,7 +990,7 @@ class ContactGroup(NgwModel):
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_CHANGE
                 log.target = 'ContactInGroup ' + str(contact.id) + ' ' + str(self.id)
-                log.target_repr = 'Membership contact ' + contact.name + ' in group ' + self.name_with_date()
+                log.target_repr = 'Membership contact %s in group %s' % ( contact, self )
                 log.property = 'membership_' + flag
                 log.property_repr = perms.FLAGTOTEXT[flag]
                 log.change = 'new value is true'
@@ -1034,7 +1025,7 @@ class ContactGroup(NgwModel):
                 msg = _('Contact %(contacts)s have been added in %(group)s with status %(status)s.')
             messages.add_message(request, messages.SUCCESS, msg % {
                 'contacts': msgpart_contacts,
-                'group': self.name_with_date(),
+                'group': self,
                 'status': group_member_mode})
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
@@ -1044,7 +1035,7 @@ class ContactGroup(NgwModel):
                 msg = _('Contacts %(contacts)s already were in %(group)s. Status has been changed to %(status)s.')
             messages.add_message(request, messages.SUCCESS, msg % {
                 'contacts': msgpart_contacts,
-                'group': self.name_with_date(),
+                'group': self,
                 'status': group_member_mode})
 
 
@@ -1540,7 +1531,7 @@ class GroupFilterIsMember(Filter):
             raise Http404()
         return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
             'filtername': html.escape(self.__class__.human_name),
-            'groupname': html.escape(group.name_with_date())})
+            'groupname': html.escape(str(group))})
     def get_param_types(self):
         return ()
 GroupFilterIsMember.internal_name = 'memberof'
@@ -1559,7 +1550,7 @@ class GroupFilterIsNotMember(Filter):
             raise Http404()
         return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
             'filtername': html.escape(self.__class__.human_name),
-            'groupname': html.escape(group.name_with_date())})
+            'groupname': html.escape(str(group))})
     def get_param_types(self):
         return ()
 GroupFilterIsNotMember.internal_name = 'notmemberof'
@@ -1578,7 +1569,7 @@ class GroupFilterIsInvited(Filter):
             raise Http404()
         return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
             'filtername': html.escape(self.__class__.human_name),
-            'groupname': html.escape(group.name_with_date())})
+            'groupname': html.escape(str(group))})
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name = 'ginvited'
@@ -1597,7 +1588,7 @@ class GroupFilterIsNotInvited(Filter):
             raise Http404()
         return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
             'filtername': html.escape(self.__class__.human_name),
-            'groupname': html.escape(group.name_with_date())})
+            'groupname': html.escape(str(group))})
     def get_param_types(self):
         return ()
 GroupFilterIsNotInvited.internal_name = 'gnotinvited'
@@ -1616,7 +1607,7 @@ class GroupFilterDeclinedInvitation(Filter):
             raise Http404()
         return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
             'filtername': html.escape(self.__class__.human_name),
-            'groupname': html.escape(group.name_with_date())})
+            'groupname': html.escape(str(group))})
     def get_param_types(self):
         return ()
 GroupFilterDeclinedInvitation.internal_name = "gdeclined"
@@ -1635,7 +1626,7 @@ class GroupFilterNotDeclinedInvitation(Filter):
             raise Http404()
         return mark_safe('%(filtername)s <b>%(groupname)s</b>' % {
             'filtername': html.escape(self.__class__.human_name),
-            'groupname': html.escape(group.name_with_date())})
+            'groupname': html.escape(str(group))})
     def get_param_types(self):
         return ()
 GroupFilterNotDeclinedInvitation.internal_name = 'gnotdeclined'
@@ -1834,7 +1825,7 @@ class ContactInGroup(NgwModel):
         return '<ContactInGroup %s %s>' % (self.contact_id, self.group_id)
 
     def __str__(self):
-        return _('contact %(contactname)s in group %(groupname)s') % {'contactname': self.contact.name, 'groupname': self.group.name_with_date()}
+        return _('contact %(contactname)s in group %(groupname)s') % {'contactname': self.contact, 'groupname': self.group}
 
     @classmethod
     def get_class_navcomponent(cls):

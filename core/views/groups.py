@@ -60,14 +60,14 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         supergroups = group.get_direct_supergroups()
         supergroups = supergroups.with_user_perms(self.request.user.id, perms.SEE_CG)
         supergroups = supergroups[:LIST_PREVIEW_LEN+1]
-        return ', '.join(_truncate_list([sg.name_with_date() for sg in supergroups]))
+        return ', '.join(_truncate_list([str(sg) for sg in supergroups]))
     visible_direct_supergroups_5.short_description = ugettext_lazy('Super groups')
 
     def visible_direct_subgroups_5(self, group):
         subgroups = group.get_direct_subgroups()
         subgroups = subgroups.with_user_perms(self.request.user.id, perms.SEE_CG)
         subgroups = subgroups[:LIST_PREVIEW_LEN+1]
-        return ', '.join(_truncate_list([sg.name_with_date() for sg in subgroups]))
+        return ', '.join(_truncate_list([str(sg) for sg in subgroups]))
     visible_direct_subgroups_5.short_description = ugettext_lazy('Sub groups')
 
     def rendered_fields(self, group):
@@ -376,7 +376,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
         context = {}
-        context['title'] = _('Contacts of group %s') % cg.name_with_date()
+        context['title'] = _('Contacts of group %s') % cg
 
         context['nav'] = cg.get_smart_navbar() \
                            .add_component(('members', _('members')))
@@ -426,7 +426,7 @@ class ContactGroupForm(forms.ModelForm):
 
         # Only show visible groups
         visible_groups_choices = [
-            (g.id, g.name_with_date())
+            (g.id, str(g))
             for g in ContactGroup.objects.with_user_perms(user.id, perms.SEE_CG)]
 
         # Super groups
@@ -542,7 +542,7 @@ class GroupEditMixin(ModelFormMixin):
         request = self.request
         cg = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed successfully!') % cg.name_with_date())
+        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed successfully!') % cg)
 
         cg.check_static_folder_created()
         Contact.objects.check_login_created(request) # subgroups change
@@ -562,7 +562,7 @@ class GroupEditMixin(ModelFormMixin):
     def get_context_data(self, **kwargs):
         context = {}
         if self.object:
-            title = _('Editing %s') % self.object.name_with_date()
+            title = _('Editing %s') % self.object
             id = self.object.id
         else:
             title = _('Adding a new %s') % ContactGroup.get_class_verbose_name()
@@ -776,7 +776,7 @@ class ContactInGroupView(InGroupAcl, FormView):
         context = {}
         context['title'] = _('Contact %(contact)s in group %(group)s') % {
             'contact': str(contact),
-            'group': cg.name_with_date()}
+            'group': cg}
         context['contact'] = contact
         context['objtype'] = ContactInGroup
         inherited_info = ''
@@ -799,7 +799,7 @@ class ContactInGroupView(InGroupAcl, FormView):
             inherited_info += _('Automatically member because member of subgroup(s)') + ':<ul>'
             for sub_cg in visible_automember_groups:
                 inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
-                    'name': sub_cg.name_with_date(),
+                    'name': sub_cg,
                     'url': sub_cg.get_absolute_url()}
             if invisible_automember_groups:
                 inherited_info += '<li>' + _('Hidden group(s)...')
@@ -822,7 +822,7 @@ class ContactInGroupView(InGroupAcl, FormView):
             inherited_info += _('Automatically invited because invited in subgroup(s)') + ':<ul>'
             for sub_cg in visible_autoinvited_groups:
                 inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
-                    'name': sub_cg.name_with_date(),
+                    'name': sub_cg,
                     'url': sub_cg.get_absolute_url()}
             if invisible_autoinvited_groups:
                 inherited_info += '<li>' + _('Hidden group(s)...')

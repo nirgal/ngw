@@ -21,9 +21,9 @@ Show messages counts on the member list.
 CODE REFACTOR
 ====================================================================================================
 
-Support Image contactfields
+Support Image contactfields.
 
-Event selection widget (Do not load everything at once, like for column selection)
+Event selection widget. (Do not load everything at once, like for column selection)
 
 Files handling:
 - Improve display (mimetype, size, ...)
@@ -35,8 +35,6 @@ See also https://docs.djangoproject.com/en/1.7/ref/models/lookups/
 
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
-
-Remove ContactGroup.name_with_date for __str__
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 

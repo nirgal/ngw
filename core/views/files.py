@@ -41,8 +41,8 @@ class FileListView(InGroupAcl, FormView):
         path = self.kwargs['path']
         cg = self.contactgroup
         context = {}
-        context['title'] = _('Files of %(groupname)s in %(folder)s') % {
-            'groupname': cg.name_with_date(),
+        context['title'] = _('Files of %(group)s in %(folder)s') % {
+            'group': cg,
             'folder': path,
         }
         context['nav'] = cg.get_smart_navbar() \

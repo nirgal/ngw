@@ -277,7 +277,7 @@ def get_available_columns(user_id):
     for cf in ContactField.objects.with_user_perms(user_id):
         result.append((DISP_FIELD_PREFIX+str(cf.id), cf.name))
     for cg in ContactGroup.objects.with_user_perms(user_id, wanted_flags=perms.SEE_MEMBERS, add_column=False).order_by('-date', 'name'):
-        result.append((DISP_GROUP_PREFIX+str(cg.id), cg.name_with_date()))
+        result.append((DISP_GROUP_PREFIX+str(cg.id), str(cg)))
     return result
 
 
@@ -336,9 +336,9 @@ def membership_extended_widget(request, contact_with_extra_fields, contact_group
         'note': getattr(contact_with_extra_fields, 'group_%s_note' % contact_group.id),
         'membership': membership,
         'cig_url': contact_group.get_absolute_url()+'members/'+str(contact_with_extra_fields.id),
-        'title': _('%(contactname)s in group %(groupname)s') % {
-            'contactname':contact_with_extra_fields.name,
-            'groupname': contact_group.name_with_date()},
+        'title': _('%(contact)s in group %(group)s') % {
+            'contact':contact_with_extra_fields,
+            'group': contact_group},
         })
 
 
@@ -647,7 +647,7 @@ class GroupAddManyForm(forms.Form):
                     (group.id, group.name)
                     for group in ContactGroup.objects.filter(date__isnull=1).with_user_perms(user.id, perms.CHANGE_MEMBERS).order_by('name')]),
                 (_('Events'), [
-                    (group.id, group.name_with_date())
+                    (group.id, str(group))
                     for group in ContactGroup.objects.filter(date__isnull=0).with_user_perms(user.id,
  perms.CHANGE_MEMBERS).order_by('-date', 'name')]),
                 ],
@@ -767,7 +767,7 @@ class ContactDetailView(InGroupAcl, TemplateView):
         context['title'] = _('Details for %s') % contact
         cg = self.contactgroup
         if cg:
-            #context['title'] += ' in group '+cg.name_with_date()
+            #context['title'] += ' in group '+str(cg)
             context['nav'] = cg.get_smart_navbar() \
                              .add_component(('members', _('members')))
             context['active_submenu'] = 'members'

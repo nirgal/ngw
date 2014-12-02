@@ -71,7 +71,7 @@
     {% for event in events %}
     {% if forloop.counter0 %}<br>
     {% endif %}
-    • <a href="{{event.get_absolute_url}}" title="{{event.description}}">{{ event }}</a>
+    • <a href="{{event.get_absolute_url}}" title="{{event.description}}">{{ event.name }}</a>
       {% if 'x' in event.userperms|perms_int_to_flags %}
          {% with nbmsg=event.count_unread_messages %}
          {% if nbmsg %}<span style='color:red;'>{{nbmsg}}✉</span>{% endif %}

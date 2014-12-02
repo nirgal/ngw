@@ -55,7 +55,7 @@ class ContactSearchColumnsView(NgwUserAcl, View):
             choices = []
             choices.append({'id': 'allevents', 'text': str(_('All events'))})
             for group in groups:
-                choices.append({'id': str(group.id), 'text': group.name_with_date()})
+                choices.append({'id': str(group.id), 'text': str(group)})
 
         elif column_type == 'custom':
             choices = [{'id': 'user', 'text': request.user.name}]

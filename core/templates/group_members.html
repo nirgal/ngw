@@ -50,7 +50,7 @@
     {% if "a" in display %}
     {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
         {% if forloop.first %}
-        <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg.name_with_date }}</h1>
+        <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg }}</h1>
         <div class=box>
         {% endif %}
         ‣ {{ sg|group_with_link }}<br>
