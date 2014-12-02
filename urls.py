@@ -19,7 +19,7 @@ from ngw.core.views.messages import MessageListView, SendMessageView, MessageDet
 from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView, FieldEditView, FieldCreateView, FieldDeleteView
 from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView, ChoiceGroupDeleteView
 from ngw.core.views.logs import LogListView
-from ngw.core.views.contactsearch import ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
+from ngw.core.views.contactsearch import ContactSearchAutocompleteView, ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
 from ngw.core.gpg import GpgLookupView
 
 # These patterns are valid with both /contactgroups and /events prefixes
@@ -74,6 +74,7 @@ urlpatterns = patterns('',
     url(r'^logs$', LogListView.as_view(), name='log_list'),
 
     url(r'^contacts/$', ContactListView.as_view(), name='contact_list'),
+    url(r'^contacts/ajaxsearch/autocomplete$', ContactSearchAutocompleteView.as_view()),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)$', ContactSearchColumnsView.as_view()),
     url(r'^contacts/ajaxsearch/custom/user$', ContactSearchCustomFiltersView.as_view()),
     url(r'^contacts/ajaxsearch/(?P<column_type>\w+)/(?P<column_id>\w+)$', ContactSearchColumnFiltersView.as_view()),

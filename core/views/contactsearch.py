@@ -7,11 +7,25 @@ from django.http import Http404
 from django.http.response import JsonResponse
 from django.views.generic import View
 from ngw.core.models import (
-    ContactField, ContactGroup, ChoiceGroup)
+    Contact, ContactField, ContactGroup, ChoiceGroup)
 from ngw.core import perms
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
 from ngw.core.views.generic import NgwUserAcl
 
+class ContactSearchAutocompleteView(NgwUserAcl, View):
+	def get(self, request, *args, **kwargs):
+		term = request.GET['term']
+		choices = []
+		contacts = Contact.objects.filter(name__startswith=term)
+		contacts = contacts.extra(
+			tables = [ 'v_c_can_see_c' ],
+			where = [
+				'v_c_can_see_c.contact_id_1=%s' % request.user.id,
+				'v_c_can_see_c.contact_id_2=contact.id'])
+				
+		for contact in contacts:
+			choices.append(contact.name)
+		return JsonResponse(choices, safe=False)
 
 class ContactSearchColumnsView(NgwUserAcl, View):
     def get(self, request, *args, **kwargs):

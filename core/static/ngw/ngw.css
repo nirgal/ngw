@@ -199,3 +199,9 @@ ul.onelinechoices li {
 	text-align: left;
 }
 
+/* autocomplete adds the ui-autocomplete-loading class to the textbox when it is _busy_ */
+#autocomplete.ui-autocomplete-loading {
+	background-image: url(loading.gif);
+	background-position: right center;
+	background-repeat: no-repeat;
+}

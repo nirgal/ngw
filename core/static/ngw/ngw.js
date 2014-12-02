@@ -1,4 +1,4 @@
-$=django.jQuery;
+/*$=django.jQuery;
 
 function dump(o) {
     var txt = "";
@@ -57,3 +57,14 @@ function inline_edit_membership(title, cig_url, membership) {
 function inline_edit_membership_close() {
     $('#membership_edit').hide();
 }
+
+//----------------------------
+// contact list with autocompletion
+
+$(document).ready(
+	function() {
+		$( "#qsearch" ).autocomplete({
+			source: autocompleteurl
+		});
+	}
+);
