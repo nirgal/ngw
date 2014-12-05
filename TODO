@@ -9,7 +9,7 @@ VALIDATED IMPROVEMENTS
 
 Top right quick search:
 - Limit list length.
-- Go to contact when a contact was selected (mouse and keyboard).
+- Go to contact when a contact was selected (mouse and keyboard). But first add actions on contact_detail page.
 - Improve search: case insensitive, accentuated characters(?), any begining of a word, logins.
 
 Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
@@ -38,7 +38,7 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 
-Make a double-choice contactfield
+Make a double-choice and mulitple-double-choice contactfields
 Attach a choice to a field and only one (usefull for permissions)
 Allow group operator to modify their fields without being site-wide admin
 
