@@ -388,44 +388,13 @@ class CustomColumnsFilter(filters.ListFilter):
         return [ 'fields' ]
 
 
-class ContactCustomFilter(filters.ListFilter):
-    '''
-    Special filter for contact rawquery
-    '''
-    title = ugettext_lazy('contact field')
-    template = 'empty.html'
-
-    def __init__(self, request, params, model, view):
-        super().__init__(request, params, model, view)
-        self.view = view
-        self.filter_str = params.pop('filter', '')
-        params.pop('disp_filter', None)
-        self.filter = parse_filterstring(self.filter_str, request.user.id)
-        self.filter_html = self.filter.to_html()
-        view.filter_str = self.filter_str
-        view.filter_html = self.filter_html
-
-
-    def has_output(self):
-        return True # This is required so that queryset is called
-
-    def choices(self, cl):
-        return ()
-
-    def queryset(self, request, q):
-        return self.filter.apply_filter_to_query(q)
-
-    def expected_parameters(self):
-        return [ 'filter' ]
-
-
 class BaseContactListView(NgwListView):
     '''
     Base view for contact list.
     That view should NOT be called directly since there is no user check.
     '''
     template_name = 'contact_list.html'
-    list_filter = CustomColumnsFilter, ContactCustomFilter
+    list_filter = CustomColumnsFilter,
 
     actions = (
         'action_csv_export',
@@ -520,6 +489,16 @@ class BaseContactListView(NgwListView):
         self.list_display = list_display
         return q
 
+    def get_search_results(self, request, queryset, search_term):
+        '''
+        Contact list views handle the search in a very special way.
+        Returns a tuple containing a queryset to implement the search,
+        and a boolean indicating if the results may contain duplicates.
+        '''
+        self.filter_str = search_term
+        filter = parse_filterstring(search_term, request.user.id)
+        self.filter_html = filter.to_html()
+        return filter.apply_filter_to_query(queryset), False
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -531,7 +510,7 @@ class BaseContactListView(NgwListView):
         result['fields_form'] = FieldSelectForm(self.request.user, initial={'fields': self.fields})
         result['filter'] = self.filter_str
         result['filter_html'] = self.filter_html
-        result['reset_filter_link'] = self.cl.get_query_string({}, 'filter')
+        result['reset_filter_link'] = self.cl.get_query_string({}, 'q')
         return result
 
 
