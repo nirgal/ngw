@@ -48,7 +48,7 @@ class Command(BaseCommand):
             if not groupid:
                 raise CommandError('You must use -g option')
             cg = ContactGroup.objects.get(pk=groupid)
-            self.stdout.write('Synching' + str(cg))
+            self.stdout.write('Synching %s' % cg)
             
             msg, unsubscribe_list, subscribe_list = mailman.synchronise_group(cg, filecontent)
 
