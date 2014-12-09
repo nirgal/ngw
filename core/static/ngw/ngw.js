@@ -65,9 +65,11 @@ $(document).ready(
 	function() {
 		$( "#qsearch" ).autocomplete({
 			source: autocompleteurl,
-			select: function(event, ui) { 
-				$("#qsearch").val(ui.item.label);
-				$("#header_quicksearch").submit(); }
+			select: function(event, ui) {
+				//$("#qsearch").val(ui.item.label);
+				document.location = '/contacts/' + ui.item.value + '/';
+				//$("#header_quicksearch").submit(); 
+				}
 		});
 	}
 );

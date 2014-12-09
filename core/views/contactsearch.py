@@ -25,7 +25,7 @@ class ContactSearchAutocompleteView(NgwUserAcl, View):
 				'v_c_can_see_c.contact_id_2=contact.id'])
 				
 		for contact in contacts:
-			choices.append(contact.name)
+			choices.append( {'label': contact.name, 'value': contact.id} )
 		return JsonResponse(choices, safe=False)
 
 class ContactSearchColumnsView(NgwUserAcl, View):
