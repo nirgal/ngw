@@ -7,14 +7,13 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-Top right quick search:
-- Limit list length.
-- Go to contact when a contact was selected (mouse and keyboard). But first add actions on contact_detail page.
-- Improve search: case insensitive, accentuated characters(?), any begining of a word, logins.
+Add actions on contact_detail page (message, ...).
 
 Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
 
 Show messages counts on the member list.
+
+Extend contact quick search to logins.
 
 
 ====================================================================================================

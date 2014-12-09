@@ -1,8 +1,4 @@
-#!/usr/bin/env python3
-
-import sys
-import os
-import logging
+from ngw.core.models import FIELD_EMAIL
 
 def normalize_name(name):
     '''
@@ -57,7 +53,7 @@ def synchronise_group(cg, mailcontent):
     unsubscribe_list = []
     subscribe_list = []
     for c in cg.get_all_members():
-        email_base = c.get_fieldvalue_by_id(7) # FIXME
+        email_base = c.get_fieldvalue_by_id(FIELD_EMAIL) # FIXME
         name_base = c.name
         if name_base == email_base:
             name_base = ''
@@ -80,71 +76,3 @@ def synchronise_group(cg, mailcontent):
                        format_mailadd(name, email),
                        None))
     return result
-
-
-if __name__ == '__main__':
-    sys.path += ['/usr/lib/']
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
-
-    from ngw.core.models import ContactGroup
-    from optparse import OptionParser
-    parser = OptionParser(usage='%prog [options] filename dump|normalize|check')
-    parser.add_option('-g', '--group', action='store', dest='groupid', type='int', help='specify groupid')
-
-    options, args = parser.parse_args()
-
-    if len(args) != 2:
-        print('Need exactly 2 arguments\n', file=sys.stderr)
-        parser.print_help(file=sys.stderr)
-        sys.exit(1)
-    
-    action = args[1]
-
-    filecontent = open(args[0]).read()
-
-    if action == 'dump':
-        mailman_members = parse_who_result(filecontent)
-        for name, email in mailman_members:
-            if name:
-                print(name, '->', normalize_name(name), end=' ')
-            print('<%s>' % email)
-    elif action == 'normalize':
-        mailman_members = parse_who_result(filecontent)
-        print('*')
-        print('unscrubsribe:')
-        for name, email in mailman_members:
-            if name != normalize_name(name):
-                print(name, end=' ')
-                print('<%s>' % email)
-        print('*')
-        print('scrubsribe:')
-        for name, email in mailman_members:
-            if name != normalize_name(name):
-                print(normalize_name(name), end=' ')
-                print('<%s>' % email)
-
-    elif action == 'check':
-        assert options.groupid is not None, 'You must use -g option'
-        cg = ContactGroup.objects.get(pk=options.groupid)
-        print('Synching', cg.name)
-        
-        msg, unsubscribe_list, subscribe_list = synchronise_group(cg, filecontent)
-
-        print(msg)
-
-        print('*'*80)
-        print('unscubscribe')
-        for cmd in unsubscribe_list:
-            print(cmd)
-        print()
-        print()
-        print('*'*80)
-        print('subscribe')
-        for cmd in subscribe_list:
-            print(cmd)
-        print()
-        print()
-
-
-    else:
-        print('unknow action', action, file=sys.stderr)
