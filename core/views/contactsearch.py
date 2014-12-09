@@ -11,12 +11,13 @@ from ngw.core.models import (
 from ngw.core import perms
 from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
 from ngw.core.views.generic import NgwUserAcl
+import decoratedstr
 
 class ContactSearchAutocompleteView(NgwUserAcl, View):
 	def get(self, request, *args, **kwargs):
 		term = request.GET['term']
 		choices = []
-		contacts = Contact.objects.filter(name__startswith=term)
+		contacts = Contact.objects.filter(name__iregex=decoratedstr.decorated_match(term))
 		contacts = contacts.extra(
 			tables = [ 'v_c_can_see_c' ],
 			where = [
