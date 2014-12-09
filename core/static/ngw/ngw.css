@@ -200,8 +200,12 @@ ul.onelinechoices li {
 }
 
 /* autocomplete adds the ui-autocomplete-loading class to the textbox when it is _busy_ */
-#autocomplete.ui-autocomplete-loading {
-	background-image: url(loading.gif);
-	background-position: right center;
-	background-repeat: no-repeat;
+#changelist-filter {
+    z-index: 0;			/* prevent "filter" block to overlap search autocomplete */
+}
+.ui-autocomplete {
+        max-height: 20em;
+        overflow-y: auto;
+        /* prevent horizontal scrollbar */
+        overflow-x: hidden;
 }
