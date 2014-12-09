@@ -64,7 +64,10 @@ function inline_edit_membership_close() {
 $(document).ready(
 	function() {
 		$( "#qsearch" ).autocomplete({
-			source: autocompleteurl
+			source: autocompleteurl,
+			select: function(event, ui) { 
+				$("#qsearch").val(ui.item.label);
+				$("#header_quicksearch").submit(); }
 		});
 	}
 );
