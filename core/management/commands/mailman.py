@@ -26,46 +26,46 @@ class Command(BaseCommand):
             mailman_members = mailman.parse_who_result(filecontent)
             for name, email in mailman_members:
                 if name:
-                    print(name, '->', mailman.normalize_name(name), end=' ')
-                print('<%s>' % email)
+                    self.stdout.write(name, '->', mailman.normalize_name(name), ending=' ')
+                self.stdout.write('<%s>' % email)
         elif action == 'normalize':
             mailman_members = mailman.parse_who_result(filecontent)
-            print('*')
-            print('unscrubsribe:')
+            self.stdout.write('*')
+            self.stdout.write('unscrubsribe:')
             for name, email in mailman_members:
                 if name != mailman.normalize_name(name):
-                    print(name, end=' ')
-                    print('<%s>' % email)
-            print('*')
-            print('scrubsribe:')
+                    self.stdout.write(name, ending=' ')
+                    self.stdout.write('<%s>' % email)
+            self.stdout.write('*')
+            self.stdout.write('scrubsribe:')
             for name, email in mailman_members:
                 if name != mailman.normalize_name(name):
-                    print(mailman.normalize_name(name), end=' ')
-                    print('<%s>' % email)
+                    self.stdout.write(mailman.normalize_name(name), ending=' ')
+                    self.stdout.write('<%s>' % email)
 
         elif action == 'check':
             groupid = options['groupid']
             if not groupid:
                 raise CommandError('You must use -g option')
             cg = ContactGroup.objects.get(pk=groupid)
-            print('Synching', cg.name)
+            self.stdout.write('Synching' + str(cg))
             
             msg, unsubscribe_list, subscribe_list = mailman.synchronise_group(cg, filecontent)
 
-            print(msg)
+            self.stdout.write(str(msg))
 
-            print('*'*80)
-            print('unscubscribe')
+            self.stdout.write('*'*80)
+            self.stdout.write('unscubscribe')
             for cmd in unsubscribe_list:
-                print(cmd)
-            print()
-            print()
-            print('*'*80)
-            print('subscribe')
+                self.stdout.write(str(cmd))
+            self.stdout.write('')
+            self.stdout.write('')
+            self.stdout.write('*'*80)
+            self.stdout.write('subscribe')
             for cmd in subscribe_list:
-                print(cmd)
-            print()
-            print()
+                self.stdout.write(str(cmd))
+            self.stdout.write('')
+            self.stdout.write('')
 
         else:
             raise CommandError('Unknown action')
