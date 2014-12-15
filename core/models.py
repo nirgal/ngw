@@ -50,6 +50,8 @@ FIELD_DEFAULT_GROUP = 83    # GROUP_USER_NGW
 # Ends with a /
 GROUP_STATIC_DIR = settings.MEDIA_ROOT+'g/'
 
+# Filesystem encoding
+FS_ENCODING='utf-8'
 
 def _truncate_text(txt, maxlen=200):
     'Utility function to truncate text longer that maxlen'
@@ -834,24 +836,24 @@ class ContactGroup(NgwModel):
             raise PermissionDenied
         return fullfilename
 
-
     def get_filenames(self, path='/'):
         '''
         Returns the list of static files of that contacts group
         '''
         folder = self.get_fullfilename(path)
         try:
-            files = os.listdir(str(folder))
+            files = os.listdir(bytes(folder, FS_ENCODING))
         except OSError as err:
             logging.error(_('Error while reading shared files list in %(folder)s: %(err)s') % {
                 'folder': folder,
                 'err': err})
             return []
 
-        # probably fixed by python3
         # listdir() returns some data in utf-8, we want everything in unicode:
-        #files = [str(file, errors='replace')
-        #    for file in files]
+        files = [
+            str(file, encoding=FS_ENCODING, errors='replace')
+            for file in files
+            ]
 
         # hide files starting with a dot:
         files = [file for file in files if file[0] != '.']
