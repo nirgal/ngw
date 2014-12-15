@@ -13,6 +13,7 @@ from django.views import static
 from django.contrib import messages
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl
+from ngw.core.models import FS_ENCODING
 
 ###############################################################################
 #
@@ -107,7 +108,7 @@ class GroupMediaFileView(InGroupAcl, View):
         cg = self.contactgroup
         filename = self.kwargs['filename']
         fullfilename = cg.get_fullfilename(filename)
-        if os.path.isdir(force_str(fullfilename)):
+        if os.path.isdir(bytes(fullfilename, encoding=FS_ENCODING)):
             return HttpResponseRedirect(
                 cg.get_absolute_url() + 'files/' + filename + '/')
         return static.serve(
