@@ -3,6 +3,7 @@ files managing views
 '''
 
 import os
+import sys
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
@@ -105,12 +106,35 @@ class GroupMediaFileView(InGroupAcl, View):
             raise PermissionDenied
 
     def get(self, request, *args, **kwargs):
+        def surogate_encode(filename):
+            '''
+            On apache, using wsgi, LANG is not set, so that
+            sys.getfilesystemencoding() returns ascii.
+            This leads to os.path.exists('é') to crash.
+            The way around is to use 'surrogateescape' that maps unencoded
+            chars into unicode private range U+DCxx.
+            '''
+            name_bytes = bytes(filename, encoding=settings.FILE_CHARSET)
+            return str(
+                name_bytes,
+                encoding=sys.getfilesystemencoding(),
+                errors='surrogateescape')
+
+        def simple_quote(txt):
+            '''
+            This is a simple urlquote fonction whose only purpose is to make
+            sure unquote won't do nasty stuff, like double unquoting '../..'
+            '''
+            return txt.replace('%', '%25')
+
         cg = self.contactgroup
         filename = self.kwargs['filename']
         fullfilename = cg.get_fullfilename(filename)
-        bytes_name = bytes(fullfilename, encoding=settings.FILE_CHARSET)
-        if os.path.isdir(bytes_name):
+        if os.path.isdir(surogate_encode(fullfilename)):
             return HttpResponseRedirect(
                 cg.get_absolute_url() + 'files/' + filename + '/')
         return static.serve(
-            request, bytes_name, cg.static_folder(), show_indexes=False)
+            request,
+            simple_quote(surogate_encode(filename)),
+            cg.static_folder(),
+            show_indexes=False)
