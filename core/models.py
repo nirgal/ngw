@@ -50,9 +50,6 @@ FIELD_DEFAULT_GROUP = 83    # GROUP_USER_NGW
 # Ends with a /
 GROUP_STATIC_DIR = settings.MEDIA_ROOT+'g/'
 
-# Filesystem encoding
-FS_ENCODING='utf-8'
-
 def _truncate_text(txt, maxlen=200):
     'Utility function to truncate text longer that maxlen'
     if len(txt) < maxlen:
@@ -842,7 +839,7 @@ class ContactGroup(NgwModel):
         '''
         folder = self.get_fullfilename(path)
         try:
-            files = os.listdir(bytes(folder, FS_ENCODING))
+            files = os.listdir(bytes(folder, settings.FILE_CHARSET))
         except OSError as err:
             logging.error(_('Error while reading shared files list in %(folder)s: %(err)s') % {
                 'folder': folder,
@@ -851,7 +848,7 @@ class ContactGroup(NgwModel):
 
         # listdir() returns some data in utf-8, we want everything in unicode:
         files = [
-            str(file, encoding=FS_ENCODING, errors='replace')
+            str(file, encoding=settings.FILE_CHARSET, errors='replace')
             for file in files
             ]
 

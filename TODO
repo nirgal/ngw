@@ -2,18 +2,16 @@
 BUGS
 ====================================================================================================
 
+Accentuated chars in directories don't work with apache.
+
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-Add actions on contact_detail page (message, ...).
-
 Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
 
 Show messages counts on the member list.
-
-Extend contact quick search to logins.
 
 
 ====================================================================================================
@@ -31,6 +29,7 @@ Files handling:
 
 With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet: See internal cache in o2o sql compiler.
 See also https://docs.djangoproject.com/en/1.7/ref/models/lookups/
+Extend contact quick search to logins.
 
 Fix ejabberd cross subscribe overrides:
 Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd tables
@@ -43,6 +42,11 @@ Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
 
+On the contact detail page, have the events either in a separated page or in a widget.
+
+Check unified authorization system in apache2.4, like
+https://httpd.apache.org/docs/2.4/mod/mod_auth_form.html
+https://github.com/GrahamDumpleton/mod_wsgi/pull/41
 
 ====================================================================================================
 UNSORTED
@@ -52,9 +56,10 @@ See https://docs.djangoproject.com/en/1.7/releases/1.7/#custom-lookups
 
 Make sure all form.save() support the commit parameter
 
-Favorite groups.
-
 Default supergroup(s).
+Change "default group" into "default permissions"
+
+Favorite groups.
 
 Sticky groups:
 - When you join a 'sticky' group though inheritance, group membership should be permanent.
@@ -71,7 +76,5 @@ Or just allow supergroup inherited...
 TBD
 
 Change MailmanSyncForm into a ModelForm (?)
-
-Change "default group" into "default permissions"
 
 Check new migrations framework
