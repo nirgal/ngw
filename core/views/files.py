@@ -108,8 +108,9 @@ class GroupMediaFileView(InGroupAcl, View):
         cg = self.contactgroup
         filename = self.kwargs['filename']
         fullfilename = cg.get_fullfilename(filename)
-        if os.path.isdir(bytes(fullfilename, encoding=settings.FILE_CHARSET)):
+        bytes_name = bytes(fullfilename, encoding=settings.FILE_CHARSET)
+        if os.path.isdir(bytes_name):
             return HttpResponseRedirect(
                 cg.get_absolute_url() + 'files/' + filename + '/')
         return static.serve(
-            request, filename, cg.static_folder(), show_indexes=False)
+            request, bytes_name, cg.static_folder(), show_indexes=False)
