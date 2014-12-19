@@ -11,7 +11,7 @@ from ngw.core.admin import ContactGroupAdmin
 
 from ngw.core.views.misc import HomeView, LogoutView, TestView
 from ngw.core.views.contacts import ContactListView, GroupAddManyView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, FilterDeleteView, DefaultGroupView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView, ContactInGroupDelete
+from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, CalendarView, CalendarQueryView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView, ContactInGroupDelete
 from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView, NewsDeleteView
 from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
@@ -98,7 +98,9 @@ urlpatterns = patterns('',
     url(r'^contactgroups/$', ContactGroupListView.as_view(), name='group_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),
     #url(r'^contactgroups2/$', admin.site.admin_view(admin.site._registry[ContactGroup].changelist_view)),
-    url(r'^events/$', EventListView.as_view(), name='event_list'),
+    url(r'^eventsold/$', EventListView.as_view(), name='event_list'),
+    url(r'^events/$', CalendarView.as_view()),
+    url(r'^events/query$', CalendarQueryView.as_view()),
     url(r'^events/', include(groups_urlpatterns)),
 
     url(r'^contactfields/$', FieldListView.as_view(), name='field_list'),

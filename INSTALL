@@ -2,9 +2,9 @@ Installation
 ============
 It is recommanded to use Debian 6 (Squeeze) or above
 
-aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-uno python3-cracklib tor make python3-socksipy oomailing python3-decoratedstr python3-django-session-security python3-gnupg libjs-jquery-ui
+aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-uno python3-cracklib tor make python3-socksipy oomailing python3-decoratedstr python3-django-session-security python3-gnupg libjs-jquery-ui javascript-xgcalendar
 
-oomailing, python-decoratedstr, python3-socksipy and python3-django-session-security packages can be downloaded at:
+oomailing, python-decoratedstr, python3-socksipy, python3-django-session-security and javascript-xgcalendar packages can be downloaded at:
 http://www.nirgal.com/debian/
 
 You need python-django version 1.7, available in Debian stable-backports at:

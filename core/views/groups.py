@@ -3,10 +3,15 @@ ContactGroup managing views
 '''
 
 from datetime import date, datetime, timedelta
+import time
+import decimal
+import json
+import re
+import calendar
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils.translation import ugettext as _, ugettext_lazy
@@ -15,6 +20,7 @@ from django.shortcuts import get_object_or_404
 from django import forms
 from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin import filters
 from django.contrib.admin.widgets import FilteredSelectMultiple, AdminDateWidget
 from django.contrib import messages
@@ -27,7 +33,7 @@ from ngw.core.models import (
 from ngw.core.nav import Navbar
 from ngw.core import perms
 from ngw.core.views.contacts import BaseContactListView
-from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
+from ngw.core.views.generic import method_decorator, NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
 from ngw.core.widgets import OnelineCheckboxSelectMultiple, FlagsField
 
 
@@ -247,6 +253,135 @@ class EventListView(NgwUserAcl, TemplateView):
         return super().get_context_data(**context)
 
 
+
+#######################################################################
+#
+# Calendar
+#
+#######################################################################
+
+class CalendarView(NgwUserAcl, TemplateView):
+    template_name = 'calendar.html'
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['title'] = _('Calendar')
+        context['nav'] = Navbar(('calendar', _('calendar')))
+        context['weekdaystart'] = formats.get_format('FIRST_DAY_OF_WEEK')
+        context.update(kwargs)
+        return super().get_context_data(**context)
+
+#----------------------------------------------------------------------
+def safe_new_datetime(d):
+    kw = [d.year, d.month, d.day]
+    if isinstance(d, datetime):
+        kw.extend([d.hour, d.minute, d.second, d.microsecond, d.tzinfo])
+    return datetime(*kw)
+
+def safe_new_date(d):
+    return date(d.year, d.month, d.day)
+
+def get_date_stamp(d):
+    """获取当前日期和1970年1月1日之间的毫秒数"""
+    return int(time.mktime(d.timetuple())*1000)
+    
+def get_ms_json_date_format(d):
+    """获取MS Ajax Json Data Format /Date(@tickets)/"""
+    stamp=get_date_stamp(d);
+    return r'/Date(%d)/' % stamp
+    
+class DatetimeJSONEncoder(json.JSONEncoder):
+    """可以序列化时间的JSON"""
+    #DATE_FORMAT = "%Y-%m-%d"
+    TIME_FORMAT = "%H:%M:%S"
+    def default(self, o):
+        if isinstance(o, datetime):
+            d = safe_new_datetime(o)
+            return get_ms_json_date_format(d)
+        elif isinstance(o, date):
+            d = safe_new_date(o)
+            return get_ms_json_date_format(d)
+        #elif isinstance(o, time):
+        #    return o.strftime(self.TIME_FORMAT)
+        elif isinstance(o, decimal.Decimal):
+            return str(o)
+        else:
+            return super().default(o)
+
+#----------------------------------------------------------------------
+        
+class CalendarQueryView(View):
+    def post(self, request, *args, **kwargs):
+        '''
+        parameters are:
+        showdate: 12/18/2014
+        viewtype: week
+        timezone: 1
+        '''
+
+        showdate = request.REQUEST.get('showdate')
+        showdate = datetime.strptime(showdate, '%m/%d/%Y').date()
+        print('showdate:', showdate)
+
+        viewtype = request.REQUEST.get('viewtype', 'month')
+
+        year = showdate.year
+        month = showdate.month
+        dow_first, nb_days = calendar.monthrange(year, month)
+        first_day_of_week = formats.get_format('FIRST_DAY_OF_WEEK')
+
+        if viewtype == 'month':
+            min_date = date(year, month, 1)
+            max_date = date(year, month, nb_days)
+        elif viewtype == 'week':
+            weekday = calendar.weekday(year, month, showdate.day)
+            min_date = showdate - timedelta(days=(weekday-first_day_of_week+8)%7)
+            max_date = min_date + timedelta(days=6)
+        else: #viewtype == 'day':
+            min_date = showdate
+            max_date = showdate
+
+        str_min_date = min_date.strftime('%Y-%m-%d')
+        str_max_date = max_date.strftime('%Y-%m-%d')
+        #print(str_min_date, str_max_date)
+
+        qs = ContactGroup.objects.with_user_perms(request.user.id, perms.SEE_CG)
+        qs = qs.filter(Q(date__gte=str_min_date, date__lte=str_max_date)
+            | Q(end_date__gte=str_min_date, end_date__lte=str_max_date))
+        #qs = qs.distinct()
+
+        events = []
+        for i, group in enumerate(qs):
+            end_date = group.end_date
+            if not end_date:
+                end_date = group.date
+            events.append([
+                group.id,
+                group.name,
+                group.date,
+                end_date,
+                True, # all day event
+                0, # crossday
+                0, # recurring
+                group.id % 22, # theme id
+                0, # can be drag
+                None, # location
+                '', # participants
+            ])
+
+        response = {
+            'events': events,
+            'issort': True,
+            'start': min_date,
+            'end': max_date,
+            'error': None,
+        }
+        jsonresponse = json.dumps(response, cls=DatetimeJSONEncoder)
+        
+        # dates must be transformed in pseuso-regular expressions
+        jsonresponse = re.compile('"/Date\((\d+)\)/"').sub('"\\/Date(\\1)\\/"', jsonresponse)
+        return HttpResponse(jsonresponse, content_type='application/json')
+    get = post
 
 #######################################################################
 #

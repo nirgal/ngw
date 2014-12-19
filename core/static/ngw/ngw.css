@@ -209,3 +209,7 @@ ul.onelinechoices li {
         /* prevent horizontal scrollbar */
         overflow-x: hidden;
 }
+
+th.mv-dayname {
+    padding: 0 0 1ex 1ex;
+}
