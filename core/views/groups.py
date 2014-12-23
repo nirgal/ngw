@@ -189,69 +189,35 @@ class YearMonthCal:
         return datetime(self.year, self.month, 1)
 
 
-class EventListView(NgwUserAcl, TemplateView):
-    '''
-    Calendar with all the user-visible events of selected month
-    '''
+class EventListView(NgwUserAcl, NgwListView):
+    list_display = ('name', 'date', 'description_not_too_long',
+        'budget_code',
+        # 'visible_member_count',
+        )
+    list_display_links = 'name',
+    search_fields = 'name', 'description', 'budget_code'
 
-    template_name = 'event_list.html'
+    def visible_member_count(self, group):
+        # This is totally ineficient
+        if perms.c_can_see_members_cg(self.request.user.id, group.id):
+            return group.get_members_count()
+        else:
+            return _('Not available')
+    visible_member_count.short_description = ugettext_lazy('Members')
+
+
+    def get_root_queryset(self):
+        return ContactGroup.objects.filter(date__isnull=False).with_user_perms(self.request.user.id, perms.SEE_CG)
+
 
     def get_context_data(self, **kwargs):
-        request = self.request
-
-        dt = request.REQUEST.get('dt', None)
-        year = month = None
-        if dt is not None:
-            try:
-                year, month = dt.split('-')
-                year = int(year)
-                month = int(month)
-            except ValueError:
-                year = month = None
-            else:
-                if year < 2000 or year > 2100 \
-                 or month < 1 or month > 12:
-                    year = month = None
-
-        if year is None or month is None:
-            now = datetime.utcnow()
-            month = now.month
-            year = now.year
-
-        min_date = date(year, month, 1) - timedelta(days=6)
-        str_min_date = min_date.strftime('%Y-%m-%d')
-        max_date = date(year, month, 1) + timedelta(days=31+6)
-        str_max_date = max_date.strftime('%Y-%m-%d')
-
-        qs = ContactGroup.objects.with_user_perms(request.user.id, perms.SEE_CG)
-        qs = qs.filter(Q(date__gte=str_min_date, date__lte=str_max_date)
-            | Q(end_date__gte=str_min_date, end_date__lte=str_max_date))
-
-        month_events = {}
-        dt = min_date
-        while dt <= max_date:
-            month_events[dt] = []
-            dt += timedelta(days=1)
-
-        for cg in qs:
-            if cg.end_date:
-                dt = cg.date
-                while dt <= cg.end_date:
-                    if dt >= min_date and dt <= max_date:
-                        month_events[dt].append(cg)
-                    dt += timedelta(days=1)
-            else:
-                month_events[cg.date].append(cg)
-
         context = {}
-        context['title'] = _('Events')
+        context['title'] = _('Select a contact group')
+        context['objtype'] = ContactGroup
         context['nav'] = Navbar(('events', _('events')))
-        context['year_month'] = YearMonthCal(year, month, month_events)
-        context['today'] = date.today()
 
         context.update(kwargs)
         return super().get_context_data(**context)
-
 
 
 #######################################################################
@@ -266,7 +232,8 @@ class CalendarView(NgwUserAcl, TemplateView):
     def get_context_data(self, **kwargs):
         context = {}
         context['title'] = _('Calendar')
-        context['nav'] = Navbar(('calendar', _('calendar')))
+        context['nav'] = Navbar(('events', _('events')))
+        context['nav'].add_component(('calendar', _('calendar')))
         context['weekdaystart'] = formats.get_format('FIRST_DAY_OF_WEEK')
         context.update(kwargs)
         return super().get_context_data(**context)
@@ -320,6 +287,8 @@ class CalendarQueryView(View):
         '''
 
         showdate = request.REQUEST.get('showdate')
+        print('showdate:', showdate)
+        #showdate = datetime.strptime(showdate, '%d/%m/%Y').date()
         showdate = datetime.strptime(showdate, '%m/%d/%Y').date()
         print('showdate:', showdate)
 

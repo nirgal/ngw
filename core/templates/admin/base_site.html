@@ -64,7 +64,7 @@
 <div id=tabs>
     <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
     <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
-    <a href="/events/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
+    <a href="/events/calendar/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
     {% if user.is_admin %}
     <a href="/contactfields/" {{ nav|nav_is_active:"contactfields"}}>{% trans "fields" %}</a>
     <a href="/choicegroups/" {{ nav|nav_is_active:"choicegroups"}}>{% trans "choices" %}</a>
