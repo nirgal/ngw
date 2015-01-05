@@ -2,6 +2,11 @@
 BUGS
 ====================================================================================================
 
+Calendar:
+Data is lost when user clic too quickly on prev/next.
+"Loading" get stuck on first load.
+Show the month/year as title, not the period.
+Localize the javascript name for automatic English/French switch.
 
 
 ====================================================================================================
@@ -11,6 +16,8 @@ VALIDATED IMPROVEMENTS
 Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
 
 Show messages counts on the member list.
+
+Calendar: Add search widget.
 
 
 ====================================================================================================
