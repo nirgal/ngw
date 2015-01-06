@@ -300,8 +300,11 @@ class CalendarQueryView(View):
         first_day_of_week = formats.get_format('FIRST_DAY_OF_WEEK')
 
         if viewtype == 'month':
-            min_date = date(year, month, 1)
-            max_date = date(year, month, nb_days)
+            #min_date = date(year, month, 1)
+            #max_date = date(year, month, nb_days)
+            min_date = date(year, month, 1) - timedelta(days=(dow_first-first_day_of_week+8)%7)
+            extra_days = (34-(nb_days+dow_first-first_day_of_week))%7
+            max_date = date(year, month, nb_days) + timedelta(days=extra_days)
         elif viewtype == 'week':
             weekday = calendar.weekday(year, month, showdate.day)
             min_date = showdate - timedelta(days=(weekday-first_day_of_week+8)%7)
@@ -317,10 +320,11 @@ class CalendarQueryView(View):
         qs = ContactGroup.objects.with_user_perms(request.user.id, perms.SEE_CG)
         qs = qs.filter(Q(date__gte=str_min_date, date__lte=str_max_date)
             | Q(end_date__gte=str_min_date, end_date__lte=str_max_date))
+        qs = qs.order_by('date')
         #qs = qs.distinct()
 
         events = []
-        for i, group in enumerate(qs):
+        for group in qs:
             end_date = group.end_date
             if not end_date:
                 end_date = group.date
@@ -330,14 +334,14 @@ class CalendarQueryView(View):
                 group.date,
                 end_date,
                 True, # all day event
-                0, # crossday
+                bool(end_date) and group.date!=group.end_date, # crossday
                 0, # recurring
                 group.id % 22, # theme id
                 0, # can be drag
                 None, # location
                 '', # participants
             ])
-
+            #print(events[-1])
         response = {
             'events': events,
             'issort': True,
