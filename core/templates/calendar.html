@@ -77,7 +77,7 @@ $(document).ready(function() {
         autoload:true, //是否在页面加载完毕后自动获取当前视图时间的数据
         //method: "GET", //异步提交数据的方式，默认为POST建议不要修改。
         //readonly: true, //是否只读，某些情况下，可设置整个
-    //    showday: new Date(), //当前视图的显示时间
+        showday: new Date(), //当前视图的显示时间
     //    EditCmdhandler:edit, //点击的响应事件
         //DeleteCmdhandler:dcal, //删除的响应事件
         ViewCmdhandler:View,    //查看的响应事件
@@ -144,37 +144,38 @@ $(document).ready(function() {
         }                
     }
     
+    var __MonthName = new Array(i18n.xgcalendar.dateformat.jan, i18n.xgcalendar.dateformat.feb, i18n.xgcalendar.dateformat.mar, i18n.xgcalendar.dateformat.apr, i18n.xgcalendar.dateformat.may, i18n.xgcalendar.dateformat.jun, i18n.xgcalendar.dateformat.jul, i18n.xgcalendar.dateformat.aug, i18n.xgcalendar.dateformat.sep, i18n.xgcalendar.dateformat.oct, i18n.xgcalendar.dateformat.nov, i18n.xgcalendar.dateformat.dec);
+    function update_title(op) {
+        if (!op)
+            return;
+        var month = op.showday.getMonth();
+        var year = op.showday.getYear() + 1900;
+        $("#txtdatetimeshow").text(__MonthName[month] + " " + year);
+    }
+
     function wtd(p)
     {
         // when switching to day view: switch back to month !
-        var p = $("#xgcalendarp").BCalSwtichview("month").BcalGetOp();
-        if (p && p.datestrshow) {
-            $("#txtdatetimeshow").text(p.datestrshow);
-        }
+        var op = $("#xgcalendarp").BCalSwtichview("month").BcalGetOp();
+        update_title(op);
     }
 
     //点击回到今天
     $("#showtodaybtn").click(function(e) {
-        var p = $("#xgcalendarp").BCalGoToday().BcalGetOp();
-        if (p && p.datestrshow) {
-            $("#txtdatetimeshow").text(p.datestrshow);
-        }
+        var op = $("#xgcalendarp").BCalGoToday().BcalGetOp();
+        update_title(op);
     });
 
     //上一个
     $("#sfprevbtn").click(function(e) {
-        var p = $("#xgcalendarp").BCalPrev().BcalGetOp();
-        if (p && p.datestrshow) {
-            $("#txtdatetimeshow").text(p.datestrshow);
-        }
-
+        var op = $("#xgcalendarp").BCalPrev().BcalGetOp();
+        update_title(op);
     });
+
     //下一个
     $("#sfnextbtn").click(function(e) {
-        var p = $("#xgcalendarp").BCalNext().BcalGetOp();
-        if (p && p.datestrshow) {
-            $("#txtdatetimeshow").text(p.datestrshow);
-        }
+        var op = $("#xgcalendarp").BCalNext().BcalGetOp();
+        update_title(op);
     });
 
     /*
@@ -185,22 +186,20 @@ $(document).ready(function() {
         rop.loadDateR = []; // clear cache
         $("#xgcalendarp").BcalSetOp({showday: newdate});
         //var p = $("#xgcalendarp").BcalSetOp(rop);
-        var p = $("#xgcalendarp").BCalGoToday(newdate).BCalReload().BcalGetOp();
-        if (p && p.datestrshow) {
-            $("#txtdatetimeshow").text(p.datestrshow);
-        }
+        var op = $("#xgcalendarp").BCalGoToday(newdate).BCalReload().BcalGetOp();
+        update_title(op);
     });
 
     $("#sfnextyear").click(function(e) {
         var rop = $("#xgcalendarp").BcalGetOp();
         var newdate = newdate = DateAdd('y', 1, rop.showday)
-        var p = $("#xgcalendarp").BCalGoToday(newdate).BcalGetOp();
-        if (p && p.datestrshow) {
-            $("#txtdatetimeshow").text(p.datestrshow);
-        }
+        var op = $("#xgcalendarp").BCalGoToday(newdate).BcalGetOp();
+        update_title(op);
     });
     */
 
+    var op = $("#xgcalendarp").BcalGetOp();
+    update_title(op);
 });
 </script>
 </div>
