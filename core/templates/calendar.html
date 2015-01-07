@@ -155,6 +155,8 @@ $(document).ready(function() {
 
     function wtd(p)
     {
+        var dt = $("#xgcalendarp").BcalGetOp().showday;
+        document.location = ".?date=" + dt.dateFormat('y-M-d');
         // when switching to day view: switch back to month !
         var op = $("#xgcalendarp").BCalSwtichview("month").BcalGetOp();
         update_title(op);
@@ -180,12 +182,8 @@ $(document).ready(function() {
 
     $("#sfprevyear").click(function(e) {
         var rop = $("#xgcalendarp").BcalGetOp();
-        var newdate = DateAdd('y', -1, rop.showday)
-        rop.showday = newdate;
-        rop.loadDateR = []; // clear cache
-        $("#xgcalendarp").BcalSetOp({showday: newdate});
-        //var p = $("#xgcalendarp").BcalSetOp(rop);
-        var op = $("#xgcalendarp").BCalGoToday(newdate).BCalReload().BcalGetOp();
+        var newdate = DateAdd('y', -1, rop.showday);
+        var op = $("#xgcalendarp").BCalGoToday(newdate).BcalGetOp();
         update_title(op);
     });
 
@@ -198,6 +196,7 @@ $(document).ready(function() {
 
     var op = $("#xgcalendarp").BcalGetOp();
     update_title(op);
+
 });
 </script>
 </div>
