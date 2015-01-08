@@ -80,7 +80,7 @@ $(document).ready(function() {
     //    EditCmdhandler:edit, //点击的响应事件
         //DeleteCmdhandler:dcal, //删除的响应事件
         ViewCmdhandler:View,    //查看的响应事件
-        onWeekOrMonthToDay:wtd,//当when weekview or month switch to dayview
+        onWeekOrMonthToDay: wtd,//当when weekview or month switch to dayview
         onBeforeRequestData: cal_beforerequest,
         onAfterRequestData: cal_afterrequest,
         onRequestDataError: cal_onerror, 
@@ -155,7 +155,7 @@ $(document).ready(function() {
     function wtd(p)
     {
         var dt = $("#xgcalendarp").BcalGetOp().showday;
-        document.location = ".?date=" + dt.dateFormat('y-M-d');
+        //document.location = ".?date=" + dt.dateFormat('y-M-d');
         // when switching to day view: switch back to month !
         var op = $("#xgcalendarp").BCalSwtichview("month").BcalGetOp();
         update_title(op);
