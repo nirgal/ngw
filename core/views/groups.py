@@ -212,7 +212,7 @@ class EventListView(NgwUserAcl, NgwListView):
 
     def get_context_data(self, **kwargs):
         context = {}
-        context['title'] = _('Select a contact group')
+        context['title'] = _('Select an event')
         context['objtype'] = ContactGroup
         context['nav'] = Navbar(('events', _('events')))
 
