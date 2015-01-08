@@ -52,7 +52,7 @@ div.loaderror
     <div style="float:right">
         <form id="changelist-search" action="../" method="get">
         <div>
-        <input style="" type="text" size="20" name="q" value="{% trans 'Search' %}"
+        <input style="background:url({% static "admin/img/icon_searchbox.png" %}) bottom left no-repeat; padding-left:20px;" type="text" size="20" name="q" value="{% trans 'Search' %}"
             onclick="if (this.value=='{% trans 'Search' %}') { this.value=''; }"
             onblur="if (this.value=='') { this.value='{% trans 'Search' %}'; }"
         >
