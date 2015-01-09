@@ -83,28 +83,28 @@ $(document).ready(function() {
     var __CURRENTDATA=[
     ];
     var op = {
-        view: "month", //默认视图，这里是周视图
-        theme:1,//默认的主题风格
-        autoload:true, //是否在页面加载完毕后自动获取当前视图时间的数据
-        //method: "GET", //异步提交数据的方式，默认为POST建议不要修改。
-        //readonly: true, //是否只读，某些情况下，可设置整个
-        showday: new Date(), //当前视图的显示时间
-    //    EditCmdhandler:edit, //点击的响应事件
-        //DeleteCmdhandler:dcal, //删除的响应事件
-        ViewCmdhandler:View,    //查看的响应事件
-        onWeekOrMonthToDay: wtd,//当when weekview or month switch to dayview
+        view: "month",
+        theme:1,
+        autoload:true,
+        //method: "GET",
+        //readonly: true,
+        showday: new Date(),
+        //EditCmdhandler:edit,
+        //DeleteCmdhandler:dcal,
+        ViewCmdhandler:View,
+        onWeekOrMonthToDay: wtd,
         onBeforeRequestData: cal_beforerequest,
         onAfterRequestData: cal_afterrequest,
         onRequestDataError: cal_onerror, 
         url: "/events/calendar/query" ,  //url for get event data by ajax request(post)
-    //    quickAddUrl: "/calendar/add" ,   //url for quick add event data by ajax request(post)
-    //    quickUpdateUrl: "/calendar/update" ,   //url for quick update event data by ajax request(post)
-    //    quickDeleteUrl:  "/calendar/delete",  //url for quick delete event data by ajax request(post)
+        //quickAddUrl: "/calendar/add" ,   //url for quick add event data by ajax request(post)
+        //quickUpdateUrl: "/calendar/update" ,   //url for quick update event data by ajax request(post)
+        //quickDeleteUrl:  "/calendar/delete",  //url for quick delete event data by ajax request(post)
         weekstartday: {{ weekdaystart }},
         extParam: [{'name': 'csrfmiddlewaretoken', 'value': '{{ csrf_token }}'}],
     };
-    var _MH = document.documentElement.clientHeight; //获取页面高度，不同的文档类型需要不同的计算方法，注意示例中使用的doctype 用这个就搞定了
-    op.height = _MH-200 // _MH-70; //container height;
+    var _MH = document.documentElement.clientHeight;
+    op.height = _MH-200; //container height
     op.eventItems = __CURRENTDATA;
     $("#xgcalendarp").bcalendar(op);
 
@@ -160,7 +160,7 @@ $(document).ready(function() {
         if (!op)
             return;
         var month = op.showday.getMonth();
-        var year = op.showday.getYear() + 1900;
+        var year = op.showday.getFullYear();
         $("#txtdatetimeshow").text(__MonthName[month] + " " + year);
     }
 
@@ -214,5 +214,6 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block footer %}
+{# Don't display the footer. The positioning is too buggy. TODO. #}
 {% endblock %}
 {# vim: set et ts=4 ft=htmldjango: #}
