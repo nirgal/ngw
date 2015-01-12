@@ -1,6 +1,6 @@
 Installation
 ============
-It is recommanded to use Debian 6 (Squeeze) or above
+It is recommanded to use Debian 7 (Wheezy) or above
 
 aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-uno python3-cracklib tor make python3-socksipy oomailing python3-decoratedstr python3-django-session-security python3-gnupg libjs-jquery-ui libjs-xgcalendar
 
@@ -90,7 +90,7 @@ Add a new line "Listen 443" to /etc/apache2/ports.conf" if it's now there allrea
 Enable virtual hosts on https:
 Add a new line "NameVirtualHost *:443" before "Listen 443"
 
-User or group www-data should have write access to /usr/lib/ngw/media/g. If you want to run the debug runserver command from time to time, I suggest you chown :www-data that folder, with g+ws mode.
+User or group www-data should have write access to /usr/lib/ngw/media/g and /usr/lib/ngw/media/messages. If you want to run the debug runserver command from time to time, I suggest you chown :www-data that folder, with g+ws mode.
 
 Admin account setup:
 ====================

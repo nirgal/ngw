@@ -2,8 +2,7 @@
 BUGS
 ====================================================================================================
 
-Calendar:
-Data is lost when user clic too quickly on prev/next.
+Calendar: Data is lost when user clic too quickly on prev/next. (Forwarded to https://github.com/xuanye/xgcalendar/issues/24)
 
 
 ====================================================================================================
