@@ -4,8 +4,8 @@ It is recommanded to use Debian 7 (Wheezy) or above.
 
 Here's a suggested /etc/apt/sources.list::
 
-    deb     http://ftp.fr.debian.org/debian/     wheezy           main contrib non-free
-    deb-src http://ftp.fr.debian.org/debian/     wheezy           main contrib non-free
+    deb     http://http.debian.net/debian/       wheezy           main contrib non-free
+    deb-src http://http.debian.net/debian/       wheezy           main contrib non-free
     deb     http://security.debian.org/          wheezy/updates   main contrib non-free
     deb-src http://security.debian.org/          wheezy/updates   main contrib non-free
     deb     http://ftp.debian.org/debian         wheezy-backports main contrib non-free
