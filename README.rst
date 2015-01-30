@@ -1,6 +1,22 @@
+===
+NGW
+===
+
+Introduction
+============
+
+NGW is a kind of groupware. It supports customizable contacts, groups, events, news, files, and messages.
+
+It provide a high level of permission settings including which group can see/change which contact fields, which other groups.
+
+It can alos pilot permission to jabber and phpbb installation as exentions.
+
+This is the installation guide, intended for system administrators.
+
+
 Debian repository setup (optional)
 ==================================
-It is recommanded to use Debian 7 (Wheezy) or above.
+It is recommanded to use Debian 7 (Wheezy) or above. All the source is available, so you can use other settings if you want, but you are on your own, then.
 
 Here's a suggested /etc/apt/sources.list::
 
@@ -33,29 +49,19 @@ If you set up nirgal.com repository as described above, just run::
 
     aptitude install libjs-xgcalendar python3-django-session-security python3-decoratedstr oomailing python3-socksipy
 
-If you did not, python3-socksipy, python3-django-session-security and libjs-xgcalendar are now officially in debian experimental. The source for the other packages are available at nirgal.com/debian.
+If you did not, *python3-socksipy* and *python3-django-session-security* are now officially in debian experimental. The sources of the other packages are available at nirgal.com/debian.
 
 
-Installation
-============
-If you did not yet, you need to clone the git repository:
-git clone https://github.com/nirgal/ngw.git
+Use the source
+==============
 
-Base directory must be /usr/lib/ngw (make a symlink)
+If you did not yet, you need to clone the git repository::
 
-You need to edit your settings.py:
-- Put your database user/password there
-- Put something in SECRET_KEY::
+    git clone https://github.com/nirgal/ngw.git
 
-    from django.utils.crypto import get_random_string
-    get_random_string(50, 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
+As root, make a symbolic link from the git copy to /usr/lib. Base directory must be */usr/lib/ngw*.
 
-You need to set up a cron tab::
-
-    */5 * * * * /usr/lib/ngw/manage msgsync -v 2
-    0 * * * * /usr/lib/ngw/manage clearsessions
-
-It is suggested you create a .git/hooks/post-merge file 755 file::
+That way, you can have upgrades with a simple *git pull*. You need to run the *Makefile* after each upgrades (not yet on the first installation). So it is suggested you create a *.git/hooks/post-merge* file 755 file::
 
     #!/bin/bash
     echo "Running $0" >&2
@@ -64,6 +70,8 @@ It is suggested you create a .git/hooks/post-merge file 755 file::
 
 Postgres setup
 ==============
+
+Ngw depends on some advanced postgres functions, such as recursive querries. So this is a requirement.
 
 Create a user ngw (or something else)::
 
@@ -77,12 +85,33 @@ Create a database ngw with owner ngw::
 
     postgres@localhost:~$ createdb ngw -E unicode -O ngw
 
-Create the structure, populate the initial data, and create the extra views and functions:
+Create the structure, populate the initial data, and create the extra views and functions::
 
     $ psql -h localhost -U ngw ngw -f sql/structure.sql
     $ psql -h localhost -U ngw ngw -f sql/initialdata.sql
     $ psql -h localhost -U ngw ngw -f sql/functions.sql
     $ ./manage syncdb
+
+
+Application setup
+=================
+
+You need to create and tune your  *settings.py*. It is recommended to use *settings.py.exemple* as a template. Then:
+
+- Put your database user/password there
+- Put something in SECRET_KEY::
+
+    from django.utils.crypto import get_random_string
+    get_random_string(50, 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
+
+You now need to create an admin account on the application level. Use::
+
+    ./manage createsuperuser
+
+Now the application should run locally::
+
+    make
+    ./manage runserver
 
 
 Apache
@@ -110,45 +139,48 @@ Enable virtual hosts on https:
 
 User or group www-data should have write access to /usr/lib/ngw/media/g and /usr/lib/ngw/media/messages. If you want to run the debug runserver command from time to time, I suggest you chown :www-data that folder, with g+ws mode.
 
-
-Admin account setup
-====================
-
-In order to create an admin account, use::
-
-    ./manage createsuperuser
-
-
-oomailing permissions
-=====================
-
-The web server needs to have write permission to where the pdf are generated::
+The web server also needs to have write permission to where the pdf are generated::
 
     chown www-data: /usr/lib/ngw/mailing/generated/
+
+
+Cron
+====
+
+You should to set up a cron tab::
+
+    */5 * * * * /usr/lib/ngw/manage msgsync -v 2
+    0 * * * * /usr/lib/ngw/manage clearsessions
+
+You may also want to setup some kind of backup here.
 
 
 Optionnal extensions
 ====================
 
-* phpbb3 synchronisation
+phpbb3 synchronisation
+----------------------
 
 You can use ngw groups to manage phpbb3 permissions, so that some contacts will
 automatically have access to some forums.
 See extentions/phpbb3/README
 
-* ejabberd synchronisation
+ejabberd synchronisation
+------------------------
 
 You can have one group automatically grant access to a local ejabberd.
 See extentions/xmpp/README
 
-* gpg support
+gnupg support
+-------------
+
+Public keys can be */usr/lib/ngw/.gnupg*::
 
     mkdir /var/lib/ngw
     chown www-data /var/lib/ngw
 
 Right now, keys needs to be imported by hand: gpg --homedir /var/lib/ngw/ --import akey.key
 
-Add "Listen 11371" at the end of the /etc/apache2/ports.conf
-to have an hkp:// compatible server (Download only)
+Add *Listen 11371* at the end of the */etc/apache2/ports.conf* to have an hkp:// compatible server (Download only)
 
 Uncomment gpg keyring directory in settings.py (GPG_HOME)
