@@ -10,3 +10,6 @@ clean:
 	rm -rf static/
 	rm -f mailing/generated/*
 	py3clean core extensions
+
+README.html: README.rst
+	rst2html README.rst README.html

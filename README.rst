@@ -1,3 +1,7 @@
+.. This document uses rst format. See http://docutils.sourceforge.net/
+   Quick start: http://docutils.sourceforge.net/docs/user/rst/quickref.html
+   Use "make README.html" to make the nice HTML version (requires python3-docutils or python-docutils)
+
 ===
 NGW
 ===
