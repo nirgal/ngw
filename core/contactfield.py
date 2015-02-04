@@ -235,7 +235,7 @@ class MultipleChoiceContactField(ContactField):
             except KeyError:
                 value = 'Error'
             txt_choice_list.append(value)
-        return ', '.join(txt_choice_list)
+        return ', \u00a0\u00a0\u00a0'.join(txt_choice_list)
     def get_form_fields(self):
         return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=OnelineCheckboxSelectMultiple())
     def formfield_value_to_db_value(self, value):
