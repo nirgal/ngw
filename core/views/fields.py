@@ -99,7 +99,7 @@ class FieldEditForm(forms.ModelForm):
     class Meta:
         model = ContactField
         fields = ['name', 'hint', 'contact_group', 'type', 'choice_group',
-            'default']
+            'choice_group2', 'default']
         widgets = {
             'type': forms.Select,
             'default': forms.widgets.Input,
@@ -129,24 +129,34 @@ class FieldEditForm(forms.ModelForm):
             for cls in ContactField.types_classes.values()] # TODO: Sort
         js_test_type_has_choice = ' || '.join(["this.value=='" + cls.db_type_id + "'"
             for cls in ContactField.types_classes.values()
-            if cls.has_choice])
+            if cls.has_choice > 0])
+        js_test_type_has_choice2 = ' || '.join(["this.value=='" + cls.db_type_id + "'"
+            for cls in ContactField.types_classes.values()
+            if cls.has_choice == 2])
         self.fields['type'].widget.attrs = {'onchange':
-            mark_safe('if (0 || '+js_test_type_has_choice+") { document.forms['objchange']['choice_group'].disabled = 0; } else { document.forms['objchange']['choice_group'].value = ''; document.forms['objchange']['choice_group'].disabled = 1; }")}
+            mark_safe("if (0 || "+js_test_type_has_choice+") { document.forms['objchange']['choice_group'].disabled = 0; } else { document.forms['objchange']['choice_group'].value = ''; document.forms['objchange']['choice_group'].disabled = 1; } if (0 || "+js_test_type_has_choice2+") { document.forms['objchange']['choice_group2'].disabled = 0; } else { document.forms['objchange']['choice_group2'].value = ''; document.forms['objchange']['choice_group2'].disabled = 1; } ")}
 
-        self.fields['choice_group'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
+        #self.fields['choice_group'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
 
         t = self.data.get('type', '') or self.initial.get('type', '')
         if t:
             cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
         else:
             cls_contact_field = ContactField.get_contact_field_type_by_dbid('TEXT')
-        if cls_contact_field.has_choice:
+        if cls_contact_field.has_choice > 0:
             if 'disabled' in self.fields['choice_group'].widget.attrs:
                 del self.fields['choice_group'].widget.attrs['disabled']
             self.fields['choice_group'].required = True
         else:
             self.fields['choice_group'].widget.attrs['disabled'] = 1
             self.fields['choice_group'].required = False
+        if cls_contact_field.has_choice == 2:
+            if 'disabled' in self.fields['choice_group2'].widget.attrs:
+                del self.fields['choice_group2'].widget.attrs['disabled']
+            self.fields['choice_group2'].required = True
+        else:
+            self.fields['choice_group2'].widget.attrs['disabled'] = 1
+            self.fields['choice_group2'].required = False
 
         self.fields['default'].widget.attrs['disabled'] = 1
 
@@ -157,6 +167,7 @@ class FieldEditForm(forms.ModelForm):
             self.fields['type'].widget.attrs['disabled'] = 1
             self.fields['type'].required = False
             self.fields['choice_group'].widget.attrs['disabled'] = 1
+            self.fields['choice_group2'].widget.attrs['disabled'] = 1
 
     def clean(self):
         if self.instance.system:
@@ -165,15 +176,19 @@ class FieldEditForm(forms.ModelForm):
             self.cleaned_data['contact_group'] = self.instance.contact_group
             self.cleaned_data['type'] = self.instance.type
             self.cleaned_data['choice_group'] = self.instance.choice_group
+            self.cleaned_data['choice_group2'] = self.instance.choice_group2
 
         new_cls_id = self.cleaned_data['type']
         choice_group_id = self.cleaned_data.get('choice_group', None)
+        choice_group2_id = self.cleaned_data.get('choice_group2', None)
         new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
 
         if new_cls.has_choice and not choice_group_id:
             raise forms.ValidationError(_('You must select a choice group for that type.'))
+        if new_cls.has_choice == 2 and not choice_group2_id:
+            raise forms.ValidationError(_('You must select both choice groups for that type.'))
 
-        if not self.delete_incompatible:
+        if not self.delete_incompatible: # TODO XXX FIXME for double choices
             deletion_details = []
             for cfv in self.instance.values.all():
                 if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
@@ -183,7 +198,7 @@ class FieldEditForm(forms.ModelForm):
 
         return self.cleaned_data
 
-    def save(self):
+    def save(self): # TODO XXX FIXME for double choices
         if self.instance.pk:
             # we are changing an existing field
             deletion_details = []

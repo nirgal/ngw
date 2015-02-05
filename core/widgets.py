@@ -2,10 +2,12 @@
 Custom widgets for use in forms.
 '''
 
+from django.core.exceptions import ValidationError
 from django import forms
 from django.utils.safestring import mark_safe
 from django.utils import html
 from django.utils.html import format_html
+from django.utils.translation import ugettext as _
 from ngw.core import perms
 
 class OnelineCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
@@ -133,3 +135,78 @@ class FlagsField(forms.MultiValueField):
         #print("compressed", result)
         return result
 
+#######################################################################
+#
+# Double choices field & widget
+#
+#######################################################################
+
+MAX_DOUBLECHOICE_LENGTH = 20
+
+class DoubleChoicesWidget(forms.widgets.MultiWidget):
+    def __init__(self, sub_count, sub_choice1, sub_choice2, attrs=None):
+        #print('attrs:', attrs)
+        widgets = []
+        if attrs is None:
+            attrs = {}
+        for i in range(sub_count):
+            widgets.append(forms.widgets.Select(choices=sub_choice1, attrs={'class': 'doublechoicefirst'}))
+            widgets.append(forms.widgets.Select(choices=sub_choice2, attrs={'class': 'doublechoicesecond'}))
+        super().__init__(widgets, attrs)
+
+    def decompress(self, value):
+        #print('decompress', value)
+        if value:
+            return value.split(',')
+        return ()
+
+    def render(self, name, value, attrs=None):
+        result = super().render(name, value, attrs)
+        final_attrs = self.build_attrs(attrs)
+        id_ = final_attrs.get('id', None)
+        js="""
+        <script>
+        doublechoice_show('%(id)s', 1);
+        </script>
+        """
+        result += mark_safe(js % { 'id': id_ })
+        return result
+
+class DoubleChoicesField(forms.MultiValueField):
+    def __init__(self, *args, **kwargs):
+        localize = kwargs.get('localize', False)
+        choicegroup1 = kwargs.pop('choicegroup1')
+        choicegroup2 = kwargs.pop('choicegroup2')
+        choices1 = [('', '---')] + choicegroup1.ordered_choices
+        choices2 = [('', '---')] + choicegroup2.ordered_choices
+        fields = []
+        for i in range(MAX_DOUBLECHOICE_LENGTH):
+            fields.append(forms.ChoiceField(choices=choices1))
+            fields.append(forms.ChoiceField(choices=choices2))
+        super().__init__(fields,
+            widget = DoubleChoicesWidget(
+                sub_count = MAX_DOUBLECHOICE_LENGTH,
+                sub_choice1 = choices1,
+                sub_choice2 = choices2),
+            *args, **kwargs)
+        self.choicegroup1 = choicegroup1
+        self.choicegroup2 = choicegroup2
+
+    def compress(self, data_list):
+        #print("compressing", data_list)
+        result = ''
+        for i in range(0, len(data_list), 2):
+            col1 = data_list[i]
+            col2 = data_list[i+1]
+            if not col1 and col2:
+                raise ValidationError(_('You must choose column %(missingcol)s for each column %(presentcol)s') %
+                    { 'missingcol': self.choicegroup1.name, 'presentcol': self.choicegroup2.name })
+            if col1 and not col2:
+                raise ValidationError(_('You must choose column %(missingcol)s for each column %(presentcol)s') %
+                    { 'missingcol': self.choicegroup2.name, 'presentcol': self.choicegroup1.name })
+            if col1 and col2:
+                if result:
+                    result += ','
+                result += col1 + ',' + col2
+        #print("compressed", result)
+        return result

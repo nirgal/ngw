@@ -213,3 +213,11 @@ ul.onelinechoices li {
 th.mv-dayname {
     padding: 0 0 1ex 1ex;
 }
+
+select.doublechoicefirst {
+    float: left;
+    clear: both;
+}
+select.doublechoicesecond {
+    float: left;
+}

@@ -1043,6 +1043,7 @@ class ContactGroup(NgwModel):
 # Contact Fields
 
 def register_contact_field_type(cls, db_type_id, human_type_id, has_choice):
+    assert has_choice in (0, 1, 2)
     ContactField.types_classes[db_type_id] = cls
     cls.db_type_id = db_type_id
     cls.human_type_id = human_type_id
@@ -1091,6 +1092,7 @@ class ContactField(NgwModel):
     contact_group = models.ForeignKey(ContactGroup, verbose_name=ugettext_lazy('Only for'))
     sort_weight = models.IntegerField()
     choice_group = models.ForeignKey(ChoiceGroup, verbose_name=ugettext_lazy('Choice group'), null=True, blank=True)
+    choice_group2 = models.ForeignKey(ChoiceGroup, related_name='second_choices_set', verbose_name=ugettext_lazy('Second choice group'), null=True, blank=True)
     system = models.BooleanField(ugettext_lazy('System locked'), default=False)
     default = models.TextField(ugettext_lazy('Default value'), blank=True)
     class Meta:
@@ -1169,6 +1171,19 @@ class ContactField(NgwModel):
             for choice in choices:
                 self._cached_choices[choice.key] = choice.value
             return self._cached_choices
+
+    def cached_choices2(self):
+        try:
+            return self._cached_choices2
+        except AttributeError:
+            self._cached_choices2 = OrderedDict()
+            choice_group = self.choice_group2
+            if not choice_group:
+                print("Error: %s doesn't have second choices")
+            choices = self.choice_group2.choices.all()
+            for choice in choices:
+                self._cached_choices2[choice.key] = choice.value
+            return self._cached_choices2
 
 def contact_field_initialized_by_manager(sender, **kwargs):
     field = kwargs['instance']

@@ -21,7 +21,7 @@ from ngw.core.models import (
     AllEventsReactionYearRatioMore)
     #, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
 from ngw.core import gpg
-from ngw.core.widgets import OnelineCheckboxSelectMultiple
+from ngw.core.widgets import OnelineCheckboxSelectMultiple, DoubleChoicesField
 
 
 class RibField(forms.Field):
@@ -69,7 +69,7 @@ class TextContactField(ContactField):
         return forms.CharField(label=self.name, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(TextContactField, 'TEXT', ugettext_lazy('Text'), has_choice=False)
+register_contact_field_type(TextContactField, 'TEXT', ugettext_lazy('Text'), has_choice=0)
 
 class LongTextContactField(ContactField):
     class Meta:
@@ -78,7 +78,7 @@ class LongTextContactField(ContactField):
         return forms.CharField(label=self.name, widget=forms.Textarea, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(LongTextContactField, 'LONGTEXT', ugettext_lazy('Long Text'), has_choice=False)
+register_contact_field_type(LongTextContactField, 'LONGTEXT', ugettext_lazy('Long Text'), has_choice=0)
 
 class NumberContactField(ContactField):
     class Meta:
@@ -94,7 +94,7 @@ class NumberContactField(ContactField):
         except ValueError:
             return False
         return True
-register_contact_field_type(NumberContactField, 'NUMBER', ugettext_lazy('Number'), has_choice=False)
+register_contact_field_type(NumberContactField, 'NUMBER', ugettext_lazy('Number'), has_choice=0)
 
 class DateContactField(ContactField):
     class Meta:
@@ -115,7 +115,7 @@ class DateContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(DateContactField, 'DATE', ugettext_lazy('Date'), has_choice=False)
+register_contact_field_type(DateContactField, 'DATE', ugettext_lazy('Date'), has_choice=0)
 
 class DateTimeContactField(ContactField):
     class Meta:
@@ -140,7 +140,7 @@ class DateTimeContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(DateTimeContactField, 'DATETIME', ugettext_lazy('Date time'), has_choice=False)
+register_contact_field_type(DateTimeContactField, 'DATETIME', ugettext_lazy('Date time'), has_choice=0)
 
 class EmailContactField(ContactField):
     class Meta:
@@ -162,7 +162,7 @@ class EmailContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(EmailContactField, 'EMAIL', ugettext_lazy('E.Mail'), has_choice=False)
+register_contact_field_type(EmailContactField, 'EMAIL', ugettext_lazy('E.Mail'), has_choice=0)
 
 class PhoneContactField(ContactField):
     class Meta:
@@ -173,7 +173,7 @@ class PhoneContactField(ContactField):
         return forms.CharField(label=self.name, max_length=255, required=False, help_text=self.hint)
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(PhoneContactField, 'PHONE', ugettext_lazy('Phone'), has_choice=False)
+register_contact_field_type(PhoneContactField, 'PHONE', ugettext_lazy('Phone'), has_choice=0)
 
 class RibContactField(ContactField):
     class Meta:
@@ -189,7 +189,7 @@ class RibContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(RibContactField, 'RIB', ugettext_lazy('French bank account'), has_choice=False)
+register_contact_field_type(RibContactField, 'RIB', ugettext_lazy('French bank account'), has_choice=0)
 
 class ChoiceContactField(ContactField):
     class Meta:
@@ -213,7 +213,7 @@ class ChoiceContactField(ContactField):
     def get_filters_classes(self):
         return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterNull, FieldFilterNotNull,)
 
-register_contact_field_type(ChoiceContactField, 'CHOICE', ugettext_lazy('Choice'), has_choice=True)
+register_contact_field_type(ChoiceContactField, 'CHOICE', ugettext_lazy('Choice'), has_choice=1)
 
 class MultipleChoiceContactField(ContactField):
     class Meta:
@@ -250,7 +250,49 @@ class MultipleChoiceContactField(ContactField):
         return True
     def get_filters_classes(self):
         return (FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, FieldFilterNull, FieldFilterNotNull,)
-register_contact_field_type(MultipleChoiceContactField, 'MULTIPLECHOICE', ugettext_lazy('Multiple choice'), has_choice=True)
+register_contact_field_type(MultipleChoiceContactField, 'MULTIPLECHOICE', ugettext_lazy('Multiple choice'), has_choice=1)
+
+
+class MultipleDoubleChoiceContactField(ContactField):
+    class Meta:
+        proxy = True
+    def type_as_html(self):
+        return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>, <a href='" + self.choice_group2.get_absolute_url() + "'>" + html.escape(self.choice_group2.name) + "</a>)"
+    type_as_html.short_description = ugettext_lazy('Type')
+    type_as_html.admin_order_field = 'type'
+    type_as_html.allow_tags = True
+    def format_value_text(self, value):
+        choices = self.cached_choices()
+        choices2 = self.cached_choices2()
+        txt_choice_list = []
+        for count, key in enumerate(value.split(',')):
+            if key == '':
+                txt_choice_list.append("default") # this should never occur
+                continue
+            try:
+                if count % 2:
+                    value = choices2[key]
+                else:
+                    value = choices[key]
+            except KeyError:
+                value = 'Error'
+            if count % 2:
+                txt_choice_list[-1] += ' (%s)' % value
+            else:
+                txt_choice_list.append(value)
+        return ', \u00a0\u00a0\u00a0'.join(txt_choice_list)
+    def get_form_fields(self):
+        return DoubleChoicesField(label=self.name, required=False, help_text=self.hint, choicegroup1=self.choice_group, choicegroup2=self.choice_group2)
+    @classmethod
+    def validate_unicode_value(cls, value, choice_group_id=None):
+        print('validate_unicode_value', value, choice_group_id)
+        for v in value.split(','):
+            if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=v).count() != 1:
+                return False
+        return True
+    def get_filters_classes(self):
+        return (FieldFilterNull, FieldFilterNotNull,)
+register_contact_field_type(MultipleDoubleChoiceContactField, 'DOUBLECHOICE', ugettext_lazy('Double choices'), has_choice=2)
 
 
 class PasswordContactField(ContactField):
@@ -267,7 +309,7 @@ class PasswordContactField(ContactField):
     @classmethod
     def validate_unicode_value(cls, value, choice_group_id=None):
         return True # No check
-register_contact_field_type(PasswordContactField, 'PASSWORD', ugettext_lazy('Password'), has_choice=False)
+register_contact_field_type(PasswordContactField, 'PASSWORD', ugettext_lazy('Password'), has_choice=0)
 
 
 class ContactNameMetaField(object):
