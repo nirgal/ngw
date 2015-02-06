@@ -1525,6 +1525,46 @@ FieldFilterMultiChoiceHASNOT.human_name = ugettext_lazy("doesn't contain")
 
 
 
+class FieldFilterDoubleChoiceHAS(FieldFilterOp1):
+    def get_sql_where_params(self, value1, value2):
+        return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value ~ %(pattern)s)', \
+            {'field_id': self.field_id, 'pattern': '(^|,)%s-%s(,|$)' % (value1, value2)}
+    def to_html(self, value1, value2):
+        field = ContactField.objects.get(pk=self.field_id)
+        cfv1 = Choice.objects.get(choice_group_id=field.choice_group_id, key=value1)
+        cfv2 = Choice.objects.get(choice_group_id=field.choice_group2_id, key=value2)
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value1)s", "%(value2)s"' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name),
+            'value1': html.escape(cfv1.value),
+            'value2': html.escape(cfv2.value)})
+    def get_param_types(self):
+        field = ContactField.objects.get(pk=self.field_id)
+        return (field.choice_group, field.choice_group2)
+FieldFilterDoubleChoiceHAS.internal_name = 'dchas'
+FieldFilterDoubleChoiceHAS.human_name = ugettext_lazy('contains')
+
+
+class FieldFilterDoubleChoiceHASNOT(FieldFilterOp1):
+    def get_sql_where_params(self, value1, value2):
+        return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value ~ %(pattern)s)', \
+            {'field_id': self.field_id, 'pattern': '(^|,)%s-%s(,|$)' % (value1, value2)}
+    def to_html(self, value1, value2):
+        field = ContactField.objects.get(pk=self.field_id)
+        cfv1 = Choice.objects.get(choice_group_id=field.choice_group_id, key=value1)
+        cfv2 = Choice.objects.get(choice_group_id=field.choice_group2_id, key=value2)
+        return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value1)s", "%(value2)s"' % {
+            'fieldname': html.escape(field.name),
+            'filtername': html.escape(self.__class__.human_name),
+            'value1': html.escape(cfv1.value),
+            'value2': html.escape(cfv2.value)})
+    def get_param_types(self):
+        field = ContactField.objects.get(pk=self.field_id)
+        return (field.choice_group, field.choice_group2)
+FieldFilterDoubleChoiceHASNOT.internal_name = 'dchasnot'
+FieldFilterDoubleChoiceHASNOT.human_name = ugettext_lazy("doesn't contain")
+
+
 class GroupFilterIsMember(Filter):
     def __init__(self, group_id):
         self.group_id = group_id

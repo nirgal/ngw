@@ -17,6 +17,7 @@ from ngw.core.models import (
     FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT,
     FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ,
     FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT,
+    FieldFilterDoubleChoiceHAS, FieldFilterDoubleChoiceHASNOT,
     AllEventsNotReactedSince, AllEventsReactionYearRatioLess,
     AllEventsReactionYearRatioMore)
     #, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
@@ -291,7 +292,7 @@ class MultipleDoubleChoiceContactField(ContactField):
                     return False
         return True
     def get_filters_classes(self):
-        return (FieldFilterNull, FieldFilterNotNull,)
+        return (FieldFilterDoubleChoiceHAS, FieldFilterDoubleChoiceHASNOT, FieldFilterNull, FieldFilterNotNull,)
 register_contact_field_type(MultipleDoubleChoiceContactField, 'DOUBLECHOICE', ugettext_lazy('Double choices'), has_choice=2)
 
 
