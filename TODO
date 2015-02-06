@@ -4,7 +4,6 @@ BUGS
 
 Calendar: Data is lost when user clic too quickly on prev/next. (Forwarded to https://github.com/xuanye/xgcalendar/issues/24)
 
-
 ====================================================================================================
 VALIDATED IMPROVEMENTS
 ====================================================================================================
@@ -36,7 +35,8 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 
-Make a double-choice and mulitple-double-choice contactfields
+Improve double-choice filters.
+
 Attach a choice to a field and only one (usefull for permissions)
 Allow group operator to modify their fields without being site-wide admin
 

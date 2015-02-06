@@ -1277,6 +1277,8 @@ class FilterEditForm(forms.Form):
             self.filter_html = parse_filterstring(filterstr, user.id).to_html()
         except PermissionDenied:
             self.filter_html = _("[Permission was denied to explain that filter. You probably don't have access to the fields / group names it is using.]<br>Raw filter=%s") % filterstr
+        except ContactField.DoesNotExist:
+            self.filter_html = _("[This filter uses a field that doesn't exist anymore.]")
 
     def save(self, request):
         filter_list = self.filter_list
