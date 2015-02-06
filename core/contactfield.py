@@ -89,7 +89,7 @@ class NumberContactField(ContactField):
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterIEQ, FieldFilterINE, FieldFilterILE, FieldFilterIGE, FieldFilterILT, FieldFilterIGT, FieldFilterNull, FieldFilterNotNull,)
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         try:
             int(value)
         except ValueError:
@@ -108,7 +108,7 @@ class DateContactField(ContactField):
         value = datetime.strptime(value, '%Y-%m-%d')
         return formats.date_format(value, "DATE_FORMAT")
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         try:
             datetime.strptime(value, '%Y-%m-%d')
         except ValueError:
@@ -133,7 +133,7 @@ class DateTimeContactField(ContactField):
         return datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
 
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         try:
             datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         except ValueError:
@@ -155,7 +155,7 @@ class EmailContactField(ContactField):
     def get_form_fields(self):
         return forms.EmailField(label=self.name, required=False, help_text=self.hint)
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         try:
             forms.EmailField().clean(value)
         except forms.ValidationError:
@@ -182,7 +182,7 @@ class RibContactField(ContactField):
     def get_form_fields(self):
         return RibField(label=self.name, required=False, help_text=self.hint)
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         try:
             RibField().clean(value)
         except forms.ValidationError:
@@ -209,7 +209,7 @@ class ChoiceContactField(ContactField):
     def get_form_fields(self):
         return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[('', 'Unknown')]+self.choice_group.ordered_choices))
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         return Choice.objects.filter(choice_group_id=choice_group_id).filter(key=value).count() == 1
     def get_filters_classes(self):
         return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterNull, FieldFilterNotNull,)
@@ -244,7 +244,7 @@ class MultipleChoiceContactField(ContactField):
     def db_value_to_formfield_value(self, value):
         return value.split(',')
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         for v in value.split(','):
             if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=v).count() != 1:
                 return False
@@ -282,14 +282,17 @@ class MultipleDoubleChoiceContactField(ContactField):
     def get_form_fields(self):
         return DoubleChoicesField(label=self.name, required=False, help_text=self.hint, choicegroup1=self.choice_group, choicegroup2=self.choice_group2)
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
-        print('validate_unicode_value', value, choice_group_id)
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
+        #print('validate_unicode_value', value, choice_group_id, choice_group2_id)
         for v in value.split(','):
-            for k1, k2 in v.split('-', 1):
-                if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=k1).count() != 1:
-                    return False
-                if Choice.objects.filter(choice_group_id=choice_group2_id).filter(key=k2).count() != 1:
-                    return False
+            try:
+                k1, k2 = v.split('-', 1)
+            except ValueError:
+                return False
+            if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=k1).count() != 1:
+                return False
+            if Choice.objects.filter(choice_group_id=choice_group2_id).filter(key=k2).count() != 1:
+                return False
         return True
     def get_filters_classes(self):
         return (FieldFilterDoubleChoiceHAS, FieldFilterDoubleChoiceHASNOT, FieldFilterNull, FieldFilterNotNull,)
@@ -308,7 +311,7 @@ class PasswordContactField(ContactField):
     def db_value_to_formfield_value(self, value):
         raise NotImplementedError('Cannot reverse hash of a password')
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         return True # No check
 register_contact_field_type(PasswordContactField, 'PASSWORD', ugettext_lazy('Password'), has_choice=0)
 

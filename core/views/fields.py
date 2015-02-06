@@ -188,32 +188,33 @@ class FieldEditForm(forms.ModelForm):
         if new_cls.has_choice == 2 and not choice_group2_id:
             raise forms.ValidationError(_('You must select both choice groups for that type.'))
 
-        if not self.delete_incompatible: # TODO XXX FIXME for double choices
+        if not self.delete_incompatible:
             deletion_details = []
             for cfv in self.instance.values.all():
-                if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
+                if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id):
                     deletion_details.append((cfv.contact, str(cfv)))
             if deletion_details:
                 raise FieldEditForm.IncompatibleData(deletion_details)
 
         return self.cleaned_data
 
-    def save(self): # TODO XXX FIXME for double choices
+    def save(self):
         if self.instance.pk:
             # we are changing an existing field
             deletion_details = []
             new_cls_id = self.cleaned_data['type']
             choice_group_id = self.cleaned_data.get('choice_group', None)
+            choice_group2_id = self.cleaned_data.get('choice_group2', None)
 
             if self.delete_incompatible:
                 new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
                 for cfv in self.instance.values.all():
-                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
+                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id):
                         cfv.delete()
             else:  # delete_incompatible==False
                 new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
                 for cfv in self.instance.values.all():
-                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id):
+                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id):
                         deletion_details.append((cfv.contact, cfv))
                 if deletion_details:
                     raise FieldEditForm.IncompatibleData(deletion_details)
