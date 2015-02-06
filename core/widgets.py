@@ -156,9 +156,12 @@ class DoubleChoicesWidget(forms.widgets.MultiWidget):
 
     def decompress(self, value):
         #print('decompress', value)
-        if value:
-            return value.split(',')
-        return ()
+        if not value:
+            return ()
+        result = []
+        for pair in value.split(','):
+            result += pair.split('-')
+        return result
 
     def render(self, name, value, attrs=None):
         result = super().render(name, value, attrs)
@@ -207,6 +210,6 @@ class DoubleChoicesField(forms.MultiValueField):
             if col1 and col2:
                 if result:
                     result += ','
-                result += col1 + ',' + col2
+                result += col1 + '-' + col2
         #print("compressed", result)
         return result

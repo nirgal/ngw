@@ -233,7 +233,7 @@ class MultipleChoiceContactField(ContactField):
             try:
                 value = choices[key]
             except KeyError:
-                value = 'Error'
+                value = _('Error')
             txt_choice_list.append(value)
         return ', \u00a0\u00a0\u00a0'.join(txt_choice_list)
     def get_form_fields(self):
@@ -265,21 +265,18 @@ class MultipleDoubleChoiceContactField(ContactField):
         choices = self.cached_choices()
         choices2 = self.cached_choices2()
         txt_choice_list = []
-        for count, key in enumerate(value.split(',')):
+        for key in value.split(','):
             if key == '':
                 txt_choice_list.append("default") # this should never occur
                 continue
             try:
-                if count % 2:
-                    value = choices2[key]
-                else:
-                    value = choices[key]
-            except KeyError:
-                value = 'Error'
-            if count % 2:
-                txt_choice_list[-1] += ' (%s)' % value
-            else:
-                txt_choice_list.append(value)
+                key1, key2 = key.split('-', 1)
+                val1 = choices[key1]
+                val2 = choices2[key2]
+            except (ValueError, KeyError):
+                txt_choice_list.append(_('Error'))
+                continue
+            txt_choice_list.append('%s (%s)' % (val1, val2))
         return ', \u00a0\u00a0\u00a0'.join(txt_choice_list)
     def get_form_fields(self):
         return DoubleChoicesField(label=self.name, required=False, help_text=self.hint, choicegroup1=self.choice_group, choicegroup2=self.choice_group2)
@@ -287,8 +284,11 @@ class MultipleDoubleChoiceContactField(ContactField):
     def validate_unicode_value(cls, value, choice_group_id=None):
         print('validate_unicode_value', value, choice_group_id)
         for v in value.split(','):
-            if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=v).count() != 1:
-                return False
+            for k1, k2 in v.split('-', 1):
+                if Choice.objects.filter(choice_group_id=choice_group_id).filter(key=k1).count() != 1:
+                    return False
+                if Choice.objects.filter(choice_group_id=choice_group2_id).filter(key=k2).count() != 1:
+                    return False
         return True
     def get_filters_classes(self):
         return (FieldFilterNull, FieldFilterNotNull,)
