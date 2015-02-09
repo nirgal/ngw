@@ -12,6 +12,7 @@ Modify inline editing for membership so that the Note can be edited too. This ma
 
 Show messages counts on the member list.
 
+On event creation, when start date is defined, set up the end date for a one day event.
 
 ====================================================================================================
 CODE REFACTOR
@@ -37,7 +38,7 @@ In group_members.html, show detailed permissions for get_manager_groups|group_vi
 
 Improve double-choice filters.
 
-Attach a choice to a field and only one (usefull for permissions)
+Attach a choice to a field and only one (usefull for permissions) (but yes/no)
 Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
