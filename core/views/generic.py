@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils.translation import ugettext as _
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django.utils.text import capfirst
 from django.utils.http import urlencode
 from django.utils.html import format_html
@@ -40,6 +41,7 @@ class NgwUserAcl(object):
     '''
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
+    @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
         self.check_perm_user(request.user)
         return super().dispatch(request, *args, **kwargs)
@@ -74,6 +76,7 @@ class InGroupAcl(ContextMixin):
 
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
+    @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         group_id = self.kwargs.get('gid', None)
