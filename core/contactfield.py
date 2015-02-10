@@ -205,7 +205,7 @@ class ChoiceContactField(ContactField):
         try:
             return choices[value]
         except KeyError:
-            return 'Error'
+            return _('Error')
     def get_form_fields(self):
         return forms.CharField(max_length=255, label=self.name, required=False, help_text=self.hint, widget=forms.Select(choices=[('', 'Unknown')]+self.choice_group.ordered_choices))
     @classmethod
@@ -236,7 +236,7 @@ class MultipleChoiceContactField(ContactField):
             except KeyError:
                 value = _('Error')
             txt_choice_list.append(value)
-        return ', \u00a0\u00a0\u00a0'.join(txt_choice_list)
+        return '<br>'.join(txt_choice_list)
     def get_form_fields(self):
         return forms.MultipleChoiceField(label=self.name, required=False, help_text=self.hint, choices=self.choice_group.ordered_choices, widget=OnelineCheckboxSelectMultiple())
     def formfield_value_to_db_value(self, value):
@@ -278,7 +278,7 @@ class MultipleDoubleChoiceContactField(ContactField):
                 txt_choice_list.append(_('Error'))
                 continue
             txt_choice_list.append('%s (%s)' % (val1, val2))
-        return ', \u00a0\u00a0\u00a0'.join(txt_choice_list)
+        return '<br>'.join(txt_choice_list)
     def get_form_fields(self):
         return DoubleChoicesField(label=self.name, required=False, help_text=self.hint, choicegroup1=self.choice_group, choicegroup2=self.choice_group2)
     @classmethod

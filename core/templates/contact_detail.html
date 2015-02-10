@@ -12,9 +12,15 @@
 <div class=module>
     <table class=objlist>
     <tr><td>
-    
+
     {% for key,value in rows %}
-        {{ key }}: <b>{{ value }}</b><br>
+            <div style="float:left; margin-right:1ex;">
+                {{ key }}:
+            </div>
+            <div style="display:inline-block;">
+                <b>{{ value }}</b>
+            </div>
+            <br style="clear:both;">
     {% endfor %}
 
     {% for g in contact.get_directgroups_member|group_visible_by:request.user.id %}
