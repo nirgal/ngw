@@ -24,12 +24,12 @@ It is recommanded to use Debian 7 (Wheezy) or above. All the source is available
 
 Here's a suggested /etc/apt/sources.list::
 
-    deb     http://http.debian.net/debian/       wheezy           main contrib non-free
-    deb-src http://http.debian.net/debian/       wheezy           main contrib non-free
-    deb     http://security.debian.org/          wheezy/updates   main contrib non-free
-    deb-src http://security.debian.org/          wheezy/updates   main contrib non-free
-    deb     http://ftp.debian.org/debian         wheezy-backports main contrib non-free
-    deb-src http://ftp.debian.org/debian         wheezy-backports main contrib non-free
+    deb     http://http.debian.net/debian/       wheezy           main
+    deb-src http://http.debian.net/debian/       wheezy           main
+    deb     http://security.debian.org/          wheezy/updates   main
+    deb-src http://security.debian.org/          wheezy/updates   main
+    deb     http://ftp.debian.org/debian         wheezy-backports main
+    deb-src http://ftp.debian.org/debian         wheezy-backports main
 
 Make sure you defined wich default Debian version you want, so that backports are not installed automatically::
 
