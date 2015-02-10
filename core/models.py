@@ -1167,9 +1167,9 @@ class ContactField(NgwModel):
             choice_group = self.choice_group
             if not choice_group:
                 print("Error: %s doesn't have choices")
-            choices = self.choice_group.choices.all()
-            for choice in choices:
-                self._cached_choices[choice.key] = choice.value
+            else:
+                for key, value in self.choice_group.ordered_choices:
+                    self._cached_choices[key] = value
             return self._cached_choices
 
     def cached_choices2(self):
@@ -1180,9 +1180,9 @@ class ContactField(NgwModel):
             choice_group = self.choice_group2
             if not choice_group:
                 print("Error: %s doesn't have second choices")
-            choices = self.choice_group2.choices.all()
-            for choice in choices:
-                self._cached_choices2[choice.key] = choice.value
+            else:
+                for key, value in choice_group.ordered_choices:
+                    self._cached_choices2[key] = value
             return self._cached_choices2
 
 def contact_field_initialized_by_manager(sender, **kwargs):

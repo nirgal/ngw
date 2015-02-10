@@ -265,7 +265,7 @@ class MultipleDoubleChoiceContactField(ContactField):
     def format_value_text(self, value):
         choices = self.cached_choices()
         choices2 = self.cached_choices2()
-        txt_choice_list = []
+        choices_list = [] # list of (val1, val2, key1_index_in_choices)
         for key in value.split(','):
             if key == '':
                 txt_choice_list.append("default") # this should never occur
@@ -277,8 +277,16 @@ class MultipleDoubleChoiceContactField(ContactField):
             except (ValueError, KeyError):
                 txt_choice_list.append(_('Error'))
                 continue
-            txt_choice_list.append('%s (%s)' % (val1, val2))
-        return '<br>'.join(txt_choice_list)
+            for index, key1test in enumerate(choices):
+                if key1 == key1test:
+                    choices_list.append((val1, val2, index))
+                    break
+            else:
+                print('Key %s lost in %s' % (key1, choices))
+        choices_list.sort(key=lambda x: x[2])
+        return '<br>'.join([
+            '%s (%s)' % (val1, val2)
+            for val1, val2, indexkey1 in choices_list])
     def get_form_fields(self):
         return DoubleChoicesField(label=self.name, required=False, help_text=self.hint, choicegroup1=self.choice_group, choicegroup2=self.choice_group2)
     @classmethod
