@@ -4,6 +4,8 @@ BUGS
 
 Calendar: Data is lost when user clic too quickly on prev/next. (Forwarded to https://github.com/xuanye/xgcalendar/issues/24)
 
+@never_cache in views doesn't seem to work properly
+
 ====================================================================================================
 VALIDATED IMPROVEMENTS
 ====================================================================================================
@@ -14,7 +16,7 @@ Show messages counts on the member list.
 
 On event creation, when start date is defined, set up the end date for a one day event.
 
-@never_cache in views doesn't seem to work properly
+Add alternative onion adresses in messages notifications.
 
 ====================================================================================================
 CODE REFACTOR
