@@ -81,5 +81,3 @@ TBD
 Change MailmanSyncForm into a ModelForm (?)
 
 Check new migrations framework
-
-Import JsonResponse directly from django.http

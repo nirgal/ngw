@@ -3,8 +3,7 @@ ajax views for building contact filter
 '''
 
 from django.utils.translation import ugettext as _
-from django.http import Http404
-from django.http.response import JsonResponse
+from django.http import Http404, JsonResponse
 from django.views.generic import View
 from ngw.core.models import (
     Contact, ContactField, ContactGroup, ChoiceGroup)
