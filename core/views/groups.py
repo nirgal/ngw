@@ -521,7 +521,7 @@ class ContactGroupForm(forms.ModelForm):
             'name', 'description', 'date', 'end_date', 'budget_code', #'sticky',
             'field_group', 'mailman_address']
         widgets = {
-            'date': AdminDateWidget,
+            'date': AdminDateWidget(attrs={'onchange': mark_safe("alert('ok');")}),
             'end_date': AdminDateWidget,
         }
 

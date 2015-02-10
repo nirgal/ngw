@@ -124,7 +124,8 @@ def send_notification(msg):
 
     notification_text = _('''Hello
 
-You can read your message at https://onetime.info/%s
+You can read your message at https://onetime.info/%(otid)s
+or http://7z4nl4ojzggwicx5.onion/%(otid)s if you are using tor [1].
 
 Warning, that message will be displayed only once, and then deleted. Have a pen
 ready before clicking the link.
@@ -132,13 +133,32 @@ ready before clicking the link.
 Do not reply to that email: Use the link above.
 If the link doesn't work, please try again.
 If you get an error saying the message was already read, but you were not the
-one to read it, please repport that.''')
+one to read it, please repport that.
 
-    message = mail.EmailMessage(
+[1] https://www.torproject.org/''')
+
+    notification_html = _('''<p>Hello</p>
+
+<p>You can read your message at
+<a href="https://onetime.info/%(otid)s">https://onetime.info/%(otid)s</a><br>
+or <a href="http://7z4nl4ojzggwicx5.onion/%(otid)s">http://7z4nl4ojzggwicx5.onion/%(otid)s</a>
+if you are using <a href="https://www.torproject.org/">tor</a>.</p>
+
+<p>Warning, that message will be displayed only once, and then deleted. Have a
+pen ready before clicking the link.</p>
+
+<p>Do not reply to that email: Use the link above.<br>
+If the link doesn't work, please try again.<br>
+If you get an error saying the message was already read, but you were not the
+one to read it, please repport that.</p>''')
+
+    message = mail.EmailMultiAlternatives(
         subject=msg.subject,
-        body=notification_text % sync_info['otid'],
+        body=notification_text % sync_info,
         to=(mail_addr,),
         connection=SMTP_CONNECTION)
+    message.attach_alternative(notification_html % sync_info, "text/html")
+
     try:
         message.send()
     except smtplib.SMTPException as err:

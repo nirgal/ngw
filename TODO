@@ -16,8 +16,6 @@ Show messages counts on the member list.
 
 On event creation, when start date is defined, set up the end date for a one day event.
 
-Add alternative onion adresses in messages notifications.
-
 ====================================================================================================
 CODE REFACTOR
 ====================================================================================================
