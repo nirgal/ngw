@@ -1528,16 +1528,23 @@ FieldFilterMultiChoiceHASNOT.human_name = ugettext_lazy("doesn't contain")
 class FieldFilterDoubleChoiceHAS(FieldFilterOp1):
     def get_sql_where_params(self, value1, value2):
         return 'EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value ~ %(pattern)s)', \
-            {'field_id': self.field_id, 'pattern': '(^|,)%s-%s(,|$)' % (value1, value2)}
+            {'field_id': self.field_id, 'pattern': '(^|,)%s-%s(,|$)' % (value1 or '[^,-]*', value2 or '[^,-]*')}
     def to_html(self, value1, value2):
         field = ContactField.objects.get(pk=self.field_id)
-        cfv1 = Choice.objects.get(choice_group_id=field.choice_group_id, key=value1)
-        cfv2 = Choice.objects.get(choice_group_id=field.choice_group2_id, key=value2)
+        try:
+            val1 = Choice.objects.get(choice_group_id=field.choice_group_id, key=value1).value
+        except Choice.DoesNotExist:
+            val1 = '*'
+        try:
+            val2 = Choice.objects.get(choice_group_id=field.choice_group2_id, key=value2).value
+        except Choice.DoesNotExist:
+            val2 = '*'
         return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value1)s", "%(value2)s"' % {
             'fieldname': html.escape(field.name),
             'filtername': html.escape(self.__class__.human_name),
-            'value1': html.escape(cfv1.value),
-            'value2': html.escape(cfv2.value)})
+            'value1': html.escape(val1),
+            'value2': html.escape(val2),
+            })
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group, field.choice_group2)
@@ -1548,16 +1555,23 @@ FieldFilterDoubleChoiceHAS.human_name = ugettext_lazy('contains')
 class FieldFilterDoubleChoiceHASNOT(FieldFilterOp1):
     def get_sql_where_params(self, value1, value2):
         return 'NOT EXISTS (SELECT value FROM contact_field_value WHERE contact_field_value.contact_id = contact.id AND contact_field_value.contact_field_id = %(field_id)i AND value ~ %(pattern)s)', \
-            {'field_id': self.field_id, 'pattern': '(^|,)%s-%s(,|$)' % (value1, value2)}
+            {'field_id': self.field_id, 'pattern': '(^|,)%s-%s(,|$)' % (value1 or '[^,-]*', value2 or '[^,-]*')}
     def to_html(self, value1, value2):
         field = ContactField.objects.get(pk=self.field_id)
-        cfv1 = Choice.objects.get(choice_group_id=field.choice_group_id, key=value1)
-        cfv2 = Choice.objects.get(choice_group_id=field.choice_group2_id, key=value2)
+        try:
+            val1 = Choice.objects.get(choice_group_id=field.choice_group_id, key=value1).value
+        except Choice.DoesNotExist:
+            val1 = '*'
+        try:
+            val2 = Choice.objects.get(choice_group_id=field.choice_group2_id, key=value2).value
+        except Choice.DoesNotExist:
+            val2 = '*'
         return mark_safe('<b>%(fieldname)s</b> %(filtername)s "%(value1)s", "%(value2)s"' % {
             'fieldname': html.escape(field.name),
             'filtername': html.escape(self.__class__.human_name),
-            'value1': html.escape(cfv1.value),
-            'value2': html.escape(cfv2.value)})
+            'value1': html.escape(val1),
+            'value2': html.escape(val2),
+            })
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group, field.choice_group2)

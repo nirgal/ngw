@@ -137,6 +137,8 @@ class ContactSearchFilterParamsView(NgwUserAcl, View):
                 jsparams.append('number')
             elif isinstance(param_type, ChoiceGroup):
                 choices = []
+                if len(parameter_types):
+                    choices = [{'id':'', 'text': _('Any')}] # Allow empty if double choice
                 for key, value in param_type.ordered_choices:
                     choices.append({'id': key, 'text': value})
                 jsparams.append(choices)

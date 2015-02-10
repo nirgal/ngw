@@ -38,8 +38,6 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 
-Improve double-choice filters.
-
 Attach a choice to a field and only one (usefull for permissions) (but yes/no)
 Allow group operator to modify their fields without being site-wide admin
 
