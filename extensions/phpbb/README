@@ -55,6 +55,7 @@ Add to your ngw/apache.conf:
     </Location>
 
 In the admin control panel, in general, in client communication, in authentication, change authentication method from "Db" to "Apache".
+See https://bugs.debian.org/778553 if you get a blank page there.
 
 
 Install french packs:

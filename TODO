@@ -6,6 +6,7 @@ Calendar: Data is lost when user clic too quickly on prev/next. (Forwarded to ht
 
 @never_cache in views doesn't seem to work properly
 
+
 ====================================================================================================
 VALIDATED IMPROVEMENTS
 ====================================================================================================
@@ -15,6 +16,7 @@ Modify inline editing for membership so that the Note can be edited too. This ma
 Show messages counts on the member list.
 
 On event creation, when start date is defined, set up the end date for a one day event.
+
 
 ====================================================================================================
 CODE REFACTOR
@@ -38,7 +40,7 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 
-Attach a choice to a field and only one (usefull for permissions) (but yes/no)
+Attach a choice to a field and only one (usefull for permissions) (but yes/no ?)
 Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
@@ -48,6 +50,8 @@ On the contact detail page, have the events either in a separated page or in a w
 Check unified authorization system in apache2.4, like
 https://httpd.apache.org/docs/2.4/mod/mod_auth_form.html
 https://github.com/GrahamDumpleton/mod_wsgi/pull/41
+
+Global or Group filters
 
 ====================================================================================================
 UNSORTED
@@ -79,3 +83,5 @@ TBD
 Change MailmanSyncForm into a ModelForm (?)
 
 Check new migrations framework
+
+Make an ldap compatible daemon
