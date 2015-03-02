@@ -17,7 +17,6 @@ WSGIPythonPath /usr/lib
     AddDefaultCharset UTF-8
     ServerSignature Off
     #CustomLog "/dev/null" " "
-    ErrorLog "/usr/lib/ngw/apache_error.log"
 
     Alias /static/ /usr/lib/ngw/static/
 
