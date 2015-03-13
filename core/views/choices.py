@@ -92,11 +92,15 @@ class ChoicesField(forms.MultiValueField):
         return None
 
     def clean(self, value):
+        keys = []
+        raw_values = forms.MultiValueField.clean(self, value)
+        if raw_values:
+            possibles_values = raw_values.split('\u001f')
+        else:
+            possibles_values = []
+        #print('possibles_values=', repr(possibles_values))
         # check there is no duplicate keys
         # necessary since keys are the id used in <select>
-        possibles_values = forms.MultiValueField.clean(self, value).split('\u001f')
-        #print('possibles_values=', repr(possibles_values))
-        keys = []
         for i in range(len(possibles_values)//2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
