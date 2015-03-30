@@ -43,8 +43,6 @@ WSGIPythonPath /usr/lib
     WSGIScriptAliasMatch ^(/contacts/.*)$          /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/contactgroups/.*)$     /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/events/.*)$            /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/contactfields/.*)$     /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/choicegroups/.*)$      /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/media/.*)$             /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/pks/.*)$               /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/test)$                 /usr/lib/ngw/core/wsgi.py$1
