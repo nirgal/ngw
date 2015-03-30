@@ -94,7 +94,7 @@ Create the structure, populate the initial data, and create the extra views and 
     $ psql -h localhost -U ngw ngw -f sql/structure.sql
     $ psql -h localhost -U ngw ngw -f sql/initialdata.sql
     $ psql -h localhost -U ngw ngw -f sql/functions.sql
-    $ ./manage syncdb
+    $ ./manage.py syncdb
 
 
 Application setup
@@ -110,12 +110,12 @@ You need to create and tune your  *settings.py*. It is recommended to use *setti
 
 You now need to create an admin account on the application level. Use::
 
-    ./manage createsuperuser
+    ./manage.py createsuperuser
 
 Now the application should run locally::
 
     make
-    ./manage runserver
+    ./manage.py runserver
 
 
 Apache
@@ -153,8 +153,8 @@ Cron
 
 You should to set up a cron tab::
 
-    */5 * * * * /usr/lib/ngw/manage msgsync -v 2
-    0 * * * * /usr/lib/ngw/manage clearsessions
+    */5 * * * * /usr/lib/ngw/manage.py msgsync -v 2
+    0 * * * * /usr/lib/ngw/manage.py clearsessions
 
 You may also want to setup some kind of backup here.
 
