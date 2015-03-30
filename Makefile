@@ -1,10 +1,10 @@
 #!/usr/bin/make -f
 all:
-	cd core && ../manage compilemessages
-	cd extensions/externalmessages && ../../manage compilemessages
+	cd core && ../manage.py compilemessages
+	cd extensions/externalmessages && ../../manage.py compilemessages
 	mkdir -p /usr/lib/ngw/static
-	./manage collectstatic --verbosity 1 --noinput
-	./manage upgradedb --verbosity 2
+	./manage.py collectstatic --verbosity 1 --noinput
+	./manage.py upgradedb --verbosity 2
 	py3compile core extensions
 clean:
 	rm -rf static/
