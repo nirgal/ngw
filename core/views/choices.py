@@ -87,7 +87,7 @@ class ChoicesField(forms.MultiValueField):
 class ChoiceGroupForm(forms.ModelForm):
     class Meta:
         model = ChoiceGroup
-        fields = ['name', 'sort_by_key']
+        fields = ['sort_by_key']
 
     def __init__(self, *args, **kwargs):
         choicegroup = kwargs.get('instance', None)
@@ -180,7 +180,8 @@ class ChoiceEditMixin(ModelFormMixin):
         request = self.request
         choicegroup = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved successfully.') % choicegroup.name)
+        # TODO show field name
+        messages.add_message(request, messages.SUCCESS, _('Choices have been saved successfully.'))
 
         return HttpResponseRedirect('..')
 

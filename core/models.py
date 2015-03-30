@@ -174,16 +174,14 @@ class Choice(NgwModel):
 
 class ChoiceGroup(NgwModel):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(ugettext_lazy('Name'), max_length=255)
     sort_by_key = models.BooleanField(ugettext_lazy('Sort by key'), default=False)
     class Meta:
         db_table = 'choice_group'
         verbose_name = ugettext_lazy('choices list')
         verbose_name_plural = ugettext_lazy('choices lists')
-        ordering = 'name',
 
     def __str__(self):
-        return self.name
+        return str(self.id)
 
     @property
     def ordered_choices(self):

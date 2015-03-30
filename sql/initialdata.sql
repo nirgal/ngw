@@ -15,10 +15,10 @@ SET search_path = public, pg_catalog;
 -- Data for Name: choice_group; Type: TABLE DATA; Schema: public; Owner: ngw
 --
 
-COPY choice_group (id, name, sort_by_key) FROM stdin;
-1	Countries	f
-9	Yes / No	t
-41	Password status	t
+COPY choice_group (id, sort_by_key) FROM stdin;
+1	f
+9	t
+41	t
 \.
 
 SELECT pg_catalog.setval('choice_group_id_seq', 100, true);
@@ -49,7 +49,7 @@ columns	name,field_7,field_8,field_10
 banner	<big>NGW</big> Group Ware
 phpbb acl dictionary	
 query_page_length	100
-db version	14
+db version	18
 \.
 
 
