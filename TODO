@@ -6,6 +6,9 @@ Calendar: Data is lost when user clic too quickly on prev/next. (Forwarded to ht
 
 @never_cache in views doesn't seem to work properly
 
+List of fields crashs when a choice fields has no choicegroup. It should not happen, but the list should be resistant anyway.
+
+Bug in add_to_grop when user isn't admin.
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS
@@ -40,7 +43,11 @@ Use "ejabberdctl add-rosteritem ..." rather than messing directly with ejabberd 
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
 
-Attach a choice to a field and only one (usefull for permissions) (but yes/no ?)
+Allow choice edition if permission to change fields in all group it's used in
+. Create default empty choice group
+If choice already used in another group, propose to duplicate.
+Delete choice group when it's not used any more by any contactfield.
+
 Allow group operator to modify their fields without being site-wide admin
 
 Extensions: Change hooks for signals
@@ -85,3 +92,7 @@ Change MailmanSyncForm into a ModelForm (?)
 Check new migrations framework
 
 Make an ldap compatible daemon
+
+Check https://docs.djangoproject.com/en/1.7/howto/outputting-pdf/
+
+Remove manage, put #! in manage.py (python2 no longer supported)

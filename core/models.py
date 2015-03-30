@@ -641,6 +641,9 @@ class ContactGroupQuerySet(models.query.QuerySet):
         qs = qs.annotate(news_count=models.Count('news_set'))
         qs = qs.extra(select={
             'member_count': 'SELECT COUNT(*) FROM v_c_member_of WHERE group_id=contact_group.id'})
+        #qs = qs.annotate(fields_count=models.Count('contactfield'))
+        qs = qs.extra(select={
+            'fields_count': 'SELECT COUNT(*) FROM contact_field WHERE contact_field.contact_group_id=contact_group.id'})
         return qs
 
 
@@ -1060,6 +1063,7 @@ class ContactFieldQuerySet(models.query.QuerySet):
         else:
             wanted_flag = perms.VIEW_FIELDS
         qs = self.extra(
+            select={'perm': 'v_cig_perm.flags'},
             tables=('v_cig_perm',),
             where=[
                 'v_cig_perm.contact_id = %s'
@@ -1106,6 +1110,10 @@ class ContactField(NgwModel):
     def get_class_urlfragment(cls):
         return 'contactfields'
 
+    def get_absolute_url(self):
+        return '/contactgroups/%s/fields/%s/' % (
+            self.contact_group_id, self.id)
+
     def __repr__(self):
         return '<ContactField %s %s %s>' % (self.id, self.name, self.type)
 
@@ -1128,8 +1136,6 @@ class ContactField(NgwModel):
 
     def type_as_html(self):
         return self.str_type_base()
-    type_as_html.short_description = ugettext_lazy('Type')
-    type_as_html.admin_order_field = 'type'
 
     def format_value_text(self, value):
         return value
@@ -1147,7 +1153,7 @@ class ContactField(NgwModel):
         return value
 
     @classmethod
-    def validate_unicode_value(cls, value, choice_group_id=None):
+    def validate_unicode_value(cls, value, choice_group_id=None, choice_group2_id=None):
         return True
 
     def get_filters_classes(self):

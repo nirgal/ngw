@@ -80,14 +80,14 @@ class ContactGroupAdmin(MyModelAdmin, ContactGroupListView):
 
 #######################################################################
 
-from ngw.core.views.choices import ChoiceListView
-class ChoiceAdminInLine(admin.TabularInline):
-    model = Choice
-    fields = 'value', 'key'
-@admin.register(ChoiceGroup)
-class ChoiceGroupAdmin(MyModelAdmin, ChoiceListView):
-    list_display = ChoiceListView.list_display
-    inlines = [ChoiceAdminInLine]
+#from ngw.core.views.choices import ChoiceListView
+#class ChoiceAdminInLine(admin.TabularInline):
+#    model = Choice
+#    fields = 'value', 'key'
+#@admin.register(ChoiceGroup)
+#class ChoiceGroupAdmin(MyModelAdmin, ChoiceListView):
+#    list_display = ChoiceListView.list_display
+#    inlines = [ChoiceAdminInLine]
 
 #######################################################################
 

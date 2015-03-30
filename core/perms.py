@@ -4,7 +4,7 @@ This is a simple proxy to the permission system implemented in SQL.
 See sql/functions.sql
 
 c_can_see_cg              C can view existence of CG
-c_can_change_cg           C can change/delete CG itself
+c_can_change_cg           C can change/delete CG itself, including add/edit/delete fields
 c_can_see_members_cg      C can view members of CG
 c_can_change_members_cg   C can change/delete membership in CG (+note)
 c_can_view_fields_cg      C can view C-fields of CG (existence, content for members it can see)

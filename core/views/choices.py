@@ -2,6 +2,7 @@
 ChoiceGroup & Choice managing views
 '''
 
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
@@ -11,40 +12,10 @@ from django import forms
 from django.views.generic import UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
 from django.contrib import messages
-from ngw.core.models import ChoiceGroup
+from ngw.core.models import ChoiceGroup, ContactField
 from ngw.core.nav import Navbar
-from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
-
-
-#######################################################################
-#
-# Choice groups list
-#
-#######################################################################
-
-
-class ChoiceListView(NgwAdminAcl, NgwListView):
-    list_display = 'name', 'html_choices'
-    list_display_links = 'name',
-
-    def get_root_queryset(self):
-        return ChoiceGroup.objects.all()
-
-    def html_choices(self, choice_group):
-        return mark_safe(', '.join([
-            html.escape(c[1])
-            for c in choice_group.ordered_choices]))
-    html_choices.short_description = ugettext_lazy('Choices')
-
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context['title'] = _('Select a choice group')
-        context['objtype'] = ChoiceGroup
-        context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
-
-        context.update(kwargs)
-        return super().get_context_data(**context)
+from ngw.core import perms
+from ngw.core.views.generic import InGroupAcl
 
 
 #######################################################################
@@ -193,10 +164,17 @@ class ChoiceGroupForm(forms.ModelForm):
 
 
 class ChoiceEditMixin(ModelFormMixin):
-    template_name = 'edit.html'
+    template_name = 'choice_edit.html'
     form_class = ChoiceGroupForm
     model = ChoiceGroup
-    pk_url_kwarg = 'id'
+    #pk_url_kwarg = 'id'
+
+    def get_object(self):
+        fid = self.kwargs.get('id')
+        field = ContactField.objects.get(pk=fid)
+        if field.contact_group_id != self.contactgroup.id:
+            raise PermissionDenied
+        return field.choice_group
 
     def form_valid(self, form):
         request = self.request
@@ -204,20 +182,11 @@ class ChoiceEditMixin(ModelFormMixin):
 
         messages.add_message(request, messages.SUCCESS, _('Choice %s has been saved successfully.') % choicegroup.name)
 
-        if self.pk_url_kwarg not in self.kwargs: # new added instance
-            base_url = '.'
-        else:
-            base_url = '..'
-        if request.POST.get('_continue', None):
-            return HttpResponseRedirect(
-                base_url + '/' + str(choicegroup.id) + '/edit')
-        elif request.POST.get('_addanother', None):
-            return HttpResponseRedirect(base_url + '/add')
-        else:
-            return HttpResponseRedirect(base_url)
+        return HttpResponseRedirect('..')
 
     def get_context_data(self, **kwargs):
         context = {}
+        cg = self.contactgroup
         if self.object:
             title = _('Editing %s') % self.object
             id = self.object.id
@@ -227,32 +196,28 @@ class ChoiceEditMixin(ModelFormMixin):
         context['title'] = title
         context['id'] = id
         context['objtype'] = ChoiceGroup
-        context['nav'] = Navbar(ChoiceGroup.get_class_navcomponent())
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('fields', _('contact fields')))
         if id:
             context['nav'].add_component(self.object.get_navcomponent()) \
-                          .add_component(('edit', _('edit')))
+                          .add_component(('choices', _('choices')))
         else:
-            context['nav'].add_component(('add', _('add')))
+            context['nav'].add_component(('add', _('add'))) # obsolete
+        context['active_submenu'] = 'fields'
 
         context.update(kwargs)
         return super().get_context_data(**context)
 
 
-class ChoiceEditView(NgwAdminAcl, ChoiceEditMixin, UpdateView):
-    pass
+class ChoiceEditView(InGroupAcl, ChoiceEditMixin, UpdateView):
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.CHANGE_CG:
+            raise PermissionDenied
 
-
-class ChoiceCreateView(NgwAdminAcl, ChoiceEditMixin, CreateView):
-    pass
-
-
-#######################################################################
-#
-# Choice groups delete
-#
-#######################################################################
-
-
-class ChoiceGroupDeleteView(NgwAdminAcl, NgwDeleteView):
-    model = ChoiceGroup
-    pk_url_kwarg = 'id'
+class Choice2EditView(ChoiceEditView):
+    def get_object(self):
+        fid = self.kwargs.get('id')
+        field = ContactField.objects.get(pk=fid)
+        if field.contact_group2_id != self.contactgroup.id:
+            raise PermissionDenied
+        return field.choice_group2

@@ -5,6 +5,7 @@ ContactField managing views
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
+from django.utils import html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
 from django.shortcuts import render_to_response, get_object_or_404
@@ -13,10 +14,12 @@ from django import forms
 from django.core.urlresolvers import reverse
 from django.views.generic import View, UpdateView, CreateView
 from django.views.generic.edit import ModelFormMixin
+from django.contrib.admin import filters
 from django.contrib import messages
 from ngw.core.models import ContactField, ContactGroup, ChoiceGroup
 from ngw.core.nav import Navbar
-from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
+from ngw.core import perms
+from ngw.core.views.generic import NgwAdminAcl, InGroupAcl, NgwListView, NgwDeleteView
 
 ###############################################################################
 #
@@ -25,15 +28,51 @@ from ngw.core.views.generic import NgwAdminAcl, NgwListView, NgwDeleteView
 ###############################################################################
 
 
-class FieldListView(NgwAdminAcl, NgwListView):
+class FieldGroupFilter(filters.SimpleListFilter):
+    title = ugettext_lazy('group')
+    parameter_name = 'group'
+    def lookups(self, request, view):
+        self.view = view
+        return (
+            ('parents', _('Include parent groups')),
+            ('all', _('All groups')),
+        )
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val == 'all':
+            return queryset
+        elif val == 'parents':
+            return queryset.extra(where=[
+                'contact_group_id in (SELECT self_and_supergroups(%s))' % self.view.contactgroup.id])
+        return queryset.filter(contact_group=self.view.contactgroup.id)
+
+    def choices(self, cl):
+        # This override the parent default "All"
+        for i, choice in enumerate(super().choices(cl)):
+            if i == 0:
+                choice['display'] = _('Current group')
+                yield choice
+            else:
+                yield choice
+
+
+class FieldListView(InGroupAcl, NgwListView):
+    template_name = 'group_fields.html'
     list_display = (
-        'name', 'type_as_html', 'contact_group', 'locked',
+        'name_with_link',
+        'clean_type_as_html',
+        'contact_group',
+        'locked',
         #'move_it', 'sort_weight',
         )
-    list_display_links = 'name',
+    list_display_links = None
     search_fields = 'name', 'hint'
     default_sort = 'sort_weight'
+    list_filter = FieldGroupFilter,
 
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.CHANGE_CG:
+            raise PermissionDenied
 
     def move_it(self, field):
         return '<a href='+str(field.id)+'/moveup>Up</a> <a href='+str(field.id)+'/movedown>Down</a>'
@@ -42,16 +81,40 @@ class FieldListView(NgwAdminAcl, NgwListView):
 
 
     def get_root_queryset(self):
-        return ContactField.objects.with_user_perms(self.request.user.id)
+        qs = ContactField.objects \
+            .with_user_perms(self.request.user.id)
+        return qs
 
 
     def get_context_data(self, **kwargs):
+        cg = self.contactgroup
         context = {}
-        context['title'] = _('Select an optionnal field')
+        context['title'] = _('Select a field')
         context['objtype'] = ContactField
-        context['nav'] = Navbar(ContactField.get_class_navcomponent())
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('fields', _('fields')))
+        context['active_submenu'] = 'fields'
         context.update(kwargs)
         return super().get_context_data(**context)
+
+    def name_with_link(self, field):
+        html_name = html.escape(field.name)
+        if field.perm & perms.CHANGE_CG:
+            return '<a href="../../%s/fields/%s/">%s</a>' % (field.contact_group.id, field.id, html_name)
+        else:
+            return html_name
+    name_with_link.short_description = ugettext_lazy('Name')
+    name_with_link.admin_order_field = 'name'
+    name_with_link.allow_tags = True
+
+    def clean_type_as_html(self, field):
+        html_type = field.type_as_html()
+        if not field.perm & perms.CHANGE_CG:
+            html_type = html.strip_tags(str(html_type)) # ugly hack to remove links
+        return html_type
+    clean_type_as_html.short_description = ugettext_lazy('Type')
+    clean_type_as_html.admin_order_field = 'type'
+    clean_type_as_html.allow_tags = True
 
     def locked(self, field):
         if field.system:
@@ -60,6 +123,7 @@ class FieldListView(NgwAdminAcl, NgwListView):
     locked.short_description = ugettext_lazy('Locked')
     locked.admin_order_field = 'system'
     locked.allow_tags = True
+
 
 ###############################################################################
 #
@@ -98,8 +162,9 @@ class FieldMoveDownView(NgwAdminAcl, View):
 class FieldEditForm(forms.ModelForm):
     class Meta:
         model = ContactField
-        fields = ['name', 'hint', 'contact_group', 'type', 'choice_group',
-            'choice_group2', 'default']
+        fields = ['name', 'hint', 'contact_group', 'type',
+            #'choice_group', 'choice_group2',
+            'default']
         widgets = {
             'type': forms.Select,
             'default': forms.widgets.Input,
@@ -115,6 +180,7 @@ class FieldEditForm(forms.ModelForm):
     def __init__(self, *args, **kargs):
         instance = kargs.get('instance', None)
         initial = kargs.get('initial', {})
+        userid = kargs.pop('userid')
         if instance:
             initial['move_after'] = instance.sort_weight-10
         kargs['initial'] = initial
@@ -122,41 +188,14 @@ class FieldEditForm(forms.ModelForm):
 
         self.delete_incompatible = bool(self.data.get('confirm', None))
 
-        contacttypes = ContactGroup.objects.filter(field_group=True)
-        self.fields['contact_group'].widget.choices = [(g.id, g.name) for g in contacttypes]
+        allowedgroups = ContactGroup.objects.filter(field_group=True) \
+            .with_user_perms(userid, perms.CHANGE_CG)
+        self.fields['contact_group'].widget.choices = [(g.id, g.name) for g in allowedgroups]
 
-        self.fields['type'].widget.choices = [(cls.db_type_id, cls.human_type_id)
-            for cls in ContactField.types_classes.values()] # TODO: Sort
-        js_test_type_has_choice = ' || '.join(["this.value=='" + cls.db_type_id + "'"
-            for cls in ContactField.types_classes.values()
-            if cls.has_choice > 0])
-        js_test_type_has_choice2 = ' || '.join(["this.value=='" + cls.db_type_id + "'"
-            for cls in ContactField.types_classes.values()
-            if cls.has_choice == 2])
-        self.fields['type'].widget.attrs = {'onchange':
-            mark_safe("if (0 || "+js_test_type_has_choice+") { document.forms['objchange']['choice_group'].disabled = 0; } else { document.forms['objchange']['choice_group'].value = ''; document.forms['objchange']['choice_group'].disabled = 1; } if (0 || "+js_test_type_has_choice2+") { document.forms['objchange']['choice_group2'].disabled = 0; } else { document.forms['objchange']['choice_group2'].value = ''; document.forms['objchange']['choice_group2'].disabled = 1; } ")}
-
-        #self.fields['choice_group'].widget.choices = [('', '---')] + [(c.id, c.name) for c in ChoiceGroup.objects.order_by('name')]
-
-        t = self.data.get('type', '') or self.initial.get('type', '')
-        if t:
-            cls_contact_field = ContactField.get_contact_field_type_by_dbid(t)
-        else:
-            cls_contact_field = ContactField.get_contact_field_type_by_dbid('TEXT')
-        if cls_contact_field.has_choice > 0:
-            if 'disabled' in self.fields['choice_group'].widget.attrs:
-                del self.fields['choice_group'].widget.attrs['disabled']
-            self.fields['choice_group'].required = True
-        else:
-            self.fields['choice_group'].widget.attrs['disabled'] = 1
-            self.fields['choice_group'].required = False
-        if cls_contact_field.has_choice == 2:
-            if 'disabled' in self.fields['choice_group2'].widget.attrs:
-                del self.fields['choice_group2'].widget.attrs['disabled']
-            self.fields['choice_group2'].required = True
-        else:
-            self.fields['choice_group2'].widget.attrs['disabled'] = 1
-            self.fields['choice_group2'].required = False
+        types = [(cls.db_type_id, str(cls.human_type_id))
+            for cls in  ContactField.types_classes.values()]
+        types.sort(key=lambda cls: cls[1])
+        self.fields['type'].widget.choices = types
 
         self.fields['default'].widget.attrs['disabled'] = 1
 
@@ -166,8 +205,6 @@ class FieldEditForm(forms.ModelForm):
             self.fields['contact_group'].widget.attrs['disabled'] = 1
             self.fields['type'].widget.attrs['disabled'] = 1
             self.fields['type'].required = False
-            self.fields['choice_group'].widget.attrs['disabled'] = 1
-            self.fields['choice_group2'].widget.attrs['disabled'] = 1
 
     def clean(self):
         if self.instance.system:
@@ -175,23 +212,22 @@ class FieldEditForm(forms.ModelForm):
             # changed:
             self.cleaned_data['contact_group'] = self.instance.contact_group
             self.cleaned_data['type'] = self.instance.type
-            self.cleaned_data['choice_group'] = self.instance.choice_group
-            self.cleaned_data['choice_group2'] = self.instance.choice_group2
 
         new_cls_id = self.cleaned_data['type']
-        choice_group_id = self.cleaned_data.get('choice_group', None)
-        choice_group2_id = self.cleaned_data.get('choice_group2', None)
         new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
 
-        if new_cls.has_choice and not choice_group_id:
-            raise forms.ValidationError(_('You must select a choice group for that type.'))
-        if new_cls.has_choice == 2 and not choice_group2_id:
-            raise forms.ValidationError(_('You must select both choice groups for that type.'))
+        if self.instance:
+            choice_group_id = self.instance.choice_group_id
+            choice_group2_id = self.instance.choice_group2_id
+        else:
+            choice_group_id = None
+            choice_group2_id = None
 
         if not self.delete_incompatible:
             deletion_details = []
             for cfv in self.instance.values.all():
-                if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id):
+                if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id) \
+                   or self.instance.has_choice != new_cls.has_choice:
                     deletion_details.append((cfv.contact, str(cfv)))
             if deletion_details:
                 raise FieldEditForm.IncompatibleData(deletion_details)
@@ -199,37 +235,86 @@ class FieldEditForm(forms.ModelForm):
         return self.cleaned_data
 
     def save(self):
+        new_cls_id = self.cleaned_data['type']
+
+        if self.instance:
+            choice_group_id = self.instance.choice_group_id
+            choice_group2_id = self.instance.choice_group2_id
+        else:
+            choice_group_id = None
+            choice_group2_id = None
+
         if self.instance.pk:
             # we are changing an existing field
             deletion_details = []
-            new_cls_id = self.cleaned_data['type']
-            choice_group_id = self.cleaned_data.get('choice_group', None)
-            choice_group2_id = self.cleaned_data.get('choice_group2', None)
 
             if self.delete_incompatible:
                 new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
                 for cfv in self.instance.values.all():
-                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id):
+                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id) \
+                        or self.instance.has_choice != new_cls.has_choice:
                         cfv.delete()
             else:  # delete_incompatible==False
                 new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
                 for cfv in self.instance.values.all():
-                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id):
+                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id) \
+                        or self.instance.has_choice != new_cls.has_choice:
                         deletion_details.append((cfv.contact, cfv))
                 if deletion_details:
                     raise FieldEditForm.IncompatibleData(deletion_details)
 
-        result = super().save(commit=False)
-        self.instance.sort_weight = self.cleaned_data['move_after'] + 5
-        self.instance.save()
-        return result
+
+        cf = super().save(commit=False)
+
+        # Hack to set up cf.__class__ without saving it
+        cf.polymorphic_upgrade()
+
+        # Create choicegroups when missing, delete it when no longer needed
+        if type(cf).has_choice == 1:
+            if not cf.choice_group:
+                choice_group = ChoiceGroup(name=_('Choices for %s') % cf.name)
+                choice_group.save()
+                cf.choice_group = choice_group
+        else:
+            if cf.choice_group:
+                cf.choice_group.delete()
+                cf.choice_group_id = None
+
+        if type(cf).has_choice == 2:
+            if not cf.choice_group2:
+                choice_group2 = ChoiceGroup(name=_('Second choices for %s') % cf.name)
+                choice_group2.save()
+                cf.choice_group2 = choice_group2
+        else:
+            if cf.choice_group2:
+                cf.choice_group2.delete()
+                cf.choice_group2_id = None
+
+        cf.sort_weight = self.cleaned_data['move_after'] + 5
+        cf.save()
+
+        return cf
 
 
 class FieldEditMixin(ModelFormMixin):
-    template_name = 'edit.html'
+    template_name = 'field_edit.html'
     form_class = FieldEditForm
     model = ContactField
     pk_url_kwarg = 'id'
+
+    def get_object(self, queryset=None):
+        cf = super().get_object(queryset)
+        if cf.contact_group_id != self.contactgroup.id:
+            raise PermissionDenied
+        return cf
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if 'initial' not in kwargs:
+            kwargs['initial'] = {}
+        kwargs['initial']['contact_group'] = self.contactgroup
+        kwargs['userid'] = self.request.user.id
+        return kwargs
 
     def form_valid(self, form):
         request = self.request
@@ -251,6 +336,7 @@ class FieldEditMixin(ModelFormMixin):
 
     def get_context_data(self, **kwargs):
         context = {}
+        cg = self.contactgroup
         if self.object:
             title = _('Editing %s') % self.object
             id = self.object.id
@@ -259,19 +345,25 @@ class FieldEditMixin(ModelFormMixin):
             id = None
         context['title'] = title
         context['id'] = id
-        context['objtype'] = ChoiceGroup
-        context['nav'] = Navbar(ContactField.get_class_navcomponent())
+        context['objtype'] = ContactField
+        context['nav'] = cg.get_smart_navbar() \
+                         .add_component(('fields', _('contact fields')))
         if id:
             context['nav'].add_component(self.object.get_navcomponent()) \
                           .add_component(('edit', _('edit')))
         else:
             context['nav'].add_component(('add', _('add')))
+        context['active_submenu'] = 'fields'
 
         context.update(kwargs)
         return super().get_context_data(**context)
 
 
-class FieldEditView(NgwAdminAcl, FieldEditMixin, UpdateView):
+class FieldEditView(InGroupAcl, FieldEditMixin, UpdateView):
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.CHANGE_CG:
+            raise PermissionDenied
+
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         form_class = self.get_form_class()
@@ -282,6 +374,7 @@ class FieldEditView(NgwAdminAcl, FieldEditMixin, UpdateView):
             else:
                 return self.form_invalid(form)
         except FieldEditForm.IncompatibleData as err:
+            cg = self.contactgroup
             cf = form.instance
             context = {}
             context['title'] = _('Type incompatible with existing data')
@@ -291,14 +384,17 @@ class FieldEditView(NgwAdminAcl, FieldEditMixin, UpdateView):
             for k in ('name', 'hint', 'contact_group', 'type', 'move_after'):
                 context[k] = form.cleaned_data[k]
             context['contact_group'] = form.cleaned_data['contact_group'].id
-            if form.cleaned_data['choice_group']:
-                context['choice_group'] = form.cleaned_data['choice_group'].id
-            context['nav'] = Navbar(cf.get_class_navcomponent(), cf.get_navcomponent(), ('edit', _('delete incompatible data')))
+            context['nav'] = cg.get_smart_navbar()
+            context['nav'].add_component(('fields', _('contact fields')))
+            context['nav'].add_component(cf.get_navcomponent())
+            context['nav'].add_component(('edit', _('delete incompatible data')))
             return render_to_response('type_change.html', context, RequestContext(request))
 
 
-class FieldCreateView(NgwAdminAcl, FieldEditMixin, CreateView):
-    pass
+class FieldCreateView(InGroupAcl, FieldEditMixin, CreateView):
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.CHANGE_CG:
+            raise PermissionDenied
 
 
 ###############################################################################
@@ -308,12 +404,18 @@ class FieldCreateView(NgwAdminAcl, FieldEditMixin, CreateView):
 ###############################################################################
 
 
-class FieldDeleteView(NgwAdminAcl, NgwDeleteView):
+class FieldDeleteView(InGroupAcl, NgwDeleteView):
     model = ContactField
     pk_url_kwarg = 'id'
 
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.CHANGE_CG:
+            raise PermissionDenied
+
     def get_object(self, *args, **kwargs):
         field = super().get_object(*args, **kwargs)
+        if field.contact_group_id != self.contactgroup.id:
+            raise PermissionDenied
         if field.system:
             messages.add_message(
                 self.request, messages.ERROR,

@@ -17,7 +17,7 @@ from ngw.core.views.files import FileListView, GroupMediaFileView
 from ngw.core.views.mailman import MailmanSyncView
 from ngw.core.views.messages import MessageListView, SendMessageView, MessageDetailView
 from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView, FieldEditView, FieldCreateView, FieldDeleteView
-from ngw.core.views.choices import ChoiceListView, ChoiceEditView, ChoiceCreateView, ChoiceGroupDeleteView
+from ngw.core.views.choices import ChoiceEditView, Choice2EditView
 from ngw.core.views.logs import LogListView
 from ngw.core.views.contactsearch import ContactSearchAutocompleteView, ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
 from ngw.core.gpg import GpgLookupView
@@ -49,6 +49,17 @@ groups_urlpatterns = patterns('',
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/edit$', NewsEditView.as_view()),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', NewsDeleteView.as_view()),
     url(r'^(?P<gid>\d+)/mailman$', MailmanSyncView.as_view()),
+
+    url(r'^(?P<gid>\d+)/fields/$', FieldListView.as_view()),
+    url(r'^(?P<gid>\d+)/fields/add$', FieldCreateView.as_view()),
+    url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/$', RedirectView.as_view(url='edit')),
+    url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/edit$', FieldEditView.as_view()),
+    url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/moveup$', FieldMoveUpView.as_view()),
+    url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/movedown$', FieldMoveDownView.as_view()),
+    url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/delete$', FieldDeleteView.as_view()),
+
+    url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/choices$', ChoiceEditView.as_view()),
+    url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/choices2$', Choice2EditView.as_view()),
 )
 
 
@@ -102,24 +113,6 @@ urlpatterns = patterns('',
     url(r'^events/calendar/$', CalendarView.as_view()),
     url(r'^events/calendar/query$', CalendarQueryView.as_view()),
     url(r'^events/', include(groups_urlpatterns)),
-
-    url(r'^contactfields/$', FieldListView.as_view(), name='field_list'),
-    url(r'^contactfields/add$', FieldCreateView.as_view()),
-    url(r'^contactfields/(?P<id>\d+)/$', RedirectView.as_view(url='edit')),
-    url(r'^contactfields/(?P<id>\d+)/edit$', FieldEditView.as_view()),
-    url(r'^contactfields/(?P<id>\d+)/moveup$', FieldMoveUpView.as_view()),
-    url(r'^contactfields/(?P<id>\d+)/movedown$', FieldMoveDownView.as_view()),
-    url(r'^contactfields/(?P<id>\d+)/delete$', FieldDeleteView.as_view()),
-
-    #url(r'^contactfields2/$', admin.site.admin_view(admin.site._registry[ContactField].changelist_view)),
-    #url(r'^contactfields2/(\d+)/$', RedirectView.as_view(url='edit')),
-    #url(r'^contactfields2/(?P<object_id>\d+)/edit$', admin.site.admin_view(admin.site._registry[ContactField].change_view)),
-
-    url(r'^choicegroups/$', ChoiceListView.as_view(), name='choice_list'),
-    url(r'^choicegroups/add$', ChoiceCreateView.as_view(), name='choice_add'),
-    url(r'^choicegroups/(?P<id>\d+)/$', RedirectView.as_view(url='edit'), ),
-    url(r'^choicegroups/(?P<id>\d+)/edit$', ChoiceEditView.as_view(), name='choice_edit'),
-    url(r'^choicegroups/(?P<id>\d+)/delete$', ChoiceGroupDeleteView.as_view(), name='choice_delete'),
 
     url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$', GroupMediaFileView.as_view()),
 

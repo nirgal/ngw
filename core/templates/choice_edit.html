@@ -1,0 +1,13 @@
+{% extends "edit.html" %}
+{% load i18n %}
+
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
+{% block submitbar %}
+<div class="submit-row">
+    <input type=submit value="{% trans "Save" %}" class="default" name="_save">
+</div>
+{% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}

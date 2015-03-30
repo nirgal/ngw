@@ -33,6 +33,22 @@
 {% endspaceless %}
 
 {% spaceless %}
+{% if 'e' in cg_perms %}
+    <a href="{{cg.get_absolute_url}}fields/">
+{% endif %}
+    <div class="submenuitem {% if active_submenu == "fields" %}activesubmenuitem{% endif %}"{% if not 'e' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+    {% if 'e' in cg_perms %}
+      {% blocktrans count counter=cg.fields_count %}{{counter}} field{% plural %}{{counter}} fields{% endblocktrans %}
+    {% else %}
+        {% trans "Fields" %}
+    {% endif %}
+    </div>
+{% if 'e' in cg_perms %}
+    </a>
+{% endif %}
+{% endspaceless %}
+
+{% spaceless %}
 {% if 'u' in cg_perms %}
     <a href="{{cg.get_absolute_url}}files/">
 {% endif %}

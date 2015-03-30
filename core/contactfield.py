@@ -196,10 +196,7 @@ class ChoiceContactField(ContactField):
     class Meta:
         proxy = True
     def type_as_html(self):
-        return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
-    type_as_html.short_description = ugettext_lazy('Type')
-    type_as_html.admin_order_field = 'type'
-    type_as_html.allow_tags = True
+        return self.str_type_base() + " (<a href='" + self.get_absolute_url() + "choices'>" + html.escape(self.choice_group.name) + "</a>)"
     def format_value_text(self, value):
         choices = self.cached_choices()
         try:
@@ -220,10 +217,7 @@ class MultipleChoiceContactField(ContactField):
     class Meta:
         proxy = True
     def type_as_html(self):
-        return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>)"
-    type_as_html.short_description = ugettext_lazy('Type')
-    type_as_html.admin_order_field = 'type'
-    type_as_html.allow_tags = True
+        return self.str_type_base() + " (<a href='" + self.get_absolute_url() + "choices'>" + html.escape(self.choice_group.name) + "</a>)"
     def format_value_text(self, value):
         choices = self.cached_choices()
         txt_choice_list = []
@@ -258,10 +252,7 @@ class MultipleDoubleChoiceContactField(ContactField):
     class Meta:
         proxy = True
     def type_as_html(self):
-        return self.str_type_base() + " (<a href='" + self.choice_group.get_absolute_url() + "'>" + html.escape(self.choice_group.name) + "</a>, <a href='" + self.choice_group2.get_absolute_url() + "'>" + html.escape(self.choice_group2.name) + "</a>)"
-    type_as_html.short_description = ugettext_lazy('Type')
-    type_as_html.admin_order_field = 'type'
-    type_as_html.allow_tags = True
+        return self.str_type_base() + " (<a href='" + self.get_absolute_url() + "choices'>" + html.escape(self.choice_group.name) + "</a>, <a href='" + self.get_absolute_url() + "choices2'>" + html.escape(self.choice_group2.name) + "</a>)"
     def format_value_text(self, value):
         choices = self.cached_choices()
         choices2 = self.cached_choices2()
