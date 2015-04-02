@@ -174,6 +174,7 @@ class ChoiceEditMixin(ModelFormMixin):
         field = ContactField.objects.get(pk=fid)
         if field.contact_group_id != self.contactgroup.id:
             raise PermissionDenied
+        self.field = field
         return field.choice_group
 
     def form_valid(self, form):
@@ -189,7 +190,7 @@ class ChoiceEditMixin(ModelFormMixin):
         context = {}
         cg = self.contactgroup
         if self.object:
-            title = _('Editing %s') % self.object
+            title = _('Editing choices for %s') % self.field
             id = self.object.id
         else:
             title = _('Adding a new %s') % ChoiceGroup.get_class_verbose_name()

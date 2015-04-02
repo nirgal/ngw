@@ -8,7 +8,6 @@ Calendar: Data is lost when user clic too quickly on prev/next. (Forwarded to ht
 
 List of fields crashs when a choice fields has no choicegroup. It should not happen, but the list should be resistant anyway.
 
-Bug in add_to_group when user isn't admin.
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS
@@ -52,6 +51,9 @@ https://httpd.apache.org/docs/2.4/mod/mod_auth_form.html
 https://github.com/GrahamDumpleton/mod_wsgi/pull/41
 
 Global or Group filters
+
+add_to_group: You need to be able to add contacts in all super groups, including hidden ones.
+
 
 ====================================================================================================
 UNSORTED
