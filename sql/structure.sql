@@ -196,7 +196,7 @@ CREATE TABLE contact_message (
 -- TODO: postgresql 9.2 supports json type for syncinfo
 
 ALTER TABLE contact_field ADD CONSTRAINT contact_field_has_choice1 CHECK (
-        (type<>'choice' AND type<>'MULTIPLECHOICE' AND type<>'DOUBLECHOICE')
+        (type<>'CHOICE' AND type<>'MULTIPLECHOICE' AND type<>'DOUBLECHOICE')
         OR choice_group_id IS NOT NULL
 );
 ALTER TABLE contact_field ADD CONSTRAINT contact_field_has_choice2 CHECK (
