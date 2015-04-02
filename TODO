@@ -6,8 +6,6 @@ Calendar: Data is lost when user clic too quickly on prev/next. (Forwarded to ht
 
 @never_cache in views doesn't seem to work properly
 
-List of fields crashs when a choice fields has no choicegroup. It should not happen, but the list should be resistant anyway.
-
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS
@@ -18,6 +16,10 @@ Modify inline editing for membership so that the Note can be edited too. This ma
 Show messages counts on the member list.
 
 On event creation, when start date is defined, set up the end date for a one day event.
+
+add_to_group: You need to be able to add contacts in all super groups, including hidden ones.
+
+Group list is too slow. Period.
 
 
 ====================================================================================================
@@ -52,16 +54,12 @@ https://github.com/GrahamDumpleton/mod_wsgi/pull/41
 
 Global or Group filters
 
-add_to_group: You need to be able to add contacts in all super groups, including hidden ones.
-
 
 ====================================================================================================
 UNSORTED
 ====================================================================================================
 
 See https://docs.djangoproject.com/en/1.7/releases/1.7/#custom-lookups
-
-Make sure all form.save() support the commit parameter
 
 Default supergroup(s).
 Change "default group" into "default permissions"

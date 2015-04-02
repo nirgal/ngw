@@ -270,11 +270,11 @@ class FieldEditForm(forms.ModelForm):
         cf.polymorphic_upgrade()
 
         # Create choicegroups when missing, delete it when no longer needed
-        if type(cf).has_choice == 1:
+        if type(cf).has_choice >= 1:
             if not cf.choice_group:
-                choice_group = ChoiceGroup(name=_('Choices for %s') % cf.name)
+                choice_group = ChoiceGroup()
                 choice_group.save()
-                cf.choice_group = choice_group
+                cf.choice_group_id = choice_group.id
         else:
             if cf.choice_group:
                 cf.choice_group.delete()
@@ -282,9 +282,9 @@ class FieldEditForm(forms.ModelForm):
 
         if type(cf).has_choice == 2:
             if not cf.choice_group2:
-                choice_group2 = ChoiceGroup(name=_('Second choices for %s') % cf.name)
+                choice_group2 = ChoiceGroup()
                 choice_group2.save()
-                cf.choice_group2 = choice_group2
+                cf.choice_group2_id = choice_group2.id
         else:
             if cf.choice_group2:
                 cf.choice_group2.delete()

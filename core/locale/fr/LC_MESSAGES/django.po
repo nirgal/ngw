@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-03-30 16:38+0000\n"
+"POT-Creation-Date: 2015-04-02 15:56+0000\n"
 "PO-Revision-Date: 2014-09-29 16:47+0200\n"
 "Last-Translator: \n"
 "Language-Team: French <>\n"
@@ -144,7 +144,7 @@ msgstr "Valeur"
 msgid "choice"
 msgstr "choix"
 
-#: models.py:171 views/choices.py:204
+#: models.py:171 views/choices.py:205
 msgid "choices"
 msgstr "choix"
 
@@ -312,7 +312,7 @@ msgstr "Valeur par défaut"
 msgid "contact field"
 msgstr "champ des contacts"
 
-#: models.py:1103 views/choices.py:201 views/fields.py:350 views/fields.py:388
+#: models.py:1103 views/choices.py:202 views/fields.py:350 views/fields.py:388
 msgid "contact fields"
 msgstr "champs des contacts"
 
@@ -1313,23 +1313,22 @@ msgstr ""
 msgid "Possible values"
 msgstr "Valeurs possibles"
 
-#: views/choices.py:184
+#: views/choices.py:185
 msgid "Choices have been saved successfully."
 msgstr "Les choix ont été enregistrés avec succès."
 
-#: views/choices.py:192 views/contacts.py:958 views/fields.py:341
-#: views/groups.py:675 views/news.py:86
+#: views/choices.py:193
 #, python-format
-msgid "Editing %s"
-msgstr "Modification de %s"
+msgid "Editing choices for %s"
+msgstr "Modification des choix pour %s"
 
-#: views/choices.py:195 views/contacts.py:961 views/fields.py:344
+#: views/choices.py:196 views/contacts.py:961 views/fields.py:344
 #: views/groups.py:678 views/news.py:89
 #, python-format
 msgid "Adding a new %s"
 msgstr "Ajout d'un(e) nouvel(le) %s"
 
-#: views/choices.py:206 views/contacts.py:976 views/fields.py:355
+#: views/choices.py:207 views/contacts.py:976 views/fields.py:355
 #: views/groups.py:690 views/news.py:101
 msgid "add"
 msgstr "ajouter"
@@ -1426,6 +1425,12 @@ msgstr "membres"
 #, python-format
 msgid "Contact %s has been saved."
 msgstr "Le contact %s a été enregistré."
+
+#: views/contacts.py:958 views/fields.py:341 views/groups.py:675
+#: views/news.py:86
+#, python-format
+msgid "Editing %s"
+msgstr "Modification de %s"
 
 #: views/contacts.py:974 views/fields.py:353 views/groups.py:687
 #: views/news.py:99

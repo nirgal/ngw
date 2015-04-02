@@ -220,6 +220,7 @@ class Choice2EditView(ChoiceEditView):
     def get_object(self):
         fid = self.kwargs.get('id')
         field = ContactField.objects.get(pk=fid)
-        if field.contact_group2_id != self.contactgroup.id:
+        if field.contact_group_id != self.contactgroup.id:
             raise PermissionDenied
+        self.field = field
         return field.choice_group2
