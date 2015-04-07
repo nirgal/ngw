@@ -1,10 +1,12 @@
 #!/usr/bin/env python
-import os
 import logging
+import os
+
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import NoArgsCommand
-from django.conf import settings
 from django.db import connection
+
 from ngw.core.models import Config
 
 

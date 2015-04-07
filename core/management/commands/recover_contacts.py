@@ -1,7 +1,10 @@
 import logging
+
 from django.core.management.base import NoArgsCommand
-from ngw.core.models import Contact, GROUP_EVERYBODY
+
 from ngw.core import perms
+from ngw.core.models import GROUP_EVERYBODY, Contact
+
 
 class Command(NoArgsCommand):
     help = 'Recover lost contacts'

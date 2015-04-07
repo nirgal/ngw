@@ -1,5 +1,6 @@
 from ngw.core.models import Config, Contact
 
+
 def banner(request):
     """
     This context processor just add a "banner" key that's allways available

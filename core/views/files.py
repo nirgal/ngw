@@ -4,17 +4,21 @@ files managing views
 
 import os
 import sys
+
+from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
-from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.encoding import force_str
-from django.views.generic import View, FormView
-from django import forms
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
 from django.views import static
-from django.contrib import messages
+from django.views.generic import FormView, View
+
 from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl
+
 
 ###############################################################################
 #

@@ -2,8 +2,10 @@
 Log managing views
 '''
 
-from django.utils.translation import ugettext as _, ugettext_lazy, pgettext_lazy
 from django.utils import formats
+from django.utils.translation import ugettext as _
+from django.utils.translation import pgettext_lazy, ugettext_lazy
+
 from ngw.core.models import Log
 from ngw.core.nav import Navbar
 from ngw.core.views.generic import NgwAdminAcl, NgwListView

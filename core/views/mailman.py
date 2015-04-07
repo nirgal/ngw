@@ -2,13 +2,15 @@
 External mailman managing views
 '''
 
+from django import forms
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext as _
 from django.views.generic import FormView
-from django import forms
+
 from ngw.core import perms
 from ngw.core.mailman import synchronise_group
 from ngw.core.views.generic import InGroupAcl
+
 
 #######################################################################
 #

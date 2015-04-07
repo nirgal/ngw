@@ -1,8 +1,11 @@
-import logging
 import json
+import logging
+
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import NoArgsCommand
+
 from ngw.core.gpg import loadkeyring
+
 
 class Command(NoArgsCommand):
     help = 'Gpg dump'

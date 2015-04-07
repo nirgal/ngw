@@ -3,28 +3,37 @@ Base view class; View helpers
 '''
 
 import inspect
+import operator
 from collections import OrderedDict
 from functools import reduce
-import operator
-from django.http import HttpResponseRedirect, Http404
-from django.core.exceptions import PermissionDenied
-from django.db import models
-from django.utils.translation import ugettext as _
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import never_cache
-from django.utils.text import capfirst
-from django.utils.http import urlencode
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
-from django.shortcuts import get_object_or_404
-from django.views.generic.base import ContextMixin
-from django.views.generic import ListView, DeleteView
+
+from django import forms
+from django.conf import settings
 from django.contrib import messages
-from ngw.core.models import (
-    GROUP_ADMIN, GROUP_USER_NGW,
-    ContactGroup, Config, Log,
-    LOG_ACTION_DEL)
+from django.contrib.admin import helpers
+from django.contrib.admin.templatetags.admin_static import static
+from django.contrib.admin.utils import lookup_needs_distinct
+from django.contrib.admin.views.main import ChangeList
+from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
+from django.db import models
+from django.db.models.fields import BLANK_CHOICE_DASH
+from django.http import Http404, HttpResponseRedirect
+from django.http.response import HttpResponseBase
+from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.utils.html import format_html
+from django.utils.http import urlencode
+from django.utils.safestring import mark_safe
+from django.utils.text import capfirst
+from django.utils.translation import ugettext as _
+from django.views.decorators.cache import never_cache
+from django.views.generic import DeleteView, ListView, TemplateView
+from django.views.generic.base import ContextMixin
+
 from ngw.core import perms
+from ngw.core.models import (GROUP_ADMIN, GROUP_USER_NGW, LOG_ACTION_DEL,
+                             Config, ContactGroup, Log)
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 
@@ -124,16 +133,6 @@ class InGroupAcl(ContextMixin):
 # model_admin.get_preserved_filters
 # model_admin.to_field_allowed
 
-from django.conf import settings
-from django import forms
-from django.core.paginator import Paginator
-from django.db.models.fields import BLANK_CHOICE_DASH
-from django.views.generic import TemplateView
-from django.http.response import HttpResponseBase
-from django.contrib.admin.views.main import ChangeList
-from django.contrib.admin import helpers
-from django.contrib.admin.templatetags.admin_static import static
-from django.contrib.admin.utils import lookup_needs_distinct
 
 class MyChangeList(ChangeList):
     '''

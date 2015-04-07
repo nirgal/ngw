@@ -2,24 +2,28 @@
 ContactField managing views
 '''
 
+from django import forms
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.admin import filters
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render_to_response
+from django.template import RequestContext
 from django.utils import html
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext as _, ugettext_lazy
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
-from django import forms
-from django.core.urlresolvers import reverse
-from django.views.generic import View, UpdateView, CreateView
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
+from django.views.generic import CreateView, UpdateView, View
 from django.views.generic.edit import ModelFormMixin
-from django.contrib.admin import filters
-from django.contrib import messages
-from ngw.core.models import ContactField, ContactGroup, ChoiceGroup
-from ngw.core.nav import Navbar
+
 from ngw.core import perms
-from ngw.core.views.generic import NgwAdminAcl, InGroupAcl, NgwListView, NgwDeleteView
+from ngw.core.models import ChoiceGroup, ContactField, ContactGroup
+from ngw.core.nav import Navbar
+from ngw.core.views.generic import (InGroupAcl, NgwAdminAcl, NgwDeleteView,
+                                    NgwListView)
+
 
 ###############################################################################
 #

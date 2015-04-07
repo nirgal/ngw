@@ -2,40 +2,41 @@
 ContactGroup managing views
 '''
 
-from datetime import date, datetime, timedelta
-import time
+import calendar
 import decimal
 import json
 import re
-import calendar
+import time
+from datetime import date, datetime, timedelta
+
+from django import forms
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.admin import filters
+from django.contrib.admin.widgets import (AdminDateWidget,
+                                          FilteredSelectMultiple)
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.utils.safestring import mark_safe
-from django.utils import html
-from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils import formats
 from django.shortcuts import get_object_or_404
-from django import forms
-from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView
-from django.views.generic.edit import ModelFormMixin
+from django.utils import formats, html
+from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.admin import filters
-from django.contrib.admin.widgets import FilteredSelectMultiple, AdminDateWidget
-from django.contrib import messages
-from ngw.core.models import (
-    GROUP_EVERYBODY,
-    FIELD_DEFAULT_GROUP,
-    Contact, ContactGroup, ContactInGroup, GroupInGroup,
-    GroupManageGroup,
-    hooks)
-from ngw.core.nav import Navbar
-from ngw.core import perms
-from ngw.core.views.contacts import BaseContactListView
-from ngw.core.views.generic import method_decorator, NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
-from ngw.core.widgets import OnelineCheckboxSelectMultiple, FlagsField
+from django.views.generic import (CreateView, FormView, TemplateView,
+                                  UpdateView, View)
+from django.views.generic.edit import ModelFormMixin
 
+from ngw.core import perms
+from ngw.core.models import (FIELD_DEFAULT_GROUP, GROUP_EVERYBODY, Contact,
+                             ContactGroup, ContactInGroup, GroupInGroup,
+                             GroupManageGroup, hooks)
+from ngw.core.nav import Navbar
+from ngw.core.views.contacts import BaseContactListView
+from ngw.core.views.generic import (InGroupAcl, NgwDeleteView, NgwListView,
+                                    NgwUserAcl, method_decorator)
+from ngw.core.widgets import FlagsField, OnelineCheckboxSelectMultiple
 
 #######################################################################
 #

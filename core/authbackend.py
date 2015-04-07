@@ -1,5 +1,6 @@
-from django.contrib.auth.signals import user_logged_in
 from django.contrib.auth.models import update_last_login
+from django.contrib.auth.signals import user_logged_in
+
 from ngw.core.models import Contact
 
 # Ugly work around for NOT using update_last_login that is hardcoded in
@@ -33,5 +34,3 @@ class NgwAuthBackend(object):
             return Contact.objects.get(pk=user_id)
         except Contact.DoesNotExist:
             return None
-
-

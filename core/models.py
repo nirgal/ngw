@@ -1,28 +1,31 @@
 # Note: You'll have to insert the output of 'manage.py sqlall core'
 # into your database.
 
-import os
-from datetime import datetime, timedelta
-import logging
-from collections import OrderedDict
 import json
+import logging
+import os
+from collections import OrderedDict
+from datetime import datetime, timedelta
 from importlib import import_module
+
+import decoratedstr  # Nirgal external package
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
-from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext as _, ugettext_lazy, pgettext_lazy
-from django.db import models, connection
-from django.http import Http404
-from django.utils import html
-from django.utils import formats
-from django.contrib.auth.models import BaseUserManager
-from django.contrib.auth.hashers import check_password, make_password
 from django.contrib import messages
-import decoratedstr # Nirgal external package
-from ngw.core.nav import Navbar
+from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.models import BaseUserManager
+from django.core.exceptions import PermissionDenied
+from django.db import connection, models
+from django.http import Http404
+from django.utils import formats, html
+from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext as _
+from django.utils.translation import pgettext_lazy, ugettext_lazy
+
 from ngw.core import perms
-#from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
+from ngw.core.nav import Navbar
 from ngw.extensions import hooks
+
+#from ngw.core.filters import (NameFilterStartsWith, FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE, FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull, FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT, FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ, FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation, AllEventsNotReactedSince, AllEventsReactionYearRatioLess, AllEventsReactionYearRatioMore)
 
 GROUP_EVERYBODY = 1 # Group "Contact"
 GROUP_USER = 2      # With login & password (does NOT mean it can access NGW, see bellow)

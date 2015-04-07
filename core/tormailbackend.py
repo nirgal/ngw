@@ -3,15 +3,17 @@ This module provides TorEmailBackend, a backend to send mail through a SMTPS
 server available through TOR.
 '''
 import os
-import time
 import random
-import socket
 import smtplib
+import socket
 import ssl
-import socks # You need package python-socksipy
+import time
+
+import socks  # You need package python-socksipy
 from django.conf import settings
-from django.core.mail.backends.smtp import EmailBackend
 from django.core.mail import make_msgid
+from django.core.mail.backends.smtp import EmailBackend
+
 
 def _validate_wildcard_name(valid_for, expected):
     '''

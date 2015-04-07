@@ -5,20 +5,23 @@ Messages managing views
 import json
 from datetime import date, timedelta
 from importlib import import_module
-from django.conf import settings
-from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseRedirect, Http404
-from django.utils import translation
-from django.utils.translation import ugettext as _, ugettext_lazy
-from django.utils.timezone import now
-from django.shortcuts import get_object_or_404
-from django.views.generic import DetailView, FormView
+
 from django import forms
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.widgets import AdminDateWidget
 from django.contrib.admin import filters
-from ngw.core.models import Contact, ContactMsg
+from django.contrib.admin.widgets import AdminDateWidget
+from django.core.exceptions import PermissionDenied
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.utils import translation
+from django.utils.timezone import now
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
+from django.views.generic import DetailView, FormView
+
 from ngw.core import perms
+from ngw.core.models import Contact, ContactMsg
 from ngw.core.views.generic import InGroupAcl, NgwListView
 
 

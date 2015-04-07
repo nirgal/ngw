@@ -1,6 +1,7 @@
 from django import template
 from django.utils import html
 from django.utils.safestring import mark_safe
+
 from ngw.core import perms
 
 register = template.Library()

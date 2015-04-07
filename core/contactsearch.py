@@ -1,9 +1,9 @@
 from django.core.exceptions import PermissionDenied
-from ngw.core.models import (
-    ContactField, ContactGroup,
-    EmptyBoundFilter, AndBoundFilter, OrBoundFilter)
-from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
+
 from ngw.core import perms
+from ngw.core.contactfield import AllEventsMetaField, ContactNameMetaField
+from ngw.core.models import (AndBoundFilter, ContactField, ContactGroup,
+                             EmptyBoundFilter, OrBoundFilter)
 
 
 class LexicalError(Exception):

@@ -1,13 +1,12 @@
-#!/usr/bin/env python3
-
-import sys
 import logging
 import struct
-from django.core.management.base import NoArgsCommand
+import sys
+
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
-from ngw.core.models import (ContactFieldValue,
-    FIELD_LOGIN, FIELD_PASSWORD)
+from django.core.management.base import NoArgsCommand
+
+from ngw.core.models import FIELD_LOGIN, FIELD_PASSWORD, ContactFieldValue
 
 print('In ejabberd auth', file=sys.stderr)
 

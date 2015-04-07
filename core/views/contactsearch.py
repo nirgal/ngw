@@ -2,15 +2,16 @@
 ajax views for building contact filter
 '''
 
-from django.utils.translation import ugettext as _
-from django.http import Http404, JsonResponse
-from django.views.generic import View
-from ngw.core.models import (
-    Contact, ContactField, ContactGroup, ChoiceGroup)
-from ngw.core import perms
-from ngw.core.contactfield import ContactNameMetaField, AllEventsMetaField
-from ngw.core.views.generic import NgwUserAcl
 import decoratedstr
+from django.http import Http404, JsonResponse
+from django.utils.translation import ugettext as _
+from django.views.generic import View
+
+from ngw.core import perms
+from ngw.core.contactfield import AllEventsMetaField, ContactNameMetaField
+from ngw.core.models import ChoiceGroup, Contact, ContactField, ContactGroup
+from ngw.core.views.generic import NgwUserAcl
+
 
 class ContactSearchAutocompleteView(NgwUserAcl, View):
 	def get(self, request, *args, **kwargs):

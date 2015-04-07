@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import subprocess
-from gnupg import GPG
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.generic import View
+from gnupg import GPG
 
 GPG_HOME = getattr(settings, 'GPG_HOME', None)
 

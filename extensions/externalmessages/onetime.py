@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 
 import datetime
+import http
 import json
 import logging
 import smtplib
 import traceback
 import urllib
-import http
+
 from django.conf import settings
+from django.core import mail
 from django.forms import ValidationError
-from django.utils.translation import ugettext as _, activate as language_activate
 from django.utils import timezone
 from django.utils.encoding import force_str
-from django.core import mail
-from ngw.core.models import ContactMsg
+from django.utils.translation import activate as language_activate
+from django.utils.translation import ugettext as _
+
 import ngw.core.contactfield
+from ngw.core.models import ContactMsg
 
 SUPPORTS_EXPIRATION = True
 

@@ -1,12 +1,15 @@
-import sys
-import os
 import fcntl
-import logging
 import json
+import logging
+import os
+import sys
+
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import NoArgsCommand
+
 from ngw.core.models import ContactMsg
+
 
 class Command(NoArgsCommand):
     help = 'External message synchronisation'

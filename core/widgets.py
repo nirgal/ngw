@@ -2,13 +2,15 @@
 Custom widgets for use in forms.
 '''
 
-from django.core.exceptions import ValidationError
 from django import forms
-from django.utils.safestring import mark_safe
+from django.core.exceptions import ValidationError
 from django.utils import html
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
+
 from ngw.core import perms
+
 
 class OnelineCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
     '''

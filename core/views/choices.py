@@ -2,19 +2,21 @@
 ChoiceGroup & Choice managing views
 '''
 
+from django import forms
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import html
-from django.utils.translation import ugettext as _, ugettext_lazy
 from django.utils.safestring import mark_safe
-from django import forms
-from django.views.generic import UpdateView, CreateView
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
+from django.views.generic import CreateView, UpdateView
 from django.views.generic.edit import ModelFormMixin
-from django.contrib import messages
+
+from ngw.core import perms
 from ngw.core.models import ChoiceGroup, ContactField
 from ngw.core.nav import Navbar
-from ngw.core import perms
 from ngw.core.views.generic import InGroupAcl
 
 

@@ -1,7 +1,10 @@
 from optparse import make_option
+
 from django.core.management.base import BaseCommand, CommandError
+
 from ngw.core import mailman
 from ngw.core.models import ContactGroup
+
 
 class Command(BaseCommand):
     help = 'Synchronise with an external mailman mailing list'

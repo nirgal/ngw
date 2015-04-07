@@ -3,15 +3,17 @@ ContactGroupNews managing views
 '''
 
 from datetime import datetime
+
+from django import forms
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext as _
-from django.views.generic import ListView, UpdateView, CreateView
+from django.views.generic import CreateView, ListView, UpdateView
 from django.views.generic.edit import ModelFormMixin
-from django import forms
-from django.contrib import messages
-from ngw.core.models import ContactGroupNews
+
 from ngw.core import perms
+from ngw.core.models import ContactGroupNews
 from ngw.core.views.generic import InGroupAcl, NgwDeleteView
 
 

@@ -1,5 +1,7 @@
 from django.core.management.base import NoArgsCommand
+
 from ngw.core.models import ContactGroup
+
 
 class Command(NoArgsCommand):
     help = 'Creates missing media folders'

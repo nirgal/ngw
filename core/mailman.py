@@ -1,5 +1,6 @@
 from ngw.core.models import FIELD_EMAIL
 
+
 def normalize_name(name):
     '''
     looks for upper case words, put them at the end

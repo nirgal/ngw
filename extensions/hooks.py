@@ -57,4 +57,3 @@ def membership_changed(request, contact, group):
         print("Dispatching notification membership_changed", contact, group, ": supergroup", sg, file=sys.stderr)
         for f in __hooks_membership_changed__.get(sg.id, []):
             f(request, contact, sg)
-    

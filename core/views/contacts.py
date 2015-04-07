@@ -4,42 +4,44 @@ Contact managing views
 
 import os
 from datetime import date
+
 import crack
+from django import forms
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.admin import filters
+from django.contrib.admin.utils import (display_for_field, display_for_value,
+                                        label_for_field, lookup_field)
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.core.exceptions import PermissionDenied
-from django.http import (
-    StreamingHttpResponse, HttpResponse, HttpResponseRedirect,
-    Http404)
-from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext as _, ugettext_lazy
+from django.core.urlresolvers import reverse
+from django.db.models.query import RawQuerySet, sql
+from django.http import (Http404, HttpResponse, HttpResponseRedirect,
+                         StreamingHttpResponse)
+from django.shortcuts import get_object_or_404
+from django.template import RequestContext, loader
 from django.utils import html
 from django.utils.decorators import method_decorator
-from django.shortcuts import get_object_or_404
-from django.template import loader, RequestContext
-from django.core.urlresolvers import reverse
-from django import forms
-from django.views.generic import View, TemplateView, FormView, UpdateView, CreateView, DetailView
-from django.views.generic.edit import ModelFormMixin
+from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
-from django.contrib.admin.widgets import FilteredSelectMultiple
-from ngw.core.models import (
-    GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
-    Config, Contact, ContactGroup, ContactField, ContactFieldValue,
-    ContactInGroup, Log,
-    LOG_ACTION_ADD, LOG_ACTION_CHANGE,
-    FIELD_COLUMNS, FIELD_FILTERS, FIELD_DEFAULT_GROUP)
-from django.contrib.admin import filters
-from django.contrib.admin.utils import (lookup_field, display_for_field,
-    display_for_value, label_for_field)
-from ngw.core.nav import Navbar
-from ngw.core.mailmerge import ngw_mailmerge
-from ngw.core.contactsearch import parse_filterstring
-from ngw.core import perms
-from ngw.core.views.generic import NgwUserAcl, InGroupAcl, NgwListView, NgwDeleteView
-from ngw.core.widgets import FlagsField
+from django.views.generic import (CreateView, DetailView, FormView,
+                                  TemplateView, UpdateView, View)
+from django.views.generic.edit import ModelFormMixin
 
-from django.db.models.query import RawQuerySet, sql
+from ngw.core import perms
+from ngw.core.contactsearch import parse_filterstring
+from ngw.core.mailmerge import ngw_mailmerge
+from ngw.core.models import (FIELD_COLUMNS, FIELD_DEFAULT_GROUP, FIELD_FILTERS,
+                             GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
+                             LOG_ACTION_ADD, LOG_ACTION_CHANGE, Config,
+                             Contact, ContactField, ContactFieldValue,
+                             ContactGroup, ContactInGroup, Log)
+from ngw.core.nav import Navbar
+from ngw.core.views.generic import (InGroupAcl, NgwDeleteView, NgwListView,
+                                    NgwUserAcl)
+from ngw.core.widgets import FlagsField
 
 DISP_NAME = 'name'
 DISP_FIELD_PREFIX = 'field_'
@@ -1462,4 +1464,3 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
 #        contact.set_fieldvalue(request, FIELD_PASSWORD_STATUS, '2')
 #
 #    return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')
-

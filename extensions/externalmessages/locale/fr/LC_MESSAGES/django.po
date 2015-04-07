@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-02-10 14:40+0000\n"
+"POT-Creation-Date: 2015-04-07 14:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,16 +18,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: onetime.py:37
+#: onetime.py:40
 msgid "The expiration date must be in the future."
 msgstr "La date d'expiration doit être dans le futur."
 
-#: onetime.py:40
+#: onetime.py:43
 #, python-format
 msgid "The expiration date can't be more that %s days in the future."
 msgstr "La date d'expiration ne peux pas être plus de %s jours dans le futur."
 
-#: onetime.py:125
+#: onetime.py:128
 #, python-format
 msgid ""
 "Hello\n"
@@ -62,7 +62,7 @@ msgstr ""
 "\n"
 "[1] https://www.torproject.org/"
 
-#: onetime.py:140
+#: onetime.py:143
 #, python-format
 msgid ""
 "<p>Hello</p>\n"
@@ -87,14 +87,18 @@ msgstr ""
 "<p>Salut</p>\n"
 "\n"
 "<p>Vous pouvez lire votre message sur \n"
-"<a href=\"https://onetime.info/%(otid)s\">https://onetime.info/%(otid)s</a><br>\n"
-"ou <a href=\"http://7z4nl4ojzggwicx5.onion/%(otid)s\">http://7z4nl4ojzggwicx5.onion/%(otid)s</a>\n"
+"<a href=\"https://onetime.info/%(otid)s\">https://onetime.info/%(otid)s</"
+"a><br>\n"
+"ou <a href=\"http://7z4nl4ojzggwicx5.onion/%(otid)s"
+"\">http://7z4nl4ojzggwicx5.onion/%(otid)s</a>\n"
 "si vous utilisez <a href=\"https://www.torproject.org/\">tor</a>.</p>\n"
 "\n"
-"<p>Attention, ce message ne sera affiché qu'une seule fois, puis effacé. Ayez\n"
+"<p>Attention, ce message ne sera affiché qu'une seule fois, puis effacé. "
+"Ayez\n"
 "un stylo à porté de main avant de cliquer sur le lien.</p>\n"
 "\n"
 "<p>Ne répondez pas à ce courriel: Utilisez le lien ci-dessus.<br>\n"
 "Si le lien ne fonctionne pas, veuillez réessayer.<br>\n"
-"Si vous avez une erreur disant que le message a déjà été lu, et que ce n'est\n"
+"Si vous avez une erreur disant que le message a déjà été lu, et que ce "
+"n'est\n"
 "pas vous qui l'avez lu, veuillez le signaler.</p>"

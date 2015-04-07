@@ -3,15 +3,17 @@ Miscalaneous views
 '''
 
 import os
+
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import logout as auth_logout
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import TemplateView
-from django.contrib.auth import logout as auth_logout
-from django.contrib import messages
-from ngw.core.models import Contact, ContactGroup, ContactGroupNews
+
 from ngw.core import perms
+from ngw.core.models import Contact, ContactGroup, ContactGroupNews
 from ngw.core.nav import Navbar
 from ngw.core.views.generic import NgwUserAcl
 

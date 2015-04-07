@@ -1,15 +1,23 @@
 # This file is unused
 
 from django.contrib import admin
+from django.contrib.admin.views.main import ChangeList
 from django.utils.translation import ugettext_lazy
-from ngw.core.models import (Config, Contact, ContactGroup, GroupInGroup,
-    ContactInGroup, Choice, ChoiceGroup, ContactGroupNews, ContactField,
-    ContactFieldValue, ContactMsg)
+
+from ngw.core.models import (Choice, ChoiceGroup, Config, Contact,
+                             ContactField, ContactFieldValue, ContactGroup,
+                             ContactGroupNews, ContactInGroup, ContactMsg,
+                             GroupInGroup)
+from ngw.core.views.contacts import ContactEditForm
+from ngw.core.views.fields import FieldEditForm, FieldListView
+from ngw.core.views.groups import ContactGroupForm, ContactGroupListView
+from ngw.core.views.messages import (MessageContactFilter,
+                                     MessageDirectionFilter, MessageListView,
+                                     MessageReadFilter)
 
 # Globally disable delete selected
 admin.site.disable_action('delete_selected')
 
-from django.contrib.admin.views.main import ChangeList
 class MyChangeList(ChangeList):
     '''
     This is a clone of ChangeList, but urls are relative
@@ -35,7 +43,6 @@ class ConfigAdmin(MyModelAdmin):
 
 #######################################################################
 
-from ngw.core.views.contacts import ContactEditForm
 @admin.register(Contact)
 class ContactAdmin(MyModelAdmin):
     list_display = 'name',
@@ -56,7 +63,6 @@ class ContactAdmin(MyModelAdmin):
 
 #######################################################################
 
-from ngw.core.views.groups import ContactGroupListView, ContactGroupForm
 @admin.register(ContactGroup)
 class ContactGroupAdmin(MyModelAdmin, ContactGroupListView):
     list_display = ContactGroupListView.list_display
@@ -97,7 +103,6 @@ class ContactGroupNewsAdmin(MyModelAdmin):
 
 #######################################################################
 
-from ngw.core.views.fields import FieldListView, FieldEditForm
 @admin.register(ContactField)
 class ContactFieldAdmin(MyModelAdmin, FieldListView):
     list_display = FieldListView.list_display
@@ -124,9 +129,6 @@ class ContactFieldValueAdmin(MyModelAdmin):
 
 #######################################################################
 
-from ngw.core.views.messages import (
-    MessageListView,
-    MessageDirectionFilter, MessageReadFilter, MessageContactFilter)
 @admin.register(ContactMsg)
 class ContactMsgAdmin(MyModelAdmin, MessageListView):
     list_display = MessageListView.list_display

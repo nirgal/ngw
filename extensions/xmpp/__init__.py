@@ -2,11 +2,9 @@
 #
 # Database settings is defined in ~/.pgpass
 
-import sys
-import os
 import logging
-#if __name__ != '__main__':
-#    print('XMPP synchronisation extension for NGW loading.', file=sys.stderr)
+import os
+import sys
 
 if __name__ == '__main__':
     sys.path += ['/usr/lib/']
@@ -125,6 +123,3 @@ if __name__ == "__main__":
     # clean up roster group
     for u in user_set:
         clean_rostergroup(u.get_fieldvalue_by_id(FIELD_LOGIN).lower())
-
-#if __name__ != '__main__':
-#    print('XMPP synchronisation extension for NGW loaded.', file=sys.stderr)

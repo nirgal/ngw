@@ -3,9 +3,10 @@ decorators for checking views access rights
 '''
 
 from functools import wraps
+
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import available_attrs
-from django.contrib.auth.decorators import login_required
 
 __all__ = ['login_required', 'require_group']
 
@@ -25,4 +26,3 @@ def require_group(group_id):
             return func(request, *args, **kwargs)
         return inner
     return decorator
-

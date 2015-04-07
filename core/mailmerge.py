@@ -2,12 +2,15 @@
 
 import os
 import random
-import sys
-import uno
 import subprocess
-from com.sun.star.connection import NoConnectException
-#from com.sun.star.uno import Exception as UnoException
+import sys
+
+import uno
+
 from com.sun.star.beans import PropertyValue
+from com.sun.star.connection import NoConnectException
+
+#from com.sun.star.uno import Exception as UnoException
 
 TMPDIR = '/tmp'
 
@@ -80,4 +83,3 @@ if __name__ == "__main__":
         name = unicode(name, 'utf8')
         filename = ngw_mailmerge("/usr/lib/ngw/mailing/templates/resetpassword.odt", {'name': name}, '.')
         print(filename)
-    

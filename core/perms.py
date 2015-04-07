@@ -16,8 +16,10 @@ c_can_change_files_cg     C can change/delete files of CG
 """
 
 from collections import OrderedDict
+
 from django.db import connection
-from django.utils.translation import ugettext as _, ugettext_lazy
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
 
 MEMBER         =     1 # 'm'ember
 INVITED        =     2 # 'i'nvited

@@ -1,28 +1,36 @@
 from datetime import datetime
+
 from django import forms
-from django.utils import http
-from django.utils import html
-from django.utils import formats
-from django.utils.translation import ugettext as _, ugettext_lazy
 from django.conf import settings
 from django.contrib.admin.widgets import AdminDateWidget
-from ngw.core.models import (
-    ContactField, ChoiceGroup, Choice,
-    register_contact_field_type)
-from ngw.core.models import (
-    NameFilterStartsWith, FieldFilterStartsWith,
-    FieldFilterEQ, FieldFilterNEQ, FieldFilterLE, FieldFilterGE,
-    FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull, FieldFilterNotNull,
-    FieldFilterIEQ, FieldFilterINE, FieldFilterILT, FieldFilterIGT,
-    FieldFilterILE, FieldFilterIGE, FieldFilterAGE_GE, FieldFilterVALID_GT,
-    FieldFilterFUTURE, FieldFilterChoiceEQ, FieldFilterChoiceNEQ,
-    FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT,
-    FieldFilterDoubleChoiceHAS, FieldFilterDoubleChoiceHASNOT,
-    AllEventsNotReactedSince, AllEventsReactionYearRatioLess,
-    AllEventsReactionYearRatioMore)
-    #, GroupFilterIsMember, GroupFilterIsNotMember, GroupFilterIsInvited, GroupFilterIsNotInvited, GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation
+from django.utils import formats, html, http
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
+
 from ngw.core import gpg
-from ngw.core.widgets import OnelineCheckboxSelectMultiple, DoubleChoicesField
+from ngw.core.models import (AllEventsNotReactedSince,
+                             AllEventsReactionYearRatioLess,
+                             AllEventsReactionYearRatioMore, Choice,
+                             ChoiceGroup, ContactField, FieldFilterAGE_GE,
+                             FieldFilterChoiceEQ, FieldFilterChoiceNEQ,
+                             FieldFilterDoubleChoiceHAS,
+                             FieldFilterDoubleChoiceHASNOT, FieldFilterEQ,
+                             FieldFilterFUTURE, FieldFilterGE, FieldFilterIEQ,
+                             FieldFilterIGE, FieldFilterIGT, FieldFilterILE,
+                             FieldFilterILIKE, FieldFilterILT, FieldFilterINE,
+                             FieldFilterLE, FieldFilterLIKE,
+                             FieldFilterMultiChoiceHAS,
+                             FieldFilterMultiChoiceHASNOT, FieldFilterNEQ,
+                             FieldFilterNotNull, FieldFilterNull,
+                             FieldFilterStartsWith, FieldFilterVALID_GT,
+                             NameFilterStartsWith, register_contact_field_type)
+from ngw.core.widgets import DoubleChoicesField, OnelineCheckboxSelectMultiple
+
+
+#                            GroupFilterIsMember, GroupFilterIsNotMember,
+#                            GroupFilterIsInvited, GroupFilterIsNotInvited,
+#                            GroupFilterDeclinedInvitation,
+#                            GroupFilterNotDeclinedInvitation
 
 
 class RibField(forms.Field):
@@ -341,4 +349,3 @@ class AllEventsMetaField(object):
     @classmethod
     def get_filter_by_name(cls, name):
         return [f for f in cls.get_filters() if f.__class__.internal_name == name][0]
-

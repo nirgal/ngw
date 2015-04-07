@@ -1,26 +1,47 @@
 from django.conf import settings
-from django.conf.urls import patterns, include, url
-from django.views.generic.base import RedirectView
+from django.conf.urls import include, patterns, url
 from django.conf.urls.static import static
-
-
-# Uncomment the next two lines to enable the admin:
 from django.contrib import admin
-from ngw.core.models import ContactField, ContactGroup
-from ngw.core.admin import ContactGroupAdmin
+from django.views.generic.base import RedirectView
 
-from ngw.core.views.misc import HomeView, LogoutView, TestView
-from ngw.core.views.contacts import ContactListView, GroupAddManyView, ContactDetailView, ContactEditView, ContactCreateView, ContactDeleteView, ContactVcardView, PasswordView, HookPasswordView, PassLetterView, FilterAddView, FilterEditView, FilterListView, FilterDeleteView, DefaultGroupView
-from ngw.core.views.groups import ContactGroupListView, GroupMemberListView, EventListView, CalendarView, CalendarQueryView, ContactGroupView, GroupEditView, GroupCreateView, GroupDeleteView, ContactInGroupView, ContactInGroupInlineView, ContactInGroupDelete
-from ngw.core.views.news import NewsListView, NewsEditView, NewsCreateView, NewsDeleteView
-from ngw.core.views.files import FileListView, GroupMediaFileView
-from ngw.core.views.mailman import MailmanSyncView
-from ngw.core.views.messages import MessageListView, SendMessageView, MessageDetailView
-from ngw.core.views.fields import FieldListView, FieldMoveUpView, FieldMoveDownView, FieldEditView, FieldCreateView, FieldDeleteView
-from ngw.core.views.choices import ChoiceEditView, Choice2EditView
-from ngw.core.views.logs import LogListView
-from ngw.core.views.contactsearch import ContactSearchAutocompleteView, ContactSearchColumnsView, ContactSearchColumnFiltersView, ContactSearchCustomFiltersView, ContactSearchFilterParamsView, ContactSearchCustomFilterParamsView
 from ngw.core.gpg import GpgLookupView
+from ngw.core.models import ContactField, ContactGroup
+from ngw.core.views.choices import Choice2EditView, ChoiceEditView
+from ngw.core.views.contacts import (ContactCreateView, ContactDeleteView,
+                                     ContactDetailView, ContactEditView,
+                                     ContactListView, ContactVcardView,
+                                     DefaultGroupView, FilterAddView,
+                                     FilterDeleteView, FilterEditView,
+                                     FilterListView, GroupAddManyView,
+                                     HookPasswordView, PassLetterView,
+                                     PasswordView)
+from ngw.core.views.contactsearch import (ContactSearchAutocompleteView,
+                                          ContactSearchColumnFiltersView,
+                                          ContactSearchColumnsView,
+                                          ContactSearchCustomFilterParamsView,
+                                          ContactSearchCustomFiltersView,
+                                          ContactSearchFilterParamsView)
+from ngw.core.views.fields import (FieldCreateView, FieldDeleteView,
+                                   FieldEditView, FieldListView,
+                                   FieldMoveDownView, FieldMoveUpView)
+from ngw.core.views.files import FileListView, GroupMediaFileView
+from ngw.core.views.groups import (CalendarQueryView, CalendarView,
+                                   ContactGroupListView, ContactGroupView,
+                                   ContactInGroupDelete,
+                                   ContactInGroupInlineView,
+                                   ContactInGroupView, EventListView,
+                                   GroupCreateView, GroupDeleteView,
+                                   GroupEditView, GroupMemberListView)
+from ngw.core.views.logs import LogListView
+from ngw.core.views.mailman import MailmanSyncView
+from ngw.core.views.messages import (MessageDetailView, MessageListView,
+                                     SendMessageView)
+from ngw.core.views.misc import HomeView, LogoutView, TestView
+from ngw.core.views.news import (NewsCreateView, NewsDeleteView, NewsEditView,
+                                 NewsListView)
+
+#from ngw.core.admin import ContactGroupAdmin
+
 
 # These patterns are valid with both /contactgroups and /events prefixes
 groups_urlpatterns = patterns('',
