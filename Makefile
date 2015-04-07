@@ -13,3 +13,6 @@ clean:
 
 README.html: README.rst
 	rst2html README.rst README.html
+
+isort:
+	isort -b fcntl -b ssl -p ngw -o gnupg `find -name '*py' | grep -v ./core/wsgi.py`
