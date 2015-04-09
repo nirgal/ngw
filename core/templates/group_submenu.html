@@ -33,6 +33,7 @@
 {% endspaceless %}
 
 {% spaceless %}
+{% if not cg.date %}
 {% if 'e' in cg_perms %}
     <a href="{{cg.get_absolute_url}}fields/">
 {% endif %}
@@ -45,6 +46,7 @@
     </div>
 {% if 'e' in cg_perms %}
     </a>
+{% endif %}
 {% endif %}
 {% endspaceless %}
 

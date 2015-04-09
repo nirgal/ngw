@@ -17,14 +17,14 @@ add_to_group: You need to be able to add contacts in all super groups, including
 
 Group list is too slow. Period.
 
+Support Image contactfields.
+
+Event selection widget. (Do not load everything at once, like for column selection)
+
 
 ====================================================================================================
 CODE REFACTOR
 ====================================================================================================
-
-Support Image contactfields.
-
-Event selection widget. (Do not load everything at once, like for column selection)
 
 Files handling:
 - Improve display (mimetype, size, ...)
