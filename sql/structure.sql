@@ -19,8 +19,9 @@ SET default_tablespace = '';
 
 CREATE TABLE config (
     id character varying(32) NOT NULL PRIMARY KEY,
-    text text
+    text text NOT NULL
 );
+CREATE INDEX config_id_like ON config USING btree (id varchar_pattern_ops);
 
 --
 -- Name: contact; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -31,6 +32,8 @@ CREATE TABLE contact (
     name character varying(255) NOT NULL UNIQUE
 );
 
+CREATE INDEX contact_name_like ON contact USING btree (name varchar_pattern_ops);
+
 --
 -- Name: contact_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
@@ -38,13 +41,13 @@ CREATE TABLE contact (
 CREATE TABLE contact_group (
     id serial NOT NULL PRIMARY KEY,
     name character varying(255) NOT NULL,
-    description text,
+    description text NOT NULL,
     field_group boolean DEFAULT false NOT NULL,
     date date,
     end_date date,
     budget_code character varying(10) DEFAULT ''::character varying NOT NULL,
     system boolean DEFAULT false NOT NULL,
-    mailman_address character varying(255),
+    mailman_address character varying(255) NOT NULL,
     sticky boolean DEFAULT false NOT NULL
 );
 
@@ -71,7 +74,8 @@ CREATE TABLE choice (
     UNIQUE ("choice_group_id", "key")
 );
 
-CREATE INDEX choice_choice_group_id_index ON choice (choice_group_id);
+CREATE INDEX choice_choice_group_id ON choice USING btree (choice_group_id);
+
 
 
 --
@@ -81,15 +85,18 @@ CREATE INDEX choice_choice_group_id_index ON choice (choice_group_id);
 CREATE TABLE contact_field (
     id serial NOT NULL PRIMARY KEY,
     name character varying(255) NOT NULL,
-    hint text,
+    hint text NOT NULL,
     type character varying(15) DEFAULT 'TEXT'::character varying NOT NULL,
     contact_group_id integer NOT NULL REFERENCES contact_group(id) ON UPDATE CASCADE ON DELETE CASCADE,
     sort_weight integer NOT NULL,
     choice_group_id integer REFERENCES choice_group(id) ON UPDATE CASCADE,
     choice_group2_id integer REFERENCES choice_group(id) ON UPDATE CASCADE,
     system boolean DEFAULT false NOT NULL,
-    "default" text
+    "default" text NOT NULL
 );
+CREATE INDEX contact_field_choice_group2_id ON contact_field USING btree (choice_group2_id);
+CREATE INDEX contact_field_choice_group_id ON contact_field USING btree (choice_group_id);
+CREATE INDEX contact_field_contact_group_id ON contact_field USING btree (contact_group_id);
 
 
 --
@@ -100,13 +107,12 @@ CREATE TABLE contact_field_value (
     django_id serial NOT NULL PRIMARY KEY,
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     contact_field_id integer NOT NULL REFERENCES contact_field(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
-    value text,
+    value text NOT NULL,
     UNIQUE ("contact_id", "contact_field_id")
 );
 
-CREATE INDEX contact_field_value_contact_id_index ON contact_field_value (contact_id);
-CREATE INDEX contact_field_value_contact_field_id_index ON contact_field_value (contact_field_id);
-
+CREATE INDEX contact_field_value_contact_field_id ON contact_field_value USING btree (contact_field_id);
+CREATE INDEX contact_field_value_contact_id ON contact_field_value USING btree (contact_id);
 
 --
 -- Name: contact_in_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -117,11 +123,12 @@ CREATE TABLE contact_in_group (
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     group_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     flags integer NOT NULL,
-    note text
+    note text NOT NULL
 );
 
-CREATE INDEX contact_in_group_contact_id_index ON contact_in_group (contact_id);
-CREATE INDEX contact_in_group_group_id_index ON contact_in_group (group_id);
+CREATE INDEX contact_in_group_contact_id ON contact_in_group USING btree (contact_id);
+CREATE INDEX contact_in_group_group_id ON contact_in_group USING btree (group_id);
+
 
 --
 -- Name: contact_group_news; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -136,6 +143,8 @@ CREATE TABLE contact_group_news (
     text text NOT NULL
 );
 
+CREATE INDEX contact_group_news_author_id ON contact_group_news USING btree (author_id);
+CREATE INDEX contact_group_news_contact_group_id ON contact_group_news USING btree (contact_group_id);
 
 --
 -- Name: group_in_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -148,8 +157,9 @@ CREATE TABLE group_in_group (
     UNIQUE ("father_id", "subgroup_id")
 );
 
-CREATE INDEX group_in_group_contact_id_index ON group_in_group (father_id);
-CREATE INDEX group_in_group_group_id_index ON group_in_group (subgroup_id);
+CREATE INDEX group_in_group_father_id ON group_in_group USING btree (father_id);
+CREATE INDEX group_in_group_subgroup_id ON group_in_group USING btree (subgroup_id);
+
 
 --
 -- Name: group_manage_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -163,8 +173,9 @@ CREATE TABLE group_manage_group (
     UNIQUE ("father_id", "subgroup_id")
 );
 
-CREATE INDEX group_manage_group_contact_id_index ON group_manage_group (father_id);
-CREATE INDEX group_manage_group_group_id_index ON group_manage_group (subgroup_id);
+CREATE INDEX group_manage_group_father_id ON group_manage_group USING btree (father_id);
+CREATE INDEX group_manage_group_subgroup_id ON group_manage_group USING btree (subgroup_id);
+
 
 --
 -- Name: log; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -182,6 +193,9 @@ CREATE TABLE log (
     change text
 );
 
+CREATE INDEX log_contact_id ON log USING btree (contact_id);
+
+
 --
 -- Name: contact_message; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
@@ -195,9 +209,14 @@ CREATE TABLE contact_message (
     read_by_id integer REFERENCES contact(id) MATCH SIMPLE ON UPDATE CASCADE ON DELETE SET NULL,
     is_answer boolean DEFAULT false NOT NULL,
     subject varchar(64) NOT NULL DEFAULT 'no title',
-    text text,
-    sync_info text
+    text text NOT NULL,
+    sync_info text NOT NULL
 );
+
+CREATE INDEX contact_message_contact_id ON contact_message USING btree (contact_id);
+CREATE INDEX contact_message_group_id ON contact_message USING btree (group_id);
+CREATE INDEX contact_message_read_by_id ON contact_message USING btree (read_by_id);
+
 -- TODO: postgresql 9.2 supports json type for syncinfo
 
 ALTER TABLE contact_field ADD CONSTRAINT contact_field_has_choice1 CHECK (

@@ -164,8 +164,8 @@ class Config(NgwModel):
 class Choice(NgwModel):
     django_id = models.AutoField(primary_key=True)  # not used
     choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
-    key = models.CharField(ugettext_lazy('Key'), max_length=255)
-    value = models.CharField(ugettext_lazy('Value'), max_length=255)
+    key = models.CharField(ugettext_lazy('Key'), blank=False, max_length=255)
+    value = models.CharField(ugettext_lazy('Value'), blank=False, max_length=255)
     def __str__(self):
         return self.value
     class Meta:
