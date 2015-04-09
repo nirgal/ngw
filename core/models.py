@@ -162,7 +162,7 @@ class Config(NgwModel):
 
 
 class Choice(NgwModel):
-    oid = models.AutoField(primary_key=True)
+    django_id = models.AutoField(primary_key=True)  # not used
     choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
     key = models.CharField(ugettext_lazy('Key'), max_length=255)
     value = models.CharField(ugettext_lazy('Value'), max_length=255)
@@ -1828,7 +1828,7 @@ class OrBoundFilter(BaseBoundFilter):
 
 
 class ContactFieldValue(NgwModel):
-    oid = models.AutoField(primary_key=True)
+    django_id = models.AutoField(primary_key=True)  # not used
     contact = models.ForeignKey(Contact, related_name='values')
     contact_field = models.ForeignKey(ContactField, related_name='values')
     value = models.TextField(blank=True)
@@ -1836,6 +1836,7 @@ class ContactFieldValue(NgwModel):
         db_table = 'contact_field_value'
         verbose_name = ugettext_lazy('contact field value')
         verbose_name_plural = ugettext_lazy('contact field values')
+        unique_together = 'contact', 'contact_field'
 
     def __repr__(self):
         cf = self.contact_field
@@ -1851,20 +1852,21 @@ class ContactFieldValue(NgwModel):
 
 
 class GroupInGroup(NgwModel):
-    oid = models.AutoField(primary_key=True)
+    django_id = models.AutoField(primary_key=True)  # not used
     father = models.ForeignKey(ContactGroup, related_name='direct_gig_subgroups')
     subgroup = models.ForeignKey(ContactGroup, related_name='direct_gig_supergroups')
     class Meta:
         db_table = 'group_in_group'
         verbose_name = ugettext_lazy('group in group')
         verbose_name_plural = ugettext_lazy('groups in group')
+        unique_together = 'father', 'subgroup'
 
     def __repr__(self):
         return '<GroupInGroup %s %s>' % (self.subgroup_id, self.father_id)
 
 
 class GroupManageGroup(NgwModel):
-    oid = models.AutoField(primary_key=True)
+    django_id = models.AutoField(primary_key=True)  # not used
     father = models.ForeignKey(ContactGroup, related_name='direct_gmg_subgroups')
     subgroup = models.ForeignKey(ContactGroup, related_name='direct_gmg_supergroups')
     flags = models.IntegerField()
@@ -1872,6 +1874,7 @@ class GroupManageGroup(NgwModel):
         db_table = 'group_manage_group'
         verbose_name = ugettext_lazy('group managing group')
         verbose_name_plural = ugettext_lazy('groups managing group')
+        unique_together = 'father', 'subgroup'
 
     def __repr__(self):
         return '<GroupManageGroup %s %s>' % (self.subgroup_id, self.father_id)

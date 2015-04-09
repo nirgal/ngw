@@ -49,7 +49,7 @@ columns	name,field_7,field_8,field_10
 banner	<big>NGW</big> Group Ware
 phpbb acl dictionary	
 query_page_length	100
-db version	20
+db version	22
 \.
 
 
@@ -58,7 +58,7 @@ db version	20
 --
 
 COPY contact_group (id, name, description, field_group, date, end_date, budget_code, system, mailman_address, sticky) FROM stdin;
-1	Contacts	Ensemble des contacts	t	\N		t		f
+1	Contacts	Ensemble des contacts	t	\N	\N		t		f
 2	Utilisateurs	Ensemble des personnes qui ont un identifiant et un mot de passe.\r\nVoir aussi "Utilisateurs NGW" et "Utilisateurs Forum".	t	\N	\N		t	\N	f
 8	Admins	Ils peuvent ajouter des contacts dans n'importe quel groupe, et tout voir.	f	\N	\N		t		f
 9	Observateurs	Ils peuvent tout voir, mais n'ont pas accès en écriture sur les groupes.	f	\N	\N		t		f

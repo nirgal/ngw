@@ -64,11 +64,12 @@ CREATE TABLE choice_group (
 --
 
 CREATE TABLE choice (
+    django_id serial NOT NULL PRIMARY KEY,
     choice_group_id integer NOT NULL REFERENCES choice_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     key character varying(255) DEFAULT ''::character varying NOT NULL,
     value character varying(255) DEFAULT ''::character varying NOT NULL,
-    PRIMARY KEY (choice_group_id, key)
-) WITH OIDS;
+    UNIQUE ("choice_group_id", "key")
+);
 
 CREATE INDEX choice_choice_group_id_index ON choice (choice_group_id);
 
@@ -85,6 +86,7 @@ CREATE TABLE contact_field (
     contact_group_id integer NOT NULL REFERENCES contact_group(id) ON UPDATE CASCADE ON DELETE CASCADE,
     sort_weight integer NOT NULL,
     choice_group_id integer REFERENCES choice_group(id) ON UPDATE CASCADE,
+    choice_group2_id integer REFERENCES choice_group(id) ON UPDATE CASCADE,
     system boolean DEFAULT false NOT NULL,
     "default" text
 );
@@ -95,11 +97,12 @@ CREATE TABLE contact_field (
 --
 
 CREATE TABLE contact_field_value (
+    django_id serial NOT NULL PRIMARY KEY,
     contact_id integer NOT NULL REFERENCES contact(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     contact_field_id integer NOT NULL REFERENCES contact_field(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     value text,
-    PRIMARY KEY (contact_id, contact_field_id)
-) WITH OIDS;
+    UNIQUE ("contact_id", "contact_field_id")
+);
 
 CREATE INDEX contact_field_value_contact_id_index ON contact_field_value (contact_id);
 CREATE INDEX contact_field_value_contact_field_id_index ON contact_field_value (contact_field_id);
@@ -139,10 +142,11 @@ CREATE TABLE contact_group_news (
 --
 
 CREATE TABLE group_in_group (
+    django_id serial NOT NULL PRIMARY KEY,
     father_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     subgroup_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (father_id, subgroup_id)
-) WITH OIDS;
+    UNIQUE ("father_id", "subgroup_id")
+);
 
 CREATE INDEX group_in_group_contact_id_index ON group_in_group (father_id);
 CREATE INDEX group_in_group_group_id_index ON group_in_group (subgroup_id);
@@ -152,11 +156,12 @@ CREATE INDEX group_in_group_group_id_index ON group_in_group (subgroup_id);
 --
 
 CREATE TABLE group_manage_group (
+    django_id serial NOT NULL PRIMARY KEY,
     father_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     subgroup_id integer NOT NULL REFERENCES contact_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
     flags integer NOT NULL,
-    PRIMARY KEY (father_id, subgroup_id)
-) WITH OIDS;
+    UNIQUE ("father_id", "subgroup_id")
+);
 
 CREATE INDEX group_manage_group_contact_id_index ON group_manage_group (father_id);
 CREATE INDEX group_manage_group_group_id_index ON group_manage_group (subgroup_id);
