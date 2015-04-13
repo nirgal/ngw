@@ -10,6 +10,7 @@ def banner(request):
     else:
         return ()
 
+
 def contactcount(request):
     """
     This context processor just add a "contactcount" key

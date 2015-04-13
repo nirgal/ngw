@@ -4,13 +4,14 @@ Log managing views
 
 from django.utils import formats
 from django.utils.translation import ugettext as _
-from django.utils.translation import pgettext_lazy, ugettext_lazy
+from django.utils.translation import ugettext_lazy
 
 from ngw.core.models import Log
 from ngw.core.nav import Navbar
 from ngw.core.views.generic import NgwAdminAcl, NgwListView
 
 __all__ = ['LogListView']
+
 
 class LogListView(NgwAdminAcl, NgwListView):
     '''
@@ -25,7 +26,6 @@ class LogListView(NgwAdminAcl, NgwListView):
         return formats.date_format(log.dt, "SHORT_DATETIME_FORMAT")
     small_date.short_description = ugettext_lazy('Date UTC')
     small_date.admin_order_field = 'dt'
-
 
     def get_root_queryset(self):
         return Log.objects.all()

@@ -20,12 +20,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ngw.settings")
 
 from django import db
 from django.contrib import auth
-from django.contrib.auth.handlers.modwsgi import check_password
 from django.core.wsgi import get_wsgi_application
 from django.utils.encoding import force_bytes
 
 from ngw.core import perms
 from ngw.core.models import ContactGroup
+
 
 def groups_for_user(environ, username):
     """

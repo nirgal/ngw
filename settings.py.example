@@ -23,7 +23,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = [ '127.0.0.1', ]
+ALLOWED_HOSTS = ['127.0.0.1', ]
 
 
 # Application definition
@@ -31,17 +31,17 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-#    'django.contrib.sites',
+    # 'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'session_security',
     'ngw.core',
-#    'ngw.extensions.phpbb',
-    'ngw.extensions.externalmessages', # Needed for translations
-#    'ngw.extensions.xmpp',
-    'django.contrib.admin', # for static files, but disabled in urls.py
+    # 'ngw.extensions.phpbb',
+    'ngw.extensions.externalmessages',  # Needed for translations
+    # 'ngw.extensions.xmpp',
+    'django.contrib.admin',  # for static files, but disabled in urls.py
     # Uncomment the next line to enable admin documentation:
-    #'django.contrib.admindocs',
+    # 'django.contrib.admindocs',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -49,7 +49,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware', # set up request.user from session
+    # set up request.user from session:
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'session_security.middleware.SessionSecurityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
@@ -57,7 +58,8 @@ MIDDLEWARE_CLASSES = (
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth', # users, perms available in templates
+    # users, perms available in templates:
+    'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
@@ -78,13 +80,12 @@ WSGI_APPLICATION = 'ngw.core.wsgi.application'
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'ngw',                      # Or path to database file if using sqlite3.
-        # The following settings are not used with sqlite3:
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'ngw',
         'USER': 'XXX',
         'PASSWORD': 'XXX',
-        'HOST': 'localhost',             # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',                      # Set to empty string for default.
+        'HOST': 'localhost',
+        'PORT': '',  # Set to empty string for default.
     },
 
     # Enable this block if you want phpbb3 extension:
@@ -131,7 +132,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT =  os.path.join(BASE_DIR, 'media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
 MEDIA_URL = '/media/'
 
@@ -150,12 +151,12 @@ LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
 
 SESSION_COOKIE_AGE = 3*3600
-SESSION_SAVE_EVERY_REQUEST = True # Update session expiration time
-SESSION_COOKIE_SECURE = True # We are not using http, only https
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True # We have short time sessions anyways
+SESSION_SAVE_EVERY_REQUEST = True  # Update session expiration time
+SESSION_COOKIE_SECURE = True  # We are not using http, only https
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # We have short time sessions anyways
 
-CSRF_COOKIE_AGE = 24*3600 # One day
-CSRF_COOKIE_SECURE = True # We are not using http, only https
+CSRF_COOKIE_AGE = 24*3600  # One day
+CSRF_COOKIE_SECURE = True  # We are not using http, only https
 
 # Output the "Etag" header for caching
 USE_ETAGS = True
@@ -164,23 +165,25 @@ APPEND_SLASH = False
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 # Default is group writable files:
-FILE_UPLOAD_PERMISSIONS=0o664
+FILE_UPLOAD_PERMISSIONS = 0o664
 
 # Uncomment next line to enable password reset though libreoffice mailings:
-#PASSWORD_LETTER = '/usr/lib/ngw/mailing/templates/resetpassword.odt'
+# PASSWORD_LETTER = '/usr/lib/ngw/mailing/templates/resetpassword.odt'
 
 # Uncomment next line to enable GPG keyring
-#GPG_HOME = '/var/lib/ngw/'
+# GPG_HOME = '/var/lib/ngw/'
 
 # If you enable xmpp extension, you'll need to define these 2 values
-#XMPP_DOMAIN = 'myxmppdomain.net'
-#XMPP_GROUP = 284
+# XMPP_DOMAIN = 'myxmppdomain.net'
+# XMPP_GROUP = 284
 
-#EMAIL_BACKEND = 'ngw.core.tormailbackend.TorEmailBackend'
-#EMAIL_HOST = 'localhost'
+# EMAIL_BACKEND = 'ngw.core.tormailbackend.TorEmailBackend'
+# EMAIL_HOST = 'localhost'
 EMAIL_PORT = 465
-#EMAIL_HOST_USER = 'smtpuser'
-#EMAIL_HOST_PASSWORD = 'password'
-#DEFAULT_FROM_EMAIL = 'webmaster@localhost'
+# EMAIL_HOST_USER = 'smtpuser'
+# EMAIL_HOST_PASSWORD = 'password'
+# DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
 EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
+
+# vim: set et ts=4 ft=python: #

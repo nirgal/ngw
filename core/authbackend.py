@@ -7,6 +7,7 @@ from ngw.core.models import Contact
 # crontrib.auth :
 user_logged_in.disconnect(update_last_login)
 
+
 class NgwAuthBackend(object):
     """
     Authenticate a user
@@ -14,11 +15,11 @@ class NgwAuthBackend(object):
 
     # required by contrib.auth:
     supports_inactive_user = False
-    
+
     def authenticate(self, username=None, password=None):
         if not username or not password:
             return None
-        
+
         try:
             contact = Contact.objects.get_by_natural_key(username)
         except (Contact.DoesNotExist, Contact.MultipleObjectsReturned):
@@ -27,7 +28,7 @@ class NgwAuthBackend(object):
         if contact.check_password(password):
             contact.update_lastconnection()
             return contact
-        return None # authentification failed
+        return None  # authentification failed
 
     def get_user(self, user_id):
         try:

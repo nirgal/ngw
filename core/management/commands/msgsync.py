@@ -1,5 +1,4 @@
 import fcntl
-import json
 import logging
 import os
 import sys
@@ -25,7 +24,8 @@ class Command(NoArgsCommand):
     def setup_logger(self, **options):
         logger = logging.getLogger('msgsync')
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s'))
+        handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(name)s %(levelname)-8s %(message)s'))
         logger.addHandler(handler)
         verbosity = int(options['verbosity'])
         if verbosity == 0:
@@ -52,7 +52,7 @@ class Command(NoArgsCommand):
             sys.exit(1)
 
         try:
-            fcntl.flock(pid_file, fcntl.LOCK_EX|fcntl.LOCK_NB)
+            fcntl.flock(pid_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except:
             # Another process is currently modifying the pid file.
             self.logger.critical(
@@ -72,11 +72,12 @@ class Command(NoArgsCommand):
             else:
                 self.logger.error(
                     "Process %s is not running. Ignoring stalled pid file."
-                     % pid)
+                    % pid)
 
         pid_file.seek(0)
         pid_file.write('%s' % os.getpid())
-        pid_file.close()  # This releases the lock, leaving the pid file: success
+        # This releases the lock, leaving the pid file: success:
+        pid_file.close()
 
     def release_lock(self):
         os.unlink(self.get_pid_filename())
@@ -88,6 +89,7 @@ class Command(NoArgsCommand):
             try:
                 func = getattr(backend, func_name)
             except AttributeError:
-                raise ImproperlyConfigured(('Module "%s" does not define a '
-                    '"%s" function' % (backend_name, func_name)))
+                raise ImproperlyConfigured((
+                    'Module "%s" does not define a "%s" function'
+                    % (backend, func_name)))
             func(msg)

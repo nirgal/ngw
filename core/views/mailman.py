@@ -12,12 +12,6 @@ from ngw.core.mailman import synchronise_group
 from ngw.core.views.generic import InGroupAcl
 
 
-#######################################################################
-#
-# External mailman synchronisation
-#
-#######################################################################
-
 class MailmanSyncForm(forms.Form):
     '''
     Simple form with a textarea
@@ -57,8 +51,8 @@ Ci-joint votre message original.
         cg = self.contactgroup
         context = {}
         context['title'] = _('Mailman synchronisation')
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('mailman', _('mailman')))
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('mailman', _('mailman')))
         context['active_submenu'] = 'mailman'
         context.update(kwargs)
         return super().get_context_data(**context)

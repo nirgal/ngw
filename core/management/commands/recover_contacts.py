@@ -12,7 +12,8 @@ class Command(NoArgsCommand):
     def handle_noargs(self, **options):
         logger = logging.getLogger('contactrecover')
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s'))
+        handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(name)s %(levelname)-8s %(message)s'))
         logger.addHandler(handler)
         logger.propagate = False
         verbosity = int(options['verbosity'])
@@ -25,5 +26,10 @@ class Command(NoArgsCommand):
         elif verbosity == 3:
             logger.setLevel(logging.DEBUG)
 
-        for contact in Contact.objects.extra(where=['NOT EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)' % (GROUP_EVERYBODY, perms.MEMBER)]):
+        for contact in Contact.objects.extra(where=[
+                ('NOT EXISTS (SELECT * FROM contact_in_group'
+                 ' WHERE contact_id=contact.id'
+                 ' AND group_id IN (SELECT self_and_subgroups(%s))'
+                 ' AND flags & %s <> 0)')
+                % (GROUP_EVERYBODY, perms.MEMBER)]):
             logger.error('%s is not member of group EVERYBODY', contact)

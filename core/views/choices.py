@@ -5,18 +5,13 @@ ChoiceGroup & Choice managing views
 from django import forms
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.utils import html
-from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
-from django.utils.translation import ugettext_lazy
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import UpdateView
 from django.views.generic.edit import ModelFormMixin
 
 from ngw.core import perms
 from ngw.core.models import ChoiceGroup, ContactField
-from ngw.core.nav import Navbar
 from ngw.core.views.generic import InGroupAcl
 
 
@@ -71,17 +66,19 @@ class ChoicesField(forms.MultiValueField):
             possibles_values = raw_values.split('\u001f')
         else:
             possibles_values = []
-        #print('possibles_values=', repr(possibles_values))
+        # print('possibles_values=', repr(possibles_values))
         # check there is no duplicate keys
         # necessary since keys are the id used in <select>
         for i in range(len(possibles_values)//2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
-                continue # ignore lines without values
+                continue  # ignore lines without values
             if not k:
-                continue # empty keys are ok
+                continue  # empty keys are ok
             if k in keys:
-                raise forms.ValidationError(_('You cannot have two keys with the same value. Leave empty for automatic generation.'))
+                raise forms.ValidationError(_(
+                    'You cannot have two keys with the same value. Leave empty'
+                    ' for automatic generation.'))
             keys.append(k)
         return possibles_values
 
@@ -105,7 +102,7 @@ class ChoiceGroupForm(forms.ModelForm):
                 self.initial['possible_values'].append(c[0])
                 ndisplay += 1
 
-        for i in range(3): # add 3 blank lines to add data
+        for i in range(3):  # add 3 blank lines to add data
             self.initial['possible_values'].append('')
             self.initial['possible_values'].append('')
             ndisplay += 1
@@ -126,8 +123,8 @@ class ChoiceGroupForm(forms.ModelForm):
         for i in range(len(possibles_values)//2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
-                continue # ignore lines whose value is empty
-            if k: # key is not left empty for automatic generation
+                continue  # ignore lines whose value is empty
+            if k:  # key is not left empty for automatic generation
                 if k.isdigit():
                     intk = int(k)
                     if intk > auto_key:
@@ -140,26 +137,26 @@ class ChoiceGroupForm(forms.ModelForm):
         for i in range(len(possibles_values)//2):
             v, k = possibles_values[2*i], possibles_values[2*i+1]
             if not v:
-                continue # ignore lines whose value is empty
-            if not k: # key is left empty for automatic generation
+                continue  # ignore lines whose value is empty
+            if not k:  # key is left empty for automatic generation
                 k = str(auto_key)
                 auto_key += 1
                 choices[k] = v
 
-        #print('choices=', choices)
+        # print('choices=', choices)
 
         for c in choicegroup.choices.all():
             k = c.key
             if k in choices.keys():
-                #print('UPDATING', k)
+                # print('UPDATING', k)
                 c.value = choices[k]
                 c.save()
                 del choices[k]
-            else: # that key has be deleted
-                #print('DELETING', k)
+            else:  # that key has be deleted
+                # print('DELETING', k)
                 c.delete()
         for k, v in choices.items():
-            #print('ADDING', k)
+            # print('ADDING', k)
             choicegroup.choices.create(key=k, value=v)
 
         return choicegroup
@@ -169,7 +166,7 @@ class ChoiceEditMixin(ModelFormMixin):
     template_name = 'choice_edit.html'
     form_class = ChoiceGroupForm
     model = ChoiceGroup
-    #pk_url_kwarg = 'id'
+    # pk_url_kwarg = 'id'
 
     def get_object(self):
         fid = self.kwargs.get('id')
@@ -181,10 +178,12 @@ class ChoiceEditMixin(ModelFormMixin):
 
     def form_valid(self, form):
         request = self.request
-        choicegroup = form.save()
+        # choicegroup = form.save()
+        form.save()
 
         # TODO show field name
-        messages.add_message(request, messages.SUCCESS, _('Choices have been saved successfully.'))
+        messages.add_message(request, messages.SUCCESS,
+                             _('Choices have been saved successfully.'))
 
         return HttpResponseRedirect('..')
 
@@ -200,13 +199,13 @@ class ChoiceEditMixin(ModelFormMixin):
         context['title'] = title
         context['id'] = id
         context['objtype'] = ChoiceGroup
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('fields', _('contact fields')))
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('fields', _('contact fields')))
         if id:
-            context['nav'].add_component(self.object.get_navcomponent()) \
-                          .add_component(('choices', _('choices')))
+            context['nav'].add_component(self.object.get_navcomponent())
+            context['nav'].add_component(('choices', _('choices')))
         else:
-            context['nav'].add_component(('add', _('add'))) # obsolete
+            context['nav'].add_component(('add', _('add')))  # obsolete
         context['active_submenu'] = 'fields'
 
         context.update(kwargs)
@@ -217,6 +216,7 @@ class ChoiceEditView(InGroupAcl, ChoiceEditMixin, UpdateView):
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.CHANGE_CG:
             raise PermissionDenied
+
 
 class Choice2EditView(ChoiceEditView):
     def get_object(self):

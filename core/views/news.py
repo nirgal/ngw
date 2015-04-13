@@ -44,8 +44,8 @@ class NewsListView(InGroupAcl, ListView):
         context = {}
         context['title'] = _('News for group %s') % cg.name
         context['objtype'] = ContactGroupNews
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('news', _('news')))
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('news', _('news')))
         context['active_submenu'] = 'news'
         context['baseurl'] = '?'  # for paginator
         context.update(kwargs)

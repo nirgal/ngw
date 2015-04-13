@@ -10,11 +10,12 @@ class Command(BaseCommand):
     help = 'Synchronise with an external mailman mailing list'
     args = 'filename dump|normalize|check'
     option_list = BaseCommand.option_list + (
-        make_option('-g', '--group',
-            action = 'store',
-            dest = 'groupid',
-            type = 'int',
-            help = 'specify groupid'),
+        make_option(
+            '-g', '--group',
+            action='store',
+            dest='groupid',
+            type='int',
+            help='specify groupid'),
         )
 
     def handle(self, *args, **options):
@@ -29,7 +30,8 @@ class Command(BaseCommand):
             mailman_members = mailman.parse_who_result(filecontent)
             for name, email in mailman_members:
                 if name:
-                    self.stdout.write(name, '->', mailman.normalize_name(name), ending=' ')
+                    self.stdout.write(name, '->', mailman.normalize_name(name),
+                                      ending=' ')
                 self.stdout.write('<%s>' % email)
         elif action == 'normalize':
             mailman_members = mailman.parse_who_result(filecontent)
@@ -52,8 +54,9 @@ class Command(BaseCommand):
                 raise CommandError('You must use -g option')
             cg = ContactGroup.objects.get(pk=groupid)
             self.stdout.write('Synching %s' % cg)
-            
-            msg, unsubscribe_list, subscribe_list = mailman.synchronise_group(cg, filecontent)
+
+            msg, unsubscribe_list, subscribe_list = mailman.synchronise_group(
+                cg, filecontent)
 
             self.stdout.write(str(msg))
 

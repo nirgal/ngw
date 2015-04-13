@@ -17,13 +17,12 @@ from django.contrib.admin.widgets import (AdminDateWidget,
                                           FilteredSelectMultiple)
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import formats, html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, FormView, TemplateView,
                                   UpdateView, View)
 from django.views.generic.edit import ModelFormMixin
@@ -35,8 +34,8 @@ from ngw.core.models import (FIELD_DEFAULT_GROUP, GROUP_EVERYBODY, Contact,
 from ngw.core.nav import Navbar
 from ngw.core.views.contacts import BaseContactListView
 from ngw.core.views.generic import (InGroupAcl, NgwDeleteView, NgwListView,
-                                    NgwUserAcl, method_decorator)
-from ngw.core.widgets import FlagsField, OnelineCheckboxSelectMultiple
+                                    NgwUserAcl)
+from ngw.core.widgets import FlagsField
 
 #######################################################################
 #
@@ -45,14 +44,18 @@ from ngw.core.widgets import FlagsField, OnelineCheckboxSelectMultiple
 #######################################################################
 
 LIST_PREVIEW_LEN = 5
+
+
 def _truncate_list(lst, maxlen=LIST_PREVIEW_LEN):
     'Utility function to truncate text longer that LIST_PREVIEW_LEN'
     if len(lst) > maxlen:
         return lst[:maxlen] + ['…']
     return lst
 
+
 class ContactGroupListView(NgwUserAcl, NgwListView):
-    list_display = ('name', 'description_not_too_long',
+    list_display = (
+        'name', 'description_not_too_long',
         # 'rendered_fields',
         'visible_direct_supergroups_5',
         'visible_direct_subgroups_5',
@@ -65,23 +68,31 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
 
     def visible_direct_supergroups_5(self, group):
         supergroups = group.get_direct_supergroups()
-        supergroups = supergroups.with_user_perms(self.request.user.id, perms.SEE_CG)
+        supergroups = supergroups.with_user_perms(self.request.user.id,
+                                                  perms.SEE_CG)
         supergroups = supergroups[:LIST_PREVIEW_LEN+1]
-        return ', '.join(_truncate_list([str(sg) for sg in supergroups]))
-    visible_direct_supergroups_5.short_description = ugettext_lazy('Super groups')
+        return ', '.join(_truncate_list(
+            [str(sg) for sg in supergroups]))
+    visible_direct_supergroups_5.short_description = ugettext_lazy(
+        'Super groups')
 
     def visible_direct_subgroups_5(self, group):
         subgroups = group.get_direct_subgroups()
-        subgroups = subgroups.with_user_perms(self.request.user.id, perms.SEE_CG)
+        subgroups = subgroups.with_user_perms(self.request.user.id,
+                                              perms.SEE_CG)
         subgroups = subgroups[:LIST_PREVIEW_LEN+1]
         return ', '.join(_truncate_list([str(sg) for sg in subgroups]))
-    visible_direct_subgroups_5.short_description = ugettext_lazy('Sub groups')
+    visible_direct_subgroups_5.short_description = ugettext_lazy(
+        'Sub groups')
 
     def rendered_fields(self, group):
         if group.field_group:
             fields = group.contactfield_set.all()
             if fields:
-                return ', '.join(['<a href="' + f.get_absolute_url() + '">'+html.escape(f.name) + '</a>' for f in fields])
+                return ', '.join(
+                    ['<a href="' + f.get_absolute_url() + '">'
+                     + html.escape(f.name) + '</a>'
+                     for f in fields])
             else:
                 return _('Yes (but none yet)')
         else:
@@ -96,18 +107,21 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
             return _('Not available')
     visible_member_count.short_description = ugettext_lazy('Members')
 
-
     def locked(self, group):
         if group.system:
-            return '<img src="%sngw/lock.png" alt="locked" width="10" height="10">' % settings.STATIC_URL
+            return (
+                '<img src="%sngw/lock.png" alt="locked"'
+                ' width="10" height="10">'
+                % settings.STATIC_URL)
         return ''
     locked.short_description = ugettext_lazy('Locked')
     locked.admin_order_field = 'system'
     locked.allow_tags = True
 
     def get_root_queryset(self):
-        return ContactGroup.objects.filter(date=None).with_user_perms(self.request.user.id, perms.SEE_CG)
-
+        return (ContactGroup
+                .objects.filter(date=None)
+                .with_user_perms(self.request.user.id, perms.SEE_CG))
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -135,6 +149,7 @@ class WeekDate:
             dt = self.date + timedelta(days=i)
             events = self.events.get(dt, [])
             yield dt, events
+
 
 class YearMonthCal:
     def __init__(self, year, month, events):
@@ -169,10 +184,11 @@ class YearMonthCal:
 
         first_day_of_month = date(self.year, self.month, 1)
         first_day_of_month_isocal = first_day_of_month.isocalendar()
-        #firstweeknumber = first_day_of_month_isocal[1]
 
-        first_day_of_month_isoweekday = first_day_of_month_isocal[2] # 1=monday, 7=sunday
-        first_week_date = first_day_of_month - timedelta(days=(first_day_of_month_isoweekday-first_day_of_week)%7)
+        first_day_of_month_isoweekday = first_day_of_month_isocal[2]
+        # 1=monday, 7=sunday
+        first_week_date = first_day_of_month - timedelta(
+            days=(first_day_of_month_isoweekday-first_day_of_week) % 7)
 
         nextyear, nextmonth = self.year, self.month
         nextmonth += 1
@@ -191,7 +207,8 @@ class YearMonthCal:
 
 
 class EventListView(NgwUserAcl, NgwListView):
-    list_display = ('name', 'date', 'description_not_too_long',
+    list_display = (
+        'name', 'date', 'description_not_too_long',
         'budget_code',
         # 'visible_member_count',
         )
@@ -206,10 +223,10 @@ class EventListView(NgwUserAcl, NgwListView):
             return _('Not available')
     visible_member_count.short_description = ugettext_lazy('Members')
 
-
     def get_root_queryset(self):
-        return ContactGroup.objects.filter(date__isnull=False).with_user_perms(self.request.user.id, perms.SEE_CG)
-
+        return (ContactGroup.objects
+                .filter(date__isnull=False)
+                .with_user_perms(self.request.user.id, perms.SEE_CG))
 
     def get_context_data(self, **kwargs):
         context = {}
@@ -239,29 +256,36 @@ class CalendarView(NgwUserAcl, TemplateView):
         context.update(kwargs)
         return super().get_context_data(**context)
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+
+
 def safe_new_datetime(d):
     kw = [d.year, d.month, d.day]
     if isinstance(d, datetime):
         kw.extend([d.hour, d.minute, d.second, d.microsecond, d.tzinfo])
     return datetime(*kw)
 
+
 def safe_new_date(d):
     return date(d.year, d.month, d.day)
+
 
 def get_date_stamp(d):
     """获取当前日期和1970年1月1日之间的毫秒数"""
     return int(time.mktime(d.timetuple())*1000)
-    
+
+
 def get_ms_json_date_format(d):
     """获取MS Ajax Json Data Format /Date(@tickets)/"""
-    stamp=get_date_stamp(d);
+    stamp = get_date_stamp(d)
     return r'/Date(%d)/' % stamp
-    
+
+
 class DatetimeJSONEncoder(json.JSONEncoder):
     """可以序列化时间的JSON"""
-    #DATE_FORMAT = "%Y-%m-%d"
+    # DATE_FORMAT = "%Y-%m-%d"
     TIME_FORMAT = "%H:%M:%S"
+
     def default(self, o):
         if isinstance(o, datetime):
             d = safe_new_datetime(o)
@@ -269,15 +293,16 @@ class DatetimeJSONEncoder(json.JSONEncoder):
         elif isinstance(o, date):
             d = safe_new_date(o)
             return get_ms_json_date_format(d)
-        #elif isinstance(o, time):
+        # elif isinstance(o, time):
         #    return o.strftime(self.TIME_FORMAT)
         elif isinstance(o, decimal.Decimal):
             return str(o)
         else:
             return super().default(o)
 
-#----------------------------------------------------------------------
-        
+# ----------------------------------------------------------------------
+
+
 class CalendarQueryView(View):
     def post(self, request, *args, **kwargs):
         '''
@@ -289,7 +314,7 @@ class CalendarQueryView(View):
 
         showdate = request.REQUEST.get('showdate')
         print('showdate:', showdate)
-        #showdate = datetime.strptime(showdate, '%d/%m/%Y').date()
+        # showdate = datetime.strptime(showdate, '%d/%m/%Y').date()
         showdate = datetime.strptime(showdate, '%m/%d/%Y').date()
         print('showdate:', showdate)
 
@@ -301,28 +326,32 @@ class CalendarQueryView(View):
         first_day_of_week = formats.get_format('FIRST_DAY_OF_WEEK')
 
         if viewtype == 'month':
-            #min_date = date(year, month, 1)
-            #max_date = date(year, month, nb_days)
-            min_date = date(year, month, 1) - timedelta(days=(dow_first-first_day_of_week+8)%7)
-            extra_days = (34-(nb_days+dow_first-first_day_of_week))%7
+            # min_date = date(year, month, 1)
+            # max_date = date(year, month, nb_days)
+            min_date = date(year, month, 1) - timedelta(
+                days=(dow_first-first_day_of_week+8) % 7)
+            extra_days = (34-(nb_days+dow_first-first_day_of_week)) % 7
             max_date = date(year, month, nb_days) + timedelta(days=extra_days)
         elif viewtype == 'week':
             weekday = calendar.weekday(year, month, showdate.day)
-            min_date = showdate - timedelta(days=(weekday-first_day_of_week+8)%7)
+            min_date = showdate - timedelta(
+                days=(weekday-first_day_of_week+8) % 7)
             max_date = min_date + timedelta(days=6)
-        else: #viewtype == 'day':
+        else:  # viewtype == 'day':
             min_date = showdate
             max_date = showdate
 
         str_min_date = min_date.strftime('%Y-%m-%d')
         str_max_date = max_date.strftime('%Y-%m-%d')
-        #print(str_min_date, str_max_date)
+        # print(str_min_date, str_max_date)
 
-        qs = ContactGroup.objects.with_user_perms(request.user.id, perms.SEE_CG)
-        qs = qs.filter(Q(date__gte=str_min_date, date__lte=str_max_date)
+        qs = ContactGroup.objects.with_user_perms(request.user.id,
+                                                  perms.SEE_CG)
+        qs = qs.filter(
+            Q(date__gte=str_min_date, date__lte=str_max_date)
             | Q(end_date__gte=str_min_date, end_date__lte=str_max_date))
         qs = qs.order_by('date')
-        #qs = qs.distinct()
+        # qs = qs.distinct()
 
         events = []
         for group in qs:
@@ -334,15 +363,15 @@ class CalendarQueryView(View):
                 group.name,
                 group.date,
                 end_date,
-                True, # all day event
-                bool(end_date) and group.date!=group.end_date, # crossday
-                0, # recurring
-                group.id % 22, # theme id
-                0, # can be drag
-                None, # location
-                '', # participants
+                True,  # all day event
+                bool(end_date) and group.date != group.end_date,  # crossday
+                0,  # recurring
+                group.id % 22,  # theme id
+                0,  # can be drag
+                None,  # location
+                '',  # participants
             ])
-            #print(events[-1])
+            # print(events[-1])
         response = {
             'events': events,
             'issort': True,
@@ -351,9 +380,11 @@ class CalendarQueryView(View):
             'error': None,
         }
         jsonresponse = json.dumps(response, cls=DatetimeJSONEncoder)
-        
+
         # dates must be transformed in pseuso-regular expressions
-        jsonresponse = re.compile('"/Date\((\d+)\)/"').sub('"\\/Date(\\1)\\/"', jsonresponse)
+        jsonresponse = (
+            re.compile('"/Date\((\d+)\)/"')
+              .sub('"\\/Date(\\1)\\/"', jsonresponse))
         return HttpResponse(jsonresponse, content_type='application/json')
     get = post
 
@@ -363,6 +394,7 @@ class CalendarQueryView(View):
 #
 #######################################################################
 
+
 class ContactGroupView(InGroupAcl, View):
     '''
     Redirect to members list, if allowed.
@@ -370,8 +402,6 @@ class ContactGroupView(InGroupAcl, View):
     '''
     def get(self, request, *args, **kwargs):
         cg = self.contactgroup
-        gid = cg.id
-        uid = request.user.id
         if cg.userperms & perms.SEE_MEMBERS:
             return HttpResponseRedirect(cg.get_absolute_url() + 'members/')
         if cg.userperms & perms.VIEW_NEWS:
@@ -405,7 +435,6 @@ class MemberFilter(filters.SimpleListFilter):
             display = self.contactgroup.get_default_display()
         self.display = display
 
-
     def lookups(self, request, view):
         return (
             ('m', _('Members')),
@@ -432,7 +461,7 @@ class MemberFilter(filters.SimpleListFilter):
             yield {
                 'selected': selected,
                 'query_string': cl.get_query_string({
-                    'display': newdisplay }),
+                    'display': newdisplay}),
                 'display': title,
             }
 
@@ -453,21 +482,53 @@ class MemberFilter(filters.SimpleListFilter):
         if not wanted_flags:
             # Show nothing
             q = q.filter('FALSE')
-        elif not 'g' in display:
+        elif 'g' not in display:
             # Not interested in inheritance:
-            q = q.filter('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+            q = q.filter(
+                'EXISTS ('
+                '   SELECT *'
+                '   FROM contact_in_group'
+                '   WHERE contact_id=contact.id'
+                '   AND group_id=%s'
+                '   AND flags & %s <> 0'
+                ')'
                 % (cg.id, wanted_flags))
         else:
             # We want inherited people
             or_conditions = []
             # The local flags
-            or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id=%s AND flags & %s <> 0)'
+            or_conditions.append(
+                'EXISTS ('
+                '   SELECT *'
+                '   FROM contact_in_group'
+                '   WHERE contact_id=contact.id'
+                '   AND group_id=%s'
+                '   AND flags & %s <> 0'
+                ')'
                 % (cg.id, wanted_flags))
             # The inherited memberships/invited/declined
-            or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(%s)) AND flags & %s <> 0)'
-                % (cg.id, wanted_flags & (perms.MEMBER|perms.INVITED|perms.DECLINED)))
+            or_conditions.append(
+                'EXISTS ('
+                '   SELECT *'
+                '   FROM contact_in_group'
+                '   WHERE contact_id=contact.id'
+                '   AND group_id IN (SELECT self_and_subgroups(%s))'
+                '   AND flags & %s <> 0'
+                ')'
+                % (cg.id, wanted_flags & (perms.MEMBER
+                                          | perms.INVITED
+                                          | perms.DECLINED)))
             # The inherited admins
-            or_conditions.append('EXISTS (SELECT * FROM contact_in_group WHERE contact_in_group.contact_id=contact.id AND group_id IN (SELECT self_and_subgroups(father_id) FROM group_manage_group WHERE subgroup_id=%s AND group_manage_group.flags & %s <> 0) AND contact_in_group.flags & 1 <> 0)'
+            or_conditions.append(
+                'EXISTS ('
+                '   SELECT *'
+                '   FROM contact_in_group'
+                '   WHERE contact_in_group.contact_id=contact.id'
+                '   AND group_id IN (SELECT self_and_subgroups(father_id)'
+                '   FROM group_manage_group WHERE subgroup_id=%s'
+                '   AND group_manage_group.flags & %s <> 0'
+                '   )'
+                ' AND contact_in_group.flags & 1 <> 0)'
                 % (cg.id, wanted_flags & perms.ADMIN_ALL))
 
             q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
@@ -477,10 +538,10 @@ class MemberFilter(filters.SimpleListFilter):
 class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_members.html'
     list_filter = BaseContactListView.list_filter + (MemberFilter,)
+
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.SEE_MEMBERS:
             raise PermissionDenied
-
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
@@ -495,18 +556,17 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         result = super().get_context_data(**context)
         return result
 
-
     def get_actions(self, request):
         actions = super().get_actions(request)
         send_message = self.get_action('action_send_message')
         actions[send_message[1]] = send_message
         return actions
 
-
     def action_send_message(self, request, queryset):
         ids = request.POST.getlist('_selected_action')
         return HttpResponseRedirect('send_message?ids=' + ','.join(ids))
-    action_send_message.short_description = ugettext_lazy("Send a message (external storage)")
+    action_send_message.short_description = ugettext_lazy(
+        "Send a message (external storage)")
 
 
 #######################################################################
@@ -519,10 +579,12 @@ class ContactGroupForm(forms.ModelForm):
     class Meta:
         model = ContactGroup
         fields = [
-            'name', 'description', 'date', 'end_date', 'budget_code', #'sticky',
+            'name', 'description', 'date', 'end_date', 'budget_code',
+            # 'sticky',
             'field_group', 'mailman_address']
         widgets = {
-            'date': AdminDateWidget(attrs={'onchange': mark_safe("alert('ok');")}),
+            'date': AdminDateWidget(attrs={
+                'onchange': mark_safe("alert('ok');")}),
             'end_date': AdminDateWidget,
         }
 
@@ -535,31 +597,37 @@ class ContactGroupForm(forms.ModelForm):
         # Only show visible groups
         visible_groups_choices = [
             (g.id, str(g))
-            for g in ContactGroup.objects.with_user_perms(user.id, perms.SEE_CG)]
+            for g in ContactGroup.objects.with_user_perms(
+                user.id, perms.SEE_CG)]
 
         # Super groups
         if instance:
-            field_initial = instance.get_visible_direct_supergroups_ids(user.id)
+            field_initial = instance.get_visible_direct_supergroups_ids(
+                user.id)
         else:
             field_initial = None
         self.fields['direct_supergroups'] = forms.MultipleChoiceField(
             label=_('Direct supergroups'),
             required=False,
-            help_text=_('Members will automatically be granted membership in these groups.'),
+            help_text=_('Members will automatically be granted membership in'
+                        ' these groups.'),
             widget=FilteredSelectMultiple(_('groups'), False),
-            choices = visible_groups_choices,
-            initial = field_initial)
+            choices=visible_groups_choices,
+            initial=field_initial)
 
         # Add fields for kind of permissions
         for flag in 'oveEcCfFnNuUxX':
             field_name = 'admin_%s_groups' % flag
             if instance:
                 intflag = perms.FLAGTOINT[flag]
-                field_initial = instance.get_visible_mananger_groups_ids(user.id, intflag)
+                field_initial = instance.get_visible_mananger_groups_ids(
+                    user.id, intflag)
             else:
                 if flag == 'o':
-                    default_group_id = user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
-                    assert default_group_id, "User doesn't have a default group"
+                    default_group_id = user.get_fieldvalue_by_id(
+                        FIELD_DEFAULT_GROUP)
+                    assert default_group_id, \
+                        "User doesn't have a default group"
                     field_initial = int(default_group_id),
                 else:
                     field_initial = None
@@ -568,8 +636,8 @@ class ContactGroupForm(forms.ModelForm):
                 required=False,
                 help_text=perms.FLAGGROUPHELP[flag],
                 widget=FilteredSelectMultiple(_('groups'), False),
-                choices = visible_groups_choices,
-                initial = field_initial)
+                choices=visible_groups_choices,
+                initial=field_initial)
 
     def clean(self):
         data = super().clean()
@@ -577,9 +645,13 @@ class ContactGroupForm(forms.ModelForm):
         end_date = data.get('end_date', None)
         if end_date:
             if not start_date:
-                self.add_error('date', _('That field is required when you have an end date.'))
+                self.add_error(
+                    'date',
+                    _('That field is required when you have an end date.'))
             elif end_date < start_date:
-                self.add_error('end_date', _('The end date must be after the start date.'))
+                self.add_error(
+                    'end_date',
+                    _('The end date must be after the start date.'))
         return data
 
     def save(self, commit=True):
@@ -590,45 +662,56 @@ class ContactGroupForm(forms.ModelForm):
         cg = super().save(commit)
 
         # Update the super groups
-        old_direct_supergroups_ids = set(cg.get_visible_direct_supergroups_ids(self.user.id))
-        new_direct_supergroups_id = set([int(i) for i in data['direct_supergroups']])
+        old_direct_supergroups_ids = set(
+            cg.get_visible_direct_supergroups_ids(self.user.id))
+        new_direct_supergroups_id = set(
+            [int(i) for i in data['direct_supergroups']])
         if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
             new_direct_supergroups_id = {GROUP_EVERYBODY}
 
-        supergroup_added = new_direct_supergroups_id - old_direct_supergroups_ids
-        supergroup_removed = old_direct_supergroups_ids - new_direct_supergroups_id
+        supergroup_added = (new_direct_supergroups_id
+                            - old_direct_supergroups_ids)
+        supergroup_removed = (old_direct_supergroups_ids
+                              - new_direct_supergroups_id)
 
         print('supergroup_added=', supergroup_added)
         print('supergroup_removed=', supergroup_removed)
         for sgid in supergroup_added:
             GroupInGroup(father_id=sgid, subgroup_id=cg.id).save()
         for sgid in supergroup_removed:
-            GroupInGroup.objects.get(father_id=sgid, subgroup_id=cg.id).delete()
+            (GroupInGroup.objects
+             .get(father_id=sgid, subgroup_id=cg.id).delete())
 
         # Update the administrative groups
         for flag in 'oveEcCfFnNuUxX':
             field_name = 'admin_%s_groups' % flag
             intflag = perms.FLAGTOINT[flag]
-            old_groups_ids = set(cg.get_visible_mananger_groups_ids(self.user.id, intflag))
+            old_groups_ids = set(
+                cg.get_visible_mananger_groups_ids(self.user.id, intflag))
             new_groups_ids = set([int(ogid) for ogid in data[field_name]])
-            #print('flag', flag, 'old_groups_ids', old_groups_ids)
-            #print('flag', flag, 'new_groups_ids', new_groups_ids)
+            # print('flag', flag, 'old_groups_ids', old_groups_ids)
+            # print('flag', flag, 'new_groups_ids', new_groups_ids)
             groups_added = new_groups_ids - old_groups_ids
             groups_removed = old_groups_ids - new_groups_ids
             print('flag', flag, 'groups_added=', groups_added)
             print('flag', flag, 'groups_removed=', groups_removed)
-            if not is_creation and (groups_added or groups_removed) and not perms.c_operatorof_cg(self.user.id, cg.id):
+            if (not is_creation
+               and (groups_added or groups_removed)
+               and not perms.c_operatorof_cg(self.user.id, cg.id)):
                 # Only operators can change permissions
                 raise PermissionDenied
             for ogid in groups_added:
                 try:
-                    gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
+                    gmg = GroupManageGroup.objects.get(
+                        father_id=ogid, subgroup_id=cg.id)
                 except GroupManageGroup.DoesNotExist:
-                    gmg = GroupManageGroup(father_id=ogid, subgroup_id=cg.id, flags=0)
+                    gmg = GroupManageGroup(
+                        father_id=ogid, subgroup_id=cg.id, flags=0)
                 gmg.flags |= intflag
                 gmg.save()
             for ogid in groups_removed:
-                gmg = GroupManageGroup.objects.get(father_id=ogid, subgroup_id=cg.id)
+                gmg = GroupManageGroup.objects.get(father_id=ogid,
+                                                   subgroup_id=cg.id)
                 gmg.flags &= ~ intflag
                 if gmg.flags:
                     gmg.save()
@@ -653,12 +736,14 @@ class GroupEditMixin(ModelFormMixin):
         request = self.request
         cg = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Group %s has been changed successfully!') % cg)
+        messages.add_message(
+            request, messages.SUCCESS,
+            _('Group %s has been changed successfully!') % cg)
 
         cg.check_static_folder_created()
-        Contact.objects.check_login_created(request) # subgroups change
+        Contact.objects.check_login_created(request)  # subgroups change
 
-        if self.pk_url_kwarg not in self.kwargs: # new added instance
+        if self.pk_url_kwarg not in self.kwargs:  # new added instance
             base_url = '.'
         else:
             base_url = '..'
@@ -676,7 +761,8 @@ class GroupEditMixin(ModelFormMixin):
             title = _('Editing %s') % self.object
             id = self.object.id
         else:
-            title = _('Adding a new %s') % ContactGroup.get_class_verbose_name()
+            title = (_('Adding a new %s')
+                     % ContactGroup.get_class_verbose_name())
             id = None
 
         context['title'] = title
@@ -684,11 +770,11 @@ class GroupEditMixin(ModelFormMixin):
         context['objtype'] = ContactGroup
 
         if id:
-            context['nav'] = self.object.get_smart_navbar() \
-                             .add_component(('edit', _('edit')))
+            context['nav'] = self.object.get_smart_navbar()
+            context['nav'].add_component(('edit', _('edit')))
         else:
-            context['nav'] = Navbar(ContactGroup.get_class_navcomponent()) \
-                             .add_component(('add', _('add')))
+            context['nav'] = Navbar(ContactGroup.get_class_navcomponent())
+            context['nav'].add_component(('add', _('add')))
 
         context.update(kwargs)
         return super().get_context_data(**context)
@@ -702,23 +788,27 @@ class GroupEditView(InGroupAcl, GroupEditMixin, UpdateView):
 
 class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
     def get(self, request, *args, **kwargs):
-        default_group_id = request.user.get_fieldvalue_by_id(FIELD_DEFAULT_GROUP)
+        default_group_id = request.user.get_fieldvalue_by_id(
+            FIELD_DEFAULT_GROUP)
         if not default_group_id:
-            messages.add_message(
-                request, messages.WARNING,
-                _('You must define a default group before you can create a group.'))
-            return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+            messages.add_message(request, messages.WARNING, _(
+                'You must define a default group before you can create a'
+                ' group.'))
+            return HttpResponseRedirect(
+                request.user.get_absolute_url()+'default_group')
         default_group_id = int(default_group_id)
         if not request.user.is_member_of(default_group_id):
-            messages.add_message(
-                request, messages.WARNING,
-                _('You no longer are member of your default group. Please define a new default group.'))
-            return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+            messages.add_message(request, messages.WARNING, _(
+                'You no longer are member of your default group.'
+                ' Please define a new default group.'))
+            return HttpResponseRedirect(
+                request.user.get_absolute_url()+'default_group')
         if not perms.c_can_see_cg(request.user.id, default_group_id):
-            messages.add_message(
-                request, messages.WARNING,
-                _('You no longer are authorized to see your default group. Please define a new default group.'))
-            return HttpResponseRedirect(request.user.get_absolute_url()+'default_group')
+            messages.add_message(request, messages.WARNING, _(
+                'You no longer are authorized to see your default group.'
+                ' Please define a new default group.'))
+            return HttpResponseRedirect(
+                request.user.get_absolute_url()+'default_group')
 
         return super().get(request, *args, **kwargs)
 
@@ -750,8 +840,8 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
     def get_context_data(self, **kwargs):
         context = {}
         if self.contactgroup:
-            context['nav'] = self.contactgroup.get_smart_navbar() \
-                     .add_component(('delete', _('delete')))
+            context['nav'] = self.contactgroup.get_smart_navbar()
+            context['nav'].add_component(('delete', _('delete')))
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -761,13 +851,14 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
         supergroups_ids = set(cg.get_direct_supergroups_ids())
         for subcg in cg.get_direct_subgroups():
             sub_super = set(subcg.get_direct_supergroups_ids())
-            #print(repr(subcg), "had these fathers:", sub_super)
+            # print(repr(subcg), "had these fathers:", sub_super)
             sub_super = sub_super | supergroups_ids - {cg.id}
             if not sub_super:
                 sub_super = {GROUP_EVERYBODY}
-            #print(repr(subcg), "new fathers:", sub_super)
+            # print(repr(subcg), "new fathers:", sub_super)
             subcg.set_direct_supergroups_ids(sub_super)
-            #print(repr(subcg), "new fathers double check:", subcg.get_direct_supergroups_ids())
+            # print(repr(subcg), "new fathers double check:",
+            #       subcg.get_direct_supergroups_ids())
         # TODO: delete static folder
         return super().delete(request, *args, **kwargs)
 
@@ -781,6 +872,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
 
 class ContactInGroupForm(forms.ModelForm):
     flags = FlagsField(label=ugettext_lazy('Membership'))
+
     class Meta:
         model = ContactInGroup
         fields = ['flags', 'note']
@@ -789,13 +881,11 @@ class ContactInGroupForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        instance = kwargs.get('instance', None)
+        # instance = kwargs.get('instance', None)
         self.user = kwargs.pop('user')
         self.contact = kwargs.pop('contact')
         self.group = kwargs.pop('group')
         super().__init__(*args, **kwargs)
-
-
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
@@ -803,14 +893,14 @@ class ContactInGroupForm(forms.ModelForm):
         data = super().clean()
         flags = data['flags']
         if ((flags & perms.INVITED and flags & perms.DECLINED)
-            or (flags & perms.DECLINED and flags & perms.MEMBER)
-            or (flags & perms.INVITED and flags & perms.MEMBER)):
+           or (flags & perms.DECLINED and flags & perms.MEMBER)
+           or (flags & perms.INVITED and flags & perms.MEMBER)):
             raise forms.ValidationError('Invalid flags combinaison')
 
         if flags == 0 and data['note']:
-            raise forms.ValidationError(_('You cannot have a note unless you select some flags too'))
+            raise forms.ValidationError(_(
+                'You cannot have a note unless you select some flags too'))
         return data
-
 
     def save(self):
         oldflags = self.instance.flags or 0
@@ -820,19 +910,19 @@ class ContactInGroupForm(forms.ModelForm):
             cig.contact = self.contact
             cig.group = self.group
 
-        data = self.cleaned_data
-
         newflags = self.cleaned_data['flags']
-        if (oldflags ^ newflags) & perms.ADMIN_ALL \
-            and not perms.c_operatorof_cg(self.user.id, self.group.id):
-            # If you change any permission flags of that group, you must be a group operator
+        if ((oldflags ^ newflags) & perms.ADMIN_ALL
+           and not perms.c_operatorof_cg(self.user.id, self.group.id)):
+            # If you change any permission flags of that group, you must be a
+            # group operator
             raise PermissionDenied
         if not newflags:
             cig.delete()
             return None
         cig.flags = newflags
         cig.save()
-        # TODO: use set_member_1 for logs:  cg.set_member_1(request, contact, flags)
+        # TODO: use set_member_1 for logs:
+        # cg.set_member_1(request, contact, flags)
         return cig
 
 
@@ -847,7 +937,8 @@ class ContactInGroupView(InGroupAcl, FormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['group'] = self.contactgroup
-        kwargs['contact'] = get_object_or_404(Contact, pk=int(self.kwargs['cid']))
+        kwargs['contact'] = get_object_or_404(Contact,
+                                              pk=int(self.kwargs['cid']))
         kwargs['user'] = self.request.user
         try:
             instance = ContactInGroup.objects.get(
@@ -865,7 +956,8 @@ class ContactInGroupView(InGroupAcl, FormView):
         if cig:
             messages.add_message(
                 self.request, messages.SUCCESS,
-                _('Member %(contact)s of group %(group)s has been changed.') % {
+                _('Member %(contact)s of group %(group)s has been changed.')
+                % {
                     'contact': contact.name,
                     'group': cg.name})
         else:
@@ -892,8 +984,16 @@ class ContactInGroupView(InGroupAcl, FormView):
         context['objtype'] = ContactInGroup
         inherited_info = ''
 
-        automember_groups = ContactGroup.objects.extra(
-            where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.MEMBER)]).exclude(id=gid).order_by('-date', 'name')
+        automember_groups = (ContactGroup.objects.extra(where=[
+            'EXISTS ('
+            '   SELECT *'
+            '   FROM contact_in_group'
+            '   WHERE group_id IN (SELECT self_and_subgroups(%s))'
+            '   AND contact_id=%s AND flags & %s <> 0'
+            '   AND group_id=contact_group.id'
+            ')'
+            % (gid, cid, perms.MEMBER)]).exclude(id=gid)
+                                        .order_by('-date', 'name'))
 
         visible_automember_groups = automember_groups.with_user_perms(
             self.request.user.id, wanted_flags=perms.SEE_CG)
@@ -907,7 +1007,9 @@ class ContactInGroupView(InGroupAcl, FormView):
             % (self.request.user.id, perms.SEE_CG)])
 
         if automember_groups:
-            inherited_info += _('Automatically member because member of subgroup(s)') + ':<ul>'
+            inherited_info += (
+                _('Automatically member because member of subgroup(s)')
+                + ':<ul>')
             for sub_cg in visible_automember_groups:
                 inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
                     'name': sub_cg,
@@ -916,7 +1018,17 @@ class ContactInGroupView(InGroupAcl, FormView):
                 inherited_info += '<li>' + _('Hidden group(s)...')
             inherited_info += '</ul>'
 
-        autoinvited_groups = ContactGroup.objects.extra(where=['EXISTS (SELECT * FROM contact_in_group WHERE group_id IN (SELECT self_and_subgroups(%s)) AND contact_id=%s AND flags & %s <> 0 AND group_id=contact_group.id)' % (gid, cid, perms.INVITED)]).exclude(id=gid).order_by('-date', 'name')
+        autoinvited_groups = (ContactGroup.objects.extra(where=[
+            'EXISTS ('
+            '   SELECT *'
+            '   FROM contact_in_group'
+            '   WHERE group_id IN (SELECT self_and_subgroups(%s))'
+            '   AND contact_id=%s'
+            '   AND flags & %s <> 0'
+            '   AND group_id=contact_group.id'
+            ')'
+            % (gid, cid, perms.INVITED)]).exclude(id=gid)
+                                         .order_by('-date', 'name'))
 
         visible_autoinvited_groups = autoinvited_groups.with_user_perms(
             self.request.user.id, wanted_flags=perms.SEE_CG)
@@ -930,7 +1042,9 @@ class ContactInGroupView(InGroupAcl, FormView):
             % (self.request.user.id, perms.SEE_CG)])
 
         if autoinvited_groups:
-            inherited_info += _('Automatically invited because invited in subgroup(s)') + ':<ul>'
+            inherited_info += (
+                _('Automatically invited because invited in subgroup(s)')
+                + ':<ul>')
             for sub_cg in visible_autoinvited_groups:
                 inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
                     'name': sub_cg,
@@ -941,10 +1055,10 @@ class ContactInGroupView(InGroupAcl, FormView):
 
         context['inherited_info'] = mark_safe(inherited_info)
 
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('members', _('members'))) \
-                         .add_component(contact.get_navcomponent()) \
-                         .add_component(('membership', _('membership')))
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('members', _('members')))
+        context['nav'].add_component(contact.get_navcomponent())
+        context['nav'].add_component(('membership', _('membership')))
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -1012,5 +1126,6 @@ class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
         try:
             self.get_object()
         except ContactInGroup.DoesNotExist:
-            return HttpResponse(_('Error, that contact is not a direct member. Please check subgroups'))
+            return HttpResponse(_('Error, that contact is not a direct member.'
+                                  ' Please check subgroups'))
         return super().get(self, request, gid, cid)

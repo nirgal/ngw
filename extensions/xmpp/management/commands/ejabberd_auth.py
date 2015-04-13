@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import logging
 import struct
 import sys
@@ -8,9 +10,11 @@ from django.core.management.base import NoArgsCommand
 
 from ngw.core.models import FIELD_LOGIN, FIELD_PASSWORD, ContactFieldValue
 
+
 print('In ejabberd auth', file=sys.stderr)
 
 logger = logging.getLogger('ejabberd_auth')
+
 
 def send_result(result):
     logger.debug('Sending result: %s', result)
@@ -21,7 +25,8 @@ def send_result(result):
 
 def cmd_auth(login, domain, password):
     try:
-        login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=login)
+        login_value = ContactFieldValue.objects.get(
+            contact_field_id=FIELD_LOGIN, value=login)
     except ContactFieldValue.DoesNotExist:
         logger.info('No user with login %s', login)
         return False
@@ -33,7 +38,8 @@ def cmd_auth(login, domain, password):
         return False
 
     try:
-        dbpassword = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=FIELD_PASSWORD).value
+        dbpassword = ContactFieldValue.objects.get(
+            contact_id=cid, contact_field_id=FIELD_PASSWORD).value
     except ContactFieldValue.DoesNotExist:
         logger.info('User %s has no password', login)
         return False
@@ -49,12 +55,13 @@ def cmd_auth(login, domain, password):
 
 def cmd_isuser(login, domain):
     try:
-        login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=login)
+        login_value = ContactFieldValue.objects.get(
+            contact_field_id=FIELD_LOGIN, value=login)
     except ContactFieldValue.DoesNotExist:
         logger.info('No user with login %s', login)
         return False
 
-    cid = login_value.contact_id
+    # cid = login_value.contact_id
     contact = login_value.contact
     if not contact.is_member_of(settings.XMPP_GROUP):
         logger.info('User %s is not member of group XMPP', login)
@@ -64,7 +71,8 @@ def cmd_isuser(login, domain):
 
 def cmd_setpass(login, domain, newpass):
     try:
-        login_value = ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN, value=login)
+        login_value = ContactFieldValue.objects.get(
+            contact_field_id=FIELD_LOGIN, value=login)
     except ContactFieldValue.DoesNotExist:
         logger.info('No user with login %s', login)
         return False
@@ -75,7 +83,8 @@ def cmd_setpass(login, domain, newpass):
         logger.info('User %s is not member of group XMPP', login)
         return False
 
-    cfv = ContactFieldValue.objects.get(contact_id=cid, contact_field_id=FIELD_PASSWORD)
+    cfv = ContactFieldValue.objects.get(
+        contact_id=cid, contact_field_id=FIELD_PASSWORD)
     cfv.value = make_password(newpass)
     cfv.save()
 
@@ -109,15 +118,15 @@ def process_line():
     else:
         logger.warning('Unknown command %s', repr(cmd))
         send_result(False)
-    
+
 
 class Command(NoArgsCommand):
     help = 'Authentication module for ejabberd'
-    
+
     def handle_noargs(self, **options):
-        #print(repr(options), file=sys.stderr)
+        # print(repr(options), file=sys.stderr)
         verbosity = options.get('verbosity', '1')
-        #print('v=', repr(verbosity), file=sys.stderr)
+        # print('v=', repr(verbosity), file=sys.stderr)
         if verbosity == '3':
             logger.setLevel(logging.DEBUG)
         elif verbosity == '2':
@@ -127,12 +136,13 @@ class Command(NoArgsCommand):
         else:
             logger.setLevel(logging.ERROR)
         hdlr = logging.FileHandler('/tmp/jabauth.log')
-        hdlr.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+        hdlr.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s %(message)s'))
         logger.addHandler(hdlr)
 
         # python3:
-        sys.stdin = open(0, 'rb') # reopen stdin in binary mode
-        sys.stdout = open(1, 'wb') # reopen stdout in binary mode
+        sys.stdin = open(0, 'rb')  # reopen stdin in binary mode
+        sys.stdout = open(1, 'wb')  # reopen stdout in binary mode
 
         while True:
             process_line()

@@ -14,19 +14,21 @@ from ngw.core.views.generic import NgwUserAcl
 
 
 class ContactSearchAutocompleteView(NgwUserAcl, View):
-	def get(self, request, *args, **kwargs):
-		term = request.GET['term']
-		choices = []
-		contacts = Contact.objects.filter(name__iregex=decoratedstr.decorated_match(term))
-		contacts = contacts.extra(
-			tables = [ 'v_c_can_see_c' ],
-			where = [
-				'v_c_can_see_c.contact_id_1=%s' % request.user.id,
-				'v_c_can_see_c.contact_id_2=contact.id'])
-				
-		for contact in contacts:
-			choices.append( {'label': contact.name, 'value': contact.id} )
-		return JsonResponse(choices, safe=False)
+    def get(self, request, *args, **kwargs):
+        term = request.GET['term']
+        choices = []
+        contacts = Contact.objects.filter(
+            name__iregex=decoratedstr.decorated_match(term))
+        contacts = contacts.extra(
+            tables=['v_c_can_see_c'],
+            where=[
+                'v_c_can_see_c.contact_id_1=%s' % request.user.id,
+                'v_c_can_see_c.contact_id_2=contact.id'])
+
+        for contact in contacts:
+            choices.append({'label': contact.name, 'value': contact.id})
+        return JsonResponse(choices, safe=False)
+
 
 class ContactSearchColumnsView(NgwUserAcl, View):
     def get(self, request, *args, **kwargs):
@@ -42,7 +44,7 @@ class ContactSearchColumnsView(NgwUserAcl, View):
             groups = groups.with_user_perms(
                 request.user.id,
                 wanted_flags=perms.SEE_MEMBERS)
-            #groups = groups.order_by('name')
+            # groups = groups.order_by('name')
             choices = []
             for group in groups:
                 choices.append({'id': str(group.id), 'text': group.name})
@@ -52,7 +54,7 @@ class ContactSearchColumnsView(NgwUserAcl, View):
             groups = groups.with_user_perms(
                 request.user.id,
                 wanted_flags=perms.SEE_MEMBERS)
-            #groups = groups.order_by('-date', 'name')
+            # groups = groups.order_by('-date', 'name')
             choices = []
             choices.append({'id': 'allevents', 'text': str(_('All events'))})
             for group in groups:
@@ -64,7 +66,7 @@ class ContactSearchColumnsView(NgwUserAcl, View):
         else:
             raise Http404
 
-        return JsonResponse({'params' : [choices]})
+        return JsonResponse({'params': [choices]})
 
 
 def get_column(column_type, column_id):
@@ -89,7 +91,7 @@ def get_column(column_type, column_id):
             return ContactGroup.objects.get(pk=column_id), 'gfilter('+column_id
 
     if column_type == 'custom':
-        raise NotImplementedError # We might make a MetaField
+        raise NotImplementedError  # We might make a MetaField
 
     raise Http404
 
@@ -104,8 +106,9 @@ class ContactSearchColumnFiltersView(NgwUserAcl, View):
 
         choices = []
         for filter in filters:
-            choices.append({'id': filter.internal_name, 'text': str(filter.human_name)})
-        return JsonResponse({'params' : [choices]})
+            choices.append({'id': filter.internal_name,
+                            'text': str(filter.human_name)})
+        return JsonResponse({'params': [choices]})
 
 
 class ContactSearchCustomFiltersView(NgwUserAcl, View):
@@ -118,7 +121,7 @@ class ContactSearchCustomFiltersView(NgwUserAcl, View):
         for i, filterpair in enumerate(filter_list):
             filtername, filterstr = filterpair
             choices.append({'id': str(i), 'text': filtername})
-        return JsonResponse({'params' : [choices]})
+        return JsonResponse({'params': [choices]})
 
 
 class ContactSearchFilterParamsView(NgwUserAcl, View):
@@ -139,16 +142,20 @@ class ContactSearchFilterParamsView(NgwUserAcl, View):
             elif isinstance(param_type, ChoiceGroup):
                 choices = []
                 if len(parameter_types) > 1:
-                    choices = [{'id':'', 'text': _('Any')}] # Allow empty if double choice
+                    # Allow empty if double choice
+                    choices = [{'id': '', 'text': _('Any')}]
                 for key, value in param_type.ordered_choices:
                     choices.append({'id': key, 'text': value})
                 jsparams.append(choices)
             else:
-                assert False, "Unsupported filter parameter of type " + str(param_type)
+                assert False, \
+                    ("Unsupported filter parameter of type "
+                     + str(param_type))
         if submit_prefix[-1] != '(':
             submit_prefix += ','
         submit_prefix += filter_id
-        return JsonResponse({'submit_prefix': submit_prefix, 'params' : jsparams})
+        return JsonResponse({'submit_prefix': submit_prefix,
+                             'params': jsparams})
 
 
 class ContactSearchCustomFilterParamsView(NgwUserAcl, View):
@@ -160,5 +167,6 @@ class ContactSearchCustomFilterParamsView(NgwUserAcl, View):
         filter_list = request.user.get_customfilters()
         filter_id = int(filter_id)
         customname, filter = filter_list[filter_id]
-        assert filter[-1] == ')', "Custom filter %s should end with a ')'" % customname
-        return JsonResponse({'submit_prefix': filter[:-1], 'params' : []})
+        assert filter[-1] == ')', \
+            "Custom filter %s should end with a ')'" % customname
+        return JsonResponse({'submit_prefix': filter[:-1], 'params': []})

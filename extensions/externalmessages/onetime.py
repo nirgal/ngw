@@ -16,7 +16,7 @@ from django.utils.encoding import force_str
 from django.utils.translation import activate as language_activate
 from django.utils.translation import ugettext as _
 
-import ngw.core.contactfield
+from ngw.core import contactfield  # Need polymorphic upgrades
 from ngw.core.models import ContactMsg
 
 SUPPORTS_EXPIRATION = True
@@ -32,16 +32,20 @@ logger = logging.getLogger('msgsync')
 # email_sent: True if notification email was sent
 # deleted: True if remote server returns 404 (deleted on remote end)
 
-TIMEOUT = 30 # seconds
+TIMEOUT = 30  # seconds
+
 
 def clean_expiration_date(expiration_date):
     MAXEXPIRATION = 90
     if expiration_date <= datetime.date.today():
         raise ValidationError(_('The expiration date must be in the future.'))
-    if expiration_date >= datetime.date.today() + datetime.timedelta(days=MAXEXPIRATION):
+    if (expiration_date >= datetime.date.today()
+       + datetime.timedelta(days=MAXEXPIRATION)):
         raise ValidationError(
-            _("The expiration date can't be more that %s days in the future.") % MAXEXPIRATION)
+            _("The expiration date can't be more that %s days in the future.")
+            % MAXEXPIRATION)
     return expiration_date
+
 
 def send_to_onetime(msg):
     "step 1 : Send message to final storage"
@@ -50,10 +54,10 @@ def send_to_onetime(msg):
     except ValueError:
         sync_info = {}
 
-    #logger.debug("%s %s", msg.id, sync_info)
+    # logger.debug("%s %s", msg.id, sync_info)
 
     if 'otid' in sync_info:
-        return # Already sent
+        return  # Already sent
 
     ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
@@ -81,11 +85,13 @@ def send_to_onetime(msg):
     })
     response = ot_conn.getresponse()
     if response.status != 200:
-        logger.error("Temporary storage server error: %s %s" % (response.status, response.reason))
+        logger.error(
+            "Temporary storage server error: %s %s"
+            % (response.status, response.reason))
         logger.error("%s", response.read())
         return
-    #jresponse = json.load(response)
-    #logger.debug("%s", jresponse)
+    # jresponse = json.load(response)
+    # logger.debug("%s", jresponse)
     sresponse = response.read()
     jresponse = json.loads(force_str(sresponse))
 
@@ -144,8 +150,9 @@ one to read it, please repport that.
 
 <p>You can read your message at
 <a href="https://onetime.info/%(otid)s">https://onetime.info/%(otid)s</a><br>
-or <a href="http://7z4nl4ojzggwicx5.onion/%(otid)s">http://7z4nl4ojzggwicx5.onion/%(otid)s</a>
-if you are using <a href="https://www.torproject.org/">tor</a>.</p>
+or <a href="http://7z4nl4ojzggwicx5.onion/%(otid)s">
+http://7z4nl4ojzggwicx5.onion/%(otid)s</a> if you are using
+<a href="https://www.torproject.org/">tor</a>.</p>
 
 <p>Warning, that message will be displayed only once, and then deleted. Have a
 pen ready before clicking the link.</p>
@@ -182,7 +189,7 @@ def read_answers(msg):
     "step 3 : Fetch answers"
 
     sync_info = json.loads(msg.sync_info)
-    if 'answer_password' not in  sync_info:
+    if 'answer_password' not in sync_info:
         return
     if 'deleted' in sync_info:
         # Ignore message that were deleted on remote storage
@@ -191,26 +198,32 @@ def read_answers(msg):
     # since we can't handle keep-alive yet
     ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
 
-    ot_conn.request('POST', '/'+sync_info['otid']+'/answers', urllib.parse.urlencode({
-        'password': sync_info['answer_password']
-    }), {
-        'Content-type': 'application/x-www-form-urlencoded',
-        'X_REQUESTED_WITH': 'XMLHttpRequest',
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-    })
-    response = ot_conn.getresponse() # TODO: except httplib.BadStatusLine
+    ot_conn.request(
+        'POST',
+        '/'+sync_info['otid']+'/answers',
+        urllib.parse.urlencode(
+            {'password': sync_info['answer_password']}),
+        {
+            'Content-type': 'application/x-www-form-urlencoded',
+            'X_REQUESTED_WITH': 'XMLHttpRequest',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+        })
+    response = ot_conn.getresponse()  # TODO: except httplib.BadStatusLine
     if response.status == 404:
-        logger.info("Message is gone: %s %s" % (response.status, response.reason))
-        # tag the message as deleted, so we stop trying to synchronise again and again
+        logger.info("Message is gone: %s %s"
+                    % (response.status, response.reason))
+        # tag the message as deleted, so we stop trying to synchronise again
+        # and again
         sync_info['deleted'] = True
         msg.sync_info = json.dumps(sync_info)
         msg.save()
         return
     if response.status != 200:
-        logger.error("Temporary storage server error: %s %s" % (response.status, response.reason))
+        logger.error("Temporary storage server error: %s %s"
+                     % (response.status, response.reason))
         logger.error("%s", response.read())
         return
-    #jresponse = json.load(response)
+    # jresponse = json.load(response)
     sresponse = response.read()
     jresponse = json.loads(force_str(sresponse))
     logger.debug(jresponse)
@@ -218,7 +231,8 @@ def read_answers(msg):
         read_date = jresponse.get('read_date', None)
         read_date = datetime.datetime.strptime(read_date, '%Y-%m-%d %H:%M:%S')
         if settings.USE_TZ:
-            read_date = timezone.make_aware(read_date, timezone.get_default_timezone())
+            read_date = timezone.make_aware(
+                read_date, timezone.get_default_timezone())
         msg.read_date = read_date
         msg.save()
     for response_text in jresponse['answers']:
@@ -260,14 +274,17 @@ def sync_msg(msg):
         logger.critical(err)
         logger.critical(traceback.format_exc())
 
+
 def get_related_messages(msg):
     sync_info = json.loads(msg.sync_info)
     if 'otid' not in sync_info:
         return ()
     otid = sync_info['otid']
     results = ContactMsg.objects
-    results = results.filter(sync_info__contains=json.dumps({'otid': otid})[1:-1])
-    results = results.filter(sync_info__contains=json.dumps({'backend': __name__})[1:-1])
+    results = results.filter(
+        sync_info__contains=json.dumps({'otid': otid})[1:-1])
+    results = results.filter(
+        sync_info__contains=json.dumps({'backend': __name__})[1:-1])
     results = results.exclude(pk=msg.pk)
     results = results.order_by('-send_date')
     return results

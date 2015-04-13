@@ -8,8 +8,11 @@ from ngw.core.models import (AndBoundFilter, ContactField, ContactGroup,
 
 class LexicalError(Exception):
     pass
+
+
 class FilterSyntaxError(Exception):
     pass
+
 
 class FilterLexer(object):
     """ Trivial parser that recognise a few types, see Type class bellow """
@@ -27,7 +30,13 @@ class FilterLexer(object):
             self.str = str
 
         def __repr__(self):
-            types = {0: 'WORD', 1: 'STRING', 2: 'INT', 3: 'LPARENTHESIS', 4: 'RPARENTHESIS', 5: 'COMMA'}
+            types = {
+                0: 'WORD',
+                1: 'STRING',
+                2: 'INT',
+                3: 'LPARENTHESIS',
+                4: 'RPARENTHESIS',
+                5: 'COMMA'}
             return '<Lexem %s %s>' % (types[self.type], self.str)
 
     def __init__(self, str):
@@ -47,7 +56,7 @@ class FilterLexer(object):
     def parse(self):
         while True:
             c = self.getchar()
-            if c == None:
+            if c is None:
                 return
             if c == '(':
                 yield self.Lexem(self.Lexem.Type.LPARENTHESIS, c)
@@ -59,13 +68,17 @@ class FilterLexer(object):
                 slexem = ''
                 while True:
                     c = self.getchar()
-                    if c == None:
-                        raise LexicalError('Unexpected EOS while parsing string')
+                    if c is None:
+                        raise LexicalError(
+                            'Unexpected EOS while parsing string')
                     if c == '\\':
                         c = self.getchar()
-                        if c == None:
-                            raise LexicalError('Unexpected EOS while parsing string after "\\"')
-                    elif c == "'": # else is needed because it could be escaped
+                        if c is None:
+                            raise LexicalError(
+                                'Unexpected EOS while parsing string'
+                                ' after "\\"')
+                    # else is needed because it could be escaped:
+                    elif c == "'":
                         yield self.Lexem(self.Lexem.Type.STRING, slexem)
                         break
                     slexem += c
@@ -75,9 +88,9 @@ class FilterLexer(object):
                 while c.isdigit():
                     slexem += c
                     c = self.getchar()
-                    if c == None:
+                    if c is None:
                         break
-                if c != None:
+                if c is not None:
                     self.goback()
                 yield self.Lexem(self.Lexem.Type.INT, slexem)
             elif c.isalpha():
@@ -85,9 +98,9 @@ class FilterLexer(object):
                 while c.isalpha():
                     slexem += c
                     c = self.getchar()
-                    if c == None:
+                    if c is None:
                         break
-                if c != None:
+                if c is not None:
                     self.goback()
                 yield self.Lexem(self.Lexem.Type.WORD, slexem)
             else:
@@ -97,7 +110,8 @@ class FilterLexer(object):
 def _filter_parse_expression(lexer, user_id):
     '''
     Filter parser.
-    Returns a BoundFilter, that is a filter reader to apply, that includes parameters.
+    Returns a BoundFilter, that is a filter reader to apply, that includes
+    parameters.
     user_id is there only to check security priviledges.
     '''
     try:
@@ -108,7 +122,8 @@ def _filter_parse_expression(lexer, user_id):
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'and':
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected '('."
+                                    % repr(lexem))
 
         subfilters = []
 
@@ -122,14 +137,16 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.COMMA:
                 continue
 
-            raise FilterSyntaxError("Unexpected %s. Expected ',' or ')'." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected ',' or ')'."
+                                    % repr(lexem))
 
         return AndBoundFilter(*subfilters)
 
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'or':
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected '('."
+                                    % repr(lexem))
 
         subfilters = []
 
@@ -143,27 +160,32 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.COMMA:
                 continue
 
-            raise FilterSyntaxError("Unexpected %s. Expected ',' or ')'." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected ',' or ')'."
+                                    % repr(lexem))
 
         return OrBoundFilter(*subfilters)
 
     if lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'ffilter':
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected '('."
+                                    % repr(lexem))
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.INT:
-            raise FilterSyntaxError("Unexpected %s. Expected INT." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected INT."
+                                    % repr(lexem))
         field_id = int(lexem.str)
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise FilterSyntaxError("Unexpected %s. Expected ','." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected ','."
+                                    % repr(lexem))
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected word."
+                                    % repr(lexem))
         field_filter_name = lexem.str
 
         params = []
@@ -173,7 +195,8 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % repr(lexem))
+                raise FilterSyntaxError("Unexpected %s. Expected ','."
+                                        % repr(lexem))
 
             lexem = next(lexer)
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -193,20 +216,24 @@ def _filter_parse_expression(lexer, user_id):
     elif lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'gfilter':
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected '('."
+                                    % repr(lexem))
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.INT:
-            raise FilterSyntaxError("Unexpected %s. Expected INT." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected INT."
+                                    % repr(lexem))
         group_id = int(lexem.str)
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.COMMA:
-            raise FilterSyntaxError("Unexpected %s. Expected ','." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected ','."
+                                    % repr(lexem))
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected word."
+                                    % repr(lexem))
         group_filter_name = lexem.str
 
         params = []
@@ -216,7 +243,8 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % repr(lexem))
+                raise FilterSyntaxError("Unexpected %s. Expected ','."
+                                        % repr(lexem))
 
             lexem = next(lexer)
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -228,17 +256,20 @@ def _filter_parse_expression(lexer, user_id):
         if not perms.c_can_see_members_cg(user_id, group_id):
             raise PermissionDenied
 
-        filter = ContactGroup.objects.get(pk=group_id).get_filter_by_name(group_filter_name)
+        filter = (ContactGroup.objects.get(pk=group_id)
+                              .get_filter_by_name(group_filter_name))
         return filter.bind(*params)
 
     elif lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'nfilter':
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected '('."
+                                    % repr(lexem))
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected word."
+                                    % repr(lexem))
         name_filter_name = lexem.str
 
         params = []
@@ -248,7 +279,8 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % repr(lexem))
+                raise FilterSyntaxError("Unexpected %s. Expected ','."
+                                        % repr(lexem))
 
             lexem = next(lexer)
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -259,14 +291,17 @@ def _filter_parse_expression(lexer, user_id):
         filter = ContactNameMetaField.get_filter_by_name(name_filter_name)
         return filter.bind(*params)
 
-    elif lexem.type == FilterLexer.Lexem.Type.WORD and lexem.str == 'allevents':
+    elif (lexem.type == FilterLexer.Lexem.Type.WORD
+          and lexem.str == 'allevents'):
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.LPARENTHESIS:
-            raise FilterSyntaxError("Unexpected %s. Expected '('." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected '('."
+                                    % repr(lexem))
 
         lexem = next(lexer)
         if lexem.type != FilterLexer.Lexem.Type.WORD:
-            raise FilterSyntaxError("Unexpected %s. Expected word." % repr(lexem))
+            raise FilterSyntaxError("Unexpected %s. Expected word."
+                                    % repr(lexem))
         allevents_filter_name = lexem.str
 
         params = []
@@ -276,7 +311,8 @@ def _filter_parse_expression(lexer, user_id):
             if lexem.type == FilterLexer.Lexem.Type.RPARENTHESIS:
                 break
             if lexem.type != FilterLexer.Lexem.Type.COMMA:
-                raise FilterSyntaxError("Unexpected %s. Expected ','." % repr(lexem))
+                raise FilterSyntaxError("Unexpected %s. Expected ','."
+                                        % repr(lexem))
 
             lexem = next(lexer)
             if lexem.type == FilterLexer.Lexem.Type.STRING:
@@ -301,7 +337,8 @@ def _filter_parse_expression_root(lexer, user_id):
     except StopIteration:
         return exp
     else:
-        raise FilterSyntaxError("Unexpected %s after end of string." % repr(lexem))
+        raise FilterSyntaxError("Unexpected %s after end of string."
+                                % repr(lexem))
 
 
 def parse_filterstring(sfilter, user_id):
@@ -309,5 +346,5 @@ def parse_filterstring(sfilter, user_id):
     Parse sfilter string, checking user_id priviledges.
     Returns a bound filter.
     '''
-    #print("Parsing", sfilter)
+    # print("Parsing", sfilter)
     return _filter_parse_expression_root(FilterLexer(sfilter).parse(), user_id)

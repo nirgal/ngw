@@ -33,7 +33,9 @@ class LogoutView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = {
-            'message': mark_safe(_('Have a nice day!<br><br><a href="%s">Login again</a>.') % settings.LOGIN_URL)
+            'message': mark_safe(
+                _('Have a nice day!<br><br><a href="%s">Login again</a>.')
+                % settings.LOGIN_URL)
         }
         context.update(kwargs)
         return super().get_context_data(**context)
@@ -48,17 +50,19 @@ class HomeView(NgwUserAcl, TemplateView):
 
     def get_context_data(self, **kwargs):
         operator_groups = ContactGroup.objects.extra(where=[
-            '''EXISTS (SELECT *
-                       FROM contact_in_group
-                       WHERE contact_in_group.group_id = contact_group.id
-                         AND contact_in_group.contact_id=%s AND contact_in_group.flags & %s <> 0)'''
+            'EXISTS (SELECT *'
+            '           FROM contact_in_group'
+            '           WHERE contact_in_group.group_id = contact_group.id'
+            '             AND contact_in_group.contact_id=%s'
+            '             AND contact_in_group.flags & %s <> 0)'
             % (self.request.user.id, perms.OPERATOR)])
 
         qry_news = ContactGroupNews.objects.extra(
             tables={'v_cig_perm': 'v_cig_perm'},
             where=[
                 'v_cig_perm.contact_id = %s'
-                ' AND v_cig_perm.group_id = contact_group_news.contact_group_id'
+                ' AND v_cig_perm.group_id '
+                '     = contact_group_news.contact_group_id'
                 ' AND v_cig_perm.flags & %s <> 0'
                 % (self.request.user.id, perms.VIEW_NEWS)])
         paginator = Paginator(qry_news, 7)
@@ -70,13 +74,18 @@ class HomeView(NgwUserAcl, TemplateView):
             # If page is not an integer, deliver first page.
             news = paginator.page(1)
         except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
+            # If page is out of range (e.g. 9999), deliver last page of
+            # results.
             news = paginator.page(paginator.num_pages)
 
-        unread_groups = ContactGroup.objects.raw('''
+        unread_groups = ContactGroup.objects.raw(
+            '''
             SELECT *
             FROM contact_group
-            JOIN (SELECT group_id, count(*) AS unread_count FROM contact_message WHERE is_answer AND read_date IS NULL GROUP BY group_id) AS msg_info
+            JOIN (SELECT group_id, count(*) AS unread_count
+                  FROM contact_message
+                  WHERE is_answer AND read_date IS NULL GROUP BY group_id
+                ) AS msg_info
                 ON contact_group.id=msg_info.group_id
             JOIN v_cig_perm
                 ON v_cig_perm.contact_id = %s

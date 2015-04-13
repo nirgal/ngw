@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-07 14:16+0000\n"
+"POT-Creation-Date: 2015-04-13 12:51+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,16 +18,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: onetime.py:40
+#: onetime.py:41
 msgid "The expiration date must be in the future."
 msgstr "La date d'expiration doit être dans le futur."
 
-#: onetime.py:43
+#: onetime.py:45
 #, python-format
 msgid "The expiration date can't be more that %s days in the future."
 msgstr "La date d'expiration ne peux pas être plus de %s jours dans le futur."
 
-#: onetime.py:128
+#: onetime.py:134
 #, python-format
 msgid ""
 "Hello\n"
@@ -62,17 +62,36 @@ msgstr ""
 "\n"
 "[1] https://www.torproject.org/"
 
-#: onetime.py:143
-#, python-format
+#: onetime.py:149
+#, fuzzy, python-format
+#| msgid ""
+#| "<p>Hello</p>\n"
+#| "\n"
+#| "<p>You can read your message at\n"
+#| "<a href=\"https://onetime.info/%(otid)s\">https://onetime.info/%(otid)s</"
+#| "a><br>\n"
+#| "or <a href=\"http://7z4nl4ojzggwicx5.onion/%(otid)s"
+#| "\">http://7z4nl4ojzggwicx5.onion/%(otid)s</a>\n"
+#| "if you are using <a href=\"https://www.torproject.org/\">tor</a>.</p>\n"
+#| "\n"
+#| "<p>Warning, that message will be displayed only once, and then deleted. "
+#| "Have a\n"
+#| "pen ready before clicking the link.</p>\n"
+#| "\n"
+#| "<p>Do not reply to that email: Use the link above.<br>\n"
+#| "If the link doesn't work, please try again.<br>\n"
+#| "If you get an error saying the message was already read, but you were not "
+#| "the\n"
+#| "one to read it, please repport that.</p>"
 msgid ""
 "<p>Hello</p>\n"
 "\n"
 "<p>You can read your message at\n"
 "<a href=\"https://onetime.info/%(otid)s\">https://onetime.info/%(otid)s</"
 "a><br>\n"
-"or <a href=\"http://7z4nl4ojzggwicx5.onion/%(otid)s"
-"\">http://7z4nl4ojzggwicx5.onion/%(otid)s</a>\n"
-"if you are using <a href=\"https://www.torproject.org/\">tor</a>.</p>\n"
+"or <a href=\"http://7z4nl4ojzggwicx5.onion/%(otid)s\">\n"
+"http://7z4nl4ojzggwicx5.onion/%(otid)s</a> if you are using\n"
+"<a href=\"https://www.torproject.org/\">tor</a>.</p>\n"
 "\n"
 "<p>Warning, that message will be displayed only once, and then deleted. Have "
 "a\n"

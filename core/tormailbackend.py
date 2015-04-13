@@ -11,8 +11,8 @@ import time
 
 import socks  # You need package python-socksipy
 from django.conf import settings
-from django.core.mail import make_msgid
 from django.core.mail.backends.smtp import EmailBackend
+from django.core.mail.utils import DNS_NAME
 
 
 def _validate_wildcard_name(valid_for, expected):
@@ -22,7 +22,7 @@ def _validate_wildcard_name(valid_for, expected):
     For exemple, expected='smtp.example.com' will match 'smtp.example.com',
     '*.example.com', but not 'www.example.com'.
     '''
-    #print('_validate_wildcard_name:', valid_for, expected)
+    # print('_validate_wildcard_name:', valid_for, expected)
     if not valid_for:
         return False
     if valid_for[0] == '*':
@@ -59,7 +59,6 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
     '''
 
     def _get_socket(self, host, port, timeout):
-        
         s = socks.socksocket()
         s.setproxy(socks.PROXY_TYPE_SOCKS5, '127.0.0.1', 9050, True)
 
@@ -67,13 +66,16 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
         if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
             s.settimeout(timeout)
 
-        new_socket = ssl.wrap_socket(s, self.keyfile, self.certfile,
+        new_socket = ssl.wrap_socket(
+            s, self.keyfile, self.certfile,
             ssl_version=ssl.PROTOCOL_TLSv1,
             ca_certs='/etc/ssl/certs/ca-certificates.crt',
             cert_reqs=ssl.CERT_REQUIRED)
         cert = new_socket.getpeercert()
         if not cert:
-            raise smtplib.SMTPException("Ssl certificate of remote smtp server was not validated by any known authority.")
+            raise smtplib.SMTPException(
+                "Ssl certificate of remote smtp server was not validated by"
+                " any known authority.")
 
         # Allow the use of EMAIL_EXPECTED_SSLHOSTNAME to override default
         # value of settings.EMAIL_HOST
@@ -82,10 +84,11 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
         except AttributeError:
             expected_sslhostname = settings.EMAIL_HOST
         if not validate_ssl_hostname(cert, expected_sslhostname):
-            raise smtplib.SMTPException('Ssl certificate is valid but does not match %s.' % expected_sslhostname)
+            raise smtplib.SMTPException(
+                'Ssl certificate is valid but does not match %s.'
+                % expected_sslhostname)
 
         return new_socket
-
 
 
 def make_msgid_noFQDN(idstring=None):
@@ -125,16 +128,18 @@ class TorEmailBackend(EmailBackend):
             # Nothing to do if the connection is already open.
             return False
         try:
-            assert self.port == 465, 'Sorry we only support smtps connections right now'
+            assert self.port == 465, \
+                'Sorry we only support smtps connections right now'
 
             if '.onion' in self.host:
-                self.connection = SMTP_SSL_TOR(self.host, self.port,
-                    local_hostname='127.0.0.1')
+                self.connection = SMTP_SSL_TOR(
+                    self.host, self.port, local_hostname='127.0.0.1')
             else:
-                # If local_hostname is not specified, socket.getfqdn() gets used.
+                # If local_hostname is not specified, socket.getfqdn() gets
+                # used.
                 # For performance, we use the cached FQDN for local_hostname.
-                self.connection = smtplib.SMTP_SSL(self.host, self.port,
-                                           local_hostname=DNS_NAME.get_fqdn())
+                self.connection = smtplib.SMTP_SSL(
+                    self.host, self.port, local_hostname=DNS_NAME.get_fqdn())
             self.connection.set_debuglevel(1)
             if self.use_tls:
                 self.connection.ehlo()

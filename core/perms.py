@@ -4,10 +4,12 @@ This is a simple proxy to the permission system implemented in SQL.
 See sql/functions.sql
 
 c_can_see_cg              C can view existence of CG
-c_can_change_cg           C can change/delete CG itself, including add/edit/delete fields
+c_can_change_cg           C can change/delete CG itself,
+                          including add/edit/delete fields
 c_can_see_members_cg      C can view members of CG
 c_can_change_members_cg   C can change/delete membership in CG (+note)
-c_can_view_fields_cg      C can view C-fields of CG (existence, content for members it can see)
+c_can_view_fields_cg      C can view C-fields of CG
+                          (existence, content for members it can see)
 c_can_write_fields_cg     C can write C-fields of CG
 c_can_see_news_cg         C can view news of CG
 c_can_change_news_cg      C can change/delete news of CG
@@ -21,23 +23,23 @@ from django.db import connection
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
 
-MEMBER         =     1 # 'm'ember
-INVITED        =     2 # 'i'nvited
-DECLINED       =     4 # 'd'eclined invitation
-OPERATOR       =     8 # 'o'pertor
-VIEWER         =    16 # 'v'iewer
-SEE_CG         =    32 # 'e'xistance
-CHANGE_CG      =    64 # 'E'
-SEE_MEMBERS    =   128 # 'c'ontent
-CHANGE_MEMBERS =   256 # 'C'
-VIEW_FIELDS    =   512 # 'f'ields
-WRITE_FIELDS   =  1024 # 'F'
-VIEW_NEWS      =  2048 # 'n'ews
-WRITE_NEWS     =  4096 # 'N'
-VIEW_FILES     =  8192 # 'u'ploaded
-WRITE_FILES    = 16384 # 'U'
-VIEW_MSGS      = 32768 # 'x'ternal messages
-WRITE_MSGS     = 65536 # 'X'
+MEMBER = 1            # 'm'ember
+INVITED = 2           # 'i'nvited
+DECLINED = 4          # 'd'eclined invitation
+OPERATOR = 8          # 'o'pertor
+VIEWER = 16           # 'v'iewer
+SEE_CG = 32           # 'e'xistance
+CHANGE_CG = 64        # 'E'
+SEE_MEMBERS = 128     # 'c'ontent
+CHANGE_MEMBERS = 256  # 'C'
+VIEW_FIELDS = 512     # 'f'ields
+WRITE_FIELDS = 1024   # 'F'
+VIEW_NEWS = 2048      # 'n'ews
+WRITE_NEWS = 4096     # 'N'
+VIEW_FILES = 8192     # 'u'ploaded
+WRITE_FILES = 16384   # 'U'
+VIEW_MSGS = 32768     # 'x'ternal messages
+WRITE_MSGS = 65536    # 'X'
 
 
 FLAGTOINT = OrderedDict()  # dict for translation 1 letter -> int
@@ -48,7 +50,9 @@ FLAGCONFLICTS = OrderedDict()
 FLAGGROUPLABEL = OrderedDict()  # dict for translation 1 letter -> group label
 FLAGGROUPHELP = OrderedDict()  # dict for translation 1 letter -> group label
 
-def _register_flag(intval, code, requires, conflicts, text, group_label, group_help):
+
+def _register_flag(intval, code, requires, conflicts, text, group_label,
+                   group_help):
     FLAGTOINT[code] = intval
     FLAGTOTEXT[code] = text
     INTTOTEXT[intval] = text
@@ -69,59 +73,76 @@ _register_flag(DECLINED, 'd', '', 'mi', ugettext_lazy('Declined'), None, None)
 _register_flag(
     OPERATOR, 'o', 'veEcCfFnNuUxX', '', ugettext_lazy('Operator'),
     ugettext_lazy('Operator groups'),
-    ugettext_lazy('Members of these groups will automatically be granted administrative priviledges.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' administrative priviledges.'))
 _register_flag(
     VIEWER, 'v', 'ecfnux', '', ugettext_lazy('Viewer'),
     ugettext_lazy('Viewer groups'),
-    ugettext_lazy("Members of these groups will automatically be granted viewer priviledges: They can see everything but can't change things."))
+    ugettext_lazy("Members of these groups will automatically be granted"
+                  " viewer priviledges: They can see everything but can't"
+                  " change things."))
 _register_flag(
     SEE_CG, 'e', '', '', ugettext_lazy('Can see group exists'),
     ugettext_lazy('Existence seer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted priviledge to know that current group exists.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' priviledge to know that current group exists.'))
 _register_flag(
     CHANGE_CG, 'E', 'e', '', ugettext_lazy('Can change group'),
     ugettext_lazy('Editor groups'),
-    ugettext_lazy('Members of these groups will automatically be granted priviledge to change/delete the current group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' priviledge to change/delete the current group.'))
 _register_flag(
     SEE_MEMBERS, 'c', 'e', '', ugettext_lazy('Can see members'),
     ugettext_lazy('Members seer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted priviledge to see the list of members.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' priviledge to see the list of members.'))
 _register_flag(
     CHANGE_MEMBERS, 'C', 'ec', '', ugettext_lazy('Can change members'),
     ugettext_lazy('Members changing groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permission to change members of current group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permission to change members of current group.'))
 _register_flag(
     VIEW_FIELDS, 'f', 'e', '', ugettext_lazy('Can view fields'),
     ugettext_lazy('Fields viewer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permission to read the fields associated to current group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permission to read the fields associated to current'
+                  ' group.'))
 _register_flag(
     WRITE_FIELDS, 'F', 'ef', '', ugettext_lazy('Can write fields'),
     ugettext_lazy('Fields writer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted priviledge to write to fields associated to current group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' priviledge to write to fields associated to current'
+                  ' group.'))
 _register_flag(
     VIEW_NEWS, 'n', 'e', '', ugettext_lazy('Can view news'),
     ugettext_lazy('News viewer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permisson to read news of current group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permisson to read news of current group.'))
 _register_flag(
     WRITE_NEWS, 'N', 'en', '', ugettext_lazy('Can write news'),
     ugettext_lazy('News writer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permission to write news in that group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permission to write news in that group.'))
 _register_flag(
     VIEW_FILES, 'u', 'e', '', ugettext_lazy('Can view uploaded files'),
     ugettext_lazy('File viewer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permission to view uploaded files in that group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permission to view uploaded files in that group.'))
 _register_flag(
     WRITE_FILES, 'U', 'eu', '', ugettext_lazy('Can upload files'),
     ugettext_lazy('File uploader groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permission to upload files.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permission to upload files.'))
 _register_flag(
     VIEW_MSGS, 'x', 'ec', '', ugettext_lazy('Can view messages'),
     ugettext_lazy('Message viewer groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permission to view messages in that group.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permission to view messages in that group.'))
 _register_flag(
     WRITE_MSGS, 'X', 'ex', '', ugettext_lazy('Can write messages'),
     ugettext_lazy('Message sender groups'),
-    ugettext_lazy('Members of these groups will automatically be granted permission to send messages.'))
+    ugettext_lazy('Members of these groups will automatically be granted'
+                  ' permission to send messages.'))
 
 ADMIN_ALL = (
     OPERATOR | VIEWER
@@ -165,7 +186,8 @@ def int_to_text(flags, inherited_flags):
         for code in 'mid':
             if inherited_flags & FLAGTOINT[code]:
                 nice_perm = FLAGTOTEXT[code]
-                memberships.append(nice_perm + ' ' + automatic_member_indicator)
+                memberships.append(
+                    nice_perm + ' ' + automatic_member_indicator)
         for code in 'oveEcCfFnNuUxX':
             if inherited_flags & FLAGTOINT[code]:
                 nice_perm = FLAGTOTEXT[code]
@@ -187,12 +209,12 @@ def int_to_text(flags, inherited_flags):
                 nice_perm = FLAGTOTEXT[code]
                 memberships.append(nice_perm)
                 if code == 'o':
-                    break # Don't show more details then
+                    break  # Don't show more details then
             elif inherited_flags & FLAGTOINT[code]:
                 nice_perm = FLAGTOTEXT[code]
                 memberships.append(nice_perm + ' ' + automatic_admin_indicator)
                 if code == 'o':
-                    break # Don't show more details then
+                    break  # Don't show more details then
 
     return ', '.join(str(membership) for membership in memberships) or _('Nil')
 
@@ -298,39 +320,42 @@ def c_can_see_news_cg(cid, gid):
     return bool(cig_perms_int(cid, gid) & VIEW_NEWS)
 
 
-#def c_can_change_news_cg(cid, gid):
-#    '''
-#    Returns True if contact cid can add/change/delete news of contactgroup gid.
-#    '''
-#    return bool(cig_perms_int(cid, gid) & WRITE_NEWS)
+# def c_can_change_news_cg(cid, gid):
+#     '''
+#     Returns True if contact cid can add/change/delete news of contactgroup
+#     gid.
+#     '''
+#     return bool(cig_perms_int(cid, gid) & WRITE_NEWS)
 
 
-#def c_can_see_files_cg(cid, gid):
-#    '''
-#    Returns True if contact cid can see files of contactgroup gid.
-#    '''
-#    return bool(cig_perms_int(cid, gid) & VIEW_FILES)
+# def c_can_see_files_cg(cid, gid):
+#     '''
+#     Returns True if contact cid can see files of contactgroup gid.
+#     '''
+#     return bool(cig_perms_int(cid, gid) & VIEW_FILES)
 
 
-#def c_can_change_files_cg(cid, gid):
-#    '''
-#    Returns True if contact cid can add/change/delete files of contactgroup gid.
-#    '''
-#    return bool(cig_perms_int(cid, gid) & WRITE_FILES)
+# def c_can_change_files_cg(cid, gid):
+#     '''
+#     Returns True if contact cid can add/change/delete files of contactgroup
+#     gid.
+#     '''
+#     return bool(cig_perms_int(cid, gid) & WRITE_FILES)
 
 
-#def c_can_view_msgs_cg(cid, gid):
-#    '''
-#    Returns True if contact cid can see files of contactgroup gid.
-#    '''
-#    return bool(cig_perms_int(cid, gid) & VIEW_MSGS)
+# def c_can_view_msgs_cg(cid, gid):
+#     '''
+#     Returns True if contact cid can see files of contactgroup gid.
+#     '''
+#     return bool(cig_perms_int(cid, gid) & VIEW_MSGS)
 
 
-#def c_can_write_msgs_cg(cid, gid):
-#    '''
-#    Returns True if contact cid can add/change/delete files of contactgroup gid.
-#    '''
-#    return bool(cig_perms_int(cid, gid) & WRITE_MSGS)
+# def c_can_write_msgs_cg(cid, gid):
+#     '''
+#     Returns True if contact cid can add/change/delete files of contactgroup
+#     gid.
+#     '''
+#     return bool(cig_perms_int(cid, gid) & WRITE_MSGS)
 
 
 def c_can_see_c(cid1, cid2):
@@ -338,6 +363,12 @@ def c_can_see_c(cid1, cid2):
     Returns True if contact cid1 can see contact cid2.
     '''
     cursor = connection.cursor()
-    cursor.execute("SELECT EXISTS(SELECT * FROM v_c_can_see_c WHERE contact_id_1=%s AND contact_id_2=%s)", [cid1, cid2])
+    cursor.execute(
+        "SELECT EXISTS("
+        "   SELECT *"
+        "   FROM v_c_can_see_c"
+        "   WHERE contact_id_1=%s"
+        "   AND contact_id_2=%s)",
+        [cid1, cid2])
     row = cursor.fetchone()
     return row[0]

@@ -11,7 +11,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import filters
 from django.contrib.admin.widgets import AdminDateWidget
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import translation
@@ -35,6 +35,7 @@ from ngw.core.views.generic import InGroupAcl, NgwListView
 class MessageDirectionFilter(filters.SimpleListFilter):
     title = ugettext_lazy('direction')
     parameter_name = 'answer'
+
     def lookups(self, request, view):
         return (
             ('1', _('Received')),
@@ -52,6 +53,7 @@ class MessageDirectionFilter(filters.SimpleListFilter):
 class MessageReadFilter(filters.SimpleListFilter):
     title = ugettext_lazy('read status')
     parameter_name = 'unread'
+
     def lookups(self, request, view):
         return (
             ('1', _('Unread')),
@@ -70,6 +72,7 @@ class MessageContactFilter(filters.SimpleListFilter):
     title = ugettext_lazy('contact')
     parameter_name = 'contact'
     template = 'admin/filter_select.html'
+
     def lookups(self, request, view):
         result = []
         contacts = Contact.objects.all()
@@ -86,11 +89,12 @@ class MessageContactFilter(filters.SimpleListFilter):
         for contact in contacts:
             result.append((contact.id, contact.name))
         return result
+
     def queryset(self, request, queryset):
         val = self.value()
         if val is None:
             return queryset
-        return queryset.filter(contact_id = val)
+        return queryset.filter(contact_id=val)
 
 
 class MessageListView(InGroupAcl, NgwListView):
@@ -114,8 +118,8 @@ class MessageListView(InGroupAcl, NgwListView):
         cg = self.contactgroup
         context = {}
         context['title'] = _('Messages for %s') % cg
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('messages', _('messages')))
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('messages', _('messages')))
         context['active_submenu'] = 'messages'
         context.update(kwargs)
         return super().get_context_data(**context)
@@ -130,13 +134,15 @@ class MessageListView(InGroupAcl, NgwListView):
 try:
     EXTERNAL_MESSAGE_BACKEND_NAME = settings.EXTERNAL_MESSAGE_BACKEND
 except AttributeError as e:
-    raise ImproperlyConfigured(('You need to add an "EXTERNAL_MESSAGE_BACKEND" handler in your settings.py: "%s"'
-        % e))
+    raise ImproperlyConfigured(('You need to add an "EXTERNAL_MESSAGE_BACKEND"'
+                                ' handler in your settings.py: "%s"'
+                                % e))
 try:
     EXTERNAL_MESSAGE_BACKEND = import_module(EXTERNAL_MESSAGE_BACKEND_NAME)
 except ImportError as e:
-    raise ImproperlyConfigured(('Error importing external messages backend module %s: "%s"'
-        % (EXTERNAL_MESSAGE_BACKEND_NAME, e)))
+    raise ImproperlyConfigured(('Error importing external messages backend'
+                                ' module %s: "%s"'
+                                % (EXTERNAL_MESSAGE_BACKEND_NAME, e)))
 
 
 class SendMessageForm(forms.Form):
@@ -160,18 +166,16 @@ class SendMessageForm(forms.Form):
             label=_('Message'),
             widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '20'}))
 
-
     def support_expiration_date(self):
         return getattr(EXTERNAL_MESSAGE_BACKEND, 'SUPPORTS_EXPIRATION', False)
 
-
     def clean_expiration_date(self):
         expiration_date = self.cleaned_data['expiration_date']
-        date_cleaner =  getattr(EXTERNAL_MESSAGE_BACKEND, 'clean_expiration_date', None)
+        date_cleaner = getattr(
+            EXTERNAL_MESSAGE_BACKEND, 'clean_expiration_date', None)
         if date_cleaner:
             expiration_date = date_cleaner(expiration_date)
         return expiration_date
-
 
     def send_message(self, group):
         contacts_noemail = []
@@ -182,7 +186,8 @@ class SendMessageForm(forms.Form):
             'language': language,
         }
         if self.support_expiration_date():
-            expiration = (self.cleaned_data['expiration_date'] - date.today()).days
+            delta = self.cleaned_data['expiration_date'] - date.today()
+            expiration = delta.days
             sync_info['expiration'] = expiration
         json_sync_info = json.dumps(sync_info)
 
@@ -229,10 +234,13 @@ class SendMessageView(InGroupAcl, FormView):
                 error_msg = _("One contact doesn't have an email address.")
             else:
                 error_msg = (_("%s contacts don't have an email address.")
-                    % nb_noemail)
-            messages.add_message(self.request, messages.WARNING,
-                translation.string_concat(error_msg,
-                    _(" The message will be kept here until you define his email address.")))
+                             % nb_noemail)
+            messages.add_message(
+                self.request, messages.WARNING,
+                translation.string_concat(
+                    error_msg,
+                    _(" The message will be kept here until you define his"
+                      " email address.")))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -241,7 +249,7 @@ class SendMessageView(InGroupAcl, FormView):
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
 
-        #if group.date and group.date <= now().date():
+        # if group.date and group.date <= now().date():
         #    return HttpResponse('Date error. Event is over.')
 
         ids = self.request.REQUEST['ids'].split(',')
@@ -300,28 +308,35 @@ class MessageDetailView(InGroupAcl, DetailView):
             else:
                 messages.add_message(
                     self.request, messages.WARNING,
-                    _("You don't have the permission to mark that message as read."))
+                    _("You don't have the permission to mark that message as"
+                      " read."))
         cg = self.contactgroup
         context = {}
         if self.object.is_answer:
-            context['title'] = _('Message from %(contactname)s in group %(groupname)s') % {
+            context['title'] = _(
+                'Message from %(contactname)s in group %(groupname)s') % {
                 'contactname': self.object.contact.name,
                 'groupname': cg,
             }
         else:
-            context['title'] = _('Message to %(contactname)s in group %(groupname)s') % {
+            context['title'] = _(
+                'Message to %(contactname)s in group %(groupname)s') % {
                 'contactname': self.object.contact.name,
                 'groupname': cg,
             }
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('messages', _('messages')))
-        context['cig_url'] = self.contactgroup.get_absolute_url() + 'members/' + str(self.object.contact_id)
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('messages', _('messages')))
+        context['cig_url'] = (
+            self.contactgroup.get_absolute_url()
+            + 'members/'
+            + str(self.object.contact_id))
         context['active_submenu'] = 'messages'
 
         flags = perms.cig_flags_int(self.object.contact.id, cg.id)
-        flags_direct = perms.cig_flags_direct_int(self.object.contact.id, cg.id)
+        flags_direct = perms.cig_flags_direct_int(self.object.contact.id,
+                                                  cg.id)
 
-        membership_str =  perms.int_to_text(flags_direct, flags & ~flags_direct)
+        membership_str = perms.int_to_text(flags_direct, flags & ~flags_direct)
         if flags_direct & perms.MEMBER:
             membership = 'member'
         elif flags_direct & perms.INVITED:
@@ -332,7 +347,8 @@ class MessageDetailView(InGroupAcl, DetailView):
             membership = ''
         context['membership'] = membership
         context['membership_str'] = membership_str
-        context['membership_title'] = _('%(contactname)s in group %(groupname)s') % {
+        context['membership_title'] = _(
+            '%(contactname)s in group %(groupname)s') % {
             'contactname': self.object.contact.name,
             'groupname': cg}
         if self.contactgroup.userperms & perms.WRITE_MSGS:
@@ -347,7 +363,8 @@ class MessageDetailView(InGroupAcl, DetailView):
             self.object.read_date = None
             self.object.read_by = None
             self.object.save()
-            return HttpResponseRedirect(self.contactgroup.get_absolute_url() + 'messages/')
+            return HttpResponseRedirect(
+                self.contactgroup.get_absolute_url() + 'messages/')
         raise Http404
 
 
@@ -358,21 +375,21 @@ class MessageDetailView(InGroupAcl, DetailView):
 #######################################################################
 
 
-#from django.http.response import JsonResponse
-#from django.shortcuts import get_object_or_404
-#class MessageToggleReadView(InGroupAcl, View):
-#    def check_perm_groupuser(self, group, user):
-#        if not group.userperms & perms.WRITE_MSGS:
-#            raise PermissionDenied
+# from django.http.response import JsonResponse
+# from django.shortcuts import get_object_or_404
+# class MessageToggleReadView(InGroupAcl, View):
+#     def check_perm_groupuser(self, group, user):
+#         if not group.userperms & perms.WRITE_MSGS:
+#             raise PermissionDenied
 #
-#    def get(self, request, *args, **kwargs):
-#        message_id = self.kwargs.get('mid', None)
-#        try:
-#            message_id = int(message_id)
-#        except (ValueError, TypeError):
-#            raise Http404
-#        message = get_object_or_404(ContactMsg, pk=message_id)
-#        if message.group_id != self.contactgroup.id:
-#            return HttpResponse('Bad group')
+#     def get(self, request, *args, **kwargs):
+#         message_id = self.kwargs.get('mid', None)
+#         try:
+#             message_id = int(message_id)
+#         except (ValueError, TypeError):
+#             raise Http404
+#         message = get_object_or_404(ContactMsg, pk=message_id)
+#         if message.group_id != self.contactgroup.id:
+#             return HttpResponse('Bad group')
 #
-#        return JsonResponse({'test': 'ok'})
+#         return JsonResponse({'test': 'ok'})

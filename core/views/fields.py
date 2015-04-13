@@ -12,7 +12,6 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import html
-from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
 from django.views.generic import CreateView, UpdateView, View
@@ -20,7 +19,6 @@ from django.views.generic.edit import ModelFormMixin
 
 from ngw.core import perms
 from ngw.core.models import ChoiceGroup, ContactField, ContactGroup
-from ngw.core.nav import Navbar
 from ngw.core.views.generic import (InGroupAcl, NgwAdminAcl, NgwDeleteView,
                                     NgwListView)
 
@@ -35,19 +33,22 @@ from ngw.core.views.generic import (InGroupAcl, NgwAdminAcl, NgwDeleteView,
 class FieldGroupFilter(filters.SimpleListFilter):
     title = ugettext_lazy('group')
     parameter_name = 'group'
+
     def lookups(self, request, view):
         self.view = view
         return (
             ('parents', _('Include parent groups')),
             ('all', _('All groups')),
         )
+
     def queryset(self, request, queryset):
         val = self.value()
         if val == 'all':
             return queryset
         elif val == 'parents':
             return queryset.extra(where=[
-                'contact_group_id in (SELECT self_and_supergroups(%s))' % self.view.contactgroup.id])
+                'contact_group_id IN (SELECT self_and_supergroups(%s))'
+                % self.view.contactgroup.id])
         return queryset.filter(contact_group=self.view.contactgroup.id)
 
     def choices(self, cl):
@@ -67,7 +68,7 @@ class FieldListView(InGroupAcl, NgwListView):
         'clean_type_as_html',
         'contact_group',
         'locked',
-        #'move_it', 'sort_weight',
+        # 'move_it', 'sort_weight',
         )
     list_display_links = None
     search_fields = 'name', 'hint'
@@ -79,24 +80,24 @@ class FieldListView(InGroupAcl, NgwListView):
             raise PermissionDenied
 
     def move_it(self, field):
-        return '<a href='+str(field.id)+'/moveup>Up</a> <a href='+str(field.id)+'/movedown>Down</a>'
+        return (
+            '<a href=' + str(field.id) + '/moveup>Up</a>'
+            + ' <a href=' + str(field.id) + '/movedown>Down</a>')
     move_it.short_description = ugettext_lazy('Move')
     move_it.allow_tags = True
-
 
     def get_root_queryset(self):
         qs = ContactField.objects \
             .with_user_perms(self.request.user.id)
         return qs
 
-
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
         context = {}
         context['title'] = _('Select a field')
         context['objtype'] = ContactField
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('fields', _('fields')))
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('fields', _('fields')))
         context['active_submenu'] = 'fields'
         context.update(kwargs)
         return super().get_context_data(**context)
@@ -104,7 +105,9 @@ class FieldListView(InGroupAcl, NgwListView):
     def name_with_link(self, field):
         html_name = html.escape(field.name)
         if field.perm & perms.CHANGE_CG:
-            return '<a href="../../%s/fields/%s/">%s</a>' % (field.contact_group.id, field.id, html_name)
+            return (
+                '<a href="../../%s/fields/%s/">%s</a>'
+                % (field.contact_group.id, field.id, html_name))
         else:
             return html_name
     name_with_link.short_description = ugettext_lazy('Name')
@@ -114,7 +117,8 @@ class FieldListView(InGroupAcl, NgwListView):
     def clean_type_as_html(self, field):
         html_type = field.type_as_html()
         if not field.perm & perms.CHANGE_CG:
-            html_type = html.strip_tags(str(html_type)) # ugly hack to remove links
+            # ugly hack to remove links
+            html_type = html.strip_tags(str(html_type))
         return html_type
     clean_type_as_html.short_description = ugettext_lazy('Type')
     clean_type_as_html.admin_order_field = 'type'
@@ -122,7 +126,10 @@ class FieldListView(InGroupAcl, NgwListView):
 
     def locked(self, field):
         if field.system:
-            return '<img src="%sngw/lock.png" alt="locked" width="10" height="10">' % settings.STATIC_URL
+            return (
+                '<img src="%sngw/lock.png" alt="locked"'
+                ' width="10" height="10">'
+                % settings.STATIC_URL)
         return ''
     locked.short_description = ugettext_lazy('Locked')
     locked.admin_order_field = 'system'
@@ -167,8 +174,8 @@ class FieldEditForm(forms.ModelForm):
     class Meta:
         model = ContactField
         fields = ['name', 'hint', 'contact_group', 'type',
-            #'choice_group', 'choice_group2',
-            'default']
+                  # 'choice_group', 'choice_group2',
+                  'default']
         widgets = {
             'type': forms.Select,
             'default': forms.widgets.Input,
@@ -179,7 +186,8 @@ class FieldEditForm(forms.ModelForm):
             super().__init__(*args, **kwargs)
             self.deletion_details = deletion_details
 
-    move_after = forms.IntegerField(label=ugettext_lazy('Move after'), widget=forms.Select)
+    move_after = forms.IntegerField(
+        label=ugettext_lazy('Move after'), widget=forms.Select)
 
     def __init__(self, *args, **kargs):
         instance = kargs.get('instance', None)
@@ -194,16 +202,20 @@ class FieldEditForm(forms.ModelForm):
 
         allowedgroups = ContactGroup.objects.filter(field_group=True) \
             .with_user_perms(userid, perms.CHANGE_CG)
-        self.fields['contact_group'].widget.choices = [(g.id, g.name) for g in allowedgroups]
+        self.fields['contact_group'].widget.choices = [
+            (g.id, g.name) for g in allowedgroups]
 
         types = [(cls.db_type_id, str(cls.human_type_id))
-            for cls in  ContactField.types_classes.values()]
+                 for cls in ContactField.types_classes.values()]
         types.sort(key=lambda cls: cls[1])
         self.fields['type'].widget.choices = types
 
         self.fields['default'].widget.attrs['disabled'] = 1
 
-        self.fields['move_after'].widget.choices = [(0, _('Name'))] + [(field.sort_weight, field.name) for field in ContactField.objects.order_by('sort_weight')]
+        self.fields['move_after'].widget.choices = (
+            [(0, _('Name'))]
+            + [(field.sort_weight, field.name)
+               for field in ContactField.objects.order_by('sort_weight')])
 
         if instance and instance.system:
             self.fields['contact_group'].widget.attrs['disabled'] = 1
@@ -253,20 +265,25 @@ class FieldEditForm(forms.ModelForm):
             deletion_details = []
 
             if self.delete_incompatible:
-                new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
+                new_cls = ContactField.get_contact_field_type_by_dbid(
+                    new_cls_id)
                 for cfv in self.instance.values.all():
-                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id) \
-                        or self.instance.has_choice != new_cls.has_choice:
+                    if (not new_cls.validate_unicode_value(cfv.value,
+                                                           choice_group_id,
+                                                           choice_group2_id)
+                       or self.instance.has_choice != new_cls.has_choice):
                         cfv.delete()
             else:  # delete_incompatible==False
-                new_cls = ContactField.get_contact_field_type_by_dbid(new_cls_id)
+                new_cls = ContactField.get_contact_field_type_by_dbid(
+                    new_cls_id)
                 for cfv in self.instance.values.all():
-                    if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id) \
-                        or self.instance.has_choice != new_cls.has_choice:
+                    if (not new_cls.validate_unicode_value(cfv.value,
+                                                           choice_group_id,
+                                                           choice_group2_id)
+                       or self.instance.has_choice != new_cls.has_choice):
                         deletion_details.append((cfv.contact, cfv))
                 if deletion_details:
                     raise FieldEditForm.IncompatibleData(deletion_details)
-
 
         cf = super().save(commit=False)
 
@@ -324,9 +341,11 @@ class FieldEditMixin(ModelFormMixin):
         request = self.request
         cf = form.save()
 
-        messages.add_message(request, messages.SUCCESS, _('Field %s has been saved successfully.') % cf.name)
+        messages.add_message(
+            request, messages.SUCCESS,
+            _('Field %s has been saved successfully.') % cf.name)
 
-        if self.pk_url_kwarg not in self.kwargs: # new added instance
+        if self.pk_url_kwarg not in self.kwargs:  # new added instance
             base_url = '.'
         else:
             base_url = '..'
@@ -345,16 +364,17 @@ class FieldEditMixin(ModelFormMixin):
             title = _('Editing %s') % self.object
             id = self.object.id
         else:
-            title = _('Adding a new %s') % ContactField.get_class_verbose_name()
+            title = (
+                _('Adding a new %s') % ContactField.get_class_verbose_name())
             id = None
         context['title'] = title
         context['id'] = id
         context['objtype'] = ContactField
-        context['nav'] = cg.get_smart_navbar() \
-                         .add_component(('fields', _('contact fields')))
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('fields', _('contact fields')))
         if id:
-            context['nav'].add_component(self.object.get_navcomponent()) \
-                          .add_component(('edit', _('edit')))
+            context['nav'].add_component(self.object.get_navcomponent())
+            context['nav'].add_component(('edit', _('edit')))
         else:
             context['nav'].add_component(('add', _('add')))
         context['active_submenu'] = 'fields'
@@ -391,8 +411,11 @@ class FieldEditView(InGroupAcl, FieldEditMixin, UpdateView):
             context['nav'] = cg.get_smart_navbar()
             context['nav'].add_component(('fields', _('contact fields')))
             context['nav'].add_component(cf.get_navcomponent())
-            context['nav'].add_component(('edit', _('delete incompatible data')))
-            return render_to_response('type_change.html', context, RequestContext(request))
+            context['nav'].add_component(
+                ('edit', _('delete incompatible data')))
+            return render_to_response('type_change.html',
+                                      context,
+                                      RequestContext(request))
 
 
 class FieldCreateView(InGroupAcl, FieldEditMixin, CreateView):

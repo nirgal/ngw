@@ -2,7 +2,6 @@
 Base view class; View helpers
 '''
 
-import inspect
 import operator
 from collections import OrderedDict
 from functools import reduce
@@ -12,7 +11,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import helpers
 from django.contrib.admin.templatetags.admin_static import static
-from django.contrib.admin.utils import lookup_needs_distinct
 from django.contrib.admin.views.main import ChangeList
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
@@ -20,15 +18,12 @@ from django.db import models
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.http import Http404, HttpResponseRedirect
 from django.http.response import HttpResponseBase
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from django.utils.html import format_html
-from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import never_cache
-from django.views.generic import DeleteView, ListView, TemplateView
+from django.views.generic import DeleteView, TemplateView
 from django.views.generic.base import ContextMixin
 
 from ngw.core import perms
@@ -46,7 +41,8 @@ from ngw.core.views.decorators import login_required, require_group
 
 class NgwUserAcl(object):
     '''
-    This simple mixin check the user is authenticated and member of GROUP_USER_NGW
+    This simple mixin check the user is authenticated and member of
+    GROUP_USER_NGW.
     '''
     @method_decorator(login_required)
     @method_decorator(require_group(GROUP_USER_NGW))
@@ -93,9 +89,9 @@ class InGroupAcl(ContextMixin):
             try:
                 group_id = int(group_id)
                 group = (ContactGroup.objects
-                    .with_user_perms(user.id)
-                    .with_counts()
-                    .get(pk=group_id))
+                         .with_user_perms(user.id)
+                         .with_counts()
+                         .get(pk=group_id))
             except (ValueError, TypeError, ContactGroup.DoesNotExist):
                 raise Http404
         else:
@@ -151,10 +147,10 @@ class MyChangeList(ChangeList):
 
 
 class NgwListView(TemplateView):
-#    '''
-#    This function renders the query, paginated.
-#    http query parameter _order is used to sort on a column
-#    '''
+    # '''
+    # This function renders the query, paginated.
+    # http query parameter _order is used to sort on a column
+    # '''
     template_name = 'list.html'
 
     list_display = ('__str__',)
@@ -191,16 +187,20 @@ class NgwListView(TemplateView):
         # This method is copied exactly fom BaseModelAdmin
         return self.ordering or ()
 
-    def get_paginator(self, request, queryset, per_page, orphans=0, allow_empty_first_page=True):
+    def get_paginator(self, request, queryset, per_page, orphans=0,
+                      allow_empty_first_page=True):
         # This method is copied exactly fom BaseModelAdmin
-        return self.paginator(queryset, per_page, orphans, allow_empty_first_page)
+        return self.paginator(queryset, per_page, orphans,
+                              allow_empty_first_page)
 
     def action_checkbox(self, obj):
         """
         A list_display column containing a checkbox widget.
         """
-        return helpers.checkbox.render(helpers.ACTION_CHECKBOX_NAME, str(obj.pk))
-    action_checkbox.short_description = mark_safe('<input type="checkbox" id="action-toggle" />')
+        return helpers.checkbox.render(
+            helpers.ACTION_CHECKBOX_NAME, str(obj.pk))
+    action_checkbox.short_description = mark_safe(
+        '<input type="checkbox" id="action-toggle" />')
     action_checkbox.allow_tags = True
 
     def get_action_choices(self, request, default_choices=BLANK_CHOICE_DASH):
@@ -210,7 +210,7 @@ class NgwListView(TemplateView):
         """
         choices = [] + default_choices
         for func, name, description in self.get_actions(request).values():
-            choice = (name, description) # % model_format_dict(self.opts))
+            choice = (name, description)  # % model_format_dict(self.opts))
             choices.append(choice)
         return choices
 
@@ -228,8 +228,9 @@ class NgwListView(TemplateView):
         actions = []
 
         # Gather actions from the admin site first
-        #for (name, func) in self.admin_site.actions:
-        #    description = getattr(func, 'short_description', name.replace('_', ' '))
+        # for (name, func) in self.admin_site.actions:
+        #    description = getattr(func, 'short_description',
+        #                          name.replace('_', ' '))
         #    actions.append((func, name, description))
 
         # Then gather them from the model admin and all parent classes,
@@ -276,7 +277,6 @@ class NgwListView(TemplateView):
         else:
             description = capfirst(action.replace('_', ' '))
         return func, action, description
-
 
     def get_list_display(self, request):
         '''
@@ -326,7 +326,8 @@ class NgwListView(TemplateView):
                 or_queries = [models.Q(**{orm_lookup: bit})
                               for orm_lookup in orm_lookups]
                 queryset = queryset.filter(reduce(operator.or_, or_queries))
-            #if not use_distinct:
+            # if not use_distinct:
+            # from django.contrib.admin.utils import lookup_needs_distinct
             #    for search_spec in orm_lookups:
             #        if lookup_needs_distinct(self.opts, search_spec):
             #            use_distinct = True
@@ -337,7 +338,6 @@ class NgwListView(TemplateView):
     def get_preserved_filters(self, request):
         # Used by ChangeList
         return ''
-
 
     def lookup_allowed(self, lookup, value):
         # TODO
@@ -386,7 +386,8 @@ class NgwListView(TemplateView):
             # the action explicitly on all objects.
             selected = request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
             if not selected and not select_across:
-                # Reminder that something needs to be selected or nothing will happen
+                # Reminder that something needs to be selected or nothing will
+                # happen
                 msg = _("Items must be selected in order to perform "
                         "actions on them. No items have been changed.")
                 messages.add_message(request, messages.WARNING, msg)
@@ -410,7 +411,6 @@ class NgwListView(TemplateView):
             messages.add_message(request, messages.WARNING, msg)
             return None
 
-
     def theview(self, request, *args, **kwargs):
         qs = self.get_root_queryset()
         request = self.request
@@ -424,7 +424,7 @@ class NgwListView(TemplateView):
         actions = self.get_actions(request)
         if actions:
             # Add the action checkboxes if there are any actions available.
-            list_display = [ 'action_checkbox' ] + list(list_display)
+            list_display = ['action_checkbox'] + list(list_display)
 
         self.cl = cl = MyChangeList(
             self.append_slash,
@@ -445,7 +445,8 @@ class NgwListView(TemplateView):
         if (actions and request.method == 'POST' and
                 'index' in request.POST and '_save' not in request.POST):
             if selected:
-                response = self.response_action(request, queryset=cl.get_queryset(request))
+                response = self.response_action(
+                    request, queryset=cl.get_queryset(request))
                 if response:
                     return response
                 else:
@@ -461,23 +462,25 @@ class NgwListView(TemplateView):
                 helpers.ACTION_CHECKBOX_NAME in request.POST and
                 'index' not in request.POST and '_save' not in request.POST):
             if selected:
-                response = self.response_action(request, qs) #queryset=cl.get_queryset(request))
+                # queryset=cl.get_queryset(request))
+                response = self.response_action(request, qs)
                 if response:
                     return response
                 else:
                     action_failed = True
 
         # Build the list of media to be used by the formset.
-        #if formset:
-        #    media = self.media + formset.media
-        #else:
-        #    media = self.media
+        # if formset:
+        #     media = self.media + formset.media
+        # else:
+        #     media = self.media
         media = self.media
 
         # Build the action form and populate it with available actions.
         if actions:
             action_form = self.action_form(auto_id=None)
-            action_form.fields['action'].choices = self.get_action_choices(request)
+            action_form.fields['action'].choices = (
+                self.get_action_choices(request))
         else:
             action_form = None
 
@@ -488,17 +491,14 @@ class NgwListView(TemplateView):
         context['actions_on_top'] = self.actions_on_top
         context['actions_on_bottom'] = self.actions_on_bottom
 
-
         cl.formset = None
         context.update(kwargs)
         context = self.get_context_data(**context)
+        if action_failed:
+            print('action failed')
         return self.render_to_response(context)
 
     get = post = theview
-
-
-
-
 
 
 #######################################################################
@@ -507,7 +507,8 @@ class NgwListView(TemplateView):
 #
 #######################################################################
 
-# Helper function that is never call directly, hence the lack of authentification check
+# Helper function that is never call directly, hence the lack of
+# authentification check
 class NgwDeleteView(DeleteView):
     template_name = 'delete.html'
     success_url = '../'
@@ -532,10 +533,12 @@ class NgwDeleteView(DeleteView):
         log.contact_id = self.request.user.id
         log.action = LOG_ACTION_DEL
         pk_names = (obj._meta.pk.attname,)  # default django pk name
-        log.target = obj.__class__.__name__ + ' ' + ' '.join([str(obj.__getattribute__(fieldname)) for fieldname in pk_names])
+        log.target = obj.__class__.__name__ + ' ' + ' '.join(
+            [str(obj.__getattribute__(fieldname)) for fieldname in pk_names])
         log.target_repr = obj.get_class_verbose_name() + ' '+name
         log.save()
 
         self.object.delete()
-        messages.add_message(request, messages.SUCCESS, _('%s has been deleted.') % name)
+        messages.add_message(request, messages.SUCCESS,
+                             _('%s has been deleted.') % name)
         return HttpResponseRedirect(success_url)
