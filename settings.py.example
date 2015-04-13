@@ -145,7 +145,7 @@ AUTHENTICATION_BACKENDS = (
     'ngw.core.authbackend.NgwAuthBackend',
 )
 
-AUTH_USER_MODEL = 'core.Contact'
+AUTH_USER_MODEL = 'ngw.Contact'
 
 LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
