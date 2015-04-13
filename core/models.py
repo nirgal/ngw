@@ -245,17 +245,19 @@ class MyContactManager(BaseUserManager):
         # Create login for all members of GROUP_USER
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT users.contact_id"
-            "FROM ("
-            "   SELECT DISTINCT contact_in_group.contact_id"
-            "   FROM contact_in_group"
-            "   WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d))"
-            "   AND contact_in_group.flags & %(member_flag)s <> 0"
-            ") AS users"
-            "LEFT JOIN contact_field_value ON ("
-            "       contact_field_value.contact_id=users.contact_id"
-            "       AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d)"
-            "WHERE contact_field_value.value IS NULL"
+            """
+            SELECT users.contact_id
+            FROM (
+                SELECT DISTINCT contact_in_group.contact_id
+                FROM contact_in_group
+                WHERE group_id IN (SELECT self_and_subgroups(%(GROUP_USER)d))
+                AND contact_in_group.flags & %(member_flag)s <> 0
+            ) AS users
+            LEFT JOIN contact_field_value ON (
+                   contact_field_value.contact_id=users.contact_id
+                   AND contact_field_value.contact_field_id=%(FIELD_LOGIN)d)
+            WHERE contact_field_value.value IS NULL
+            """
             % {'member_flag': perms.MEMBER,
                'GROUP_USER': GROUP_USER,
                'FIELD_LOGIN': FIELD_LOGIN})
@@ -270,14 +272,17 @@ class MyContactManager(BaseUserManager):
                 _("Login information generated for User %s.") % contact.name)
 
         for cfv in ContactFieldValue.objects.extra(where=[
-            "contact_field_value.contact_field_id=%(FIELD_LOGIN)d"
-            " AND NOT EXISTS ("
-            "SELECT *"
-            "FROM contact_in_group"
-            "WHERE contact_in_group.contact_id=contact_field_value.contact_id"
-            "AND contact_in_group.group_id IN ("
-            "SELECT self_and_subgroups(%(GROUP_USER)d)"
-            ") AND contact_in_group.flags & %(member_flag)s <> 0)"
+            """
+            contact_field_value.contact_field_id=%(FIELD_LOGIN)d
+            AND NOT EXISTS (
+                SELECT *
+                FROM contact_in_group
+                WHERE contact_in_group.contact_id
+                      =contact_field_value.contact_id
+                AND contact_in_group.group_id IN (
+                SELECT self_and_subgroups(%(GROUP_USER)d)
+            ) AND contact_in_group.flags & %(member_flag)s <> 0)
+            """
             % {'member_flag': perms.MEMBER,
                'GROUP_USER': GROUP_USER,
                'FIELD_LOGIN': FIELD_LOGIN}]):
@@ -360,13 +365,14 @@ class Contact(NgwModel):
         return (
             ContactGroup.objects.with_user_perms(user.id, perms.SEE_MEMBERS)
             .extra(where=[
-                'EXISTS ('
-                '   SELECT *'
-                '   FROM contact_in_group'
-                '   WHERE contact_id=%s'
-                '   AND group_id=contact_group.id'
-                '   AND flags & %s <> 0'
-                ')' % (self.id, wanted_flag)]))
+                '''
+                EXISTS (
+                   SELECT *
+                   FROM contact_in_group
+                   WHERE contact_id=%s
+                   AND group_id=contact_group.id
+                   AND flags & %s <> 0
+                )''' % (self.id, wanted_flag)]))
 
     def _get_directgroups_with_flag(self, wanted_flag):
         """
@@ -374,10 +380,13 @@ class Contact(NgwModel):
         of. Like "member of"
         """
         return ContactGroup.objects.extra(where=[
-            'EXISTS ('
-            ' SELECT * FROM contact_in_group'
-            ' WHERE contact_id=%s AND group_id=contact_group.id'
-            ' AND flags & %s <> 0)' % (self.id, wanted_flag)])
+            '''
+            EXISTS (
+                SELECT * FROM contact_in_group
+                WHERE contact_id=%s AND group_id=contact_group.id
+                AND flags & %s <> 0
+            )
+            ''' % (self.id, wanted_flag)])
 
     def get_directgroups_member(self):
         """
