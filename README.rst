@@ -65,11 +65,21 @@ If you did not yet, you need to clone the git repository::
 
 As root, make a symbolic link from the git copy to /usr/lib. Base directory must be */usr/lib/ngw*.
 
-That way, you can have upgrades with a simple *git pull*. You need to run the *Makefile* after each upgrades (not yet on the first installation). So it is suggested you create a *.git/hooks/post-merge* file 755 file::
+That way, you can have upgrades with a simple *git pull*. You need to run the *Makefile* after each upgrades (not yet on the first installation). So it is suggested you create a *.git/hooks/post-merge* 755 file::
 
     #!/bin/bash
     echo "Running $0" >&2
     make
+
+The source is now fully flake8 compliant. See http://flake8.readthedocs.org/
+
+Please ensure you are commiting correct code by invoking *make flake8* before any commit. You'll need to install flake8 package.
+Then it is recommended you create a *.git/hooks/pre-commit* 755 file to do that automatically::
+
+    #!/bin/sh
+    #
+    make flake8
+
 
 
 Postgres setup
