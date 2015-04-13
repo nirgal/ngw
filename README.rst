@@ -13,7 +13,7 @@ NGW is a kind of groupware. It supports customizable contacts, groups, events, n
 
 It provide a high level of permission settings including which group can see/change which contact fields, which other groups.
 
-It can alos pilot permission to jabber and phpbb installation as exentions.
+It can also pilot permission to jabber and phpbb installation as exentions.
 
 This is the installation guide, intended for system administrators.
 
