@@ -13,7 +13,7 @@ if __name__ == '__main__':
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ngw.settings'
 from django.conf import settings
 from django.db import connections
-from ngw.core.models import (ContactFieldValue, FIELD_LOGIN)
+from ngw.core.models import (ContactFieldValue, ContactGroup, FIELD_LOGIN)
 
 
 def get_cursor():
@@ -144,6 +144,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     logging.info("Sync'ing databases...")
+    user_set = (ContactGroup.objects.get(pk=settings.XMPP_GROUP)
+                                    .get_all_members())
 
     for l1l2 in options.add_subs:
         l1, l2 = l1l2.split(':')
