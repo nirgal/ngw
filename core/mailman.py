@@ -27,7 +27,7 @@ def parse_who_result(mailcontent):
         line = line.strip()
         if ' ' in line:
             email, name = line.split(' ', 1)
-            assert (name[0] == '(' and name[-1] == ')',
+            assert ((name[0] == '(' and name[-1] == ')'),
                     'Invalid name, () not found on line '+line)
             name = name[1:-1]
         else:
