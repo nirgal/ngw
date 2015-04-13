@@ -10,7 +10,6 @@ from django.core.management.base import NoArgsCommand
 
 from ngw.core.models import FIELD_LOGIN, FIELD_PASSWORD, ContactFieldValue
 
-
 print('In ejabberd auth', file=sys.stderr)
 
 logger = logging.getLogger('ejabberd_auth')

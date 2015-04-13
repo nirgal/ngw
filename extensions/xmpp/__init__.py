@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-#
-# Database settings is defined in ~/.pgpass
 
 from __future__ import print_function
 

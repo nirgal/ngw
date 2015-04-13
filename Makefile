@@ -18,4 +18,4 @@ isort:
 	isort -b fcntl -b ssl -p ngw -o gnupg `find -name '*py' | grep -v ./core/wsgi.py`
 
 flake8:
-	flake8 --exclude=./extensions/phpbb/__init__.py .
+	flake8 .

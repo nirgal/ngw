@@ -1,31 +1,33 @@
-#!/usr/bin/env python3
-#
-# Database settings is defined in ~/.pgpass
+#!/usr/bin/python3
 
 from __future__ import print_function
 
-import sys
+import logging
 import os
 import subprocess
-import logging
+import sys
 from time import time as timestamp
-from django.contrib import messages
-
-if __name__ != '__main__':
-    logging.debug('PHPBB forum synchronisation extension for NGW loading.')
 
 if __name__ == '__main__':
     # TODO: This should be called from top level manage.py
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ngw.settings')
     sys.path.append('/usr/lib')
+
+from django.contrib import messages
 from django.db import connection, connections
-from ngw.extensions import hooks
-from ngw.core.models import (Contact, ContactGroup, ContactFieldValue,
-                             GROUP_USER_PHPBB, FIELD_LOGIN,
-                             FIELD_PHPBB_USERID)
+
+if __name__ != '__main__':
+    logging.debug('PHPBB forum synchronisation extension for NGW loading.')
+
 from ngw.core import contactfield  # Need polymorphic upgrades
+from ngw.core.models import (FIELD_LOGIN, FIELD_PHPBB_USERID, GROUP_USER_PHPBB,
+                             Contact, ContactFieldValue, ContactGroup)
+from ngw.extensions import hooks
+
 
 DEFAULT_USER_PERMISSIONS = '00000000006xv1ssxs'
+
+contactfield.TextContactField.validate_unicode_value('')  # flake8
 
 
 def get_cursor():
