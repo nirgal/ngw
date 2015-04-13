@@ -16,7 +16,6 @@ from django.utils.encoding import force_str
 from django.utils.translation import activate as language_activate
 from django.utils.translation import ugettext as _
 
-from ngw.core import contactfield  # Need polymorphic upgrades
 from ngw.core.models import ContactMsg
 
 SUPPORTS_EXPIRATION = True
