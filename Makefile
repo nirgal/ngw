@@ -15,6 +15,7 @@ README.html: README.rst
 	rst2html README.rst README.html
 
 isort:
+	# TODO: --dont-skip __init__.py
 	isort -b fcntl -b ssl -p ngw -o gnupg `find -name '*py' | grep -v ./core/wsgi.py`
 
 flake8:

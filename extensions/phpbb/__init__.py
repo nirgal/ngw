@@ -19,15 +19,13 @@ from django.db import connection, connections
 if __name__ != '__main__':
     logging.debug('PHPBB forum synchronisation extension for NGW loading.')
 
-from ngw.core import contactfield  # Need polymorphic upgrades
+from ngw.core import contactfield  # Need polymorphic upgrades  # noqa
 from ngw.core.models import (FIELD_LOGIN, FIELD_PHPBB_USERID, GROUP_USER_PHPBB,
                              Contact, ContactFieldValue, ContactGroup)
 from ngw.extensions import hooks
 
 
 DEFAULT_USER_PERMISSIONS = '00000000006xv1ssxs'
-
-contactfield.TextContactField.validate_unicode_value('')  # flake8
 
 
 def get_cursor():
