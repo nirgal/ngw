@@ -23,14 +23,17 @@ from django.contrib import auth
 from django.core.wsgi import get_wsgi_application
 from django.utils.encoding import force_bytes
 
-from ngw.core import perms
-from ngw.core.models import ContactGroup
-
 
 def groups_for_user(environ, username):
     """
     Authorizes a user based on groups
     """
+
+    # We cannot load these modules before calling get_wsgi_application()
+    # So they must be defined here.
+    from ngw.core import perms
+    from ngw.core.models import ContactGroup
+
     UserModel = auth.get_user_model()
     db.reset_queries()
 
