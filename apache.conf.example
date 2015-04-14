@@ -45,7 +45,7 @@ WSGIPythonPath /usr/lib
     WSGIScriptAliasMatch ^(/events/.*)$            /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/media/.*)$             /usr/lib/ngw/core/wsgi.py$1
     WSGIScriptAliasMatch ^(/pks/.*)$               /usr/lib/ngw/core/wsgi.py$1
-    WSGIScriptAliasMatch ^(/test)$                 /usr/lib/ngw/core/wsgi.py$1
+    #WSGIScriptAliasMatch ^(/test)$                 /usr/lib/ngw/core/wsgi.py$1
     #WSGIScriptAliasMatch ^(/hook_change_password)$ /usr/lib/ngw/core/wsgi.py$1
     #<LocationMatch "^/hook_change_password$">
     #    require valid-user

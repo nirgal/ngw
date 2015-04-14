@@ -18,8 +18,11 @@ sys.path.append('/usr/lib')
 # os.environ["DJANGO_SETTINGS_MODULE"] = "ngw.settings"
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ngw.settings")
 
+
 from django import db
 from django.contrib import auth
+from django.contrib.auth.handlers.modwsgi import \
+    check_password as wsgi_checkpassword
 from django.core.wsgi import get_wsgi_application
 from django.utils.encoding import force_bytes
 
@@ -50,4 +53,5 @@ def groups_for_user(environ, username):
     finally:
         db.close_old_connections()
 
+check_password = wsgi_checkpassword
 application = get_wsgi_application()
