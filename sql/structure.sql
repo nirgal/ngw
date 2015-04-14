@@ -42,13 +42,13 @@ CREATE TABLE contact_group (
     id serial NOT NULL PRIMARY KEY,
     name character varying(255) NOT NULL,
     description text NOT NULL,
-    field_group boolean DEFAULT false NOT NULL,
+    field_group boolean NOT NULL,
     date date,
     end_date date,
-    budget_code character varying(10) DEFAULT ''::character varying NOT NULL,
-    system boolean DEFAULT false NOT NULL,
+    budget_code character varying(10) NOT NULL,
+    system boolean NOT NULL,
     mailman_address character varying(255) NOT NULL,
-    sticky boolean DEFAULT false NOT NULL
+    sticky boolean NOT NULL
 );
 
 
@@ -58,7 +58,7 @@ CREATE TABLE contact_group (
 
 CREATE TABLE choice_group (
     id serial NOT NULL PRIMARY KEY,
-    sort_by_key boolean DEFAULT false NOT NULL
+    sort_by_key boolean NOT NULL
 );
 
 
@@ -69,8 +69,8 @@ CREATE TABLE choice_group (
 CREATE TABLE choice (
     django_id serial NOT NULL PRIMARY KEY,
     choice_group_id integer NOT NULL REFERENCES choice_group(id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE,
-    key character varying(255) DEFAULT ''::character varying NOT NULL,
-    value character varying(255) DEFAULT ''::character varying NOT NULL,
+    key character varying(255) NOT NULL,
+    value character varying(255) NOT NULL,
     UNIQUE ("choice_group_id", "key")
 );
 
@@ -86,12 +86,12 @@ CREATE TABLE contact_field (
     id serial NOT NULL PRIMARY KEY,
     name character varying(255) NOT NULL,
     hint text NOT NULL,
-    type character varying(15) DEFAULT 'TEXT'::character varying NOT NULL,
+    type character varying(15) NOT NULL,
     contact_group_id integer NOT NULL REFERENCES contact_group(id) ON UPDATE CASCADE ON DELETE CASCADE,
     sort_weight integer NOT NULL,
     choice_group_id integer REFERENCES choice_group(id) ON UPDATE CASCADE,
     choice_group2_id integer REFERENCES choice_group(id) ON UPDATE CASCADE,
-    system boolean DEFAULT false NOT NULL,
+    system boolean NOT NULL,
     "default" text NOT NULL
 );
 CREATE INDEX contact_field_choice_group2_id ON contact_field USING btree (choice_group2_id);
@@ -207,8 +207,8 @@ CREATE TABLE contact_message (
     send_date timestamp with time zone NOT NULL,
     read_date timestamp with time zone,
     read_by_id integer REFERENCES contact(id) MATCH SIMPLE ON UPDATE CASCADE ON DELETE SET NULL,
-    is_answer boolean DEFAULT false NOT NULL,
-    subject varchar(64) NOT NULL DEFAULT 'no title',
+    is_answer boolean NOT NULL,
+    subject varchar(64) NOT NULL,
     text text NOT NULL,
     sync_info text NOT NULL
 );

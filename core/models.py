@@ -760,7 +760,7 @@ class ContactGroup(NgwModel):
         help_text=ugettext_lazy('Mailing list address, if the group is linked'
                                 ' to a mailing list.'))
     sticky = models.BooleanField(
-        ('Sticky'), default=False,
+        ugettext_lazy('Sticky'), default=False,
         help_text=ugettext_lazy('If set, automatic membership because of'
                                 ' subgroups becomes permanent. Use with'
                                 ' caution.'))
@@ -2531,7 +2531,9 @@ class ContactMsg(NgwModel):
     read_date = models.DateTimeField(null=True, blank=True)
     read_by = models.ForeignKey(Contact, null=True, related_name='msgreader')
     is_answer = models.BooleanField(default=False)
-    subject = models.CharField(ugettext_lazy('Subject'), max_length=64)
+    subject = models.CharField(
+        ugettext_lazy('Subject'),
+        max_length=64, default='No title')
     text = models.TextField()
     sync_info = models.TextField(blank=True)  # json data for external storage
 
