@@ -80,8 +80,12 @@ TBD
 
 Change MailmanSyncForm into a ModelForm (?)
 
-Check new migrations framework
+New migrations framework:
+- No default value on the SQL side
+- unique_together has no index
 
 Make an ldap compatible daemon
 
 Check https://docs.djangoproject.com/en/1.7/howto/outputting-pdf/
+
+postgresql 9.2 supports json type for contact_message.syncinfo

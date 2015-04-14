@@ -180,6 +180,7 @@ class Choice(NgwModel):
         verbose_name = ugettext_lazy('choice')
         verbose_name_plural = ugettext_lazy('choices')
         unique_together = 'choice_group', 'key'
+        index_together = 'choice_group', 'key'
 
     def __str__(self):
         return self.value
@@ -2406,6 +2407,7 @@ class ContactFieldValue(NgwModel):
         verbose_name = ugettext_lazy('contact field value')
         verbose_name_plural = ugettext_lazy('contact field values')
         unique_together = 'contact', 'contact_field'
+        index_together = 'contact', 'contact_field'
 
     def __repr__(self):
         cf = self.contact_field
@@ -2432,6 +2434,7 @@ class GroupInGroup(NgwModel):
         verbose_name = ugettext_lazy('group in group')
         verbose_name_plural = ugettext_lazy('groups in group')
         unique_together = 'father', 'subgroup'
+        index_together = 'father', 'subgroup'
 
     def __repr__(self):
         return '<GroupInGroup %s %s>' % (self.subgroup_id, self.father_id)
@@ -2450,6 +2453,7 @@ class GroupManageGroup(NgwModel):
         verbose_name = ugettext_lazy('group managing group')
         verbose_name_plural = ugettext_lazy('groups managing group')
         unique_together = 'father', 'subgroup'
+        index_together = 'father', 'subgroup'
 
     def __repr__(self):
         return '<GroupManageGroup %s %s>' % (self.subgroup_id, self.father_id)

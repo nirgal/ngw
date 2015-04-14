@@ -217,8 +217,6 @@ CREATE INDEX contact_message_contact_id ON contact_message USING btree (contact_
 CREATE INDEX contact_message_group_id ON contact_message USING btree (group_id);
 CREATE INDEX contact_message_read_by_id ON contact_message USING btree (read_by_id);
 
--- TODO: postgresql 9.2 supports json type for syncinfo
-
 ALTER TABLE contact_field ADD CONSTRAINT contact_field_has_choice1 CHECK (
         (type<>'CHOICE' AND type<>'MULTIPLECHOICE' AND type<>'DOUBLECHOICE')
         OR choice_group_id IS NOT NULL
