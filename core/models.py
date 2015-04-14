@@ -2492,9 +2492,13 @@ class ContactInGroup(NgwModel):
 
 class ContactGroupNews(NgwModel):
     id = models.AutoField(primary_key=True)
-    author = models.ForeignKey(Contact, null=True, blank=True)
+    author = models.ForeignKey(
+        Contact, null=True, blank=True,
+        on_delete=models.SET_NULL)
     contact_group = models.ForeignKey(
-        ContactGroup, null=True, blank=True, related_name='news_set')
+        ContactGroup, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='news_set')
     date = models.DateTimeField()
     title = models.CharField(ugettext_lazy('title'), max_length=64)
     text = models.TextField(ugettext_lazy('text'))
@@ -2529,7 +2533,10 @@ class ContactMsg(NgwModel):
     group = models.ForeignKey(ContactGroup, related_name='message_set')
     send_date = models.DateTimeField()
     read_date = models.DateTimeField(null=True, blank=True)
-    read_by = models.ForeignKey(Contact, null=True, related_name='msgreader')
+    read_by = models.ForeignKey(
+        Contact,
+        null=True, related_name='msgreader',
+        on_delete=models.SET_NULL)
     is_answer = models.BooleanField(default=False)
     subject = models.CharField(
         ugettext_lazy('Subject'),

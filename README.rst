@@ -101,10 +101,7 @@ Create a database ngw with owner ngw::
 
 Create the structure, populate the initial data, and create the extra views and functions::
 
-    $ psql -h localhost -U ngw ngw -f sql/structure.sql
-    $ psql -h localhost -U ngw ngw -f sql/initialdata.sql
-    $ psql -h localhost -U ngw ngw -f sql/functions.sql
-    $ ./manage.py syncdb
+    $ ./manage.py migrate
 
 
 Application setup

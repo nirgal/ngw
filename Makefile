@@ -5,6 +5,7 @@ all:
 	mkdir -p /usr/lib/ngw/static
 	./manage.py collectstatic --verbosity 1 --noinput
 	./manage.py upgradedb --verbosity 2
+	./manage.py migrate --verbosity 1
 	py3compile core extensions
 clean:
 	rm -rf static/
