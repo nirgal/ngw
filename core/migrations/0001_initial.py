@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 
 import os
 
-from django.db import models, migrations
 from django.conf import settings
+from django.db import migrations, models
 
 
 def initial_data(apps, schema_editor):
