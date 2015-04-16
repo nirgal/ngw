@@ -98,17 +98,6 @@ DATABASES = {
     #     'PORT': '',
     #     'OPTIONS': { 'autocommit': True },
     # },
-
-    # Enable this block if you want jabber extension:
-    # 'jabber': {
-    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    #     'NAME': 'jabber',
-    #     'USER': 'jabber',
-    #     'PASSWORD': 'XXX',
-    #     'HOST': 'localhost',
-    #     'PORT': '',
-    #     'OPTIONS': { 'autocommit': True },
-    # },
 }
 
 # Internationalization
@@ -173,9 +162,10 @@ FILE_UPLOAD_PERMISSIONS = 0o664
 # Uncomment next line to enable GPG keyring
 # GPG_HOME = '/var/lib/ngw/'
 
-# If you enable xmpp extension, you'll need to define these 2 values
+# If you enable xmpp extension, you'll need to define these 3 values:
 # XMPP_DOMAIN = 'myxmppdomain.net'
 # XMPP_GROUP = 284
+# XMPP_ROSTERNAME = 'Ngw contacts'  # Name of the group in the roster
 
 # EMAIL_BACKEND = 'ngw.core.tormailbackend.TorEmailBackend'
 # EMAIL_HOST = 'localhost'

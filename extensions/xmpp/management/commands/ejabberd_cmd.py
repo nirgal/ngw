@@ -1,17 +1,33 @@
 import logging
+import subprocess
 from optparse import make_option
 
 from django.conf import settings
-from django.core.management.base import NoArgsCommand
-from django.db import connections
+from django.core.management.base import CommandError, NoArgsCommand
 
 from ngw.core.models import FIELD_LOGIN, ContactFieldValue, ContactGroup
 
-logger = logging.getLogger('ejabberd_cmd')
+
+def check_login_exists(login):
+    try:
+        ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN,
+                                      value=login)
+    except ContactFieldValue.DoesNotExist:
+        raise CommandError('User "%s" does not exist' % login)
 
 
-def get_cursor():
-    return connections['jabber'].cursor()
+def call(*args):
+    'Call subprocess with arguments, log'
+    logging.debug("Subprocess call: %s", args)
+    return subprocess.check_output(args)
+
+
+def get_roster(login):
+    raw = call('sudo', '/usr/sbin/ejabberdctl',
+               'get_roster', login, settings.XMPP_DOMAIN)
+    raw = str(raw, encoding='utf-8')
+    return [line.split('\t')
+            for line in raw.split('\n')]
 
 
 def cross_subscribe(login1, login2):
@@ -19,83 +35,31 @@ def cross_subscribe(login1, login2):
     login1 & 2 must exists.
     Check before calling.
     '''
-    cursor = get_cursor()
-    login1 = login1.lower()
-    login2 = login2.lower()
-
     def _subscribe1(login1, login2):
-        params = {
-            'username': login1,
-            'jid': login2+'@'+settings.XMPP_DOMAIN,
-            'nick': login2}
+        call('sudo', '/usr/sbin/ejabberdctl',
+             'add_rosteritem',
+             login1, settings.XMPP_DOMAIN,
+             login2, settings.XMPP_DOMAIN,
+             login2+'@'+settings.XMPP_DOMAIN,
+             settings.XMPP_ROSTERNAME,
+             'both')
 
-        sql = """
-            INSERT INTO rosterusers
-                (username, jid, nick, subscription, ask, askmessage, server)
-            SELECT %(username)s, %(jid)s, %(nick)s, 'B', 'N', '', 'N'
-            WHERE NOT EXISTS (
-                SELECT *
-                FROM rosterusers
-                WHERE username=%(username)s
-                AND jid=%(jid)s
-            )"""
-        cursor.execute(sql, params)
-
-        sql = """
-            UPDATE rosterusers
-            SET subscription='B', ask='N', server='N', type='item'
-            WHERE username=%(username)s AND jid=%(jid)s
-        """
-        cursor.execute(sql, params)
     _subscribe1(login1, login2)
     _subscribe1(login2, login1)
 
 
-def clean_rostergroup(login):
-    cursor = get_cursor()
-    params = {'username': login}
-    sql = 'SELECT min(grp) FROM rostergroups WHERE username=%(username)s'
-    cursor.execute(sql, params)
-    row = cursor.fetchone()
-    if row and row[0]:
-        grp = row[0]
-    else:
-        grp = 'GP'
-    logging.debug('group for %s is %s.', login, grp)
-
-    params['grp'] = grp
-    sql = '''
-        INSERT INTO "rostergroups" (username, jid, grp)
-        SELECT username, jid, %(grp)s
-        FROM rosterusers
-        WHERE username=%(username)s
-        AND NOT EXISTS (
-            SELECT *
-            FROM rostergroups
-            WHERE rostergroups.username=rosterusers.username
-            AND rostergroups.jid=rosterusers.jid)'''
-    cursor.execute(sql, params)
-
-
-def subscribe_everyone(baseusername, allusers, exclude=None):
-    logging.debug('subscribe_everyone for %s. Exclude=%s',
-                  baseusername, exclude)
+def subscribe_everyone(login, allusers, exclude=None):
+    logging.info('subscribe_everyone for %s. Exclude=%s', login, exclude)
     exclude = exclude or []
-    # Check baseusername exists:
-    baseuser = (ContactFieldValue
-                .objects
-                .filter(contact_field_id=FIELD_LOGIN)
-                .filter(value=baseusername))
-    assert len(baseuser), ("User %s not found" % baseusername)
 
-    baseusername = baseusername.lower()
+    check_login_exists(login)
+
     for user in allusers:
         username = user.get_fieldvalue_by_id(FIELD_LOGIN)
-        username = username.lower()
-        if username == baseusername or username in exclude:
+        if username == login or username in exclude:
             continue  # skip
-        logging.debug('Cross subscribe %s:%s', baseusername, username)
-        cross_subscribe(baseusername, username)
+        logging.debug('Cross subscribe %s:%s', login, username)
+        cross_subscribe(login, username)
 
 
 class Command(NoArgsCommand):
@@ -116,10 +80,6 @@ class Command(NoArgsCommand):
             action='store', dest='suball',
             metavar='USERNAME',
             help="Subscribe a user to everyone"),
-        make_option(
-            '-d', '--debug',
-            action='store_true', dest='debug', default=False,
-            help="debug mode"),
         )
 
     def handle_noargs(self, **options):
@@ -136,27 +96,16 @@ class Command(NoArgsCommand):
         logging.basicConfig(level=loglevel,
                             format='%(asctime)s %(levelname)s %(message)s')
 
-        # if options.debug_sql:
-        #    sql_setdebug(True)
-
-        logging.info("Sync'ing databases...")
         user_set = (ContactGroup.objects.get(pk=settings.XMPP_GROUP)
                                         .get_all_members())
 
-        for l1l2 in options.add_subs:
-            l1, l2 = l1l2.split(':')
-            # Check the logins do exists in the database
-            login1 = ContactFieldValue.objects.get(
-                contact_field_id=FIELD_LOGIN, value=l1)
-            login2 = ContactFieldValue.objects.get(
-                contact_field_id=FIELD_LOGIN, value=l2)
+        for logins in options['add_subs']:
+            login1, login2 = logins.split(':')
+            check_login_exists(login1)
+            check_login_exists(login2)
             cross_subscribe(login1, login2)
 
-        if options.suball:
-            subscribe_everyone(baseusername=options.suball,
+        if options['suball']:
+            subscribe_everyone(login=options['suball'],
                                allusers=user_set,
-                               exclude=options.exclude)
-
-        # clean up roster group
-        for u in user_set:
-            clean_rostergroup(u.get_fieldvalue_by_id(FIELD_LOGIN).lower())
+                               exclude=options['exclude'])

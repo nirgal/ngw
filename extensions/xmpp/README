@@ -1,3 +1,83 @@
+Basic ejabberd setup
+====================
+
+Install package ejabberd.
+
+Configuration is in file */etc/ejabberd/ejabberd.yml*.
+
+You need set at least these settings:
+- hosts: Put the domain name you want to use.
+- acl/admin/user/-: Replace localhost by your domain
+
+You will also very probably want to add the admin tools in "modules", on
+column 3::
+
+  mod_admin_extra: {}
+  mod_muc_admin: {}
+
+
+ejabberd authentication through ngw
+===================================
+
+You can define a Ngw group whose members will automatically be granted access
+to the chat.
+
+First, create a group in Ngw. Note its internal ID from the URL. Then, you need
+to define some constants in your settings.py:
+
+XMPP_DOMAIN should be the domain your xmpp server is offering
+
+XMPP_GROUP is an integer and must be the ContactGroup containing users who
+  are allowed to connect to the server. Adding and removing contacts from
+  that group automatically grants and revoke permissions to connect to the
+  jabber daemon.
+
+XMPP_ROSTERNAME is the name of the group in the roster.
+
+
+In */etc/ejabberd/ejabberd.yml*, comment out::
+
+	auth_method: internal
+
+and uncomment or add this::
+
+	auth_method: external
+	extauth_program: "/usr/lib/ngw/manage.py ejabberd_auth -v 2"
+
+Logging will be available in /tmp/jabauth.log
+Verbosity setting:
+0: ERROR
+1: WARNING
+2: INFO
+3: DEBUG
+
+Do not use level 3 since passwords will be logged!
+
+
+Automatic rosters
+=================
+
+This is an helper to set up rosters automatically.
+
+First, the user, like www-data, must be able to run ejabberdctl admin
+commands. You can achieve this by creating a */etc/sudoers.d/ejabberctl*
+file::
+
+	# Grant ejabberdctl
+	ALL     ALL=(root) NOPASSWD: /usr/sbin/ejabberdctl
+
+Then, in order to set up all users to a user LOGIN::
+
+	./manage ./manage.py ejabberd_cmd -v 2 --suball=LOGIN
+
+Or if you want 2 users LOGIN1 and LOGIN2 to be cross suscribed automatically::
+
+	./manage ./manage.py ejabberd_cmd -v 2 --subs=LOGIN1:LOGIN2
+
+
+Debian 7 instructions (obsolete)
+================================
+
 This ngw extension provide ejabberd authentication against django database.
 
 /etc/ejabberd/ejabberd.cfg will need to contain something like:
