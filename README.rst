@@ -1,6 +1,7 @@
-.. This document uses rst format. See http://docutils.sourceforge.net/
+﻿.. This document uses rst format. See http://docutils.sourceforge.net/
    Quick start: http://docutils.sourceforge.net/docs/user/rst/quickref.html
    Use "make README.html" to make the nice HTML version (requires python3-docutils or python-docutils)
+   vim: ts=4 et
 
 ===
 NGW
@@ -13,7 +14,7 @@ NGW is a kind of groupware. It supports customizable contacts, groups, events, n
 
 It provide a high level of permission settings including which group can see/change which contact fields, which other groups.
 
-It can also pilot permission to jabber and phpbb installation as exentions.
+It can also pilot permission to jabber and phpbb installation as extensions.
 
 This is the installation guide, intended for system administrators.
 
@@ -63,9 +64,9 @@ If you did not yet, you need to clone the git repository::
 
     git clone https://github.com/nirgal/ngw.git
 
-As root, make a symbolic link from the git copy to /usr/lib. Base directory must be */usr/lib/ngw*.
+As root, make a symbolic link from the git copy to ``/usr/lib``. Base directory must be ``/usr/lib/ngw``.
 
-That way, you can have upgrades with a simple *git pull*. You need to run the *Makefile* after each upgrades (not yet on the first installation). So it is suggested you create a *.git/hooks/post-merge* 755 file::
+That way, you can have upgrades with a simple ``git pull``. You need to run the ``Makefile`` after each upgrades (not yet on the first installation). So it is suggested you create a ``.git/hooks/post-merge`` 755 file::
 
     #!/bin/bash
     echo "Running $0" >&2
@@ -73,19 +74,17 @@ That way, you can have upgrades with a simple *git pull*. You need to run the *M
 
 The source is now fully flake8 compliant. See http://flake8.readthedocs.org/
 
-Please ensure you are commiting correct code by invoking *make flake8* before any commit. You'll need to install flake8 package.
-Then it is recommended you create a *.git/hooks/pre-commit* 755 file to do that automatically::
+Please ensure you are committing correct code by invoking ``make flake8`` before any commit. You'll need to install ``flake8`` package.
+Then it is recommended you create a ``.git/hooks/pre-commit`` 755 file to do that automatically::
 
     #!/bin/sh
-    #
     make flake8
-
 
 
 Postgres setup
 ==============
 
-Ngw depends on some advanced postgres functions, such as recursive querries. So this is a requirement.
+Ngw depends on some advanced PostgreSQL functions, such as recursive queries. So this is a requirement. You cannot use another database.
 
 Create a user ngw (or something else)::
 
@@ -95,34 +94,41 @@ Set a password for it::
 
     postgres@localhost:~$ psql -c "\password ngw"
 
-Create a database ngw with owner ngw::
+Create a database ``ngw`` with owner ngw::
 
     postgres@localhost:~$ createdb ngw -E unicode -O ngw
-
-Create the structure, populate the initial data, and create the extra views and functions::
-
-    $ ./manage.py migrate
 
 
 Application setup
 =================
 
-You need to create and tune your  *settings.py*. It is recommended to use *settings.py.exemple* as a template. Then:
+You need to create and tune your ``settings.py``. It is recommended to use ``settings.py.exemple`` as a template. Then:
 
 - Put your database user/password there
-- Put something in SECRET_KEY::
+- Put something in ``SECRET_KEY``::
 
     from django.utils.crypto import get_random_string
     get_random_string(50, 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
 
-You now need to create an admin account on the application level. Use::
+- Run the initialisation / update script:
 
-    ./manage.py createsuperuser
+    There are many things that needs to be done to have a running system:
 
-Now the application should run locally::
+    - Create the database structure, populate the initial data, and create the extra views and functions.
+    - Compile the translations.
+    - Collect the static files in a single place.
 
-    make
-    ./manage.py runserver
+    You just need to run::
+
+    $ make
+
+- Create an administrative account on the application level. Use::
+
+    $ ./manage.py createsuperuser
+
+- Now the application should run locally::
+
+    $ ./manage.py runserver
 
 
 Apache
@@ -130,14 +136,14 @@ Apache
 
 Enable ssl in apache::
 
-    a2enmod ssl
+    # a2enmod ssl
 
 Generate self-signed certificate::
 
-    openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=ngw.example.net -keyout ngw.key -out ngw.crt
+    # openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=ngw.example.net -keyout ngw.key -out ngw.crt
 
 Listen on port 443
-    Add a new line "Listen 443" to /etc/apache2/ports.conf" if it's now there allready
+    Add a new line ``Listen 443`` to ``/etc/apache2/ports.conf`` if it's not there already.
 
 Enable virtual hosts on https:
     Add a new line::
@@ -148,11 +154,11 @@ Enable virtual hosts on https:
 
          Listen 443
 
-User or group www-data should have write access to /usr/lib/ngw/media/g and /usr/lib/ngw/media/messages. If you want to run the debug runserver command from time to time, I suggest you chown :www-data that folder, with g+ws mode.
+User or group ``www-data`` should have write access to ``/usr/lib/ngw/media/g`` and ``/usr/lib/ngw/media/messages``. If you want to run the debug ``runserver`` command from time to time, I suggest you ``chown :www-data`` that folder, with ``g+ws`` mode.
 
 The web server also needs to have write permission to where the pdf are generated::
 
-    chown www-data: /usr/lib/ngw/mailing/generated/
+    # chown www-data: /usr/lib/ngw/mailing/generated/
 
 
 Cron
@@ -174,13 +180,15 @@ phpbb3 synchronisation
 
 You can use ngw groups to manage phpbb3 permissions, so that some contacts will
 automatically have access to some forums.
-See extentions/phpbb3/README
+
+See ``extentions/phpbb3/README``
 
 ejabberd synchronisation
 ------------------------
 
 You can have one group automatically grant access to a local ejabberd.
-See extentions/xmpp/README
+
+See ``extentions/xmpp/README``
 
 gnupg support
 -------------
@@ -190,8 +198,8 @@ Public keys can be */usr/lib/ngw/.gnupg*::
     mkdir /var/lib/ngw
     chown www-data /var/lib/ngw
 
-Right now, keys needs to be imported by hand: gpg --homedir /var/lib/ngw/ --import akey.key
+Right now, keys needs to be imported by hand: ``gpg --homedir /var/lib/ngw/ --import akey.key``
 
-Add *Listen 11371* at the end of the */etc/apache2/ports.conf* to have an hkp:// compatible server (Download only)
+Add ``Listen 11371`` at the end of the ``/etc/apache2/ports.conf`` to have an ``hkp://`` compatible server (Download only)
 
-Uncomment gpg keyring directory in settings.py (GPG_HOME)
+Uncomment gpg keyring directory in ``settings.py`` (``GPG_HOME``)
