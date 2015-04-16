@@ -1,29 +1,16 @@
-#!/usr/bin/python3
-
 from __future__ import print_function
 
-import logging
-import os
 import subprocess
 import sys
 from time import time as timestamp
 
-if __name__ == '__main__':
-    # TODO: This should be called from top level manage.py
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ngw.settings')
-    sys.path.append('/usr/lib')
-
 from django.contrib import messages
 from django.db import connection, connections
 
-if __name__ != '__main__':
-    logging.debug('PHPBB forum synchronisation extension for NGW loading.')
-
 from ngw.core import contactfield  # Need polymorphic upgrades  # noqa
 from ngw.core.models import (FIELD_LOGIN, FIELD_PHPBB_USERID, GROUP_USER_PHPBB,
-                             Contact, ContactFieldValue, ContactGroup)
+                             ContactFieldValue)
 from ngw.extensions import hooks
-
 
 DEFAULT_USER_PERMISSIONS = '00000000006xv1ssxs'
 
@@ -276,57 +263,3 @@ def login_updated(request, contact):
             "/usr/lib/ngw/extensions/phpbb/clearcache.php")
         messages.add_message(
             request, messages.INFO, "PHPBB database updated; Cache flushed.")
-
-
-if __name__ == "__main__":
-    from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options] action\nActions:\n  full")
-    parser.add_option(
-        "-v", "--verbose",
-        action="store_true", dest="verbose", default=False,
-        help="enable verbose")
-    parser.add_option(
-        "-u", "--user",
-        action="append", type="int",
-        help="Synchronisation only acts on specified NGW user id.")
-
-    options, args = parser.parse_args()
-
-    if len(args) != 1:
-        print("Need exactly one argument\n", file=sys.stderr)
-        parser.print_help(file=sys.stderr)
-        sys.exit(1)
-
-    if args[0] == "full":
-        print("Sync'ing databases...", file=sys.stderr)
-
-        # We don't want to delete phpbb users. We can revoke acces, but we
-        # don't want to remove existing messages.
-
-        main_phpbb_changed = False
-
-        if not options.user:
-            user_set = (ContactGroup
-                        .objects
-                        .get(pk=GROUP_USER_PHPBB)
-                        .get_all_members())
-        else:
-            user_set = []
-            for ngw_user_id in options.user:
-                u = Contact.objects.get(pk=ngw_user_id)
-                if not u:
-                    print("No user", ngw_user_id, file=sys.stderr)
-                    sys.exit(1)
-                # TODO: if not member of @users must have a phpbb_user_id ....
-                user_set.append(u)
-
-        for u in user_set:
-            main_phpbb_changed = sync_user_all(u) or main_phpbb_changed
-
-        if main_phpbb_changed:
-            print_and_call(
-                "sudo", "-u",  "www-data",
-                "/usr/lib/ngw/extensions/phpbb/clearcache.php")
-
-if __name__ != '__main__':
-    logging.debug('PHPBB forum synchronisation extension for NGW loaded.')
