@@ -79,7 +79,7 @@ def send_to_onetime(msg):
         'allow_answers': 1
     }), {
         'Content-type': 'application/x-www-form-urlencoded',
-        'X_REQUESTED_WITH': 'XMLHttpRequest',
+        'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json, text/javascript, */*; q=0.01',
     })
     response = ot_conn.getresponse()
@@ -204,7 +204,7 @@ def read_answers(msg):
             {'password': sync_info['answer_password']}),
         {
             'Content-type': 'application/x-www-form-urlencoded',
-            'X_REQUESTED_WITH': 'XMLHttpRequest',
+            'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
         })
     response = ot_conn.getresponse()  # TODO: except httplib.BadStatusLine
