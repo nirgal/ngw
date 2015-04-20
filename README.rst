@@ -21,20 +21,20 @@ This is the installation guide, intended for system administrators.
 
 Debian repository setup (optional)
 ==================================
-It is recommanded to use Debian 7 (Wheezy) or above. All the source is available, so you can use other settings if you want, but you are on your own, then.
+It is recommanded to use Debian 8 (Jessie) or above. All the source is available, so you can use other settings if you want, but you are on your own, then.
 
 Here's a suggested /etc/apt/sources.list::
 
-    deb     http://http.debian.net/debian/       wheezy           main
-    deb-src http://http.debian.net/debian/       wheezy           main
-    deb     http://security.debian.org/          wheezy/updates   main
-    deb-src http://security.debian.org/          wheezy/updates   main
-    deb     http://ftp.debian.org/debian         wheezy-backports main
-    deb-src http://ftp.debian.org/debian         wheezy-backports main
+    deb     http://http.debian.net/debian/       jessie           main
+    deb-src http://http.debian.net/debian/       jessie           main
+    deb     http://security.debian.org/          jessie/updates   main
+    deb-src http://security.debian.org/          jessie/updates   main
+    deb     http://ftp.debian.org/debian         jessie-backports main
+    deb-src http://ftp.debian.org/debian         jessie-backports main
 
 Make sure you defined wich default Debian version you want, so that backports are not installed automatically::
 
-    echo 'APT::Default-Release "stable";' > /etc/apt/apt.conf.d/10_defaultrelease
+    echo 'APT::Default-Release "jessie";' > /etc/apt/apt.conf.d/10_defaultrelease
 
 If you want the packages from nirgal.com, have a look at the README file at http://nirgal.com/debian/
 
@@ -142,24 +142,13 @@ Generate self-signed certificate::
 
     # openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=ngw.example.net -keyout ngw.key -out ngw.crt
 
-Listen on port 443
-    Add a new line ``Listen 443`` to ``/etc/apache2/ports.conf`` if it's not there already.
-
-Enable virtual hosts on https:
-    Add a new line::
-
-	 NameVirtualHost *:443
-
-    before::
-
-         Listen 443
-
 User or group ``www-data`` should have write access to ``/usr/lib/ngw/media/g`` and ``/usr/lib/ngw/media/messages``. If you want to run the debug ``runserver`` command from time to time, I suggest you ``chown :www-data`` that folder, with ``g+ws`` mode.
 
 The web server also needs to have write permission to where the pdf are generated::
 
     # chown www-data: /usr/lib/ngw/mailing/generated/
 
+You may want to add ``SSLHonorCipherOrder on`` in ``/etc/apache2/mods-available/ssl.conf`` too.
 
 Cron
 ====
