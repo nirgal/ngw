@@ -15,8 +15,6 @@ On event creation, when start date is defined, set up the end date for a one day
 
 add_to_group: You need to be able to add contacts in all super groups, including hidden ones, and the ones where you don't change anything like contacts.
 
-Group list is too slow. Period.
-
 Support Image contactfields.
 
 Event selection widget. (Do not load everything at once, like for column selection)
@@ -46,6 +44,8 @@ On the contact detail page, have the events either in a separated page or in a w
 Check unified authorization system in apache2.4, like
 https://httpd.apache.org/docs/2.4/mod/mod_auth_form.html
 https://github.com/GrahamDumpleton/mod_wsgi/pull/41
+
+Make a nice display of group hierarchy.
 
 
 ====================================================================================================

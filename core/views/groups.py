@@ -57,8 +57,8 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
     list_display = (
         'name', 'description_not_too_long',
         # 'rendered_fields',
-        'visible_direct_supergroups_5',
-        'visible_direct_subgroups_5',
+        # 'visible_direct_supergroups_5',
+        # 'visible_direct_subgroups_5',
         # 'budget_code',
         # 'visible_member_count',
         'locked'
@@ -98,6 +98,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         else:
             return _('No')
     rendered_fields.short_description = ugettext_lazy('Contact fields')
+    rendered_fields.allow_tags = True
 
     def visible_member_count(self, group):
         # This is totally ineficient
