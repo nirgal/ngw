@@ -82,13 +82,21 @@ div.loaderror
 $(document).ready(function() {
     var __CURRENTDATA=[
     ];
+    var showday = location.href.split(/#/)[1];
+    if (showday) {
+        yearmonth = showday.split(/-/);
+        showday = new Date(yearmonth[0], yearmonth[1]-1, 1);
+    } else {
+        showday = new Date();
+    }
+    //alert('showday:'+showday);
     var op = {
         view: "month",
         theme:1,
         autoload:true,
         //method: "GET",
         //readonly: true,
-        showday: new Date(),
+        showday: showday,
         //EditCmdhandler:edit,
         //DeleteCmdhandler:dcal,
         ViewCmdhandler:View,
@@ -162,6 +170,10 @@ $(document).ready(function() {
         var month = op.showday.getMonth();
         var year = op.showday.getFullYear();
         $("#txtdatetimeshow").text(__MonthName[month] + " " + year);
+        var url = location.href;
+        url = url.split(/#/)[0];
+        url += '#'+year+'-'+(month+1);
+        location.href = url;
     }
 
     function wtd(p)
