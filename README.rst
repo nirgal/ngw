@@ -44,17 +44,13 @@ Requirements
 
 Standard packages::
 
-    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-uno python3-cracklib tor make python3-gnupg libjs-jquery-ui
-
-You need python-django version 1.7, available in Debian stable-backports at::
-
-    apt-get -t wheezy-backports install python3-django
+    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socksipy python3-uno python3-cracklib tor make python3-gnupg libjs-jquery-ui
 
 If you set up nirgal.com repository as described above, just run::
 
-    aptitude install libjs-xgcalendar python3-django-session-security python3-decoratedstr oomailing python3-socksipy
+    aptitude install libjs-xgcalendar python3-django-session-security python3-decoratedstr oomailing
 
-If you did not, *python3-socksipy* and *python3-django-session-security* are now officially in debian experimental. The sources of the other packages are available at nirgal.com/debian.
+If you did not, *python3-django-session-security* is now officially in debian experimental. The sources of the other packages are available at nirgal.com/debian.
 
 
 Use the source
