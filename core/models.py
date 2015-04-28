@@ -1,6 +1,3 @@
-# Note: You'll have to insert the output of 'manage.py sqlall core'
-# into your database.
-
 import json
 import logging
 import os
