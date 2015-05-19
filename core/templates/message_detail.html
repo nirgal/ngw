@@ -12,10 +12,12 @@
     {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}:
     <a href="{{cig_url}}/">{{object.contact.name}}</a>
     (
-    <a href="javascript:inline_edit_membership('{{membership_title|escapejs}}', '{{cig_url|escapejs}}', '{{ membership }}');">
+    <a href="#" onclick="inline_edit_membership('{{membership_title|escapejs}}', '{{cig_url|escapejs}}', '{{ membership }}', '{{membership_note|escapejs}}');">
     {{ membership_str }}
+    )
+    {% if membership_note %} ( {{ membership_note }} ) {% endif %}
     </a>
-    )<br>
+    <br>
     {% if object.is_answer %}{% trans "Received" %}{% else %}{% trans "Sent" %}{% endif %}: {{object.send_date}} UTC<br>
     {% trans "Subject" %}: {{object.subject}}<br>
     {% if not object.is_answer and object.read_date %}

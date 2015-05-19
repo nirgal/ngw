@@ -2,12 +2,11 @@
 BUGS
 ====================================================================================================
 
+Check the language of external message notifications.
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS
 ====================================================================================================
-
-Modify inline editing for membership so that the Note can be edited too. This may completely replace groups.contactingroup_edit
 
 Show messages counts on the member list.
 
@@ -46,6 +45,8 @@ https://httpd.apache.org/docs/2.4/mod/mod_auth_form.html
 https://github.com/GrahamDumpleton/mod_wsgi/pull/41
 
 Make a nice display of group hierarchy.
+
+Allow inline membership edition to setup administrative permisssions.
 
 
 ====================================================================================================

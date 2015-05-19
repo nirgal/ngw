@@ -1079,16 +1079,24 @@ class ContactInGroupInlineView(InGroupAcl, View):
     def post(self, request, gid, cid):
         cg = self.contactgroup
         contact = get_object_or_404(Contact, pk=int(cid))
-        newmembership = request.POST['membership']
-        if newmembership == 'invited':
+        # 201505
+        if request.POST.get('membership_i', False):
             flags = '+i'
-        elif newmembership == 'member':
+        elif request.POST.get('membership_m', False):
             flags = '+m'
-        elif newmembership == 'declined':
+        elif request.POST.get('membership_d', False):
             flags = '+d'
         else:
-            raise Exception('invalid membership %s' % newmembership)
+            flags = '-mid'
         cg.set_member_1(request, contact, flags)
+        note = request.POST.get('note', '')
+        try:
+            cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
+        except ContactInGroup.DoesNotExist:
+            print('FIXME: No note possible when no direct membership')
+        else:
+            cig.note = note
+            cig.save()
         hooks.membership_changed(request, contact, cg)
         return HttpResponseRedirect(request.POST['next_url'])
 

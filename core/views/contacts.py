@@ -357,16 +357,6 @@ def membership_extended_widget(request, contact_with_extra_fields,
                                contact_group):
     flags = getattr(contact_with_extra_fields,
                     'group_%s_flags' % contact_group.id)
-    if flags is None:
-        flags = 0
-    if flags & perms.MEMBER:
-        membership = 'member'
-    elif flags & perms.INVITED:
-        membership = 'invited'
-    elif flags & perms.DECLINED:
-        membership = 'declined'
-    else:
-        membership = ''
 
     return loader.render_to_string('membership_widget.html', {
         'cid': contact_with_extra_fields.id,
@@ -374,8 +364,8 @@ def membership_extended_widget(request, contact_with_extra_fields,
         'membership_str': membership_to_text(contact_with_extra_fields,
                                              contact_group.id),
         'note': getattr(contact_with_extra_fields,
-                        'group_%s_note' % contact_group.id),
-        'membership': membership,
+                        'group_%s_note' % contact_group.id) or '',
+        'membership': perms.int_to_flags(flags or 0),
         'cig_url': contact_group.get_absolute_url()
         + 'members/'
         + str(contact_with_extra_fields.id),

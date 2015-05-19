@@ -21,7 +21,7 @@ from django.utils.translation import ugettext_lazy
 from django.views.generic import DetailView, FormView
 
 from ngw.core import perms
-from ngw.core.models import Contact, ContactMsg
+from ngw.core.models import Contact, ContactInGroup, ContactMsg
 from ngw.core.views.generic import InGroupAcl, NgwListView
 
 
@@ -332,20 +332,18 @@ class MessageDetailView(InGroupAcl, DetailView):
             + str(self.object.contact_id))
         context['active_submenu'] = 'messages'
 
+        # 201505
+        cig = ContactInGroup.objects.get(contact_id=self.object.contact.id,
+                                         group_id=cg.id)
+        if cig:
+            print(cig)
+            context['membership_note'] = cig.note
         flags = perms.cig_flags_int(self.object.contact.id, cg.id)
         flags_direct = perms.cig_flags_direct_int(self.object.contact.id,
                                                   cg.id)
 
         membership_str = perms.int_to_text(flags_direct, flags & ~flags_direct)
-        if flags_direct & perms.MEMBER:
-            membership = 'member'
-        elif flags_direct & perms.INVITED:
-            membership = 'invited'
-        elif flags_direct & perms.DECLINED:
-            membership = 'declined'
-        else:
-            membership = ''
-        context['membership'] = membership
+        context['membership'] = perms.int_to_flags(flags_direct)
         context['membership_str'] = membership_str
         context['membership_title'] = _(
             '%(contactname)s in group %(groupname)s') % {

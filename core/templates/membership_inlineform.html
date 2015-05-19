@@ -7,13 +7,15 @@
     {% csrf_token %}
     <input type=hidden name="next_url" value="{{request.get_full_path}}">
     <span style="white-space: nowrap">
-    <input type=radio name=membership value=invited id="membership_edit_invited" onclick="this.form.submit()"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
-    <input type=radio name=membership value=member id="membership_edit_member" onclick="this.form.submit()"><label for="membership_edit_member"> {% trans "Member" %}</label>
-    <input type=radio name=membership value=declined id="membership_edit_declined" onclick="this.form.submit()"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
+    <input type=checkbox name="membership_i" id="membership_edit_invited" onchange="if (this.checked) { this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
+    <input type=checkbox name="membership_m" id="membership_edit_member" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_d.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_member"> {% trans "Member" %}</label>
+    <input type=checkbox name="membership_d" id="membership_edit_declined" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
     </span>
     <br>
-    <a id='membership_edit_more' href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:inline_edit_membership_close();">{% trans "Close" %}</a>
+    Note: <input name='note'>
+    <br>
+    <input type=submit value="{% trans "Save" %}"> | <a id='membership_edit_more' href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:inline_edit_membership_close();">{% trans "Cancel" %}</a>
     </form>
     </div>
 </div>
-
+{# vim: set et ts=4 ft=htmldjango: #}
