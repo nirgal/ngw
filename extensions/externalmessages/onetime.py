@@ -5,6 +5,7 @@ import http
 import json
 import logging
 import smtplib
+import subprocess
 import traceback
 import urllib
 
@@ -12,6 +13,7 @@ from django.conf import settings
 from django.core import mail
 from django.forms import ValidationError
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.encoding import force_str
 from django.utils.translation import activate as language_activate
 from django.utils.translation import ugettext as _
@@ -71,9 +73,19 @@ def send_to_onetime(msg):
             days = (dt - timezone.now().date()).days
         else:
             days = 21
+
+    msg_text = msg.text.encode(settings.DEFAULT_CHARSET)
+    passphrase = get_random_string(
+        16, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_')
+    msg_text = subprocess.check_output(
+        ['openssl', 'enc', '-aes-256-cbc',
+         '-pass', 'pass:%s' % passphrase,
+         '-e', '-base64'],
+        input=msg_text)
+
     ot_conn.request('POST', '/', urllib.parse.urlencode({
         'subject': msg.subject.encode(settings.DEFAULT_CHARSET),
-        'message': msg.text.encode(settings.DEFAULT_CHARSET),
+        'message': msg_text,
         'once': True,
         'expiration': days,
         'allow_answers': 1
@@ -96,6 +108,7 @@ def send_to_onetime(msg):
 
     sync_info['otid'] = jresponse['url'][1:]
     sync_info['answer_password'] = jresponse['answer_password']
+    sync_info['passphrase_out'] = passphrase
     msg.sync_info = json.dumps(sync_info)
     msg.save()
 
@@ -130,10 +143,16 @@ def send_notification(msg):
 
     logger.info('Sending email notification to %s.', mail_addr)
 
+    if 'passphrase_out' not in sync_info:
+        # Temporary set empty passphrase during upgrade
+        # This can be removed:
+        sync_info['passphrase_out'] = ''
+
     notification_text = _('''Hello
 
-You can read your message at https://onetime.info/%(otid)s
-or http://7z4nl4ojzggwicx5.onion/%(otid)s if you are using tor [1].
+You can read your message at https://onetime.info/%(otid)s#%(passphrase_out)s
+or http://7z4nl4ojzggwicx5.onion/%(otid)s#%(passphrase_out)s if you are using
+tor [1].
 
 Warning, that message will be displayed only once, and then deleted. Have a pen
 ready before clicking the link.
@@ -148,9 +167,10 @@ one to read it, please repport that.
     notification_html = _('''<p>Hello</p>
 
 <p>You can read your message at
-<a href="https://onetime.info/%(otid)s">https://onetime.info/%(otid)s</a><br>
-or <a href="http://7z4nl4ojzggwicx5.onion/%(otid)s">
-http://7z4nl4ojzggwicx5.onion/%(otid)s</a> if you are using
+<a href="https://onetime.info/%(otid)s#%(passphrase_out)s">
+https://onetime.info/%(otid)s#%(passphrase_out)s</a><br>
+or <a href="http://7z4nl4ojzggwicx5.onion/%(otid)s#%(passphrase_out)s">
+http://7z4nl4ojzggwicx5.onion/%(otid)s#%(passphrase_out)s</a> if you are using
 <a href="https://www.torproject.org/">tor</a>.</p>
 
 <p>Warning, that message will be displayed only once, and then deleted. Have a
