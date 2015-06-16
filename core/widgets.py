@@ -219,10 +219,10 @@ class DoubleChoicesField(forms.MultiValueField):
             col2 = data_list[i+1]
             if not col1 and col2:
                 raise ValidationError(
-                    _('You must choose a column #2 for each column #1.'))
+                    _('You must choose a column #1 for each column #2.'))
             if col1 and not col2:
                 raise ValidationError(
-                    _('You must choose a column #1 for each column #2.'))
+                    _('You must choose a column #2 for each column #1.'))
             if col1 and col2:
                 if result:
                     result += ','
