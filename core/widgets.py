@@ -219,16 +219,10 @@ class DoubleChoicesField(forms.MultiValueField):
             col2 = data_list[i+1]
             if not col1 and col2:
                 raise ValidationError(
-                    _('You must choose column %(missingcol)s for each column'
-                      ' %(presentcol)s') %
-                    {'missingcol': self.choicegroup1.name,
-                     'presentcol': self.choicegroup2.name})
+                    _('You must choose a column #2 for each column #1.'))
             if col1 and not col2:
                 raise ValidationError(
-                    _('You must choose column %(missingcol)s for each column '
-                      '%(presentcol)s') %
-                    {'missingcol': self.choicegroup2.name,
-                     'presentcol': self.choicegroup1.name})
+                    _('You must choose a column #1 for each column #2.'))
             if col1 and col2:
                 if result:
                     result += ','
