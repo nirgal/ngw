@@ -50,7 +50,7 @@ If you set up nirgal.com repository as described above, just run::
 
     aptitude install libjs-xgcalendar python3-django-session-security python3-decoratedstr oomailing
 
-If you did not, *python3-django-session-security* is now officially in debian experimental. The sources of the other packages are available at nirgal.com/debian.
+If you did not, ``python3-django-session-security`` is now officially in debian. The sources of the other packages are available at nirgal.com/debian.
 
 
 Use the source
