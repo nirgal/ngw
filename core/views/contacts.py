@@ -163,6 +163,26 @@ class ContactQuerySet(RawQuerySet):
 
         self.qry_fields['group_%s_note' % group_id] = 'cig_%s.note' % group_id
 
+    def add_messages(self, group_id):
+        '''
+        Add column with how many messages are there.
+        '''
+
+        self.qry_fields['group_%s_msgcount' % group_id] = '''(
+            SELECT count(*)
+            FROM contact_message
+            WHERE contact_message.contact_id = contact.id
+            AND group_id = %(group_id)s
+        )''' % {'group_id': group_id}
+        self.qry_fields['group_%s_unreadcount' % group_id] = '''(
+            SELECT count(*)
+            FROM contact_message
+            WHERE contact_message.contact_id = contact.id
+            AND group_id = %(group_id)s
+            AND is_answer
+            AND read_date IS NULL
+        )''' % {'group_id': group_id}
+
     def filter(self, extrawhere=None, pk__in=None):
         if extrawhere is not None:
             self.qry_where.append(extrawhere)
@@ -357,7 +377,12 @@ def membership_extended_widget(request, contact_with_extra_fields,
                                contact_group):
     flags = getattr(contact_with_extra_fields,
                     'group_%s_flags' % contact_group.id)
-
+    msg_count = getattr(contact_with_extra_fields,
+                        'group_%s_msgcount' % contact_group.id,
+                        0)
+    msg_count_unread = getattr(contact_with_extra_fields,
+                               'group_%s_unreadcount' % contact_group.id,
+                               0)
     return loader.render_to_string('membership_widget.html', {
         'cid': contact_with_extra_fields.id,
         'gid': contact_group.id,
@@ -372,6 +397,8 @@ def membership_extended_widget(request, contact_with_extra_fields,
         'title': _('%(contact)s in group %(group)s') % {
             'contact': contact_with_extra_fields,
             'group': contact_group},
+        'msg_count': msg_count,
+        'msg_count_unread': msg_count_unread,
         })
 
 
@@ -515,6 +542,7 @@ class BaseContactListView(NgwListView):
         current_cg = self.contactgroup
         if current_cg is not None:
             q.add_group(current_cg.id)
+            q.add_messages(current_cg.id)
             self.group_status = membership_extended_widget_factory(
                 request, current_cg)
             self.group_status.short_description = _('Status')
