@@ -254,20 +254,21 @@ def read_answers(msg):
                 read_date, timezone.get_default_timezone())
         msg.read_date = read_date
         msg.save()
-    passphrase = sync_info['passphrase_out']
+    passphrase = sync_info.get('passphrase_out', None)
     for response_text in jresponse['answers']:
         logger.info('Received answer from %s.', msg.contact)
-        try:
-            response_text += '\n'  # openssl limitation
-            response_text = response_text.encode(settings.DEFAULT_CHARSET)
-            response_text = subprocess.check_output(
-                ['openssl', 'enc', '-aes-256-cbc',
-                 '-pass', 'pass:%s' % passphrase,
-                 '-d', '-base64'],
-                input=response_text)
-            response_text = force_text(response_text)
-        except subprocess.CalledProcessError:
-            logger.error("Message decryption failed.")
+        if passphrase:
+            try:
+                response_text += '\n'  # openssl limitation
+                response_text = response_text.encode(settings.DEFAULT_CHARSET)
+                response_text = subprocess.check_output(
+                    ['openssl', 'enc', '-aes-256-cbc',
+                     '-pass', 'pass:%s' % passphrase,
+                     '-d', '-base64'],
+                    input=response_text)
+                response_text = force_text(response_text)
+            except subprocess.CalledProcessError:
+                logger.error("Message decryption failed.")
 
         answer_msg = ContactMsg(
             group_id=msg.group_id,
