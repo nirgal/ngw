@@ -14,7 +14,7 @@ from django.core import mail
 from django.forms import ValidationError
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.encoding import force_str
+from django.utils.encoding import force_str, force_text
 from django.utils.translation import activate as language_activate
 from django.utils.translation import ugettext as _
 
@@ -254,8 +254,21 @@ def read_answers(msg):
                 read_date, timezone.get_default_timezone())
         msg.read_date = read_date
         msg.save()
+    passphrase = sync_info['passphrase_out']
     for response_text in jresponse['answers']:
         logger.info('Received answer from %s.', msg.contact)
+        try:
+            response_text += '\n'  # openssl limitation
+            response_text = response_text.encode(settings.DEFAULT_CHARSET)
+            response_text = subprocess.check_output(
+                ['openssl', 'enc', '-aes-256-cbc',
+                 '-pass', 'pass:%s' % passphrase,
+                 '-d', '-base64'],
+                input=response_text)
+            response_text = force_text(response_text)
+        except subprocess.CalledProcessError:
+            logger.error("Message decryption failed.")
+
         answer_msg = ContactMsg(
             group_id=msg.group_id,
             contact_id=msg.contact_id,
