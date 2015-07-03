@@ -314,10 +314,10 @@ class CalendarQueryView(View):
         '''
 
         showdate = request.REQUEST.get('showdate')
-        print('showdate:', showdate)
+        # print('showdate:', showdate)
         # showdate = datetime.strptime(showdate, '%d/%m/%Y').date()
         showdate = datetime.strptime(showdate, '%m/%d/%Y').date()
-        print('showdate:', showdate)
+        # print('showdate:', showdate)
 
         viewtype = request.REQUEST.get('viewtype', 'month')
 

@@ -336,7 +336,6 @@ class MessageDetailView(InGroupAcl, DetailView):
         cig = ContactInGroup.objects.get(contact_id=self.object.contact.id,
                                          group_id=cg.id)
         if cig:
-            print(cig)
             context['membership_note'] = cig.note
         flags = perms.cig_flags_int(self.object.contact.id, cg.id)
         flags_direct = perms.cig_flags_direct_int(self.object.contact.id,
