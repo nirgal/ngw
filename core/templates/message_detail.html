@@ -23,6 +23,7 @@
     {% if not object.is_answer and object.read_date %}
         {% trans "Read by recipent" %}: {{ object.read_date }} UTC<br>
     {% endif %}
+    <a href="#" onclick="$('#msgdebug').css('display','block');">debug</a><span id=msgdebug style="display:none">{{ object.sync_info }}</span><br>
     <br>
     {{ object.text|linebreaksbr }}
 </div>
