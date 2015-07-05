@@ -264,7 +264,7 @@ def read_answers(msg):
                 response_text = subprocess.check_output(
                     ['openssl', 'enc', '-aes-256-cbc',
                      '-pass', 'pass:%s' % passphrase,
-                     '-d', '-base64'],
+                     '-d', '-base64', '-A'],
                     input=response_text)
                 response_text = force_text(response_text)
             except subprocess.CalledProcessError:
