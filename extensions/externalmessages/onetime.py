@@ -268,7 +268,16 @@ def read_answers(msg):
                     input=response_text)
                 response_text = force_text(response_text)
             except subprocess.CalledProcessError:
-                logger.error("Message decryption failed.")
+                # Retry with an empty passphrase
+                try:
+                    response_text = subprocess.check_output(
+                        ['openssl', 'enc', '-aes-256-cbc',
+                         '-pass', 'pass:',
+                         '-d', '-base64', '-A'],
+                        input=response_text)
+                    response_text = force_text(response_text)
+                except subprocess.CalledProcessError:
+                    logger.error("Message decryption failed.")
 
         answer_msg = ContactMsg(
             group_id=msg.group_id,
