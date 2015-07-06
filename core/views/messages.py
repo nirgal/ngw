@@ -324,6 +324,10 @@ class MessageDetailView(InGroupAcl, DetailView):
                 'contactname': self.object.contact.name,
                 'groupname': cg,
             }
+        try:
+            context['sync_info'] = json.loads(self.object.sync_info)
+        except ValueError:
+            context['sync_info'] = {}
         context['nav'] = cg.get_smart_navbar()
         context['nav'].add_component(('messages', _('messages')))
         context['cig_url'] = (

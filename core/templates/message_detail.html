@@ -9,6 +9,7 @@
 <div id="content-main">
 {% include "membership_inlineform.html" %}
 <div class="module padded">
+    <div style="float:right;"><a href="#" onclick="$('#msgdebug').css('display','block');">debug</a></div>
     {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}:
     <a href="{{cig_url}}/">{{object.contact.name}}</a>
     (
@@ -23,7 +24,13 @@
     {% if not object.is_answer and object.read_date %}
         {% trans "Read by recipent" %}: {{ object.read_date }} UTC<br>
     {% endif %}
-    <a href="#" onclick="$('#msgdebug').css('display','block');">debug</a><span id=msgdebug style="display:none">{{ object.id }}: {{ object.sync_info }}</span><br>
+    <span id=msgdebug style="display:none">
+        Message-Id: {{ object.id }}<br>
+        {% for k,v in sync_info.items %}
+        {{ k }}: {{ v }}<br>
+        {% endfor %}
+    </span>
+    <br>
     <br>
     {{ object.text|linebreaksbr }}
 </div>
