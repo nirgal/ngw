@@ -9,7 +9,7 @@
 <div id="content-main">
 {% include "membership_inlineform.html" %}
 <div class="module padded">
-    <div style="float:right;"><a href="#" onclick="$('#msgdebug').css('display','block');">debug</a></div>
+    <div style="float:right;" id=msgdebuglink><a href="#" onclick="$('#msgdebug').css('display','block'); $('#msgdebuglink').css('display','none');">{% trans "Show debug information" %}</a></div>
     {% if object.is_answer %}{% trans "From" %}{% else %}{% trans "To" %}{% endif %}:
     <a href="{{cig_url}}/">{{object.contact.name}}</a>
     (
@@ -51,7 +51,7 @@
 <form method=post>
 {% csrf_token %}
 {% if reply_url %}
-<a class='button' href="{{reply_url}}">Reply</a>
+<a class='button' href="{{reply_url}}">{% trans "Reply" %}</a>
 {% endif %}
 <input type=submit name=unread value="{% trans "Flag as unread" %}">
 </form>
