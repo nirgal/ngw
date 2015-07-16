@@ -3,13 +3,14 @@
 # This file is distributed under the same license as the ngw package.
 #
 # Jean-Michel Nirgal Vourgère <jmv_deb@nirgal.com>, 2014.
+# Jean-Michel Vourgère <nirgal@debian.org>, 2015.
 msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-07-07 09:55+0000\n"
-"PO-Revision-Date: 2014-09-29 16:47+0200\n"
-"Last-Translator: \n"
+"PO-Revision-Date: 2015-07-16 09:46+0200\n"
+"Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -20,7 +21,7 @@ msgstr ""
 
 #: contactfield.py:65
 msgid "There must be 23 non blank characters."
-msgstr "Il doit y avoir 23 charactères non blancs."
+msgstr "Il doit y avoir 23 caractères non blancs."
 
 #: contactfield.py:69
 msgid "CRC error"
@@ -134,7 +135,7 @@ msgstr "Mettre à jour"
 
 #: models.py:142
 msgid "Deletion"
-msgstr "Supression"
+msgstr "Suppression"
 
 #: models.py:151
 msgid "config"
@@ -1217,7 +1218,7 @@ msgstr "Plus..."
 
 #: templates/message_detail.html:12
 msgid "Show debug information"
-msgstr "Afficher information débogage"
+msgstr "Afficher informations débogage"
 
 #: templates/message_detail.html:13
 msgid "From"
@@ -1580,7 +1581,7 @@ msgstr "Tous les groupes"
 
 #: views/fields.py:58
 msgid "Current group"
-msgstr "Groupe courrant"
+msgstr "Groupe courant"
 
 #: views/fields.py:86
 msgid "Move"
@@ -1596,7 +1597,7 @@ msgstr "champs"
 
 #: views/fields.py:134 views/groups.py:118
 msgid "Locked"
-msgstr "Verouillé"
+msgstr "Verrouillé"
 
 #: views/fields.py:190
 msgid "Move after"
@@ -1648,7 +1649,7 @@ msgid ""
 "Items must be selected in order to perform actions on them. No items have "
 "been changed."
 msgstr ""
-"Des éléments doivent être sélectionnés pour éxécuter une action sur eux. "
+"Des éléments doivent être sélectionnés pour exécuter une action sur eux. "
 "Aucun élément n'a été modifié."
 
 #: views/generic.py:410
