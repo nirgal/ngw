@@ -943,7 +943,7 @@ msgstr "Erreur lors du téléchargement de "
 
 #: templates/contact_list.html:256
 msgid "Internal representation of the filter"
-msgstr "Représentation interne du filter"
+msgstr "Représentation interne du filtre"
 
 #: templates/contact_list.html:262
 msgid "Current filter"

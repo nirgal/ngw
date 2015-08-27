@@ -427,7 +427,7 @@ class CustomColumnsFilter(filters.ListFilter):
     This is not really a filter. This acutally adds columns to the query.
     '''
     title = ugettext_lazy('Change columns')
-    template = 'empty.html'
+    template = 'choose_columns.html'
 
     def __init__(self, request, params, model, view):
         super().__init__(request, params, model, view)
@@ -438,7 +438,10 @@ class CustomColumnsFilter(filters.ListFilter):
         return True  # This is required so that queryset is called
 
     def choices(self, cl):
-        return ()
+        # This is an ugly hack to recover all the non-fields django-filters, to
+        # build the select column base return url
+        # We do it here because we need the cl.
+        return cl.get_query_string({}, ['fields', 'savecolumns']),
 
     def queryset(self, request, q):
         return q
@@ -484,6 +487,7 @@ class BaseContactListView(NgwListView):
             fields = get_default_columns(user)
 
         strfields = ','.join(fields)
+        fields = strfields.split(',')
 
         if request.GET.get('savecolumns', False):
             user.set_fieldvalue(request, FIELD_COLUMNS, strfields)

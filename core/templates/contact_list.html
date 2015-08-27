@@ -163,7 +163,7 @@ function filter_breadcrumb_changed(select) {
     });
 }
 
-/* Function called in "Advanced search" on submition */
+/* Function called in "Advanced search" on submission */
 function filter_breadcrumbs_submit() {
     newfilterstr = filter_submit_prefix;
     for (i=filter_first_param; i<filter_first_param+filter_nb_param; ++i) {
@@ -229,21 +229,20 @@ function show_column_selection() {
 }
 
 /* Function called on column selection */
-function submit_fields() {
-    var sel = document.forms['field_selection_widget'].selected_fields;
-    var new_fields='';
+function submit_column_selection() {
+    var url = field_selection_baseurl;
+    if (url != '?')
+        url += '&';
+    url += 'fields=';
+    var sel = document.getElementById('id_fields_to');
     for (i=0; i<sel.options.length; i++) {
-        if (new_fields!='')
-            new_fields+=','
-        new_fields+=sel.options[i].value;
+        if (i)
+            url += ',';
+        url += sel.options[i].value;
     }
-    document.getElementById('fields').value = new_fields;
-    if (document.forms['field_selection_widget'].savecolumns.checked) {
-        p = document.getElementById('mainform');
-        savecolumns = quickElement('input', p, '', 'type', 'hidden', 'name', 'savecolumns', 'value', '1');
-    }
-    $('#field_selection_widget').removeAttr('data-dirty'); // ignore the fact user filled in widget
-    document.forms['mainform'].submit();
+    if (document.forms['field_selection_widget'].savecolumns.checked)
+        url += '&savecolumns=1';
+    document.location = url;
     return false;
 }
 
@@ -321,7 +320,8 @@ add_filter_breadcrumb({
 <h1 id="select_fields_title" style="display:none;">{% trans "Displayed columns" %}</h1>
 <div id="select_fields" class="module padded" style="display:none;">
     {{ field_form.media|safe }}
-    <form id=field_selection_widget onsubmit="return submit_fields();"> {# Form id is needed by SelectFilter widget #}
+    <form id=field_selection_widget onsubmit="return submit_column_selection();"> {# Form id is needed by SelectFilter widget #}
+
     <table class=objchange>
         {{fields_form.as_table}}
     </table>
