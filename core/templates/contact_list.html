@@ -251,9 +251,12 @@ function submit_column_selection() {
 
 {% block search %}
 {% include "membership_inlineform.html" %}
-<form id="mainform" action="{{reset_filter_link}}">
+<form id="mainform">
     <div style="text-align:left; display:none;">{% trans "Internal representation of the filter" %}:</div>
     <input type=hidden id=filter name=q value="{{filter}}">
+{% for pair in cl.params.items %}
+    {% ifnotequal pair.0 'q' %}<input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}"/>{% endifnotequal %}
+{% endfor %}
 </form>
 
 <div id=toolbar style="border-bottom:1px solid #eee">
