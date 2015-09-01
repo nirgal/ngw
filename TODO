@@ -16,6 +16,8 @@ Event selection widget. (Do not load everything at once, like for column selecti
 
 Global or Group filters
 
+On the contact detail page, have the events either in a separated page or in a widget.
+
 
 ====================================================================================================
 CODE REFACTOR
@@ -24,7 +26,7 @@ CODE REFACTOR
 Files handling:
 - Improve display (mimetype, size, ...)
 - Check cache/no cache.
-- Improve previews (tumbler package with d-bus commands and ajax integration?)
+- Make previews (tumbler package with d-bus commands and ajax integration?)
 
 With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet: See internal cache in o2o sql compiler.
 See also https://docs.djangoproject.com/en/1.7/ref/models/lookups/
@@ -34,8 +36,6 @@ In group_members.html, show detailed permissions for get_manager_groups|group_vi
 
 Extensions: Change hooks for signals
 
-On the contact detail page, have the events either in a separated page or in a widget.
-
 Check unified authorization system in apache2.4, like
 https://httpd.apache.org/docs/2.4/mod/mod_auth_form.html
 https://github.com/GrahamDumpleton/mod_wsgi/pull/41
@@ -44,6 +44,7 @@ Make a nice display of group hierarchy.
 
 Allow inline membership edition to setup administrative permisssions.
 
+Remove % string operators. Use string.format().
 
 ====================================================================================================
 UNSORTED

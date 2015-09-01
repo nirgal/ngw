@@ -74,7 +74,7 @@ Please ensure you are committing correct code by invoking ``make flake8`` before
 Then it is recommended you create a ``.git/hooks/pre-commit`` 755 file to do that automatically::
 
     #!/bin/sh
-    make flake8
+    make isort flake8
 
 
 Postgres setup
@@ -138,7 +138,7 @@ Generate self-signed certificate::
 
     # openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=ngw.example.net -keyout ngw.key -out ngw.crt
 
-User or group ``www-data`` should have write access to ``/usr/lib/ngw/media/g`` and ``/usr/lib/ngw/media/messages``. If you want to run the debug ``runserver`` command from time to time, I suggest you ``chown :www-data`` that folder, with ``g+ws`` mode.
+User or group ``www-data`` should have write access to ``/usr/lib/ngw/media/fields``, ``/usr/lib/ngw/media/g`` and ``/usr/lib/ngw/media/messages``. If you want to run the debug ``runserver`` command from time to time, I suggest you ``chown :www-data`` that folder, with ``g+ws`` mode.
 
 The web server also needs to have write permission to where the pdf are generated::
 

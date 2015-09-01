@@ -474,6 +474,7 @@ class Contact(NgwModel):
         else:
             assert isinstance(field, ContactField)
             field_id = field.id
+
         try:
             cfv = ContactFieldValue.objects.get(contact_id=self.id,
                                                 contact_field_id=field_id)

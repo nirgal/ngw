@@ -1,8 +1,12 @@
+import json
+import os
 from datetime import datetime
 
 from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import AdminDateWidget
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.template import loader
 from django.utils import formats, html, http
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
@@ -470,6 +474,60 @@ class PasswordContactField(ContactField):
         return True  # No check
 register_contact_field_type(PasswordContactField, 'PASSWORD',
                             ugettext_lazy('Password'), has_choice=0)
+
+
+class FileContactField(ContactField):
+    class Meta:
+        proxy = True
+
+    def format_value_html(self, value):
+        fileinfo = json.loads(value)
+        return loader.render_to_string('file_info.html', fileinfo)
+
+    def get_form_fields(self):
+        return forms.FileField(label=self.name, required=False,
+                               help_text=self.hint,
+                               widget=forms.ClearableFileInput,
+                               max_length=10*1024**3)
+
+    def formfield_value_to_db_value(self, value):
+        if not value:
+            return None
+        return json.dumps(value)
+
+    def db_value_to_formfield_value(self, value):
+        fileinfo = json.loads(value)
+        if fileinfo is False:
+            return None
+        filename = os.path.join(settings.MEDIA_ROOT, fileinfo['mediafilename'])
+        content = open(filename, 'rb').read()
+        suf = SimpleUploadedFile.from_dict({
+            'filename': fileinfo['filename'],
+            'content': content,
+            'content-type': fileinfo['content_type']
+            })
+        # Note that next line is needed, or "clear file" won't work:
+        suf.url = os.path.join(settings.MEDIA_URL, fileinfo['mediafilename'])
+        return suf
+
+    def get_filters_classes(self):
+        return (FieldFilterNull, FieldFilterNotNull,)
+
+    @classmethod
+    def validate_unicode_value(cls, value,
+                               choice_group_id=None, choice_group2_id=None):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return False
+        for key in ('mediafilename', 'filename', 'content_type', 'charset',
+                    'size'):
+            if key not in value:
+                print('Key', key, 'not found in', value)
+                return False
+        return True
+register_contact_field_type(FileContactField, 'FILE',
+                            ugettext_lazy('File'), has_choice=0)
 
 
 class ContactNameMetaField(object):

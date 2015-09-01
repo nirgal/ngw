@@ -10,6 +10,7 @@ mailing/templates
 !mailing/templates/resetpassword.odt
 mailing/generated
 settings.py
-media/
+media/fields/*
+media/g/*
 /static/
 /README.html

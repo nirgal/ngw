@@ -14,6 +14,7 @@ from django.contrib.admin.utils import (display_for_field, display_for_value,
                                         label_for_field, lookup_field)
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.core.exceptions import PermissionDenied
+from django.core.files.uploadedfile import UploadedFile
 from django.core.urlresolvers import reverse
 from django.db.models.query import RawQuerySet, sql
 from django.http import (Http404, HttpResponse, HttpResponseRedirect,
@@ -998,6 +999,29 @@ class ContactEditForm(forms.ModelForm):
             if cf.type == FTYPE_PASSWORD:
                 continue
             newvalue = data[str(cf.id)]
+            # if cf.type == 'FILE' && newvalue == False:
+            #    TODO: delete the old file
+            if isinstance(newvalue, UploadedFile):
+                dirname = os.path.join(
+                    settings.MEDIA_ROOT,
+                    'fields',
+                    str(cf.id))
+                if not os.path.isdir(dirname):
+                    os.mkdir(dirname)
+                filename = os.path.join(dirname, str(contact.id))
+                f = open(filename, mode='wb')
+                try:
+                    for chunk in newvalue.chunks():
+                        f.write(chunk)
+                finally:
+                    f.close()
+                newvalue = {
+                    'mediafilename': os.path.join(
+                        'fields', str(cf.id), str(contact.id)),
+                    'filename': newvalue.name,
+                    'content_type': newvalue.content_type,
+                    'charset': newvalue.charset,
+                    'size': newvalue.size}
             if newvalue is not None:
                 newvalue = cf.formfield_value_to_db_value(newvalue)
             contact.set_fieldvalue(request, cf, newvalue)

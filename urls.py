@@ -23,7 +23,8 @@ from ngw.core.views.contactsearch import (ContactSearchAutocompleteView,
 from ngw.core.views.fields import (FieldCreateView, FieldDeleteView,
                                    FieldEditView, FieldListView,
                                    FieldMoveDownView, FieldMoveUpView)
-from ngw.core.views.files import FileListView, GroupMediaFileView
+from ngw.core.views.files import (FileContactFieldView, FileListView,
+                                  GroupMediaFileView)
 from ngw.core.views.groups import (CalendarQueryView, CalendarView,
                                    ContactGroupListView, ContactGroupView,
                                    ContactInGroupDelete,
@@ -173,6 +174,8 @@ urlpatterns = patterns(
 
     url(r'^media/g/(?P<gid>\d+)/(?P<filename>.+)$',
         GroupMediaFileView.as_view()),
+    url(r'^media/fields/(?P<fid>\d+)/(?P<cid>\d+)$',
+        FileContactFieldView.as_view()),
 
     url(r'^pks/lookup$', GpgLookupView.as_view()),
 

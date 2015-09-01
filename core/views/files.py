@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.utils.encoding import force_str
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
@@ -17,7 +18,8 @@ from django.views import static
 from django.views.generic import FormView, View
 
 from ngw.core import perms
-from ngw.core.views.generic import InGroupAcl
+from ngw.core.models import ContactField
+from ngw.core.views.generic import InGroupAcl, NgwUserAcl
 
 
 ###############################################################################
@@ -141,4 +143,20 @@ class GroupMediaFileView(InGroupAcl, View):
             request,
             simple_quote(surogate_encode(filename)),
             cg.static_folder(),
+            show_indexes=False)
+
+
+class FileContactFieldView(NgwUserAcl, View):
+    '''
+    That view serves a contact field that are files.
+    '''
+    def get(self, request, fid, cid):
+        cf = get_object_or_404(ContactField, pk=fid)
+        if not perms.c_can_write_fields_cg(request.user.id,
+                                           cf.contact_group_id):
+            raise PermissionDenied
+        return static.serve(
+            request,
+            os.path.join(fid, cid),
+            os.path.join(settings.MEDIA_ROOT, 'fields'),
             show_indexes=False)
