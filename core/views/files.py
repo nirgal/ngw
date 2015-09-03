@@ -6,6 +6,7 @@ import json
 import os
 import stat
 import sys
+from email.quoprimime import header_encode
 
 from django import forms
 from django.conf import settings
@@ -181,6 +182,7 @@ class FileContactFieldView(NgwUserAcl, View):
         response["Last-Modified"] = http_date(statobj.st_mtime)
         if stat.S_ISREG(statobj.st_mode):
             response["Content-Length"] = statobj.st_size
-        # if encoding:
-        #    response["Content-Encoding"] = encoding
+
+        response['Content-Disposition'] = 'inline; filename="{0}"'.format(
+            header_encode(fileinfo['filename'].encode('utf-8'), 'utf-8'))
         return response
