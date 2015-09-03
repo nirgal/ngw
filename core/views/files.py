@@ -2,23 +2,27 @@
 files managing views
 '''
 
+import json
 import os
+import stat
 import sys
 
 from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseRedirect
+from django.http import (FileResponse, Http404, HttpResponseNotModified,
+                         HttpResponseRedirect)
 from django.shortcuts import get_object_or_404
 from django.utils.encoding import force_str
+from django.utils.http import http_date
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
 from django.views import static
 from django.views.generic import FormView, View
 
 from ngw.core import perms
-from ngw.core.models import ContactField
+from ngw.core.models import ContactField, ContactFieldValue
 from ngw.core.views.generic import InGroupAcl, NgwUserAcl
 
 
@@ -155,8 +159,28 @@ class FileContactFieldView(NgwUserAcl, View):
         if not perms.c_can_write_fields_cg(request.user.id,
                                            cf.contact_group_id):
             raise PermissionDenied
-        return static.serve(
-            request,
-            os.path.join(fid, cid),
-            os.path.join(settings.MEDIA_ROOT, 'fields'),
-            show_indexes=False)
+        fullpath = os.path.join(settings.MEDIA_ROOT, 'fields', fid, cid)
+        if not os.path.exists(fullpath):
+            raise Http404(_('"%(path)s" does not exist') % {'path': fullpath})
+        # Respect the If-Modified-Since header.
+        statobj = os.stat(fullpath)
+        if not static.was_modified_since(
+           request.META.get('HTTP_IF_MODIFIED_SINCE'),
+           statobj.st_mtime, statobj.st_size):
+            return HttpResponseNotModified()
+
+        # START OF content_type detection
+        cfv = get_object_or_404(ContactFieldValue,
+                                contact_id=cid, contact_field_id=fid)
+        fileinfo = json.loads(cfv.value)
+        content_type = fileinfo['content_type']
+        # END OF content_type detection
+
+        response = FileResponse(open(fullpath, 'rb'),
+                                content_type=content_type)
+        response["Last-Modified"] = http_date(statobj.st_mtime)
+        if stat.S_ISREG(statobj.st_mode):
+            response["Content-Length"] = statobj.st_size
+        # if encoding:
+        #    response["Content-Encoding"] = encoding
+        return response
