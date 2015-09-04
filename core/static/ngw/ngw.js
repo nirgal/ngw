@@ -121,3 +121,16 @@ function doublechoice_show(baseid, init_auto)
     }
     return false;
 }
+
+
+//----------------------------
+// toggle image sizes. It's applied on the container. It works for all square nodes.
+var imagefile_size_small = '50px'; // TODO: read from style
+var imagefile_size_big = '200px';
+function toggle_imagefield_sizes(node) {
+	var style = node.style;
+	if (style.width == imagefile_size_big)
+		style.width = style.height = imagefile_size_small;
+	else
+		style.width = style.height = imagefile_size_big;
+}

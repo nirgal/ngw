@@ -1002,26 +1002,7 @@ class ContactEditForm(forms.ModelForm):
             # if cf.type == 'FILE' && newvalue == False:
             #    TODO: delete the old file
             if isinstance(newvalue, UploadedFile):
-                dirname = os.path.join(
-                    settings.MEDIA_ROOT,
-                    'fields',
-                    str(cf.id))
-                if not os.path.isdir(dirname):
-                    os.mkdir(dirname)
-                filename = os.path.join(dirname, str(contact.id))
-                f = open(filename, mode='wb')
-                try:
-                    for chunk in newvalue.chunks():
-                        f.write(chunk)
-                finally:
-                    f.close()
-                newvalue = {
-                    'mediafilename': os.path.join(
-                        'fields', str(cf.id), str(contact.id)),
-                    'filename': newvalue.name,
-                    'content_type': newvalue.content_type,
-                    'charset': newvalue.charset,
-                    'size': newvalue.size}
+                newvalue = cf.save_file(contact.id, newvalue)
             if newvalue is not None:
                 newvalue = cf.formfield_value_to_db_value(newvalue)
             contact.set_fieldvalue(request, cf, newvalue)

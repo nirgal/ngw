@@ -1,6 +1,19 @@
 {% extends "admin/base_site.html" %}
 {% load i18n ngwtags %}
 
+{% block extrahead %}{{ block.super }}
+<style>
+.field_image_container {
+    width:200px;
+    height:200px;
+}
+</style>
+<script>
+var imagefile_size_small = '200px';
+var imagefile_size_big = '500px';
+</script>
+{% endblock %}
+
 {% block submenu %}
 {% if cg %}
 {% include "group_submenu.html" %}

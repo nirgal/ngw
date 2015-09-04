@@ -526,8 +526,90 @@ class FileContactField(ContactField):
                 print('Key', key, 'not found in', value)
                 return False
         return True
+
+    def save_file(self, contact_id, uploadedFile):
+        """
+        Save the file in /media/fields folder.
+        Return json with the information
+        """
+        dirname = os.path.join(
+            settings.MEDIA_ROOT,
+            'fields',
+            str(self.id))
+        if not os.path.isdir(dirname):
+            # create the missing directory for that field
+            os.mkdir(dirname)
+        filename = os.path.join(dirname, str(contact_id))
+        f = open(filename, mode='wb')
+        try:
+            for chunk in uploadedFile.chunks():
+                f.write(chunk)
+        finally:
+            f.close()
+        # TODO: discard sent mime-type and use python3-magic
+        return {
+            'mediafilename': os.path.join(
+                'fields', str(self.id), str(contact_id)),
+            'filename': uploadedFile.name,
+            'content_type': uploadedFile.content_type,
+            'charset': uploadedFile.charset,
+            'size': uploadedFile.size}
 register_contact_field_type(FileContactField, 'FILE',
                             ugettext_lazy('File'), has_choice=0)
+
+
+class ImageContactField(FileContactField):
+    class Meta:
+        proxy = True
+
+    def format_value_html(self, value):
+        fileinfo = json.loads(value)
+        return loader.render_to_string('image_field.html', fileinfo)
+
+    def get_form_fields(self):
+        return forms.ImageField(label=self.name, required=False,
+                                help_text=self.hint,
+                                widget=forms.ClearableFileInput,
+                                max_length=10*1024**3)
+
+    def formfield_value_to_db_value(self, value):
+        if not value:
+            return None
+        return json.dumps(value)
+
+    def db_value_to_formfield_value(self, value):
+        fileinfo = json.loads(value)
+        if fileinfo is False:
+            return None
+        filename = os.path.join(settings.MEDIA_ROOT, fileinfo['mediafilename'])
+        content = open(filename, 'rb').read()
+        suf = SimpleUploadedFile.from_dict({
+            'filename': fileinfo['filename'],
+            'content': content,
+            'content-type': fileinfo['content_type']
+            })
+        # Note that next line is needed, or "clear file" won't work:
+        suf.url = os.path.join(settings.MEDIA_URL, fileinfo['mediafilename'])
+        return suf
+
+    def get_filters_classes(self):
+        return (FieldFilterNull, FieldFilterNotNull,)
+
+    @classmethod
+    def validate_unicode_value(cls, value,
+                               choice_group_id=None, choice_group2_id=None):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return False
+        for key in ('mediafilename', 'filename', 'content_type', 'charset',
+                    'size'):
+            if key not in value:
+                print('Key', key, 'not found in', value)
+                return False
+        return True
+register_contact_field_type(ImageContactField, 'IMAGE',
+                            ugettext_lazy('Image'), has_choice=0)
 
 
 class ContactNameMetaField(object):
