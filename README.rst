@@ -44,7 +44,7 @@ Requirements
 
 Standard packages::
 
-    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socksipy python3-uno python3-cracklib tor make python3-gnupg libjs-jquery-ui openssl
+    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socksipy python3-uno python3-cracklib python3-pil tor make python3-gnupg libjs-jquery-ui openssl
 
 If you set up nirgal.com repository as described above, just run::
 
