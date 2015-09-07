@@ -18,4 +18,4 @@ isort:
 	isort -c --diff --dont-skip __init__.py -b fcntl -b ssl -p ngw -o gnupg `find -name '*py' | grep -v ./core/wsgi.py`
 
 flake8:
-	flake8 .
+	flake8 --builtins=FileNotFoundError .

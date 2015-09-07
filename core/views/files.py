@@ -21,6 +21,7 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
 from django.views import static
 from django.views.generic import FormView, View
+from PIL import Image
 
 from ngw.core import perms
 from ngw.core.models import ContactField, ContactFieldValue
@@ -157,8 +158,8 @@ class FileContactFieldView(NgwUserAcl, View):
     '''
     def get(self, request, fid, cid):
         cf = get_object_or_404(ContactField, pk=fid)
-        if not perms.c_can_write_fields_cg(request.user.id,
-                                           cf.contact_group_id):
+        if not perms.c_can_view_fields_cg(request.user.id,
+                                          cf.contact_group_id):
             raise PermissionDenied
         fullpath = os.path.join(settings.MEDIA_ROOT, 'fields', fid, cid)
         if not os.path.exists(fullpath):
@@ -182,6 +183,62 @@ class FileContactFieldView(NgwUserAcl, View):
         response["Last-Modified"] = http_date(statobj.st_mtime)
         if stat.S_ISREG(statobj.st_mode):
             response["Content-Length"] = statobj.st_size
+
+        response['Content-Disposition'] = 'inline; filename="{0}"'.format(
+            header_encode(fileinfo['filename'].encode('utf-8'), 'utf-8'))
+        return response
+
+
+class FileContactFieldThumbView(NgwUserAcl, View):
+    '''
+    That view serves a contact field that are files.
+    '''
+    def get(self, request, fid, cid, width, height):
+        cf = get_object_or_404(ContactField, pk=fid)
+        if not perms.c_can_view_fields_cg(request.user.id,
+                                          cf.contact_group_id):
+            raise PermissionDenied
+
+        fullpath_orig = os.path.join(settings.MEDIA_ROOT, 'fields', fid, cid)
+        fullpath_thumb = os.path.join(settings.MEDIA_ROOT, 'fields', fid,
+                                      cid + ".{0}x{1}".format(width, height))
+        try:
+            stat_orig = os.stat(fullpath_orig)
+        except FileNotFoundError:
+            raise Http404(_('"%(path)s" does not exist')
+                          % {'path': fullpath_orig})
+
+        try:
+            stat_thumb = os.stat(fullpath_thumb)
+            thumb_outdated = (stat_thumb.st_mtime < stat_orig.st_mtime)
+        except FileNotFoundError:
+            thumb_outdated = True
+
+        if thumb_outdated:
+            img = Image.open(fullpath_orig)
+            width, height = int(width), int(height)
+            img.thumbnail((width, height))
+            img.save(fullpath_thumb, "JPEG")
+            stat_thumb = os.stat(fullpath_thumb)
+        else:
+            # Respect the If-Modified-Since header.
+            if not static.was_modified_since(
+               request.META.get('HTTP_IF_MODIFIED_SINCE'),
+               stat_thumb.st_mtime, stat_thumb.st_size):
+                return HttpResponseNotModified()
+
+        # START OF content_type detection
+        cfv = get_object_or_404(ContactFieldValue,
+                                contact_id=cid, contact_field_id=fid)
+        fileinfo = json.loads(cfv.value)
+        content_type = fileinfo['content_type']
+        # END OF content_type detection
+
+        response = FileResponse(open(fullpath_thumb, 'rb'),
+                                content_type=content_type)
+        response["Last-Modified"] = http_date(stat_thumb.st_mtime)
+        if stat.S_ISREG(stat_thumb.st_mode):
+            response["Content-Length"] = stat_thumb.st_size
 
         response['Content-Disposition'] = 'inline; filename="{0}"'.format(
             header_encode(fileinfo['filename'].encode('utf-8'), 'utf-8'))

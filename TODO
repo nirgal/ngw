@@ -6,10 +6,6 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-Image contactfields:
-- Keep the original upload and precompute small size-bounded version(s?).
-- How to define a default image?
-
 File uploads:
 Use libmagic (`file`) to determine content-type.
 
@@ -27,6 +23,8 @@ On the contact detail page, have the events either in a separated page or in a w
 ====================================================================================================
 CODE REFACTOR
 ====================================================================================================
+
+Have a default picture (almost transparent head detour).
 
 Files handling:
 - Improve display (mimetype, size, ...)
