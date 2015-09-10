@@ -319,7 +319,7 @@ class MessageDetailView(InGroupAcl, DetailView):
                 groupname=cg)
         else:
             context['title'] = _(
-                'Message to {contactname} in group {groupname)}').format(
+                'Message to {contactname} in group {groupname}').format(
                 contactname=self.object.contact.name,
                 groupname=cg)
         try:
