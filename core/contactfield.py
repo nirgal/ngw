@@ -1,4 +1,5 @@
 import json
+import magic
 import os
 from datetime import datetime
 
@@ -545,12 +546,24 @@ class FileContactField(ContactField):
         finally:
             f.close()
         # TODO: discard sent mime-type and use python3-magic
+        m = magic.open(magic.MAGIC_MIME)
+        m.load()
+        content_type_list = m.file(filename).split("; ", 1)
+        if len(content_type_list) == 1:
+            content_type = content_type_list[0]
+            charset = ""
+        else:
+            content_type = content_type_list[0]
+            charset = content_type_list[1]
+            
         return {
             'mediafilename': os.path.join(
                 'fields', str(self.id), str(contact_id)),
             'filename': uploadedFile.name,
-            'content_type': uploadedFile.content_type,
-            'charset': uploadedFile.charset,
+            'content_type': content_type,
+            'charset': charset,
+            #'content_type': magic.from_file(filename, mime=True), #uploadedFile.content_type,
+            #'charset': uploadedFile.charset,
             'size': uploadedFile.size}
 register_contact_field_type(FileContactField, 'FILE',
                             ugettext_lazy('File'), has_choice=0)
