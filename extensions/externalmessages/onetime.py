@@ -43,8 +43,8 @@ def clean_expiration_date(expiration_date):
     if (expiration_date >= datetime.date.today()
        + datetime.timedelta(days=MAXEXPIRATION)):
         raise ValidationError(
-            _("The expiration date can't be more that %s days in the future.")
-            % MAXEXPIRATION)
+            _("The expiration date can't be more that {} days in the future.")
+            .format(MAXEXPIRATION))
     return expiration_date
 
 
@@ -67,7 +67,7 @@ def send_to_onetime(msg):
     try:
         days = sync_info['expiration']
     except KeyError:
-        logger.warning("Message %s doesn't have an expiration date." % msg.id)
+        logger.warning("Message %s doesn't have an expiration date.", msg.id)
         dt = msg.group.date
         if dt:
             days = (dt - timezone.now().date()).days
@@ -79,7 +79,7 @@ def send_to_onetime(msg):
         16, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_')
     msg_text = subprocess.check_output(
         ['openssl', 'enc', '-aes-256-cbc',
-         '-pass', 'pass:%s' % passphrase,
+         '-pass', 'pass:{}'.format(passphrase),
          '-e', '-base64'],
         input=msg_text)
 
@@ -97,8 +97,8 @@ def send_to_onetime(msg):
     response = ot_conn.getresponse()
     if response.status != 200:
         logger.error(
-            "Temporary storage server error: %s %s"
-            % (response.status, response.reason))
+            "Temporary storage server error: %s %s",
+            response.status, response.reason)
         logger.error("%s", response.read())
         return
     # jresponse = json.load(response)
@@ -128,7 +128,7 @@ def send_notification(msg):
         return  # Message is not ready on external storage
 
     if 'language' in sync_info:
-        logger.warning('Switch to language: %s' % sync_info['language'])
+        logger.warning('Switch to language: %s', sync_info['language'])
         language_activate(sync_info['language'])
 
     c_mails = msg.contact.get_fieldvalues_by_type('EMAIL')
@@ -150,8 +150,8 @@ def send_notification(msg):
 
     notification_text = _('''Hello
 
-You can read your message at https://onetime.info/%(otid)s#%(passphrase_out)s
-or http://7z4nl4ojzggwicx5.onion/%(otid)s#%(passphrase_out)s if you are using
+You can read your message at https://onetime.info/{otid}#{passphrase_out}
+or http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out} if you are using
 tor [1].
 
 Warning, that message will be displayed only once, and then deleted. Have a pen
@@ -167,10 +167,10 @@ one to read it, please repport that.
     notification_html = _('''<p>Hello</p>
 
 <p>You can read your message at
-<a href="https://onetime.info/%(otid)s#%(passphrase_out)s">
-https://onetime.info/%(otid)s#%(passphrase_out)s</a><br>
-or <a href="http://7z4nl4ojzggwicx5.onion/%(otid)s#%(passphrase_out)s">
-http://7z4nl4ojzggwicx5.onion/%(otid)s#%(passphrase_out)s</a> if you are using
+<a href="https://onetime.info/{otid}#{passphrase_out}">
+https://onetime.info/{otid}#{passphrase_out}</a><br>
+or <a href="http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out}">
+http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out}</a> if you are using
 <a href="https://www.torproject.org/">tor</a>.</p>
 
 <p>Warning, that message will be displayed only once, and then deleted. Have a
@@ -183,17 +183,18 @@ one to read it, please repport that.</p>''')
 
     message = mail.EmailMultiAlternatives(
         subject=msg.subject,
-        body=notification_text % sync_info,
+        body=notification_text.format(*sync_info),
         to=(mail_addr,),
         connection=SMTP_CONNECTION)
-    message.attach_alternative(notification_html % sync_info, "text/html")
+    message.attach_alternative(notification_html.format(*sync_info),
+                               "text/html")
 
     try:
         message.send()
     except smtplib.SMTPException as err:
-        logger.critical('%s' % err)
+        logger.critical('%s', err)
         if err.smtp_code // 100 == 4:
-            logger.warning('Temporarary SMTP failure: %s' % err)
+            logger.warning('Temporarary SMTP failure: %s', err)
         if err.smtp_code == 450:
             logger.info('Message rate exceeded: giving up for now')
             SMTP_SERVER_CONGESTION = True
@@ -229,8 +230,8 @@ def read_answers(msg):
         })
     response = ot_conn.getresponse()  # TODO: except httplib.BadStatusLine
     if response.status == 404:
-        logger.info("Message is gone: %s %s"
-                    % (response.status, response.reason))
+        logger.info("Message is gone: %s %s",
+                    response.status, response.reason)
         # tag the message as deleted, so we stop trying to synchronise again
         # and again
         sync_info['deleted'] = True
@@ -238,8 +239,8 @@ def read_answers(msg):
         msg.save()
         return
     if response.status != 200:
-        logger.error("Temporary storage server error: %s %s"
-                     % (response.status, response.reason))
+        logger.error("Temporary storage server error: %s %s",
+                     response.status, response.reason)
         logger.error("%s", response.read())
         return
     # jresponse = json.load(response)
@@ -263,7 +264,7 @@ def read_answers(msg):
                 response_text = response_text.encode(settings.DEFAULT_CHARSET)
                 response_text = subprocess.check_output(
                     ['openssl', 'enc', '-aes-256-cbc',
-                     '-pass', 'pass:%s' % passphrase,
+                     '-pass', 'pass:{}'.format(passphrase),
                      '-d', '-base64', '-A'],
                     input=response_text)
                 response_text = force_text(response_text)

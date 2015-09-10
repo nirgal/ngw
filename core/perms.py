@@ -225,8 +225,9 @@ def cig_flags_int(cid, gid):
     '''
     cursor = connection.cursor()
     cursor.execute(
-        'SELECT flags FROM v_cig_flags WHERE contact_id=%s AND group_id=%s' % (
-            cid, gid))
+        'SELECT flags FROM v_cig_flags'
+        ' WHERE contact_id={} AND group_id={}'
+        .format(cid, gid))
     row = cursor.fetchone()
     return row[0] or 0
 
@@ -240,8 +241,8 @@ def cig_flags_direct_int(cid, gid):
     cursor.execute(
         'SELECT flags'
         ' FROM contact_in_group'
-        ' WHERE contact_id=%s AND group_id=%s'
-        % (cid, gid))
+        ' WHERE contact_id={} AND group_id={}'
+        .format(cid, gid))
     row = cursor.fetchone()
     return row[0] or 0
 
@@ -252,8 +253,8 @@ def cig_perms_int(cid, gid):
     '''
     cursor = connection.cursor()
     cursor.execute(
-        'SELECT flags FROM v_cig_perm WHERE contact_id=%s AND group_id=%s' % (
-            cid, gid))
+        'SELECT flags FROM v_cig_perm WHERE contact_id={} AND group_id={}'
+        .format(cid, gid))
     row = cursor.fetchone()
     return row[0] or 0
 

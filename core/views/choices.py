@@ -191,10 +191,11 @@ class ChoiceEditMixin(ModelFormMixin):
         context = {}
         cg = self.contactgroup
         if self.object:
-            title = _('Editing choices for %s') % self.field
+            title = _('Editing choices for {}').format(self.field)
             id = self.object.id
         else:
-            title = _('Adding a new %s') % ChoiceGroup.get_class_verbose_name()
+            title = _('Adding a new {}').format(
+                ChoiceGroup.get_class_verbose_name())
             id = None
         context['title'] = title
         context['id'] = id

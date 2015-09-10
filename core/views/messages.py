@@ -85,7 +85,7 @@ class MessageContactFilter(filters.SimpleListFilter):
                 tables=('v_c_appears_in_cg',),
                 where=(
                     'v_c_appears_in_cg.contact_id=contact.id',
-                    'v_c_appears_in_cg.group_id=%s' % group_id))
+                    'v_c_appears_in_cg.group_id={}'.format(group_id)))
         for contact in contacts:
             result.append((contact.id, contact.name))
         return result
@@ -117,7 +117,7 @@ class MessageListView(InGroupAcl, NgwListView):
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
         context = {}
-        context['title'] = _('Messages for %s') % cg
+        context['title'] = _('Messages for {}').format(cg)
         context['nav'] = cg.get_smart_navbar()
         context['nav'].add_component(('messages', _('messages')))
         context['active_submenu'] = 'messages'
@@ -135,14 +135,14 @@ try:
     EXTERNAL_MESSAGE_BACKEND_NAME = settings.EXTERNAL_MESSAGE_BACKEND
 except AttributeError as e:
     raise ImproperlyConfigured(('You need to add an "EXTERNAL_MESSAGE_BACKEND"'
-                                ' handler in your settings.py: "%s"'
-                                % e))
+                                ' handler in your settings.py: "{}"'
+                                .format(e)))
 try:
     EXTERNAL_MESSAGE_BACKEND = import_module(EXTERNAL_MESSAGE_BACKEND_NAME)
 except ImportError as e:
     raise ImproperlyConfigured(('Error importing external messages backend'
-                                ' module %s: "%s"'
-                                % (EXTERNAL_MESSAGE_BACKEND_NAME, e)))
+                                ' module {}: "{}"'
+                                .format(EXTERNAL_MESSAGE_BACKEND_NAME, e)))
 
 
 class SendMessageForm(forms.Form):
@@ -226,15 +226,15 @@ class SendMessageView(InGroupAcl, FormView):
         if nbmessages == 1:
             success_msg = _('Message stored.')
         else:
-            success_msg = _('%s messages stored.') % nbmessages
+            success_msg = _('{} messages stored.').format(nbmessages)
         messages.add_message(self.request, messages.SUCCESS, success_msg)
         if contacts_noemail:
             nb_noemail = len(contacts_noemail)
             if nb_noemail == 1:
                 error_msg = _("One contact doesn't have an email address.")
             else:
-                error_msg = (_("%s contacts don't have an email address.")
-                             % nb_noemail)
+                error_msg = (_("{} contacts don't have an email address.")
+                             .format(nb_noemail))
             messages.add_message(
                 self.request, messages.WARNING,
                 translation.string_concat(
@@ -261,7 +261,7 @@ class SendMessageView(InGroupAcl, FormView):
                 noemails.append(contact)
 
         context = {}
-        context['title'] = _('Send message in %s') % cg
+        context['title'] = _('Send message in {}').format(cg)
         context['nbcontacts'] = nbcontacts
         context['noemails'] = noemails
         context['nav'] = cg.get_smart_navbar() \
@@ -314,16 +314,14 @@ class MessageDetailView(InGroupAcl, DetailView):
         context = {}
         if self.object.is_answer:
             context['title'] = _(
-                'Message from %(contactname)s in group %(groupname)s') % {
-                'contactname': self.object.contact.name,
-                'groupname': cg,
-            }
+                'Message from {contactname} in group {groupname}').format(
+                contactname=self.object.contact.name,
+                groupname=cg)
         else:
             context['title'] = _(
-                'Message to %(contactname)s in group %(groupname)s') % {
-                'contactname': self.object.contact.name,
-                'groupname': cg,
-            }
+                'Message to {contactname} in group {groupname)}').format(
+                contactname=self.object.contact.name,
+                groupname=cg)
         try:
             context['sync_info'] = json.loads(self.object.sync_info)
         except ValueError:
@@ -349,12 +347,12 @@ class MessageDetailView(InGroupAcl, DetailView):
         context['membership'] = perms.int_to_flags(flags_direct)
         context['membership_str'] = membership_str
         context['membership_title'] = _(
-            '%(contactname)s in group %(groupname)s') % {
-            'contactname': self.object.contact.name,
-            'groupname': cg}
+            '{contactname} in group {groupname}').format(
+            contactname=self.object.contact.name,
+            groupname=cg)
         if self.contactgroup.userperms & perms.WRITE_MSGS:
-            context['reply_url'] = "../members/send_message?ids=%s" % \
-                self.object.contact_id
+            context['reply_url'] = "../members/send_message?ids={}".format(
+                self.object.contact_id)
         context.update(kwargs)
         return super().get_context_data(**context)
 

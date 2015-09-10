@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 if name:
                     self.stdout.write(name, '->', mailman.normalize_name(name),
                                       ending=' ')
-                self.stdout.write('<%s>' % email)
+                self.stdout.write('<{email}>'.format(email=email))
         elif action == 'normalize':
             mailman_members = mailman.parse_who_result(filecontent)
             self.stdout.write('*')
@@ -40,20 +40,20 @@ class Command(BaseCommand):
             for name, email in mailman_members:
                 if name != mailman.normalize_name(name):
                     self.stdout.write(name, ending=' ')
-                    self.stdout.write('<%s>' % email)
+                    self.stdout.write('<{email}>'.format(email=email))
             self.stdout.write('*')
             self.stdout.write('scrubsribe:')
             for name, email in mailman_members:
                 if name != mailman.normalize_name(name):
                     self.stdout.write(mailman.normalize_name(name), ending=' ')
-                    self.stdout.write('<%s>' % email)
+                    self.stdout.write('<{email}>'.format(email=email))
 
         elif action == 'check':
             groupid = options['groupid']
             if not groupid:
                 raise CommandError('You must use -g option')
             cg = ContactGroup.objects.get(pk=groupid)
-            self.stdout.write('Synching %s' % cg)
+            self.stdout.write('Synching {}'.format(cg))
 
             msg, unsubscribe_list, subscribe_list = mailman.synchronise_group(
                 cg, filecontent)

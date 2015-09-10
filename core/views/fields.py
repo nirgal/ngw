@@ -47,8 +47,8 @@ class FieldGroupFilter(filters.SimpleListFilter):
             return queryset
         elif val == 'parents':
             return queryset.extra(where=[
-                'contact_group_id IN (SELECT self_and_supergroups(%s))'
-                % self.view.contactgroup.id])
+                'contact_group_id IN (SELECT self_and_supergroups({}))'
+                .format(self.view.contactgroup.id)])
         return queryset.filter(contact_group=self.view.contactgroup.id)
 
     def choices(self, cl):
@@ -106,8 +106,8 @@ class FieldListView(InGroupAcl, NgwListView):
         html_name = html.escape(field.name)
         if field.perm & perms.CHANGE_CG:
             return (
-                '<a href="../../%s/fields/%s/">%s</a>'
-                % (field.contact_group.id, field.id, html_name))
+                '<a href="../../{}/fields/{}/">{}</a>'
+                .format(field.contact_group.id, field.id, html_name))
         else:
             return html_name
     name_with_link.short_description = ugettext_lazy('Name')
@@ -127,9 +127,9 @@ class FieldListView(InGroupAcl, NgwListView):
     def locked(self, field):
         if field.system:
             return (
-                '<img src="%sngw/lock.png" alt="locked"'
+                '<img src="{}ngw/lock.png" alt="locked"'
                 ' width="10" height="10">'
-                % settings.STATIC_URL)
+                .format(settings.STATIC_URL))
         return ''
     locked.short_description = ugettext_lazy('Locked')
     locked.admin_order_field = 'system'
@@ -343,7 +343,7 @@ class FieldEditMixin(ModelFormMixin):
 
         messages.add_message(
             request, messages.SUCCESS,
-            _('Field %s has been saved successfully.') % cf.name)
+            _('Field {} has been saved successfully.').format(cf.name))
 
         if self.pk_url_kwarg not in self.kwargs:  # new added instance
             base_url = '.'
@@ -361,11 +361,12 @@ class FieldEditMixin(ModelFormMixin):
         context = {}
         cg = self.contactgroup
         if self.object:
-            title = _('Editing %s') % self.object
+            title = _('Editing {}').format(self.object)
             id = self.object.id
         else:
             title = (
-                _('Adding a new %s') % ContactField.get_class_verbose_name())
+                _('Adding a new {}').format(
+                    ContactField.get_class_verbose_name()))
             id = None
         context['title'] = title
         context['id'] = id
@@ -446,6 +447,7 @@ class FieldDeleteView(InGroupAcl, NgwDeleteView):
         if field.system:
             messages.add_message(
                 self.request, messages.ERROR,
-                _('Field %s is locked and CANNOT be deleted.') % field.name)
+                _('Field {} is locked and CANNOT be deleted.')
+                .format(field.name))
             raise PermissionDenied
         return field

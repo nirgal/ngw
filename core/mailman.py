@@ -42,7 +42,7 @@ def format_mailadd(name, email):
         result = name + ' '
     else:
         result = ''
-    result += '<%s>' % email
+    result += '<{}>'.format(email)
     return result
 
 
@@ -70,8 +70,8 @@ def synchronise_group(cg, mailcontent):
             mailman_name = mailman_names[0]
             if mailman_name != name_base:
                 result.append((
-                    ('<%s> is called "%s" in mailman but it should be "%s"'
-                     % (email_base, mailman_name, name_base)),
+                    ('<{}> is called "{}" in mailman but it should be "{}"'
+                     .format(email_base, mailman_name, name_base)),
                     format_mailadd(mailman_name, email_base),
                     format_mailadd(name_base, email_base)))
             mailman_members.remove((mailman_name, email_base))

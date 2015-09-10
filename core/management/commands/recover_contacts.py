@@ -13,7 +13,7 @@ class Command(NoArgsCommand):
         logger = logging.getLogger('contactrecover')
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter(
-            '%(asctime)s %(name)s %(levelname)-8s %(message)s'))
+            '{asctime} {name} {levelname!s:8} {message}', style='{'))
         logger.addHandler(handler)
         logger.propagate = False
         verbosity = int(options['verbosity'])
@@ -29,7 +29,9 @@ class Command(NoArgsCommand):
         for contact in Contact.objects.extra(where=[
                 ('NOT EXISTS (SELECT * FROM contact_in_group'
                  ' WHERE contact_id=contact.id'
-                 ' AND group_id IN (SELECT self_and_subgroups(%s))'
-                 ' AND flags & %s <> 0)')
-                % (GROUP_EVERYBODY, perms.MEMBER)]):
-            logger.error('%s is not member of group EVERYBODY', contact)
+                 ' AND group_id IN (SELECT self_and_subgroups({}))'
+                 ' AND flags & {} <> 0)')
+                .format(GROUP_EVERYBODY, perms.MEMBER)]):
+            logger.error('%s (#%s) is not member of group EVERYBODY',
+                         contact.name,
+                         contact.id)

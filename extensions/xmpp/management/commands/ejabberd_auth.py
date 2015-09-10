@@ -136,7 +136,7 @@ class Command(NoArgsCommand):
             logger.setLevel(logging.ERROR)
         hdlr = logging.FileHandler('/tmp/jabauth.log')
         hdlr.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s %(message)s'))
+            '{asctime} {levelname} {message}', style='{'))
         logger.addHandler(hdlr)
 
         # python3:

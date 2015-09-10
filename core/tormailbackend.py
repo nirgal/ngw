@@ -85,8 +85,8 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
             expected_sslhostname = settings.EMAIL_HOST
         if not validate_ssl_hostname(cert, expected_sslhostname):
             raise smtplib.SMTPException(
-                'Ssl certificate is valid but does not match %s.'
-                % expected_sslhostname)
+                'Ssl certificate is valid but does not match {}.'
+                .format(expected_sslhostname))
 
         return new_socket
 

@@ -55,10 +55,9 @@ class FileListView(InGroupAcl, FormView):
         path = self.kwargs['path']
         cg = self.contactgroup
         context = {}
-        context['title'] = _('Files of %(group)s in %(folder)s') % {
-            'group': cg,
-            'folder': path,
-        }
+        context['title'] = _('Files of {group} in {folder}').format(
+            group=cg,
+            folder=path)
         context['nav'] = cg.get_smart_navbar() \
             .add_component(('files', _('files')))
         base_fullname = cg.get_fullfilename()
@@ -90,13 +89,14 @@ class FileListView(InGroupAcl, FormView):
                 destination.write(chunk)
             messages.add_message(
                 request, messages.SUCCESS,
-                _('File %s has been uploaded successfully.') % upfile.name)
+                _('File {} has been uploaded successfully.')
+                .format(upfile.name))
         except IOError as err:
             messages.add_message(
                 request, messages.ERROR,
-                _('Could not upload file %(filename)s: %(error)s') % {
-                    'filename': upfile.name,
-                    'error': str(err)})
+                _('Could not upload file {filename}: {error}').format(
+                    filename=upfile.name,
+                    error=err))
         finally:
             if destination:
                 destination.close()
@@ -163,7 +163,7 @@ class FileContactFieldView(NgwUserAcl, View):
             raise PermissionDenied
         fullpath = os.path.join(settings.MEDIA_ROOT, 'fields', fid, cid)
         if not os.path.exists(fullpath):
-            raise Http404(_('"%(path)s" does not exist') % {'path': fullpath})
+            raise Http404(_('"{path}" does not exist').format(path=fullpath))
         # Respect the If-Modified-Since header.
         statobj = os.stat(fullpath)
         if not static.was_modified_since(
@@ -205,8 +205,8 @@ class FileContactFieldThumbView(NgwUserAcl, View):
         try:
             stat_orig = os.stat(fullpath_orig)
         except FileNotFoundError:
-            raise Http404(_('"%(path)s" does not exist')
-                          % {'path': fullpath_orig})
+            raise Http404(_('"{path}" does not exist').format(
+                path=fullpath_orig))
 
         try:
             stat_thumb = os.stat(fullpath_thumb)

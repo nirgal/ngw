@@ -22,7 +22,7 @@ class ContactSearchAutocompleteView(NgwUserAcl, View):
         contacts = contacts.extra(
             tables=['v_c_can_see_c'],
             where=[
-                'v_c_can_see_c.contact_id_1=%s' % request.user.id,
+                'v_c_can_see_c.contact_id_1={}'.format(request.user.id),
                 'v_c_can_see_c.contact_id_2=contact.id'])
 
         for contact in contacts:
@@ -168,5 +168,5 @@ class ContactSearchCustomFilterParamsView(NgwUserAcl, View):
         filter_id = int(filter_id)
         customname, filter = filter_list[filter_id]
         assert filter[-1] == ')', \
-            "Custom filter %s should end with a ')'" % customname
+            "Custom filter {} should end with a ')'".format(customname)
         return JsonResponse({'submit_prefix': filter[:-1], 'params': []})

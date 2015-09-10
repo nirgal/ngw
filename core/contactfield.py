@@ -6,7 +6,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import AdminDateWidget
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.template import loader
+from django.template import Context, Template, loader
 from django.utils import formats, html, http
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
@@ -200,21 +200,22 @@ class EmailContactField(ContactField):
 
     def format_value_html(self, value):
         if gpg.is_email_secure(value):
-            gpg_indicator = ((
-                ' <a href="%(link)s">'
-                '<img src="%(static_dir)sngw/key.jpeg"'
-                ' alt=key title="%(alt)s" border=0>'
+            gpg_indicator = (
+                ' <a href="{link}">'
+                '<img src="{static_dir}ngw/key.jpeg"'
+                ' alt=key title="{alt}" border=0>'
                 '</a>'
-                ) % {
-                    'link': '/pks/lookup?op=get&options=mr&extact=on&search='
-                            + http.urlquote_plus(value),
-                    'static_dir': settings.STATIC_URL,
-                    'alt': _('GPG key available'),
-                })
+                ).format(
+                    link='/pks/lookup?op=get&options=mr&extact=on&search='
+                         + http.urlquote_plus(value),
+                    static_dir=settings.STATIC_URL,
+                    alt=_('GPG key available'),
+                )
         else:
             gpg_indicator = ''
-        return ('<a href="mailto:%(value)s">%(value)s</a>%(gpg_indicator)s'
-                % {'value': value, 'gpg_indicator': gpg_indicator})
+        return '<a href="mailto:{value}">{value}</a>{gpg_indicator}'.format(
+            value=value,
+            gpg_indicator=gpg_indicator)
 
     def get_form_fields(self):
         return forms.EmailField(label=self.name, required=False,
@@ -243,7 +244,7 @@ class PhoneContactField(ContactField):
 
     def format_value_html(self, value):
         # rfc3966
-        return '<a href="tel:%(value)s">%(value)s</a>' % {'value': value}
+        return '<a href="tel:{value}">{value}</a>'.format(value=value)
 
     def get_form_fields(self):
         return forms.CharField(label=self.name, max_length=255,
@@ -286,13 +287,11 @@ class ChoiceContactField(ContactField):
         proxy = True
 
     def type_as_html(self):
-        return (
-            "%(txtname)s (<a href='%(url)s'>%(txt)s</a>)"
-            ) % {
-                'txtname': self.str_type_base(),
-                'url': self.get_absolute_url() + "choices",
-                'txt': html.escape(_('Choices')),
-            }
+        return "{txtname} (<a href='{url}'>{txt}</a>)".format(
+            txtname=self.str_type_base(),
+            url=self.get_absolute_url() + "choices",
+            txt=html.escape(_('Choices')),
+            )
 
     def format_value_text(self, value):
         choices = self.cached_choices()
@@ -326,13 +325,11 @@ class MultipleChoiceContactField(ContactField):
         proxy = True
 
     def type_as_html(self):
-        return (
-            "%(txtname)s (<a href='%(url)s'>%(txt)s</a>)"
-            ) % {
-                'txtname': self.str_type_base(),
-                'url': self.get_absolute_url() + "choices",
-                'txt': html.escape(_('Choices')),
-            }
+        return "{txtname} (<a href='{url}'>{txt}</a>)".format(
+            txtname=self.str_type_base(),
+            url=self.get_absolute_url() + "choices",
+            txt=html.escape(_('Choices')),
+            )
 
     def format_value_text(self, value):
         choices = self.cached_choices()
@@ -384,16 +381,16 @@ class MultipleDoubleChoiceContactField(ContactField):
 
     def type_as_html(self):
         return (
-            "%(txtname)s ("
-            "<a href='%(url1)s'>%(txt1)s</a>, "
-            "<a href='%(url2)s'>%(txt2)s</a>)"
-            ) % {
-                'txtname': self.str_type_base(),
-                'url1': self.get_absolute_url() + "choices",
-                'txt1': html.escape(_('Choices column 1')),
-                'url2': self.get_absolute_url() + "choices2",
-                'txt2': html.escape(_('Choices column 2')),
-                }
+            "{txtname} ("
+            "<a href='{url1}'>{txt1}</a>, "
+            "<a href='{url2}'>{txt2}</a>)"
+            ).format(
+                txtname=self.str_type_base(),
+                url1=self.get_absolute_url() + "choices",
+                txt1=html.escape(_('Choices column 1')),
+                url2=self.get_absolute_url() + "choices2",
+                txt2=html.escape(_('Choices column 2')),
+                )
 
     def format_value_text(self, value):
         choices = self.cached_choices()
@@ -415,11 +412,12 @@ class MultipleDoubleChoiceContactField(ContactField):
                     choices_list.append((val1, val2, index))
                     break
             else:
-                print('Key %s lost in %s' % (key1, choices))
+                print('Key {0} lost in {1}'.format(key1, choices))
         choices_list.sort(key=lambda x: x[2])
-        return '<br>'.join([
-            '%s (%s)' % (value1, value2)
-            for value1, value2, indexkey1 in choices_list])
+        t = Template("{% for value1, value2, indexkey1 in choices_list %}"
+                     "{{ value1 }} ({{ value2 }})<br>"
+                     "{% endfor %}")
+        return t.render(Context({'choices_list': choices_list}))
 
     def get_form_fields(self):
         return DoubleChoicesField(label=self.name, required=False,

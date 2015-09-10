@@ -34,8 +34,8 @@ class LogoutView(TemplateView):
     def get_context_data(self, **kwargs):
         context = {
             'message': mark_safe(
-                _('Have a nice day!<br><br><a href="%s">Login again</a>.')
-                % settings.LOGIN_URL)
+                _('Have a nice day!<br><br><a href="{}">Login again</a>.')
+                .format(settings.LOGIN_URL))
         }
         context.update(kwargs)
         return super().get_context_data(**context)
@@ -53,18 +53,18 @@ class HomeView(NgwUserAcl, TemplateView):
             'EXISTS (SELECT *'
             '           FROM contact_in_group'
             '           WHERE contact_in_group.group_id = contact_group.id'
-            '             AND contact_in_group.contact_id=%s'
-            '             AND contact_in_group.flags & %s <> 0)'
-            % (self.request.user.id, perms.OPERATOR)])
+            '             AND contact_in_group.contact_id={}'
+            '             AND contact_in_group.flags & {} <> 0)'
+            .format(self.request.user.id, perms.OPERATOR)])
 
         qry_news = ContactGroupNews.objects.extra(
             tables={'v_cig_perm': 'v_cig_perm'},
             where=[
-                'v_cig_perm.contact_id = %s'
+                'v_cig_perm.contact_id = {}'
                 ' AND v_cig_perm.group_id '
                 '     = contact_group_news.contact_group_id'
-                ' AND v_cig_perm.flags & %s <> 0'
-                % (self.request.user.id, perms.VIEW_NEWS)])
+                ' AND v_cig_perm.flags & {} <> 0'
+                .format(self.request.user.id, perms.VIEW_NEWS)])
         paginator = Paginator(qry_news, 7)
 
         page = self.request.GET.get('page')
@@ -88,11 +88,11 @@ class HomeView(NgwUserAcl, TemplateView):
                 ) AS msg_info
                 ON contact_group.id=msg_info.group_id
             JOIN v_cig_perm
-                ON v_cig_perm.contact_id = %s
+                ON v_cig_perm.contact_id = {}
                 AND v_cig_perm.group_id = contact_group.id
-                AND v_cig_perm.flags & %s <> 0
+                AND v_cig_perm.flags & {} <> 0
             ORDER BY date DESC,name'''
-            % (self.request.user.id, perms.VIEW_MSGS))
+            .format(self.request.user.id, perms.VIEW_MSGS))
         context = {
             'title': _('Lastest news'),
             'nav': Navbar(),

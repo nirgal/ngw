@@ -180,8 +180,9 @@ class NgwListView(TemplateView):
         extra = '' if settings.DEBUG else '.min'
         js = []
         if self.actions is not None:
-            js.append('actions%s.js' % extra)
-        return forms.Media(js=[static('admin/js/%s' % url) for url in js])
+            js.append('actions{}.js'.format(extra))
+        return forms.Media(js=[static('admin/js/{}'.format(url))
+                               for url in js])
 
     def get_ordering(self, request):
         # This method is copied exactly fom BaseModelAdmin
@@ -309,13 +310,13 @@ class NgwListView(TemplateView):
         # Apply keyword searches.
         def construct_search(field_name):
             if field_name.startswith('^'):
-                return "%s__istartswith" % field_name[1:]
+                return "{}__istartswith".format(field_name[1:])
             elif field_name.startswith('='):
-                return "%s__iexact" % field_name[1:]
+                return "{}__iexact".format(field_name[1:])
             elif field_name.startswith('@'):
-                return "%s__search" % field_name[1:]
+                return "{}__search".format(field_name[1:])
             else:
-                return "%s__icontains" % field_name
+                return "{}__icontains".format(field_name)
 
         use_distinct = False
         search_fields = self.get_search_fields(request)
@@ -540,5 +541,5 @@ class NgwDeleteView(DeleteView):
 
         self.object.delete()
         messages.add_message(request, messages.SUCCESS,
-                             _('%s has been deleted.') % name)
+                             _('{} has been deleted.').format(name))
         return HttpResponseRedirect(success_url)

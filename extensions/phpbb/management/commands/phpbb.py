@@ -31,7 +31,8 @@ class Command(BaseCommand):
             loglevel = logging.ERROR
 
         logging.basicConfig(level=loglevel,
-                            format='%(asctime)s %(levelname)s %(message)s')
+                            format='{asctime} {levelname} {message}',
+                            style='{')
 
         if len(args) != 1:
             raise CommandError('Need exactly one argument')

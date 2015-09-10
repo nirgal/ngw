@@ -13,7 +13,7 @@ def check_login_exists(login):
         ContactFieldValue.objects.get(contact_field_id=FIELD_LOGIN,
                                       value=login)
     except ContactFieldValue.DoesNotExist:
-        raise CommandError('User "%s" does not exist' % login)
+        raise CommandError('User "{}" does not exist'.format(login))
 
 
 def call(*args):
@@ -94,7 +94,8 @@ class Command(NoArgsCommand):
             loglevel = logging.ERROR
 
         logging.basicConfig(level=loglevel,
-                            format='%(asctime)s %(levelname)s %(message)s')
+                            format='{asctime} {levelname} {message}',
+                            style='{')
 
         user_set = (ContactGroup.objects.get(pk=settings.XMPP_GROUP)
                                         .get_all_members())

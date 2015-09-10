@@ -12,7 +12,7 @@ class Command(NoArgsCommand):
         logger = logging.getLogger('gpgdump')
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter(
-            '%(asctime)s %(name)s %(levelname)-8s %(message)s'))
+            '{asctime} {name} {levelname!s:8} {message}', style='{'))
         logger.addHandler(handler)
         verbosity = int(options['verbosity'])
         if verbosity == 0:

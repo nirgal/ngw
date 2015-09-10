@@ -25,7 +25,7 @@ class Command(NoArgsCommand):
         logger = logging.getLogger('msgsync')
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter(
-            '%(asctime)s %(name)s %(levelname)-8s %(message)s'))
+            '{asctime} {name} {levelname!s:8} {message}', style='{'))
         logger.addHandler(handler)
         verbosity = int(options['verbosity'])
         if verbosity == 0:
@@ -48,7 +48,7 @@ class Command(NoArgsCommand):
             pid_file = open(pid_filename, 'a+')
         except:
             self.logger.critical(
-                "Can't open file %s in read/write mode" % pid_filename)
+                "Can't open file {} in read/write mode".format(pid_filename))
             sys.exit(1)
 
         try:
@@ -56,7 +56,7 @@ class Command(NoArgsCommand):
         except:
             # Another process is currently modifying the pid file.
             self.logger.critical(
-                "Can't lock pid file %s. Aborting." % pid_filename)
+                "Can't lock pid file {}. Aborting.".format(pid_filename))
             sys.exit(1)
 
         pid_file.seek(0)
@@ -64,18 +64,18 @@ class Command(NoArgsCommand):
         if pid:
             # pid file is not empty!
             self.logger.warning(
-                "PID file found. Checking process %s." % pid)
-            if os.path.exists('/proc/%s' % pid):
+                "PID file found. Checking process {}.".format(pid))
+            if os.path.exists('/proc/{}'.format(pid)):
                 self.logger.critical(
-                    "Process %s is running. Aborting." % pid)
+                    "Process {} is running. Aborting.".format(pid))
                 sys.exit(1)
             else:
                 self.logger.error(
-                    "Process %s is not running. Ignoring stalled pid file."
-                    % pid)
+                    "Process {} is not running. Ignoring stalled pid file."
+                    .format(pid))
 
         pid_file.seek(0)
-        pid_file.write('%s' % os.getpid())
+        pid_file.write(str(os.getpid()))
         # This releases the lock, leaving the pid file: success:
         pid_file.close()
 
@@ -90,6 +90,6 @@ class Command(NoArgsCommand):
                 func = getattr(backend, func_name)
             except AttributeError:
                 raise ImproperlyConfigured((
-                    'Module "%s" does not define a "%s" function'
-                    % (backend, func_name)))
+                    'Module "{}" does not define a "{}" function'
+                    .format(backend, func_name)))
             func(msg)

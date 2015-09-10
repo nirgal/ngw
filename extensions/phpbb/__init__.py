@@ -39,7 +39,8 @@ def get_phpbb_acl_dictionary():
 
 def get_config(key):
     cursor = get_cursor()
-    sql = "SELECT config_value FROM phpbb_config WHERE config_name='%s'" % key
+    sql = ("SELECT config_value FROM phpbb_config WHERE config_name='{}'"
+           .format(key))
     cursor.execute(sql)
     row = cursor.fetchone()
     return row[0]
@@ -47,8 +48,8 @@ def get_config(key):
 
 def set_config(key, value):
     cursor = get_cursor()
-    sql = ("UPDATE phpbb_config SET config_value='%s' WHERE config_name='%s'"
-           % (value, key))
+    sql = ("UPDATE phpbb_config SET config_value='{}' WHERE config_name='{}'"
+           .format(value, key))
     # print(sql, file=sys.stderr)
     cursor.execute(sql)
 
@@ -89,25 +90,25 @@ def sync_user_base(u):
             INSERT INTO phpbb_users (user_id, group_id, user_permissions,
                 user_regdate, username, username_clean, user_email, user_lang,
                 user_timezone, user_dst, user_dateformat)
-            VALUES(%(phpbb_user_id)d, 2, '%(user_permissions)s', %(regtime)d,
-                '%(f_login)s', '%(f_login)s', 'noemail', '%(lang)s',
-                %(timezone)s, %(dst)s, '%(dateformat)s')""" % {
-            'phpbb_user_id': phpbb_user_id,
-            'user_permissions': DEFAULT_USER_PERMISSIONS,
-            'f_login': f_login,
-            'regtime': int(timestamp()),
-            'lang': get_config('default_lang'),
-            'timezone': get_config('board_timezone'),
-            'dst': get_config('board_dst'),
-            'dateformat': get_config('default_dateformat')}
+            VALUES({phpbb_user_id}, 2, '{user_permissions}', {regtime},
+                '{f_login}', '{f_login}', 'noemail', '{lang}',
+                {timezone}, {dst}, '{dateformat}')""".format(
+            phpbb_user_id=phpbb_user_id,
+            user_permissions=DEFAULT_USER_PERMISSIONS,
+            f_login=f_login,
+            regtime=int(timestamp()),
+            lang=get_config('default_lang'),
+            timezone=get_config('board_timezone'),
+            dst=get_config('board_dst'),
+            dateformat=get_config('default_dateformat'))
         # print(sql, file=sys.stderr)
         cursor.execute(sql)
         phpbb_changed = True
 
         sql = """
             INSERT INTO phpbb_user_group (user_id, group_id, user_pending)
-            VALUES(%(phpbb_user_id)d, 2, 0)""" % {
-            'phpbb_user_id': phpbb_user_id}
+            VALUES({phpbb_user_id}, 2, 0)""".format(
+            phpbb_user_id=phpbb_user_id)
         # print(sql, file=sys.stderr)
         cursor.execute(sql)
         phpbb_changed = True
@@ -121,7 +122,8 @@ def sync_user_base(u):
     phpbb_user_id = int(phpbb_user_id)
 
     # fix logins
-    sql = "SELECT username FROM phpbb_users WHERE user_id='%d'" % phpbb_user_id
+    sql = "SELECT username FROM phpbb_users WHERE user_id='{}'".format(
+        phpbb_user_id)
     cursor.execute(sql)
     # TODO: might crash if databases sync was lost
     phpbb_username = cursor.fetchone()[0]
@@ -130,10 +132,10 @@ def sync_user_base(u):
               file=sys.stderr)
         sql = """
             UPDATE phpbb_users
-            SET (username, username_clean) = ('%(sql_login)s', '%(sql_login)s')
-            WHERE user_id=%(user_id)d""" % {
-            'user_id': phpbb_user_id,
-            'sql_login': f_login.replace("'", "''")}
+            SET (username, username_clean) = ('{sql_login}', '{sql_login}')
+            WHERE user_id={user_id}""".format(
+            user_id=phpbb_user_id,
+            sql_login=f_login.replace("'", "''"))
         print(sql, file=sys.stderr)
         cursor.execute(sql)
         phpbb_changed = True
@@ -147,8 +149,8 @@ def sync_user_in_group(ngwuser, phpbb_user_id, php_group_id, ngw_group_id):
 
     # Test whether phpbb allready is ok
     sql = """
-        SELECT * FROM phpbb_user_group WHERE user_id=%s AND group_id=%d
-        """ % (phpbb_user_id, php_group_id)
+        SELECT * FROM phpbb_user_group WHERE user_id={} AND group_id={}
+        """.format(phpbb_user_id, php_group_id)
     # print(sql, file=sys.stderr)
     cursor.execute(sql)
     was_member = cursor.fetchone() is not None
@@ -161,9 +163,9 @@ def sync_user_in_group(ngwuser, phpbb_user_id, php_group_id, ngw_group_id):
                   file=sys.stderr)
             sql = """
                 INSERT INTO phpbb_user_group (user_id, group_id, user_pending)
-                VALUES(%(phpbb_user_id)d, %(group_id)d, 0)""" % {
-                'phpbb_user_id': phpbb_user_id,
-                'group_id': php_group_id}
+                VALUES({phpbb_user_id}, {group_id}, 0)""".format(
+                phpbb_user_id=phpbb_user_id,
+                group_id=php_group_id)
             print(sql, file=sys.stderr)
             cursor.execute(sql)
             phpbb_changed = True
@@ -175,10 +177,10 @@ def sync_user_in_group(ngwuser, phpbb_user_id, php_group_id, ngw_group_id):
                   file=sys.stderr)
             sql = """
                 DELETE FROM phpbb_user_group
-                WHERE user_id=%(phpbb_user_id)d
-                AND group_id=%(group_id)d""" % {
-                'phpbb_user_id': phpbb_user_id,
-                'group_id': php_group_id}
+                WHERE user_id={phpbb_user_id}
+                AND group_id={group_id}""".format(
+                phpbb_user_id=phpbb_user_id,
+                group_id=php_group_id)
             print(sql, file=sys.stderr)
             cursor.execute(sql)
             phpbb_changed = True
@@ -212,8 +214,8 @@ def phpbb_hook_membership_changed(request, contact, ngw_group):
               file=sys.stderr)  # FIXME
         messages.add_message(
             request, messages.ERROR,
-            "Can't synchronise PHPBB user %s with empty login."
-            % contact.name)
+            "Can't synchronise PHPBB user {} with empty login.".format(
+                contact.name))
         return
 
     phpbb_user_id, phpbb_changed = sync_user_base(contact)
@@ -252,7 +254,8 @@ def login_updated(request, contact):
               file=sys.stderr)
         messages.add_message(
             request, messages.ERROR,
-            "Can't synchronise PHPBB user %s with empty login." % contact.name
+            "Can't synchronise PHPBB user {} with empty login.".format(
+                contact.name)
             )
         return
 

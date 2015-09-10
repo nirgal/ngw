@@ -100,12 +100,12 @@ class ContactQuerySet(RawQuerySet):
         '''
         fieldid = str(fieldid)
         self.qry_from.append(
-            'LEFT JOIN contact_field_value AS cfv%(fid)s'
-            ' ON (contact.id = cfv%(fid)s.contact_id'
-            '     AND cfv%(fid)s.contact_field_id = %(fid)s)'
-            % {'fid': fieldid})
-        self.qry_fields[DISP_FIELD_PREFIX+fieldid] = (
-            'cfv%(fid)s.value' % {'fid': fieldid})
+            'LEFT JOIN contact_field_value AS cfv{fid}'
+            ' ON (contact.id = cfv{fid}.contact_id'
+            '     AND cfv{fid}.contact_field_id = {fid})'
+            .format(fid=fieldid))
+        self.qry_fields[DISP_FIELD_PREFIX+fieldid] = 'cfv{fid}.value'.format(
+            fid=fieldid)
 
     def add_group(self, group_id):
         '''
@@ -113,37 +113,37 @@ class ContactQuerySet(RawQuerySet):
         The caller is reponsible for checking requesting user is authorized to
         view that group's members.
         '''
-        group_flags_key = 'group_%s_flags' % group_id
+        group_flags_key = 'group_{}_flags'.format(group_id)
         if group_flags_key in self.qry_fields:
             # We already have these fields
             return
 
         # Add column for direct membership / admin
-        self.qry_fields[group_flags_key] = 'cig_%s.flags' % group_id
+        self.qry_fields[group_flags_key] = 'cig_{}.flags'.format(group_id)
         self.qry_from.append(
-            'LEFT JOIN contact_in_group AS cig_%(gid)s'
-            ' ON (contact.id = cig_%(gid)s.contact_id'
-            '     AND cig_%(gid)s.group_id=%(gid)s'
+            'LEFT JOIN contact_in_group AS cig_{gid}'
+            ' ON (contact.id = cig_{gid}.contact_id'
+            '     AND cig_{gid}.group_id={gid}'
             ')'
-            % {'gid': group_id})
+            .format(gid=group_id))
 
         # Add column for indirect membership
-        self.qry_fields['group_%s_inherited_flags' % group_id] = (
-            'cig_inherited_%s.flags' % group_id)
+        self.qry_fields['group_{}_inherited_flags'.format(group_id)] = (
+            'cig_inherited_{}.flags'.format(group_id))
         self.qry_from.append('''
             LEFT JOIN (
                 SELECT contact_id, bit_or(flags) AS flags
                 FROM contact_in_group
                 WHERE contact_in_group.group_id
-                        IN (SELECT self_and_subgroups(%(gid)s))
-                    AND contact_in_group.group_id<>%(gid)s
-                GROUP BY contact_id) AS cig_inherited_%(gid)s
-            ON (contact.id = cig_inherited_%(gid)s.contact_id)'''
-                             % {'gid': group_id})
+                        IN (SELECT self_and_subgroups({gid}))
+                    AND contact_in_group.group_id<>{gid}
+                GROUP BY contact_id) AS cig_inherited_{gid}
+            ON (contact.id = cig_inherited_{gid}.contact_id)
+            '''.format(gid=group_id))
 
         # Add column for inherited admin
-        self.qry_fields['group_%s_inherited_aflags' % group_id] = (
-            'gmg_inherited_%s.flags' % group_id)
+        self.qry_fields['group_{}_inherited_aflags'.format(group_id)] = (
+            'gmg_inherited_{}.flags'.format(group_id))
         self.qry_from.append('''
             LEFT JOIN (
                 SELECT contact_id, bit_or(gmg_perms.flags) AS flags
@@ -152,43 +152,45 @@ class ContactQuerySet(RawQuerySet):
                     SELECT self_and_subgroups(father_id) AS group_id,
                         bit_or(flags) AS flags
                     FROM group_manage_group
-                    WHERE subgroup_id=%(gid)s
+                    WHERE subgroup_id={gid}
                     GROUP BY group_id
                 ) AS gmg_perms
                 ON contact_in_group.group_id=gmg_perms.group_id
                     AND contact_in_group.flags & 1 <> 0
                 GROUP BY contact_id
-            ) AS gmg_inherited_%(gid)s
-            ON contact.id=gmg_inherited_%(gid)s.contact_id'''
-                             % {'gid': group_id})
+            ) AS gmg_inherited_{gid}
+            ON contact.id=gmg_inherited_{gid}.contact_id
+            '''.format(gid=group_id))
 
-        self.qry_fields['group_%s_note' % group_id] = 'cig_%s.note' % group_id
+        self.qry_fields['group_{}_note'.format(group_id)] = (
+            'cig_{}.note'.format(group_id))
 
     def add_messages(self, group_id):
         '''
         Add column with how many messages are there.
         '''
 
-        self.qry_fields['group_%s_msgcount' % group_id] = '''(
+        self.qry_fields['group_{}_msgcount'.format(group_id)] = '''(
             SELECT count(*)
             FROM contact_message
             WHERE contact_message.contact_id = contact.id
-            AND group_id = %(group_id)s
-        )''' % {'group_id': group_id}
-        self.qry_fields['group_%s_unreadcount' % group_id] = '''(
+            AND group_id = {group_id}
+        )'''.format(group_id=group_id)
+        self.qry_fields['group_{}_unreadcount'.format(group_id)] = '''(
             SELECT count(*)
             FROM contact_message
             WHERE contact_message.contact_id = contact.id
-            AND group_id = %(group_id)s
+            AND group_id = {group_id}
             AND is_answer
             AND read_date IS NULL
-        )''' % {'group_id': group_id}
+        )'''.format(group_id=group_id)
 
     def filter(self, extrawhere=None, pk__in=None):
         if extrawhere is not None:
             self.qry_where.append(extrawhere)
         if pk__in:
-            self.qry_where.append('contact.id IN (%s)' % ','.join(pk__in))
+            self.qry_where.append('contact.id IN ({})'.format(
+                ','.join(pk__in)))
         return self
 
     def add_params(self, params):
@@ -207,7 +209,7 @@ class ContactQuerySet(RawQuerySet):
 
     def compile(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS "%s"' % (v, k)
+        qry += ', '.join(['{} AS "{}"'.format(v, k)
                           for k, v in self.qry_fields.items()])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
@@ -222,10 +224,10 @@ class ContactQuerySet(RawQuerySet):
             qry += ' ORDER BY ' + ', '.join(order)
 
         if self.offset:
-            qry += ' OFFSET %s' % self.offset
+            qry += ' OFFSET {}'.format(self.offset)
 
         if self.limit:
-            qry += ' LIMIT %s' % self.limit
+            qry += ' LIMIT {}'.format(self.limit)
 
         self.raw_query = qry
         self.query = sql.RawQuery(sql=qry, using=self.db, params=self.params)
@@ -234,7 +236,7 @@ class ContactQuerySet(RawQuerySet):
 
     def count(self):
         qry = 'SELECT '
-        qry += ', '.join(['%s AS %s' % (v, k)
+        qry += ', '.join(['{} AS {}'.format(v, k)
                           for k, v in self.qry_fields.items()])
         qry += ' FROM ' + ' '.join(self.qry_from)
         if self.qry_where:
@@ -288,30 +290,31 @@ def get_default_columns(user):
             try:
                 groupid = int(fname[len(DISP_GROUP_PREFIX):])
             except ValueError:
-                print('Error in default fields: %s has invalid syntax.'
-                      % fname)
+                print('Error in default fields: {} has invalid syntax.'
+                      .format(fname))
                 continue
             try:
                 ContactGroup.objects.get(pk=groupid)
             except ContactGroup.DoesNotExist:
-                print('Error in default fields: There is no group #%d.'
-                      % groupid)
+                print('Error in default fields: There is no group #{}.'
+                      .format(groupid))
                 continue
         elif fname.startswith(DISP_FIELD_PREFIX):
             try:
                 fieldid = int(fname[len(DISP_FIELD_PREFIX):])
             except ValueError:
-                print('Error in default fields: %s has invalid syntax.'
-                      % fname)
+                print('Error in default fields: {} has invalid syntax.'
+                      .format(fname))
                 continue
             try:
                 ContactField.objects.get(pk=fieldid)
             except ContactField.DoesNotExist:
-                print('Error in default fields: There is no field #%d.'
-                      % fieldid)
+                print('Error in default fields: There is no field #{}.'
+                      .format(fieldid))
                 continue
         else:
-            print('Error in default fields: Invalid syntax in "%s".' % fname)
+            print('Error in default fields: Invalid syntax in "{}".'
+                  .format(fname))
             continue
         result.append(fname)
     if not result:
@@ -351,15 +354,16 @@ class FieldSelectForm(forms.Form):
 
 
 def membership_to_text(contact_with_extra_fields, group_id):
-    flags = getattr(contact_with_extra_fields, 'group_%s_flags' % group_id)
+    flags = getattr(contact_with_extra_fields,
+                    'group_{}_flags'.format(group_id))
     if flags is None:
         flags = 0
     flags_inherited = getattr(contact_with_extra_fields,
-                              'group_%s_inherited_flags' % group_id)
+                              'group_{}_inherited_flags'.format(group_id))
     if flags_inherited is None:
         flags_inherited = 0
     flags_ainherited = getattr(contact_with_extra_fields,
-                               'group_%s_inherited_aflags' % group_id)
+                               'group_{}_inherited_aflags'.format(group_id))
     if flags_ainherited is None:
         flags_ainherited = 0
 
@@ -377,12 +381,12 @@ def membership_to_text_factory(group_id):
 def membership_extended_widget(request, contact_with_extra_fields,
                                contact_group):
     flags = getattr(contact_with_extra_fields,
-                    'group_%s_flags' % contact_group.id)
+                    'group_{}_flags'.format(contact_group.id))
     msg_count = getattr(contact_with_extra_fields,
-                        'group_%s_msgcount' % contact_group.id,
+                        'group_{}_msgcount'.format(contact_group.id),
                         0)
     msg_count_unread = getattr(contact_with_extra_fields,
-                               'group_%s_unreadcount' % contact_group.id,
+                               'group_{}_unreadcount'.format(contact_group.id),
                                0)
     return loader.render_to_string('membership_widget.html', {
         'cid': contact_with_extra_fields.id,
@@ -390,14 +394,14 @@ def membership_extended_widget(request, contact_with_extra_fields,
         'membership_str': membership_to_text(contact_with_extra_fields,
                                              contact_group.id),
         'note': getattr(contact_with_extra_fields,
-                        'group_%s_note' % contact_group.id) or '',
+                        'group_{}_note'.format(contact_group.id)) or '',
         'membership': perms.int_to_flags(flags or 0),
         'cig_url': contact_group.get_absolute_url()
         + 'members/'
         + str(contact_with_extra_fields.id),
-        'title': _('%(contact)s in group %(group)s') % {
-            'contact': contact_with_extra_fields,
-            'group': contact_group},
+        'title': _('{contact} in group {group}').format(
+            contact=contact_with_extra_fields,
+            group=contact_group),
         'msg_count': msg_count,
         'msg_count_unread': msg_count_unread,
         })
@@ -521,8 +525,8 @@ class BaseContactListView(NgwListView):
                 setattr(self, attribute_name, attribute)
                 list_display.append(attribute_name)
 
-                # cols.append(('group_%s_flags' % groupid,
-                #              'group_%s_flags' % groupid, None))
+                # cols.append(('group_{}_flags'.format(groupid),
+                #              'group_{}_flags'.format(groupid), None))
 
             elif prop.startswith(DISP_FIELD_PREFIX):
                 fieldid = prop[len(DISP_FIELD_PREFIX):]
@@ -552,12 +556,14 @@ class BaseContactListView(NgwListView):
                 request, current_cg)
             self.group_status.short_description = _('Status')
             list_display.append('group_status')
-            # cols.append(('group_%s_flags' % current_cg.id,
-            #              'group_%s_flags' % current_cg.id, None))
-            # cols.append(('group_%s_inherited_flags' % current_cg.id,
-            #              'group_%s_inherited_flags' % current_cg.id, None))
-            # cols.append(('group_%s_inherited_aflags' % current_cg.id,
-            #              'group_%s_inherited_aflags' % current_cg.id, None))
+            # cols.append(('group_{}_flags'.format(current_cg.id),
+            #              'group_{}_flags'.format(current_cg.id), None))
+            # cols.append(('group_{}_inherited_flags'.format(current_cg.id),
+            #              'group_{}_inherited_flags'.format(current_cg.id),
+            #              None))
+            # cols.append(('group_{}_inherited_aflags'.format(current_cg.id),
+            #              'group_{}_inherited_aflags'.format(current_cg.id),
+            #              None))
 
         self.list_display = list_display
         return q
@@ -588,9 +594,9 @@ class BaseContactListView(NgwListView):
         return result
 
     def name_with_relative_link(self, contact):
-        return (
-            '<a href="%(id)d/"><b>%(name)s</a></b>'
-            % {'id': contact.id, 'name': html.escape(contact.name)})
+        return '<a href="{id}/"><b>{name}</a></b>'.format(
+            id=contact.id,
+            name=html.escape(contact.name))
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'
     name_with_relative_link.allow_tags = True
@@ -644,8 +650,8 @@ class BaseContactListView(NgwListView):
 
         messages.add_message(
             request, messages.WARNING,
-            _('The following people do not have an email address: %s')
-            % ', '.join(noemails))
+            _('The following people do not have an email address: {}')
+            .format(', '.join(noemails)))
 
         response = HttpResponse(status=303)
         response['Location'] = 'mailto:?bcc=' + ','.join(emails)
@@ -677,7 +683,8 @@ class ContactListView(NgwUserAcl, BaseContactListView):
 
         qs.qry_from.append(
             'JOIN v_c_can_see_c ON contact.id=v_c_can_see_c.contact_id_2')
-        qs.filter('v_c_can_see_c.contact_id_1 = %s' % self.request.user.id)
+        qs.filter('v_c_can_see_c.contact_id_1 = {}'.format(
+            self.request.user.id))
 
         return qs
 
@@ -742,7 +749,7 @@ class GroupAddManyForm(forms.Form):
         contacts = contacts.extra(
             tables=('v_c_can_see_c',),
             where=(
-                'v_c_can_see_c.contact_id_1=%s' % self.user.id,
+                'v_c_can_see_c.contact_id_1={}'.format(self.user.id),
                 'v_c_can_see_c.contact_id_2=contact.id'))
 
         modes = ''
@@ -769,7 +776,7 @@ class GroupAddManyView(NgwUserAcl, FormView):
     def get_context_data(self, **kwargs):
         context = {}
         ids = self.request.REQUEST['ids'].split(',')
-        context['title'] = _('Add %s contact(s) to a group') % len(ids)
+        context['title'] = _('Add {} contact(s) to a group').format(len(ids))
         context['nav'] = Navbar(Contact.get_class_navcomponent())
         context['nav'].add_component(('add_to_group', _('add contacts to')))
         context.update(kwargs)
@@ -827,7 +834,7 @@ class ContactDetailView(InGroupAcl, TemplateView):
                 pass  # ignore blank values
 
         context = {}
-        context['title'] = _('Details for %s') % contact
+        context['title'] = _('Details for {}').format(contact)
         cg = self.contactgroup
         if cg:
             # context['title'] += ' in group '+str(cg)
@@ -1042,7 +1049,7 @@ class ContactEditMixin(ModelFormMixin):
 
         messages.add_message(
             request, messages.SUCCESS,
-            _('Contact %s has been saved.') % contact.name)
+            _('Contact {} has been saved.').format(contact.name))
 
         if self.pk_url_kwarg not in self.kwargs:  # new added instance
             base_url = '.'
@@ -1059,10 +1066,11 @@ class ContactEditMixin(ModelFormMixin):
     def get_context_data(self, **kwargs):
         context = {}
         if self.object:
-            title = _('Editing %s') % self.object
+            title = _('Editing {}').format(self.object)
             id = self.object.id
         else:
-            title = _('Adding a new %s') % Contact.get_class_verbose_name()
+            title = _('Adding a new {}').format(
+                Contact.get_class_verbose_name())
             id = None
         context['title'] = title
         context['id'] = id
@@ -1113,7 +1121,7 @@ class ContactPasswordForm(forms.ModelForm):
         try:
             crack.FascistCheck(self.cleaned_data.get('new_password', ''))
         except ValueError as err:
-            raise forms.ValidationError("%s" % err)
+            raise forms.ValidationError("{}".format(err))
 
         return self.cleaned_data
 
@@ -1397,7 +1405,7 @@ class FilterEditForm(forms.Form):
             self.filter_html = _(
                 "[Permission was denied to explain that filter. You probably"
                 " don't have access to the fields / group names it is using.]"
-                "<br>Raw filter=%s") % filterstr
+                "<br>Raw filter={}").format(filterstr)
         except ContactField.DoesNotExist:
             self.filter_html = _(
                 "[This filter uses a field that doesn't exist anymore.]")
@@ -1407,7 +1415,7 @@ class FilterEditForm(forms.Form):
         filter_list[self.fid] = (
             self.cleaned_data['name'], filter_list[self.fid][1])
         filter_list_str = ','.join(
-            ['"%s","%s"' % filterdata for filterdata in filter_list])
+            ['"{}","{}"'.format(*filterdata) for filterdata in filter_list])
         self.contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
 
 
@@ -1516,9 +1524,9 @@ class DefaultGroupForm(forms.ModelForm):
         contact = self.instance
         if not default_group:
             cg = ContactGroup(
-                name=_('Group of %s') % contact.name,
-                description=_('This is the default group of %s')
-                % contact.name,
+                name=_('Group of {}').format(contact.name),
+                description=_('This is the default group of {}').format(
+                    contact.name),
                 )
             cg.save()
             cg.check_static_folder_created()
@@ -1587,17 +1595,17 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
 #     q = Contact.objects
 #     q = q.extra(where=["EXISTS (SELECT * FROM contact_field_value "
 # " WHERE contact_field_value.contact_id = contact.id "
-# " AND contact_field_value.contact_field_id = %(field_id)i"
-# " AND value='%(value)s')" % { 'field_id': FIELD_PASSWORD_STATUS,
-#                               'value': '1' }])
+# " AND contact_field_value.contact_field_id = {field_id}"
+# " AND value='{value}')".format(field_id=FIELD_PASSWORD_STATUS,
+#                                value='1' )])
 #     q = q.extra(where=['EXISTS (SELECT * FROM contact_field_value
 #       WHERE contact_field_value.contact_id = contact.id
-#       AND contact_field_value.contact_field_id = %(field_id)i)'
-#       % { 'field_id': FIELD_STREET}])
+#       AND contact_field_value.contact_field_id = {field_id})'
+#       .format(field_id=FIELD_STREET)])
 #     q.extra(where=['EXISTS (SELECT * FROM contact_field_value '
 #       'WHERE contact_field_value.contact_id = contact.id'
-#       'AND contact_field_value.contact_field_id = %(field_id)i)'
-#       % { 'field_id': FIELD_CITY}])
+#       'AND contact_field_value.contact_field_id = {field_id})'
+#       .format(field_id=FIELD_CITY)])
 #     ids = [ row.id for row in q ]
 #     #print(ids)
 #     if not ids:

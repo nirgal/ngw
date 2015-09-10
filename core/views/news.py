@@ -42,7 +42,7 @@ class NewsListView(InGroupAcl, ListView):
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
         context = {}
-        context['title'] = _('News for group %s') % cg.name
+        context['title'] = _('News for group {}').format(cg.name)
         context['objtype'] = ContactGroupNews
         context['nav'] = cg.get_smart_navbar()
         context['nav'].add_component(('news', _('news')))
@@ -85,11 +85,11 @@ class NewsEditMixin(ModelFormMixin):
     def get_context_data(self, **kwargs):
         context = {}
         if self.object:
-            title = _('Editing %s') % self.object
+            title = _('Editing {}').format(self.object)
             id = self.object.id
         else:
-            title = _('Adding a new %s') % \
-                ContactGroupNews.get_class_verbose_name()
+            title = _('Adding a new {}').format(
+                ContactGroupNews.get_class_verbose_name())
             id = None
         context['title'] = title
         context['id'] = id
@@ -111,7 +111,7 @@ class NewsEditMixin(ModelFormMixin):
         response = super().form_valid(form)
         messages.add_message(
             request, messages.SUCCESS,
-            _('News %s has been saved.') % self.object)
+            _('News {} has been saved.').format(self.object))
         if request.POST.get('_continue', None):
             return HttpResponseRedirect(self.object.get_absolute_url())
         elif request.POST.get('_addanother', None):

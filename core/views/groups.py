@@ -111,9 +111,9 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
     def locked(self, group):
         if group.system:
             return (
-                '<img src="%sngw/lock.png" alt="locked"'
+                '<img src="{}ngw/lock.png" alt="locked"'
                 ' width="10" height="10">'
-                % settings.STATIC_URL)
+                .format(settings.STATIC_URL))
         return ''
     locked.short_description = ugettext_lazy('Locked')
     locked.admin_order_field = 'system'
@@ -164,7 +164,7 @@ class YearMonthCal:
         if month < 1:
             month = 12
             year -= 1
-        return '%s-%s' % (year, month)
+        return '{}-{}'.format(year, month)
 
     def next_month(self):
         year, month = self.year, self.month
@@ -172,13 +172,13 @@ class YearMonthCal:
         if month > 12:
             month = 1
             year += 1
-        return '%s-%s' % (year, month)
+        return '{}-{}'.format(year, month)
 
     def prev_year(self):
-        return '%s-%s' % (self.year-1, self.month)
+        return '{}-{}'.format(self.year-1, self.month)
 
     def next_year(self):
-        return '%s-%s' % (self.year+1, self.month)
+        return '{}-{}'.format(self.year+1, self.month)
 
     def weeks(self):
         first_day_of_week = formats.get_format('FIRST_DAY_OF_WEEK')
@@ -279,7 +279,7 @@ def get_date_stamp(d):
 def get_ms_json_date_format(d):
     """获取MS Ajax Json Data Format /Date(@tickets)/"""
     stamp = get_date_stamp(d)
-    return r'/Date(%d)/' % stamp
+    return '/Date({})/'.format(stamp)
 
 
 class DatetimeJSONEncoder(json.JSONEncoder):
@@ -490,10 +490,10 @@ class MemberFilter(filters.SimpleListFilter):
                 '   SELECT *'
                 '   FROM contact_in_group'
                 '   WHERE contact_id=contact.id'
-                '   AND group_id=%s'
-                '   AND flags & %s <> 0'
+                '   AND group_id={}'
+                '   AND flags & {} <> 0'
                 ')'
-                % (cg.id, wanted_flags))
+                .format(cg.id, wanted_flags))
         else:
             # We want inherited people
             or_conditions = []
@@ -503,22 +503,22 @@ class MemberFilter(filters.SimpleListFilter):
                 '   SELECT *'
                 '   FROM contact_in_group'
                 '   WHERE contact_id=contact.id'
-                '   AND group_id=%s'
-                '   AND flags & %s <> 0'
+                '   AND group_id={}'
+                '   AND flags & {} <> 0'
                 ')'
-                % (cg.id, wanted_flags))
+                .format(cg.id, wanted_flags))
             # The inherited memberships/invited/declined
             or_conditions.append(
                 'EXISTS ('
                 '   SELECT *'
                 '   FROM contact_in_group'
                 '   WHERE contact_id=contact.id'
-                '   AND group_id IN (SELECT self_and_subgroups(%s))'
-                '   AND flags & %s <> 0'
+                '   AND group_id IN (SELECT self_and_subgroups({}))'
+                '   AND flags & {} <> 0'
                 ')'
-                % (cg.id, wanted_flags & (perms.MEMBER
-                                          | perms.INVITED
-                                          | perms.DECLINED)))
+                .format(cg.id, wanted_flags & (perms.MEMBER
+                                               | perms.INVITED
+                                               | perms.DECLINED)))
             # The inherited admins
             or_conditions.append(
                 'EXISTS ('
@@ -526,11 +526,11 @@ class MemberFilter(filters.SimpleListFilter):
                 '   FROM contact_in_group'
                 '   WHERE contact_in_group.contact_id=contact.id'
                 '   AND group_id IN (SELECT self_and_subgroups(father_id)'
-                '   FROM group_manage_group WHERE subgroup_id=%s'
-                '   AND group_manage_group.flags & %s <> 0'
+                '   FROM group_manage_group WHERE subgroup_id={}'
+                '   AND group_manage_group.flags & {} <> 0'
                 '   )'
                 ' AND contact_in_group.flags & 1 <> 0)'
-                % (cg.id, wanted_flags & perms.ADMIN_ALL))
+                .format(cg.id, wanted_flags & perms.ADMIN_ALL))
 
             q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
             return q
@@ -547,7 +547,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
         context = {}
-        context['title'] = _('Contacts of group %s') % cg
+        context['title'] = _('Contacts of group {}').format(cg)
 
         context['nav'] = cg.get_smart_navbar() \
                            .add_component(('members', _('members')))
@@ -618,7 +618,7 @@ class ContactGroupForm(forms.ModelForm):
 
         # Add fields for kind of permissions
         for flag in 'oveEcCfFnNuUxX':
-            field_name = 'admin_%s_groups' % flag
+            field_name = 'admin_{}_groups'.format(flag)
             if instance:
                 intflag = perms.FLAGTOINT[flag]
                 field_initial = instance.get_visible_mananger_groups_ids(
@@ -685,7 +685,7 @@ class ContactGroupForm(forms.ModelForm):
 
         # Update the administrative groups
         for flag in 'oveEcCfFnNuUxX':
-            field_name = 'admin_%s_groups' % flag
+            field_name = 'admin_{}_groups'.format(flag)
             intflag = perms.FLAGTOINT[flag]
             old_groups_ids = set(
                 cg.get_visible_mananger_groups_ids(self.user.id, intflag))
@@ -739,7 +739,7 @@ class GroupEditMixin(ModelFormMixin):
 
         messages.add_message(
             request, messages.SUCCESS,
-            _('Group %s has been changed successfully!') % cg)
+            _('Group {} has been changed successfully!').format(cg))
 
         cg.check_static_folder_created()
         Contact.objects.check_login_created(request)  # subgroups change
@@ -759,11 +759,11 @@ class GroupEditMixin(ModelFormMixin):
     def get_context_data(self, **kwargs):
         context = {}
         if self.object:
-            title = _('Editing %s') % self.object
+            title = _('Editing {}').format(self.object)
             id = self.object.id
         else:
-            title = (_('Adding a new %s')
-                     % ContactGroup.get_class_verbose_name())
+            title = (_('Adding a new {}')
+                     .format(ContactGroup.get_class_verbose_name()))
             id = None
 
         context['title'] = title
@@ -834,7 +834,7 @@ class GroupDeleteView(InGroupAcl, NgwDeleteView):
         if cg.system:
             messages.add_message(
                 self.request, messages.ERROR,
-                _('Group %s is locked and CANNOT be deleted.') % cg.name)
+                _('Group {} is locked and CANNOT be deleted.').format(cg.name))
             raise PermissionDenied
         return cg
 
@@ -957,16 +957,15 @@ class ContactInGroupView(InGroupAcl, FormView):
         if cig:
             messages.add_message(
                 self.request, messages.SUCCESS,
-                _('Member %(contact)s of group %(group)s has been changed.')
-                % {
-                    'contact': contact.name,
-                    'group': cg.name})
+                _('Member {contact} of group {group} has been changed.')
+                .format(contact=contact.name,
+                        group=cg.name))
         else:
             messages.add_message(
                 self.request, messages.SUCCESS,
-                _('%(contact)s has been removed from group %(group)s.') % {
-                    'contact': contact.name,
-                    'group': cg.name})
+                _('{contact} has been removed from group {group}.')
+                .format(contact=contact.name,
+                        group=cg.name))
         Contact.objects.check_login_created(self.request)
         hooks.membership_changed(self.request, contact, cg)
         return HttpResponseRedirect(cg.get_absolute_url())
@@ -978,9 +977,9 @@ class ContactInGroupView(InGroupAcl, FormView):
         cg = self.contactgroup
 
         context = {}
-        context['title'] = _('Contact %(contact)s in group %(group)s') % {
-            'contact': str(contact),
-            'group': cg}
+        context['title'] = _('Contact {contact} in group {group}').format(
+            contact=contact,
+            group=cg)
         context['contact'] = contact
         context['objtype'] = ContactInGroup
         inherited_info = ''
@@ -989,12 +988,12 @@ class ContactInGroupView(InGroupAcl, FormView):
             'EXISTS ('
             '   SELECT *'
             '   FROM contact_in_group'
-            '   WHERE group_id IN (SELECT self_and_subgroups(%s))'
-            '   AND contact_id=%s AND flags & %s <> 0'
+            '   WHERE group_id IN (SELECT self_and_subgroups({}))'
+            '   AND contact_id={} AND flags & {} <> 0'
             '   AND group_id=contact_group.id'
-            ')'
-            % (gid, cid, perms.MEMBER)]).exclude(id=gid)
-                                        .order_by('-date', 'name'))
+            ')'.format(gid, cid, perms.MEMBER)])
+            .exclude(id=gid)
+            .order_by('-date', 'name'))
 
         visible_automember_groups = automember_groups.with_user_perms(
             self.request.user.id, wanted_flags=perms.SEE_CG)
@@ -1002,19 +1001,19 @@ class ContactInGroupView(InGroupAcl, FormView):
         invisible_automember_groups = automember_groups.extra(where=[
             'NOT EXISTS ('
             ' SELECT * FROM v_cig_perm'
-            ' WHERE v_cig_perm.contact_id=%s'
+            ' WHERE v_cig_perm.contact_id={}'
             ' AND v_cig_perm.group_id=contact_group.id'
-            ' AND v_cig_perm.flags & %s <> 0)'
-            % (self.request.user.id, perms.SEE_CG)])
+            ' AND v_cig_perm.flags & {} <> 0)'
+            .format(self.request.user.id, perms.SEE_CG)])
 
         if automember_groups:
             inherited_info += (
                 _('Automatically member because member of subgroup(s)')
                 + ':<ul>')
             for sub_cg in visible_automember_groups:
-                inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
-                    'name': sub_cg,
-                    'url': sub_cg.get_absolute_url()}
+                inherited_info += '<li><a href=\"{url}\">{name}</a>'.format(
+                    name=sub_cg,
+                    url=sub_cg.get_absolute_url())
             if invisible_automember_groups:
                 inherited_info += '<li>' + _('Hidden group(s)...')
             inherited_info += '</ul>'
@@ -1023,13 +1022,13 @@ class ContactInGroupView(InGroupAcl, FormView):
             'EXISTS ('
             '   SELECT *'
             '   FROM contact_in_group'
-            '   WHERE group_id IN (SELECT self_and_subgroups(%s))'
-            '   AND contact_id=%s'
-            '   AND flags & %s <> 0'
+            '   WHERE group_id IN (SELECT self_and_subgroups({}))'
+            '   AND contact_id={}'
+            '   AND flags & {} <> 0'
             '   AND group_id=contact_group.id'
-            ')'
-            % (gid, cid, perms.INVITED)]).exclude(id=gid)
-                                         .order_by('-date', 'name'))
+            ')'.format(gid, cid, perms.INVITED)])
+            .exclude(id=gid)
+            .order_by('-date', 'name'))
 
         visible_autoinvited_groups = autoinvited_groups.with_user_perms(
             self.request.user.id, wanted_flags=perms.SEE_CG)
@@ -1037,19 +1036,19 @@ class ContactInGroupView(InGroupAcl, FormView):
         invisible_autoinvited_groups = autoinvited_groups.extra(where=[
             'NOT EXISTS ('
             ' SELECT * FROM v_cig_perm'
-            ' WHERE v_cig_perm.contact_id=%s'
+            ' WHERE v_cig_perm.contact_id={}'
             ' AND v_cig_perm.group_id=contact_group.id'
-            ' AND v_cig_perm.flags & %s <> 0)'
-            % (self.request.user.id, perms.SEE_CG)])
+            ' AND v_cig_perm.flags & {} <> 0)'
+            .format(self.request.user.id, perms.SEE_CG)])
 
         if autoinvited_groups:
             inherited_info += (
                 _('Automatically invited because invited in subgroup(s)')
                 + ':<ul>')
             for sub_cg in visible_autoinvited_groups:
-                inherited_info += '<li><a href=\"%(url)s\">%(name)s</a>' % {
-                    'name': sub_cg,
-                    'url': sub_cg.get_absolute_url()}
+                inherited_info += '<li><a href=\"{url}\">{name}</a>'.format(
+                    name=sub_cg,
+                    url=sub_cg.get_absolute_url())
             if invisible_autoinvited_groups:
                 inherited_info += '<li>' + _('Hidden group(s)...')
             inherited_info += '</ul>'

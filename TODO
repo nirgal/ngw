@@ -47,8 +47,6 @@ Make a nice display of group hierarchy.
 
 Allow inline membership edition to setup administrative permisssions.
 
-Remove % string operators. Use string.format().
-
 ====================================================================================================
 UNSORTED
 ====================================================================================================

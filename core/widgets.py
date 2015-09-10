@@ -75,15 +75,15 @@ class FlagsWidget(forms.widgets.MultiWidget):
 
         def id_of(i):
             if id_:
-                return '%s_%s' % (id_, i)
+                return '{}_{}'.format(id_, i)
             else:
-                return 'anonflag_%s' % i
+                return 'anonflag_{}'.format(i)
 
         def name_of_flag(flag):
             'Returns the internal name of the input, 0-based'
             for i, aflag in enumerate(perms.FLAGTOINT.keys()):
                 if flag == aflag:
-                    return name + '_%s' % i
+                    return name + '_{}'.format(i)
 
         for i, widget in enumerate(self.widgets):
             try:
@@ -94,31 +94,34 @@ class FlagsWidget(forms.widgets.MultiWidget):
                 final_attrs = dict(final_attrs, id=id_of(i))
 
             flag = enumerated_flags[i]
-            field_name = name + '_%s' % i
+            field_name = name + '_{}'.format(i)
 
             oncheck_js = ''.join([
-                'this.form.%s.checked=true;' % name_of_flag(code)
+                'this.form.{}.checked=true;'.format(name_of_flag(code))
                 for code in perms.FLAGDEPENDS[flag]])
             oncheck_js += ''.join([
-                'this.form.%s.checked=false;' % name_of_flag(code)
+                'this.form.{}.checked=false;'.format(name_of_flag(code))
                 for code in perms.FLAGCONFLICTS[flag]])
 
             onuncheck_js = ''
             for flag1, depflag1 in perms.FLAGDEPENDS.items():
                 if flag in depflag1:
-                    onuncheck_js += (
-                        'this.form.%s.checked=false;' % name_of_flag(flag1))
+                    onuncheck_js += ('this.form.{}.checked=false;'
+                                     .format(name_of_flag(flag1)))
 
-            final_attrs['onchange'] = ('if (this.checked) {%s} else {%s}'
-                                       % (oncheck_js, onuncheck_js))
+            final_attrs['onchange'] = (
+                'if (this.checked) {{oncheck_js}} else {{onuncheck_js}}'
+                .format(
+                    oncheck_js=oncheck_js,
+                    onuncheck_js=onuncheck_js))
 
             output.append(
-                '<label for="%(id)s">%(widget)s %(label)s</label> ' % {
-                    'widget': widget.render(
+                '<label for="{id}">{widget} {label}</label> '.format(
+                    widget=widget.render(
                         field_name, widget_value, final_attrs),
-                    'label': html.escape(str(perms.FLAGTOTEXT[flag])),
-                    'id': '%s_%s' % (id_, i)
-                    })
+                    label=html.escape(str(perms.FLAGTOTEXT[flag])),
+                    id='{}_{}'.format(id_, i)
+                    ))
             if flag == 'd':
                 output.append('<br style="clear:both;">')
         return mark_safe(self.format_output(output))
@@ -183,10 +186,10 @@ class DoubleChoicesWidget(forms.widgets.MultiWidget):
         id_ = final_attrs.get('id', None)
         js = """
         <script>
-        doublechoice_show('%(id)s', 1);
+        doublechoice_show('{id}', 1);
         </script>
         """
-        result += mark_safe(js % {'id': id_})
+        result += mark_safe(js.format(id=id_))
         return result
 
 

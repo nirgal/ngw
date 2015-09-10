@@ -65,7 +65,7 @@ def group_visible_by(contact_groups_query, user_id):
     return contact_groups_query.with_user_perms(
         user_id, perms.SEE_CG, add_column=False)
     # return contact_groups_query.extra(where=[
-    #   'perm_c_can_see_cg(%s, contact_group.id)' % user_id])
+    #   'perm_c_can_see_cg({}, contact_group.id)'.format(user_id)])
 
 
 @register.filter
