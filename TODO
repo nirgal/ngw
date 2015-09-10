@@ -6,9 +6,6 @@ BUGS
 VALIDATED IMPROVEMENTS
 ====================================================================================================
 
-File uploads:
-Use libmagic (`file`) to determine content-type.
-
 On event creation, when start date is defined, set up the end date for a one day event.
 
 add_to_group: You need to be able to add contacts in all super groups, including hidden ones, and the ones where you don't change anything like contacts.

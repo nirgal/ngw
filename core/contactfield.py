@@ -1,8 +1,8 @@
 import json
-import magic
 import os
 from datetime import datetime
 
+import magic
 from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import AdminDateWidget
@@ -545,7 +545,7 @@ class FileContactField(ContactField):
                 f.write(chunk)
         finally:
             f.close()
-        # TODO: discard sent mime-type and use python3-magic
+        # TODO: don't reload magic on each upload, use a global.
         m = magic.open(magic.MAGIC_MIME)
         m.load()
         content_type_list = m.file(filename).split("; ", 1)
@@ -555,15 +555,13 @@ class FileContactField(ContactField):
         else:
             content_type = content_type_list[0]
             charset = content_type_list[1]
-            
+
         return {
             'mediafilename': os.path.join(
                 'fields', str(self.id), str(contact_id)),
             'filename': uploadedFile.name,
             'content_type': content_type,
             'charset': charset,
-            #'content_type': magic.from_file(filename, mime=True), #uploadedFile.content_type,
-            #'charset': uploadedFile.charset,
             'size': uploadedFile.size}
 register_contact_field_type(FileContactField, 'FILE',
                             ugettext_lazy('File'), has_choice=0)
