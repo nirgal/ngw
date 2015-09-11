@@ -30,6 +30,7 @@ Files handling:
 
 With django 1.6, ContactQuerySet may no longer need to inherit from RawQuerySet: See internal cache in o2o sql compiler.
 See also https://docs.djangoproject.com/en/1.7/ref/models/lookups/
+
 Extend contact quick search to logins.
 
 In group_members.html, show detailed permissions for get_manager_groups|group_visible_by:user.id
@@ -76,3 +77,5 @@ Make an ldap compatible daemon
 Check https://docs.djangoproject.com/en/1.7/howto/outputting-pdf/
 
 postgresql 9.2 supports json type for contact_message.syncinfo
+
+Quick search: Make the drop down list nicer (picture, email, ...)
