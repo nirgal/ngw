@@ -61,7 +61,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         # 'visible_direct_subgroups_5',
         # 'budget_code',
         # 'visible_member_count',
-        'locked'
+        'flags'
         )
     list_display_links = 'name',
     search_fields = 'name', 'description'
@@ -108,16 +108,21 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
             return _('Not available')
     visible_member_count.short_description = ugettext_lazy('Members')
 
-    def locked(self, group):
+    def flags(self, group):
+        res = ''
         if group.system:
-            return (
+            res += (
                 '<img src="{}ngw/lock.png" alt="locked"'
                 ' width="10" height="10">'
                 .format(settings.STATIC_URL))
-        return ''
-    locked.short_description = ugettext_lazy('Locked')
-    locked.admin_order_field = 'system'
-    locked.allow_tags = True
+        if group.sticky:
+            res += (
+                '<img src="{}ngw/sticky.png" alt="sticky"'
+                ' width="10" height="10">'
+                .format(settings.STATIC_URL))
+        return res
+    flags.short_description = ugettext_lazy('Flags')
+    flags.allow_tags = True
 
     def get_root_queryset(self):
         return (ContactGroup
@@ -739,7 +744,7 @@ class GroupEditMixin(ModelFormMixin):
 
         messages.add_message(
             request, messages.SUCCESS,
-            _('Group {} has been changed successfully!').format(cg))
+            _('Group {} has been changed successfully.').format(cg))
 
         cg.check_static_folder_created()
         Contact.objects.check_login_created(request)  # subgroups change
