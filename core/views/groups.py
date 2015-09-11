@@ -5,6 +5,7 @@ ContactGroup managing views
 import calendar
 import decimal
 import json
+import logging
 import re
 import time
 from datetime import date, datetime, timedelta
@@ -597,6 +598,7 @@ class ContactGroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')
         self.user = user
+        self.request = kwargs.pop('request')
         instance = kwargs.get('instance', None)
         super().__init__(*args, **kwargs)
 
@@ -664,8 +666,29 @@ class ContactGroupForm(forms.ModelForm):
         is_creation = self.instance.pk is None
         data = self.cleaned_data
 
+        if is_creation:
+            was_sticky = False
+        else:
+            was_sticky = ContactGroup.objects.get(pk=self.instance.pk).sticky
+
         # Save the base fields
         cg = super().save(commit)
+
+        # Update the members if it's now sticky
+        if cg.sticky and not was_sticky:
+            logging.warning("Group %s has become sticky.", cg)
+            members = cg.get_all_members()
+            members = members.extra(where=["""
+                NOT EXISTS (
+                    SELECT *
+                    FROM contact_in_group
+                    WHERE contact_in_group.contact_id=contact.id
+                        AND contact_in_group.group_id={group_id}
+                        AND flags & {member_flag} <> 0
+                )""".format(group_id=cg.id,
+                            member_flag=perms.MEMBER)])
+            for m in members:
+                cg.set_member_1(self.request, m, '+m')
 
         # Update the super groups
         old_direct_supergroups_ids = set(
@@ -736,6 +759,7 @@ class GroupEditMixin(ModelFormMixin):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        kwargs['request'] = self.request
         return kwargs
 
     def form_valid(self, form):
