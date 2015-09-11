@@ -13,7 +13,7 @@ def photo_field(apps, schema_editor):
             name='Photo',
             hint='',
             type='IMAGE',
-            contact_group_id=3,
+            contact_group_id=1,
             sort_weight=5,
             choice_group_id=None,
             system=True),
