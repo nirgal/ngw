@@ -1062,6 +1062,8 @@ class ContactGroup(NgwModel):
         if cig.flags ^ newflags & perms.ADMIN_ALL:
             if not perms.c_operatorof_cg(user.id, self.id):
                 # You need to be operator to be able to change permissions
+                logging.error('User {} is not operator of {}'.format(
+                    user, self))
                 raise PermissionDenied
         if cig.flags ^ newflags & ~perms.ADMIN_ALL:  # m/i/d
             # user needs to be able to add contacts
@@ -1070,6 +1072,8 @@ class ContactGroup(NgwModel):
             for sg in self.get_supergroups():
                 if (not contact.is_directmember_of(sg.id)
                         and not perms.c_can_change_members_cg(user.id, sg.id)):
+                    logging.error("User {} can't change members of {}".format(
+                        user, sg))
                     raise PermissionDenied
 
         if newflags == 0:
