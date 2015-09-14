@@ -419,7 +419,11 @@ def field_widget(contact_field, contact_with_extra_fields):
     if raw_value:
         return contact_field.format_value_html(raw_value)
     else:
-        return ''
+        try:
+            default_html_func = getattr(contact_field, 'default_value_html')
+            return default_html_func()
+        except AttributeError:
+            return ''
 
 
 def field_widget_factory(contact_field):

@@ -571,6 +571,9 @@ class ImageContactField(FileContactField):
     class Meta:
         proxy = True
 
+    def default_value_html(self):
+        return loader.render_to_string('image_field_default.html', {})
+
     def format_value_html(self, value):
         fileinfo = json.loads(value)
         return loader.render_to_string('image_field.html', fileinfo)

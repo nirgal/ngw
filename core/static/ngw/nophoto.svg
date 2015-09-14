@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="500"
+   height="500"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.5 r10040"
+   sodipodi:docname="New document 1">
+  <title
+     id="title3955">Empty profile</title>
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ebebeb"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="1"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="207.0575"
+     inkscape:cy="233.13024"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:showpageshadow="false"
+     showborder="true"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1440"
+     inkscape:window-height="843"
+     inkscape:window-x="0"
+     inkscape:window-y="35"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Empty profile</dc:title>
+        <dc:date>2015-09-14</dc:date>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Jean-Michel Vourgère</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title></dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by/3.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by/3.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(240.02814,-358.83767)">
+    <path
+       style="fill:#9f9f9f;fill-opacity:1"
+       d="m -234.19924,845.71265 c 12.81698,-43.93488 63.16835,-78.10268 136.869202,-92.87763 l 27.7824,-5.5696 3.324225,-9.83887 c 6.88595,-20.38073 4.971375,-42.86813 -5.307525,-62.3389 -5.081175,-9.625 -9.958675,-22.89188 -10.838875,-29.48195 -1.41645,-10.60503 -2.560925,-12.3833 -9.95935,-15.47455 -16.909427,-7.06523 -24.996577,-37.2311 -13.828397,-51.58135 3.73352,-4.7973 4.92025,-12.06758 6.07405,-37.21215 3.996947,-87.1037 52.258097,-132.26235 128.655847,-120.38505 60.382025,9.38737 86.282153,45.40905 91.951253,127.88505 1.3692,19.9193 2.93475,27.6879 6.49155,32.21215 10.11877,12.87107 2.83452,39.8052 -12.94185,47.8537 -8.39268,4.28162 -9.81778,6.38575 -12.24553,18.0801 -1.51112,7.279 -6.787848,21.0802 -11.726073,30.6693 -8.66305,16.82197 -8.93025,18.13882 -7.6025,37.46687 2.157125,31.4015 2.958625,32.55313 24.930373,35.82103 76.23028,11.33785 137.55731,52.7477 147.90743,99.87155 l 1.76265,8.0253 -247.563878,0 -247.563902,0 3.8289,-13.125 z"
+       id="path3185"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>
