@@ -183,10 +183,10 @@ one to read it, please repport that.</p>''')
 
     message = mail.EmailMultiAlternatives(
         subject=msg.subject,
-        body=notification_text.format(*sync_info),
+        body=notification_text.format(**sync_info),
         to=(mail_addr,),
         connection=SMTP_CONNECTION)
-    message.attach_alternative(notification_html.format(*sync_info),
+    message.attach_alternative(notification_html.format(**sync_info),
                                "text/html")
 
     try:
