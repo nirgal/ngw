@@ -64,7 +64,7 @@
 <div id=tabs>
     <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
     <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>
-    <a href="/events/calendar/" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
+    <a href="/events/calendar/{% if cg.date %}#{{ cg.date.year}}-{{ cg.date.month }}{% endif %}" {{ nav|nav_is_active:"events"}}>{% trans "events" %}</a>
     {% if user.is_admin %}
     <a href="/logs" {{ nav|nav_is_active:"logs"}}>{% trans "logs" %}</a>
     {% endif %}
