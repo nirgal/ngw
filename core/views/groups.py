@@ -113,14 +113,26 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         res = ''
         if group.system:
             res += (
-                '<img src="{}ngw/lock.png" alt="locked"'
-                ' width="10" height="10">'
-                .format(settings.STATIC_URL))
+                '<img src="{static}ngw/lock.png" alt="{title}"'
+                ' title="{title}" width="10" height="10"'
+                ' style="margin-left:2px">'
+                .format(static=settings.STATIC_URL,
+                        title=_('Locked')))
         if group.sticky:
             res += (
-                '<img src="{}ngw/sticky.png" alt="sticky"'
-                ' width="10" height="10">'
-                .format(settings.STATIC_URL))
+                '<img src="{static}ngw/sticky.png" alt="{title}"'
+                ' title="{title}" width="10" height="10"'
+                ' style="margin-left:2px">'
+                .format(static=settings.STATIC_URL,
+                        title=_('Sticky')))
+        if group.field_group:
+            res += (
+                '<img src="{static}ngw/has_fields.png" alt="{title}"'
+                ' title="{title}" width="10" height="10"'
+                ' style="margin-left:2px">'
+                .format(static=settings.STATIC_URL,
+                        title=_('Has fields')))
+
         return res
     flags.short_description = ugettext_lazy('Flags')
     flags.allow_tags = True
