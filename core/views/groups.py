@@ -114,31 +114,37 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         if group.system:
             res += (
                 '<img src="{static}ngw/lock.png" alt="{title}"'
-                ' title="{title}" width="10" height="10"'
+                ' title="{title}:\n{title_long}" width="10" height="10"'
                 ' style="margin-left:2px">'
                 .format(static=settings.STATIC_URL,
-                        title=_('Locked')))
+                        title=_('Locked'),
+                        title_long=_('System is using that group.'
+                                     ' Changes are restricted.')))
         if group.sticky:
             res += (
                 '<img src="{static}ngw/sticky.png" alt="{title}"'
-                ' title="{title}" width="10" height="10"'
+                ' title="{title}:\n{title_long}" width="10" height="10"'
                 ' style="margin-left:2px">'
                 .format(static=settings.STATIC_URL,
-                        title=_('Sticky')))
+                        title=_('Sticky'),
+                        title_long=_('Inherited membership is permanent.')))
         if group.virtual:
             res += (
                 '<img src="{static}ngw/virtual.png" alt="{title}"'
-                ' title="{title}" width="10" height="10"'
+                ' title="{title}:\n{title_long}" width="10" height="10"'
                 ' style="margin-left:2px">'
                 .format(static=settings.STATIC_URL,
-                        title=_('Virtual')))
+                        title=_('Virtual'),
+                        title_long=_("That group doesn't have direct members.")
+                        ))
         if group.field_group:
             res += (
                 '<img src="{static}ngw/has_fields.png" alt="{title}"'
-                ' title="{title}" width="10" height="10"'
+                ' title="{title}:\n{title_long}" width="10" height="10"'
                 ' style="margin-left:2px">'
                 .format(static=settings.STATIC_URL,
-                        title=_('Has fields')))
+                        title=_('Has fields'),
+                        title_long=_('Being a members yields new fields.')))
 
         return res
     flags.short_description = ugettext_lazy('Flags')
