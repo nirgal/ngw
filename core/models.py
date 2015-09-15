@@ -766,6 +766,9 @@ class ContactGroup(NgwModel):
         help_text=ugettext_lazy('If set, automatic membership because of'
                                 ' subgroups becomes permanent. Use with'
                                 ' caution.'))
+    virtual = models.BooleanField(
+        ugettext_lazy('Virtual'), default=False,
+        help_text=ugettext_lazy("Doesn't have any direct members."))
     # direct_supergroups = models.ManyToManyField(
     #     "self", through='GroupInGroup', symmetrical=False,
     #     related_name='none1+')

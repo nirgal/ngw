@@ -125,6 +125,13 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
                 ' style="margin-left:2px">'
                 .format(static=settings.STATIC_URL,
                         title=_('Sticky')))
+        if group.virtual:
+            res += (
+                '<img src="{static}ngw/virtual.png" alt="{title}"'
+                ' title="{title}" width="10" height="10"'
+                ' style="margin-left:2px">'
+                .format(static=settings.STATIC_URL,
+                        title=_('Virtual')))
         if group.field_group:
             res += (
                 '<img src="{static}ngw/has_fields.png" alt="{title}"'
@@ -600,6 +607,7 @@ class ContactGroupForm(forms.ModelForm):
         fields = [
             'name', 'description', 'date', 'end_date', 'budget_code',
             # 'sticky',
+            # 'virtual',
             'field_group', 'mailman_address']
         widgets = {
             'date': AdminDateWidget(attrs={

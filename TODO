@@ -43,6 +43,7 @@ Make a nice display of group hierarchy.
 
 Allow inline membership edition to setup administrative permisssions.
 
+
 ====================================================================================================
 UNSORTED
 ====================================================================================================
@@ -52,7 +53,10 @@ See https://docs.djangoproject.com/en/1.7/releases/1.7/#custom-lookups
 Default supergroup(s).
 Change "default group" into "default permissions"
 
-Favorite groups.
+Favorite groups (not for events?):
+- Add a profile field to store the list of favorite groups (comma delimited?)
+- Add a filter on group page on the right to show only favorite fields or all of them
+- Add actions on group list to remove or add a group from/to the list of favorites.
 
 Sticky groups:
 - When you join a 'sticky' group though inheritance, group membership should be permanent.
@@ -60,7 +64,11 @@ Sticky groups:
 Invite groups (?):
 - Disable invitation buttons when a group doesn't support the feature.
 
-Check date is not null when creating an event.
+Improve EditGroup form:
+- Check date is not null when creating an event.
+- Change permission setup: We need a way to add groups and for each of them to select the permissions
+- Make a full wizard?
+- Shouln't mailman extension be setup in its own table/extension?
 
 Add support for attachements in externals messages (?)
 
