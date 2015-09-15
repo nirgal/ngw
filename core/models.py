@@ -1073,6 +1073,8 @@ class ContactGroup(NgwModel):
             # user needs to be able to add contacts
             # in all subgroups it's not a member yet, including
             # hidden ones
+            if self.virtual:
+                raise PermissionDenied
             for sg in self.get_supergroups():
                 if (not contact.is_directmember_of(sg.id)
                         and not perms.c_can_change_members_cg(user.id, sg.id)):

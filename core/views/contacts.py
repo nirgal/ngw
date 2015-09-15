@@ -391,6 +391,7 @@ def membership_extended_widget(request, contact_with_extra_fields,
     return loader.render_to_string('membership_widget.html', {
         'cid': contact_with_extra_fields.id,
         'gid': contact_group.id,
+        'virtual_group': contact_group.virtual,  # TODO: use this
         'membership_str': membership_to_text(contact_with_extra_fields,
                                              contact_group.id),
         'note': getattr(contact_with_extra_fields,
@@ -732,6 +733,12 @@ class GroupAddManyForm(forms.Form):
         data = super().clean()
         if 'group' in data:
             flags = data['flags']
+            if (flags & ~perms.ADMIN_ALL):
+                group = get_object_or_404(
+                    ContactGroup, pk=self.cleaned_data['group'])
+                if group.virtual:
+                    raise forms.ValidationError(_(
+                        "This is a virtual group. It cannot have members."))
             if (flags & perms.ADMIN_ALL
                and not perms.c_operatorof_cg(self.user.id,
                                              self.cleaned_data['group'])):
@@ -1030,6 +1037,15 @@ class ContactEditMixin(ModelFormMixin):
     def check_perm_groupuser(self, group, user):
         if group:
             if not group.userperms & perms.CHANGE_MEMBERS:
+                messages.add_message(
+                    self.request, messages.ERROR,
+                    _('You are not authorized to change members of that'
+                      ' group.'))
+                raise PermissionDenied
+            if group.virtual:
+                messages.add_message(
+                    self.request, messages.ERROR,
+                    _('This is a virtual group. It cannot have members.'))
                 raise PermissionDenied
         else:
             cid = int(self.kwargs['cid'])  # ok to crash if create & no group

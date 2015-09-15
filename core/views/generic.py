@@ -108,6 +108,10 @@ class InGroupAcl(ContextMixin):
         group = self.contactgroup
         if group and not group.userperms & perms.SEE_CG:
             raise PermissionDenied
+        try:
+            super().check_perm_groupuser(group, user)
+        except AttributeError:
+            pass
 
     def get_context_data(self, **kwargs):
         cg = self.contactgroup
