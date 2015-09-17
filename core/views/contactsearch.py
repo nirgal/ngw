@@ -2,6 +2,8 @@
 ajax views for building contact filter
 '''
 
+import json
+
 import decoratedstr
 from django.http import Http404, JsonResponse
 from django.utils.translation import ugettext as _
@@ -9,7 +11,8 @@ from django.views.generic import View
 
 from ngw.core import perms
 from ngw.core.contactfield import AllEventsMetaField, ContactNameMetaField
-from ngw.core.models import ChoiceGroup, Contact, ContactField, ContactGroup
+from ngw.core.models import (ChoiceGroup, Config, Contact, ContactField,
+                             ContactGroup)
 from ngw.core.views.generic import NgwUserAcl
 
 
@@ -60,8 +63,9 @@ class ContactSearchColumnsView(NgwUserAcl, View):
             for group in groups:
                 choices.append({'id': str(group.id), 'text': str(group)})
 
-        elif column_type == 'custom':
-            choices = [{'id': 'user', 'text': request.user.name}]
+        elif column_type == 'saved':
+            choices = [{'id': 'global', 'text': _('Global')},
+                       {'id': 'user', 'text': request.user.name}]
 
         else:
             raise Http404
@@ -90,7 +94,7 @@ def get_column(column_type, column_id):
         else:
             return ContactGroup.objects.get(pk=column_id), 'gfilter('+column_id
 
-    if column_type == 'custom':
+    if column_type == 'saved':
         raise NotImplementedError  # We might make a MetaField
 
     raise Http404
@@ -111,12 +115,29 @@ class ContactSearchColumnFiltersView(NgwUserAcl, View):
         return JsonResponse({'params': [choices]})
 
 
-class ContactSearchCustomFiltersView(NgwUserAcl, View):
+def get_global_filers():
+    '''
+    Returns a list to 2-tupples (name,filterstr)
+    '''
+    try:
+        filter_list = Config.objects.get(pk='filters').text
+    except Config.DoesNotExist:
+        return ()
+    return json.loads(filter_list)
+
+
+class ContactSearchSavedFiltersView(NgwUserAcl, View):
     '''
     This is a special version of ajax_get_filters for saved filters
+    (common version)
     '''
-    def get(self, request, *args, **kwargs):
-        filter_list = request.user.get_customfilters()
+    def get(self, request, saved_type, *args, **kwargs):
+        if saved_type == 'user':
+            filter_list = request.user.get_customfilters()
+        elif saved_type == 'global':
+            filter_list = get_global_filers()
+        else:
+            raise Http404
         choices = []
         for i, filterpair in enumerate(filter_list):
             filtername, filterstr = filterpair
@@ -158,13 +179,18 @@ class ContactSearchFilterParamsView(NgwUserAcl, View):
                              'params': jsparams})
 
 
-class ContactSearchCustomFilterParamsView(NgwUserAcl, View):
+class ContactSearchSavedFilterParamsView(NgwUserAcl, View):
     '''
     This is a special version of ajax_get_filters_params for saved filters
     '''
-    def get(self, request, *args, **kwargs):
+    def get(self, request, saved_type, *args, **kwargs):
         filter_id = self.kwargs['filter_id']
-        filter_list = request.user.get_customfilters()
+        if saved_type == 'user':
+            filter_list = request.user.get_customfilters()
+        elif saved_type == 'global':
+            filter_list = get_global_filers()
+        else:
+            raise Http404
         filter_id = int(filter_id)
         customname, filter = filter_list[filter_id]
         assert filter[-1] == ')', \

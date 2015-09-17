@@ -13,6 +13,7 @@ add_to_group: You need to be able to add contacts in all super groups, including
 Event selection widget. (Do not load everything at once, like for column selection)
 
 Global or Group filters: Exemple "Région" field
+- Change user filters format to json in the database
 
 On the contact detail page, have the events either in a separated page or in a widget.
 
