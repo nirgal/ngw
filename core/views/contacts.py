@@ -2,6 +2,7 @@
 Contact managing views
 '''
 
+import json
 import os
 from datetime import date
 
@@ -1348,9 +1349,7 @@ class FilterAddView(NgwUserAcl, View):
         filter_str = request.GET['filterstr']
         filter_list = contact.get_customfilters()
         filter_list.append((_('No name'), filter_str))
-        filter_list_str = ','.join([
-            '"' + str(name) + '","' + str(filterstr) + '"'
-            for name, filterstr in filter_list])
+        filter_list_str = json.dumps(filter_list)
         contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
         messages.add_message(request, messages.SUCCESS,
                              _('Filter has been added successfully!'))
@@ -1434,8 +1433,7 @@ class FilterEditForm(forms.Form):
         filter_list = self.filter_list
         filter_list[self.fid] = (
             self.cleaned_data['name'], filter_list[self.fid][1])
-        filter_list_str = ','.join(
-            ['"{}","{}"'.format(*filterdata) for filterdata in filter_list])
+        filter_list_str = json.dumps(filter_list)
         self.contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
 
 
@@ -1499,9 +1497,7 @@ class FilterDeleteView(NgwUserAcl, View):
         contact = get_object_or_404(Contact, pk=cid)
         filter_list = contact.get_customfilters()
         del filter_list[fid]
-        filter_list_str = ','.join([
-            '"' + name + '","' + filterstr + '"'
-            for name, filterstr in filter_list])
+        filter_list_str = json.dumps(filter_list)
         contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
         messages.add_message(request, messages.SUCCESS,
                              _('Filter has been deleted.'))
