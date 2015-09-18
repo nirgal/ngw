@@ -1421,7 +1421,7 @@ class FilterEditForm(forms.Form):
         except (IndexError, ValueError):
             raise Http404
         self.fields['name'].initial = filterinfo['name']
-        self.fields['shared'].initial = filterinfo.get('share', False)
+        self.fields['shared'].initial = filterinfo.get('shared', False)
         filterstr = filterinfo['filter_string']
         try:
             self.filter_html = parse_filterstring(filterstr, user.id).to_html()
