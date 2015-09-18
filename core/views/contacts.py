@@ -1402,6 +1402,7 @@ class FilterListView(InGroupAcl, TemplateView):
 class FilterEditForm(forms.Form):
     name = forms.CharField(label=_('Name'), max_length=50)
     shared = forms.BooleanField(
+        required=False,
         label=ugettext_lazy('Shared'),
         help_text=ugettext_lazy(
             'Allow other users to use that filter.'))
