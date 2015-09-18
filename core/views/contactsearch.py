@@ -117,13 +117,20 @@ class ContactSearchColumnFiltersView(NgwUserAcl, View):
 
 def get_global_filers():
     '''
-    Returns a list to 2-tupples (name,filterstr)
+    Returns a list of dict:
+    [{ 'name':, 'filter_string': }, ...]
     '''
     try:
         filter_list = Config.objects.get(pk='filters').text
     except Config.DoesNotExist:
         return ()
-    return json.loads(filter_list)
+    filters = json.loads(filter_list)
+    if len(filters) > 0 and isinstance(filters[0], list):
+        # Convert to new format from list of tuples (name, filter_string)
+        return [{'name': x[0], 'filter_string': x[1]}
+                for x in filters]
+    else:
+        return filters
 
 
 class ContactSearchSavedFiltersView(NgwUserAcl, View):
@@ -133,15 +140,14 @@ class ContactSearchSavedFiltersView(NgwUserAcl, View):
     '''
     def get(self, request, saved_type, *args, **kwargs):
         if saved_type == 'user':
-            filter_list = request.user.get_customfilters()
+            filter_list = request.user.get_saved_filters()
         elif saved_type == 'global':
             filter_list = get_global_filers()
         else:
             raise Http404
         choices = []
-        for i, filterpair in enumerate(filter_list):
-            filtername, filterstr = filterpair
-            choices.append({'id': str(i), 'text': filtername})
+        for i, info in enumerate(filter_list):
+            choices.append({'id': str(i), 'text': info['name']})
         return JsonResponse({'params': [choices]})
 
 
@@ -186,13 +192,15 @@ class ContactSearchSavedFilterParamsView(NgwUserAcl, View):
     def get(self, request, saved_type, *args, **kwargs):
         filter_id = self.kwargs['filter_id']
         if saved_type == 'user':
-            filter_list = request.user.get_customfilters()
+            filter_list = request.user.get_saved_filters()
         elif saved_type == 'global':
             filter_list = get_global_filers()
         else:
             raise Http404
         filter_id = int(filter_id)
-        customname, filter = filter_list[filter_id]
-        assert filter[-1] == ')', \
-            "Custom filter {} should end with a ')'".format(customname)
-        return JsonResponse({'submit_prefix': filter[:-1], 'params': []})
+        info = filter_list[filter_id]
+        filter_string = info['filter_string']
+        assert filter_string[-1] == ')', \
+            "Custom filter {} should end with a ')'".format(info['name'])
+        return JsonResponse({'submit_prefix': filter_string[:-1],
+                             'params': []})

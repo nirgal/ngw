@@ -654,17 +654,35 @@ class Contact(NgwModel):
         cfv.value = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         cfv.save()
 
-    def get_customfilters(self):
+    def get_saved_filters(self):
         '''
-        Returns a list of tuples ( filtername, filter_string )
+        Get user saved contact-list filters.
+        Returns a list of dict [
+        { 'name':, 'filter_string': }, ... ]
         '''
         field_value = self.get_fieldvalue_by_id(FIELD_FILTERS)
         if not field_value:
             return []
         try:
-            return json.loads(field_value)
+            filters = json.loads(field_value)
         except ValueError:
             return []
+        if len(filters) > 0 and isinstance(filters[0], list):
+            # Convert to new format from list of tuples (name, filter_string)
+            filters = [{'name': x[0], 'filter_string': x[1]}
+                       for x in filters]
+            cfv = ContactFieldValue.objects.get(
+                contact_id=self.id, contact_field_id=FIELD_FILTERS)
+            cfv.value = json.dumps(filters)
+            cfv.save()
+        return filters
+
+    def set_saved_filters(self, request, value):
+        '''
+        Set user saved contact-list filters.
+        '''
+        value_str = json.dumps(value)
+        self.set_fieldvalue(request, FIELD_FILTERS, value_str)
 
 
 #######################################################################

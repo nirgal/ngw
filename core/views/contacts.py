@@ -2,7 +2,6 @@
 Contact managing views
 '''
 
-import json
 import os
 from datetime import date
 
@@ -35,7 +34,7 @@ from django.views.generic.edit import ModelFormMixin
 from ngw.core import perms
 from ngw.core.contactsearch import parse_filterstring
 from ngw.core.mailmerge import ngw_mailmerge
-from ngw.core.models import (FIELD_COLUMNS, FIELD_DEFAULT_GROUP, FIELD_FILTERS,
+from ngw.core.models import (FIELD_COLUMNS, FIELD_DEFAULT_GROUP,
                              GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
                              LOG_ACTION_ADD, LOG_ACTION_CHANGE, Config,
                              Contact, ContactField, ContactFieldValue,
@@ -1347,10 +1346,9 @@ class FilterAddView(NgwUserAcl, View):
         cid = int(cid)
         contact = get_object_or_404(Contact, pk=cid)
         filter_str = request.GET['filterstr']
-        filter_list = contact.get_customfilters()
-        filter_list.append((_('No name'), filter_str))
-        filter_list_str = json.dumps(filter_list)
-        contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
+        filter_list = contact.get_saved_filters()
+        filter_list.append({'name': _('No name'), 'filter_string': filter_str})
+        contact.set_saved_filters(request, filter_list)
         messages.add_message(request, messages.SUCCESS,
                              _('Filter has been added successfully!'))
         return HttpResponseRedirect(
@@ -1380,8 +1378,8 @@ class FilterListView(InGroupAcl, TemplateView):
     def get_context_data(self, **kwargs):
         cid = int(self.kwargs['cid'])
         contact = get_object_or_404(Contact, pk=cid)
-        filter_list = contact.get_customfilters()
-        filters = [filtername for filtername, filter_str in filter_list]
+        filter_list = contact.get_saved_filters()
+        filters = [finfo['name'] for finfo in filter_list]
         context = {}
         context['title'] = _('User custom filters')
         context['contact'] = contact
@@ -1402,7 +1400,11 @@ class FilterListView(InGroupAcl, TemplateView):
 
 
 class FilterEditForm(forms.Form):
-    name = forms.CharField(max_length=50)
+    name = forms.CharField(label=_('Name'), max_length=50)
+    shared = forms.BooleanField(
+        label=ugettext_lazy('Shared'),
+        help_text=ugettext_lazy(
+            'Allow other users to use that filter.'))
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')
@@ -1412,12 +1414,14 @@ class FilterEditForm(forms.Form):
 
         self.contact = contact
         self.fid = fid
-        self.filter_list = contact.get_customfilters()
+        self.filter_list = contact.get_saved_filters()
         try:
-            self.filtername, filterstr = self.filter_list[fid]
+            filterinfo = self.filter_list[fid]
         except (IndexError, ValueError):
             raise Http404
-        self.fields['name'].initial = self.filtername
+        self.fields['name'].initial = filterinfo['name']
+        self.fields['shared'].initial = filterinfo.get('share', False)
+        filterstr = filterinfo['filter_string']
         try:
             self.filter_html = parse_filterstring(filterstr, user.id).to_html()
         except PermissionDenied:
@@ -1431,10 +1435,11 @@ class FilterEditForm(forms.Form):
 
     def save(self, request):
         filter_list = self.filter_list
-        filter_list[self.fid] = (
-            self.cleaned_data['name'], filter_list[self.fid][1])
-        filter_list_str = json.dumps(filter_list)
-        self.contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
+        filter_list[self.fid] = {
+            'name': self.cleaned_data['name'],
+            'shared': self.cleaned_data['shared'],
+            'filter_string': filter_list[self.fid]['filter_string']}
+        self.contact.set_saved_filters(request, filter_list)
 
 
 class FilterEditView(NgwUserAcl, FormView):
@@ -1495,10 +1500,9 @@ class FilterDeleteView(NgwUserAcl, View):
         cid = int(cid)
         fid = int(fid)
         contact = get_object_or_404(Contact, pk=cid)
-        filter_list = contact.get_customfilters()
+        filter_list = contact.get_saved_filters()
         del filter_list[fid]
-        filter_list_str = json.dumps(filter_list)
-        contact.set_fieldvalue(request, FIELD_FILTERS, filter_list_str)
+        contact.set_saved_filters(request, filter_list)
         messages.add_message(request, messages.SUCCESS,
                              _('Filter has been deleted.'))
         return HttpResponseRedirect(contact.get_absolute_url())
