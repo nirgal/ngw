@@ -240,12 +240,18 @@ class YearMonthCal:
 
 class EventListView(NgwUserAcl, NgwListView):
     list_display = (
-        'name', 'date', 'description_not_too_long',
+        'name', 'date', 'days', 'description_not_too_long',
         'budget_code',
         # 'visible_member_count',
         )
     list_display_links = 'name',
     search_fields = 'name', 'description', 'budget_code'
+
+    def days(self, group):
+        delta = group.end_date - group.date
+        return delta.days + 1
+    days.short_description = ugettext_lazy('Days')
+    days.admin_order_field = 'days'
 
     def visible_member_count(self, group):
         # This is totally ineficient
@@ -258,7 +264,9 @@ class EventListView(NgwUserAcl, NgwListView):
     def get_root_queryset(self):
         return (ContactGroup.objects
                 .filter(date__isnull=False)
-                .with_user_perms(self.request.user.id, perms.SEE_CG))
+                .with_user_perms(self.request.user.id, perms.SEE_CG)
+                .extra(select={'days': 'end_date - date'})  # used by sort
+                )
 
     def get_context_data(self, **kwargs):
         context = {}
