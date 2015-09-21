@@ -2,16 +2,15 @@
 ajax views for building contact filter
 '''
 
-import json
-
 import decoratedstr
 from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext as _
 from django.views.generic import View
 
 from ngw.core import perms
 from ngw.core.contactfield import AllEventsMetaField, ContactNameMetaField
-from ngw.core.models import (ChoiceGroup, Config, Contact, ContactField,
+from ngw.core.models import (FIELD_FILTERS, ChoiceGroup, Contact, ContactField,
                              ContactGroup)
 from ngw.core.views.generic import NgwUserAcl
 
@@ -64,8 +63,20 @@ class ContactSearchColumnsView(NgwUserAcl, View):
                 choices.append({'id': str(group.id), 'text': str(group)})
 
         elif column_type == 'saved':
-            choices = [{'id': 'global', 'text': _('Global')},
-                       {'id': 'user', 'text': request.user.name}]
+            choices = [{'id': str(request.user.id), 'text': request.user.name}]
+            contacts = Contact.objects.extra(
+                tables=['contact_field_value', ],
+                where=[
+                    'contact_field_value.contact_id = contact.id',
+                    'contact_field_value.contact_field_id = {fid}'.format(
+                        fid=FIELD_FILTERS),
+                    "value LIKE %s",
+                    ],
+                params=['%"shared": true%'],
+            )
+            for contact in contacts:
+                if contact.id != request.user.id:
+                    choices += [{'id': str(contact.id), 'text': contact.name}]
 
         else:
             raise Http404
@@ -115,36 +126,18 @@ class ContactSearchColumnFiltersView(NgwUserAcl, View):
         return JsonResponse({'params': [choices]})
 
 
-def get_global_filers():
-    '''
-    Returns a list of dict:
-    [{ 'name':, 'filter_string': }, ...]
-    '''
-    try:
-        filter_list = Config.objects.get(pk='filters').text
-    except Config.DoesNotExist:
-        return ()
-    filters = json.loads(filter_list)
-    if len(filters) > 0 and isinstance(filters[0], list):
-        # Convert to new format from list of tuples (name, filter_string)
-        return [{'name': x[0], 'filter_string': x[1]}
-                for x in filters]
-    else:
-        return filters
-
-
 class ContactSearchSavedFiltersView(NgwUserAcl, View):
     '''
     This is a special version of ajax_get_filters for saved filters
     (common version)
     '''
-    def get(self, request, saved_type, *args, **kwargs):
-        if saved_type == 'user':
+    def get(self, request, cid, *args, **kwargs):
+        if cid == 'user':
             filter_list = request.user.get_saved_filters()
-        elif saved_type == 'global':
-            filter_list = get_global_filers()
         else:
-            raise Http404
+            cid = int(cid)
+            contact = get_object_or_404(Contact, pk=cid)
+            filter_list = contact.get_saved_filters()
         choices = []
         for i, info in enumerate(filter_list):
             choices.append({'id': str(i), 'text': info['name']})
@@ -189,14 +182,11 @@ class ContactSearchSavedFilterParamsView(NgwUserAcl, View):
     '''
     This is a special version of ajax_get_filters_params for saved filters
     '''
-    def get(self, request, saved_type, *args, **kwargs):
+    def get(self, request, cid, *args, **kwargs):
         filter_id = self.kwargs['filter_id']
-        if saved_type == 'user':
-            filter_list = request.user.get_saved_filters()
-        elif saved_type == 'global':
-            filter_list = get_global_filers()
-        else:
-            raise Http404
+        cid = int(cid)
+        contact = get_object_or_404(Contact, pk=cid)
+        filter_list = contact.get_saved_filters()
         filter_id = int(filter_id)
         info = filter_list[filter_id]
         filter_string = info['filter_string']
