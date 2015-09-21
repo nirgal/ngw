@@ -247,6 +247,14 @@ class EventListView(NgwUserAcl, NgwListView):
     list_display_links = 'name',
     search_fields = 'name', 'description', 'budget_code'
 
+    # def get_list_display(self, request):
+    #    columns = [
+    #        'name', 'date', 'days', 'description_not_too_long',
+    #        'budget_code']
+    #    if request.REQUEST.get('showmembers', 0):
+    #        columns += ['visible_member_count']
+    #    return columns
+
     def days(self, group):
         delta = group.end_date - group.date
         return delta.days + 1
@@ -254,9 +262,10 @@ class EventListView(NgwUserAcl, NgwListView):
     days.admin_order_field = 'days'
 
     def visible_member_count(self, group):
-        # This is totally ineficient
-        if perms.c_can_see_members_cg(self.request.user.id, group.id):
+        if group.userperms & perms.SEE_MEMBERS:
+            # This is inefficient (about 2 extra seconds):
             return group.get_members_count()
+            # return group.member_count
         else:
             return _('Not available')
     visible_member_count.short_description = ugettext_lazy('Members')
@@ -264,8 +273,11 @@ class EventListView(NgwUserAcl, NgwListView):
     def get_root_queryset(self):
         return (ContactGroup.objects
                 .filter(date__isnull=False)
+                # .with_counts() is too slow
                 .with_user_perms(self.request.user.id, perms.SEE_CG)
-                .extra(select={'days': 'end_date - date'})  # used by sort
+                # days is used by sort:
+                .extra(select={
+                    'days': 'contact_group.end_date - contact_group.date'})
                 )
 
     def get_context_data(self, **kwargs):
