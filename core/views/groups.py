@@ -686,6 +686,12 @@ class ContactGroupForm(forms.ModelForm):
                 self.add_error(
                     'end_date',
                     _('The end date must be after the start date.'))
+        else:
+            # The is no end date
+            if start_date:
+                # use start date is available
+                data['end_date'] = data['date']
+            # else this is a permanent group without any date
         return data
 
     def save(self, commit=True):
