@@ -9,11 +9,11 @@
 <div class="module padded">
     {% if cg.description %}{{ cg.description|linebreaksbr }}<br>{% endif %}
     {% if cg.date %}<br>
-        {% if cg.end_date %}
-        {% blocktrans with start_date=cg.date|date:"DATE_FORMAT" end_date=cg.end_date|date:"DATE_FORMAT" %}Dates: From <b>{{ start_date }}</b> to <b>{{ end_date }}</b>{% endblocktrans %}
-        {% else %}
+        {% ifequal cg.date cg.end_date %}
         {% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b>
-        {% endif %}
+        {% else %}
+        {% blocktrans with start_date=cg.date|date:"DATE_FORMAT" end_date=cg.end_date|date:"DATE_FORMAT" %}Dates: From <b>{{ start_date }}</b> to <b>{{ end_date }}</b>{% endblocktrans %}
+        {% endifequal %}
     {% endif %}
     {% if cg.budget_code %}<br>{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b>{% endif %}
     {% if cg.mailman_address %}<br>{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b>{% endif %}
