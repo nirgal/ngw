@@ -636,8 +636,8 @@ class ContactGroupForm(forms.ModelForm):
             # 'virtual',
             'field_group', 'mailman_address']
         widgets = {
-            'date': AdminDateWidget(attrs={
-                'onchange': mark_safe("alert('ok');")}),
+            'date': AdminDateWidget,
+            # (attrs={'onchange': mark_safe("alert('ok');")}),
             'end_date': AdminDateWidget,
         }
 
