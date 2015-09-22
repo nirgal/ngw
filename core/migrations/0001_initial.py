@@ -654,7 +654,7 @@ class Migration(migrations.Migration):
         ),
 
         migrations.RunSQL(
-            sql=open(os.path.join(settings.BASE_DIR, 'sql/functions.sql')).read()
+            sql=open(os.path.join(settings.BASE_DIR, 'core/migrations/functions.sql')).read()
         ),
 
         migrations.RunPython(
