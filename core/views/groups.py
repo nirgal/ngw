@@ -492,6 +492,7 @@ class MemberFilter(filters.SimpleListFilter):
             ('m', _('Members')),
             ('i', _('Invited people')),
             ('d', _('Declined invitations')),
+            ('D', _('Canceled members')),
             ('g', _('Include subgroups')),
             ('a', _('Admins')),
         )
@@ -528,6 +529,8 @@ class MemberFilter(filters.SimpleListFilter):
             wanted_flags |= perms.INVITED
         if 'd' in display:
             wanted_flags |= perms.DECLINED
+        if 'D' in display:
+            wanted_flags |= perms.CANCELED
         if 'a' in display:
             wanted_flags |= perms.ADMIN_ALL
 
@@ -569,7 +572,8 @@ class MemberFilter(filters.SimpleListFilter):
                 ')'
                 .format(cg.id, wanted_flags & (perms.MEMBER
                                                | perms.INVITED
-                                               | perms.DECLINED)))
+                                               | perms.DECLINED
+                                               | perms.CANCELED)))
             # The inherited admins
             or_conditions.append(
                 'EXISTS ('
@@ -974,9 +978,16 @@ class ContactInGroupForm(forms.ModelForm):
         # Currently gets best resolution in set_member_1
         data = super().clean()
         flags = data['flags']
-        if ((flags & perms.INVITED and flags & perms.DECLINED)
-           or (flags & perms.DECLINED and flags & perms.MEMBER)
-           or (flags & perms.INVITED and flags & perms.MEMBER)):
+        membership_count = 0
+        if flags & perms.MEMBER:
+            membership_count += 1
+        if flags & perms.INVITED:
+            membership_count += 1
+        if flags & perms.DECLINED:
+            membership_count += 1
+        if flags & perms.CANCELED:
+            membership_count += 1
+        if membership_count > 1:
             raise forms.ValidationError('Invalid flags combinaison')
 
         if flags == 0 and data['note']:
@@ -1159,15 +1170,16 @@ class ContactInGroupInlineView(InGroupAcl, View):
     def post(self, request, gid, cid):
         cg = self.contactgroup
         contact = get_object_or_404(Contact, pk=int(cid))
-        # 201505
         if request.POST.get('membership_i', False):
             flags = '+i'
         elif request.POST.get('membership_m', False):
             flags = '+m'
         elif request.POST.get('membership_d', False):
             flags = '+d'
+        elif request.POST.get('membership_D', False):
+            flags = '+D'
         else:
-            flags = '-mid'
+            flags = '-midD'
         cg.set_member_1(request, contact, flags)
         note = request.POST.get('note', '')
         try:

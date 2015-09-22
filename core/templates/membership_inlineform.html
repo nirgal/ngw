@@ -7,9 +7,10 @@
     {% csrf_token %}
     <input type=hidden name="next_url" value="{{request.get_full_path}}">
     <span style="white-space: nowrap">
-    <input type=checkbox name="membership_i" id="membership_edit_invited" onchange="if (this.checked) { this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
-    <input type=checkbox name="membership_m" id="membership_edit_member" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_d.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_member"> {% trans "Member" %}</label>
-    <input type=checkbox name="membership_d" id="membership_edit_declined" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
+    <input type=checkbox name="membership_i" id="membership_edit_invited" onchange="if (this.checked) { this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
+    <input type=checkbox name="membership_m" id="membership_edit_member" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_d.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_member"> {% trans "Member" %}</label>
+    <input type=checkbox name="membership_d" id="membership_edit_declined" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
+    <input type=checkbox name="membership_D" id="membership_edit_canceled" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_canceled"> {% trans "Canceled member" %}</label>
     </span>
     <br>
     Note: <input name='note'>

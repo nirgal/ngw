@@ -53,8 +53,9 @@ function inline_edit_membership(title, cig_url, membership, note) {
     $('#membership_edit_form input[name=membership_i]').prop('checked', membership.indexOf('i') != -1)
     $('#membership_edit_form input[name=membership_m]').prop('checked', membership.indexOf('m') != -1)
     $('#membership_edit_form input[name=membership_d]').prop('checked', membership.indexOf('d') != -1)
+    $('#membership_edit_form input[name=membership_D]').prop('checked', membership.indexOf('D') != -1)
     $('#membership_edit_form input[name=note]').val(note);
-    if (membership.indexOf('i') != -1 || membership.indexOf('m') != -1 || membership.indexOf('d') != -1)
+    if (membership.indexOf('i') != -1 || membership.indexOf('m') != -1 || membership.indexOf('d') != -1 || membership.indexOf('D') != -1)
         $('#membership_edit_form input[name=note]').removeAttr('disabled');
     else {
         $('#membership_edit_form input[name=note]').prop('disabled', 'true');

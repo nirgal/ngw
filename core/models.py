@@ -409,6 +409,13 @@ class Contact(NgwModel):
         """
         return self._get_directgroups_with_flag(perms.DECLINED)
 
+    def get_directgroups_canceled(self):
+        """
+        Returns the list of groups that contact was member of, then was
+        canceled.
+        """
+        return self._get_directgroups_with_flag(perms.CANCELED)
+
     def get_directgroups_operator(self):
         """
         Returns the list of groups that contact is an operator of.
@@ -991,7 +998,8 @@ class ContactGroup(NgwModel):
         return (
             GroupFilterIsMember, GroupFilterIsNotMember,
             GroupFilterIsInvited, GroupFilterIsNotInvited,
-            GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation)
+            GroupFilterDeclinedInvitation, GroupFilterNotDeclinedInvitation,
+            GroupFilterCanceledMembership, GroupFilterNotCanceledMembership)
 
     def get_filters(self):
         return [cls(self.id) for cls in self.get_filters_classes()]
@@ -2212,6 +2220,70 @@ class GroupFilterNotDeclinedInvitation(Filter):
 GroupFilterNotDeclinedInvitation.internal_name = 'gnotdeclined'
 GroupFilterNotDeclinedInvitation.human_name = ugettext_lazy(
     'has not declined invitation in group')
+
+
+class GroupFilterCanceledMembership(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+
+    def get_sql_where_params(self):
+        return (
+            'EXISTS ('
+            '   SELECT *'
+            '   FROM contact_in_group'
+            '   WHERE contact_id=contact.id'
+            '   AND group_id IN (SELECT self_and_subgroups(%s))'
+            '   AND flags & %s <> 0'
+            '   )'
+            % (self.group_id, perms.CANCELED),
+            {})
+
+    def to_html(self):
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
+        return mark_safe('{filtername} <b>{groupname}</b>'.format(
+            filtername=html.escape(self.__class__.human_name),
+            groupname=html.escape(str(group))))
+
+    def get_param_types(self):
+        return ()
+GroupFilterCanceledMembership.internal_name = "gcanceled"
+GroupFilterCanceledMembership.human_name = ugettext_lazy(
+    'membership was canceled in group')
+
+
+class GroupFilterNotCanceledMembership(Filter):
+    def __init__(self, group_id):
+        self.group_id = group_id
+
+    def get_sql_where_params(self):
+        return (
+            'NOT EXISTS ('
+            '   SELECT *'
+            '   FROM contact_in_group'
+            '   WHERE contact_id=contact.id'
+            '   AND group_id IN (SELECT self_and_subgroups(%s))'
+            '   AND flags & %s <> 0'
+            '   )'
+            % (self.group_id, perms.CANCELED),
+            {})
+
+    def to_html(self):
+        try:
+            group = ContactGroup.objects.get(pk=self.group_id)
+        except ContactGroup.DoesNotExist:
+            raise Http404()
+        return mark_safe('{filtername} <b>{groupname}</b>'.format(
+            filtername=html.escape(self.__class__.human_name),
+            groupname=html.escape(str(group))))
+
+    def get_param_types(self):
+        return ()
+GroupFilterNotCanceledMembership.internal_name = 'gnotcanceled'
+GroupFilterNotCanceledMembership.human_name = ugettext_lazy(
+    'membership was not canceled in group')
 
 
 class AllEventsNotReactedSince(Filter):

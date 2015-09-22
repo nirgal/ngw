@@ -110,7 +110,7 @@ class FlagsWidget(forms.widgets.MultiWidget):
                                      .format(name_of_flag(flag1)))
 
             final_attrs['onchange'] = (
-                'if (this.checked) {{oncheck_js}} else {{onuncheck_js}}'
+                'if (this.checked) {{{oncheck_js}}} else {{{onuncheck_js}}}'
                 .format(
                     oncheck_js=oncheck_js,
                     onuncheck_js=onuncheck_js))
@@ -122,7 +122,7 @@ class FlagsWidget(forms.widgets.MultiWidget):
                     label=html.escape(str(perms.FLAGTOTEXT[flag])),
                     id='{}_{}'.format(id_, i)
                     ))
-            if flag == 'd':
+            if flag == 'D':
                 output.append('<br style="clear:both;">')
         return mark_safe(self.format_output(output))
 

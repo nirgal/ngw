@@ -26,20 +26,21 @@ from django.utils.translation import ugettext_lazy
 MEMBER = 1            # 'm'ember
 INVITED = 2           # 'i'nvited
 DECLINED = 4          # 'd'eclined invitation
-OPERATOR = 8          # 'o'pertor
-VIEWER = 16           # 'v'iewer
-SEE_CG = 32           # 'e'xistance
-CHANGE_CG = 64        # 'E'
-SEE_MEMBERS = 128     # 'c'ontent
-CHANGE_MEMBERS = 256  # 'C'
-VIEW_FIELDS = 512     # 'f'ields
-WRITE_FIELDS = 1024   # 'F'
-VIEW_NEWS = 2048      # 'n'ews
-WRITE_NEWS = 4096     # 'N'
-VIEW_FILES = 8192     # 'u'ploaded
-WRITE_FILES = 16384   # 'U'
-VIEW_MSGS = 32768     # 'x'ternal messages
-WRITE_MSGS = 65536    # 'X'
+CANCELED = 8          # 'D'eclined forcefully (Cancelled)
+OPERATOR = 16         # 'o'perator
+VIEWER = 32           # 'v'iewer
+SEE_CG = 64           # 'e'xistance
+CHANGE_CG = 128       # 'E'
+SEE_MEMBERS = 256     # 'c'ontent
+CHANGE_MEMBERS = 512  # 'C'
+VIEW_FIELDS = 1024    # 'f'ields
+WRITE_FIELDS = 2048   # 'F'
+VIEW_NEWS = 4096      # 'n'ews
+WRITE_NEWS = 8192     # 'N'
+VIEW_FILES = 16384    # 'u'ploaded
+WRITE_FILES = 32768   # 'U'
+VIEW_MSGS = 65536     # 'x'ternal messages
+WRITE_MSGS = 131072   # 'X'
 
 
 FLAGTOINT = OrderedDict()  # dict for translation 1 letter -> int
@@ -67,9 +68,10 @@ def _register_flag(intval, code, requires, conflicts, text, group_label,
 # human friendly text, sometimes used in forms field names
 # dependency: 'u':'e' means viewing files implies viewing group existence
 # conflicts: 'F':'f' means can't write to fields unless can read them too
-_register_flag(MEMBER, 'm', '', 'id', ugettext_lazy('Member'), None, None)
-_register_flag(INVITED, 'i', '', 'md', ugettext_lazy('Invited'), None, None)
-_register_flag(DECLINED, 'd', '', 'mi', ugettext_lazy('Declined'), None, None)
+_register_flag(MEMBER, 'm', '', 'idD', ugettext_lazy('Member'), None, None)
+_register_flag(INVITED, 'i', '', 'mdD', ugettext_lazy('Invited'), None, None)
+_register_flag(DECLINED, 'd', '', 'miD', ugettext_lazy('Declined'), None, None)
+_register_flag(CANCELED, 'D', '', 'mid', ugettext_lazy('Canceled'), None, None)
 _register_flag(
     OPERATOR, 'o', 'veEcCfFnNuUxX', '', ugettext_lazy('Operator'),
     ugettext_lazy('Operator groups'),
@@ -179,11 +181,11 @@ def int_to_text(flags, inherited_flags):
     if debug_memberships:
         # That version show everything, even when obvious like
         # Inherited member + member
-        for code in 'midoveEcCfFnNuUxX':
+        for code in 'midDoveEcCfFnNuUxX':
             if flags & FLAGTOINT[code]:
                 nice_perm = FLAGTOTEXT[code]
                 memberships.append(nice_perm)
-        for code in 'mid':
+        for code in 'midD':
             if inherited_flags & FLAGTOINT[code]:
                 nice_perm = FLAGTOTEXT[code]
                 memberships.append(
@@ -203,6 +205,8 @@ def int_to_text(flags, inherited_flags):
             memberships.append(_("Invited") + " " + automatic_member_indicator)
         elif flags & DECLINED:
             memberships.append(_("Declined"))
+        elif flags & CANCELED:
+            memberships.append(_("Canceled"))
 
         for code in 'ovEcCfFnNuUexX':
             if flags & FLAGTOINT[code]:
@@ -221,7 +225,7 @@ def int_to_text(flags, inherited_flags):
 
 def cig_flags_int(cid, gid):
     '''
-    Return the integer value of flags (midoveE...)
+    Return the integer value of flags (midDoveE...)
     '''
     cursor = connection.cursor()
     cursor.execute(
@@ -234,7 +238,7 @@ def cig_flags_int(cid, gid):
 
 def cig_flags_direct_int(cid, gid):
     '''
-    Return the integer value of flags (midoveE...) without inheritance.
+    Return the integer value of flags (midDoveE...) without inheritance.
     Returns 0 if contact_in_group doesn't exists
     '''
     cursor = connection.cursor()
@@ -249,7 +253,7 @@ def cig_flags_direct_int(cid, gid):
 
 def cig_perms_int(cid, gid):
     '''
-    Return the integer value of flags (oveE...) *excluding* m/i/d
+    Return the integer value of flags (oveE...) *excluding* m/i/d/D
     '''
     cursor = connection.cursor()
     cursor.execute(

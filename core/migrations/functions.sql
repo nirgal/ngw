@@ -128,36 +128,36 @@ $$;
 CREATE OR REPLACE FUNCTION cig_add_perm_dependencies(integer) RETURNS integer
 LANGUAGE SQL IMMUTABLE AS $$
     SELECT bit_or(flag) FROM (
--- 'm'ember / 'i'nvited / 'd'eclined
-        SELECT $1 & 7 AS flag
+-- 'm'ember / 'i'nvited / 'd'eclined / cancele'D'
+        SELECT $1 & 15 AS flag
 -- 'o'perator
-        UNION (SELECT 8 WHERE $1 & (8) <> 0)
+        UNION (SELECT 16 WHERE $1 & (16) <> 0)
 -- 'v'iewer: if v or o
-        UNION (SELECT 16 WHERE $1 & (8|16) <> 0)
+        UNION (SELECT 32 WHERE $1 & (16|32) <> 0)
 -- 'e'xistance: if voeEcCfFnNuUxX
-        UNION (SELECT 32 WHERE $1 & (8|16|32|64|128|256|512|1024|2048|4096|8192|16384|32768|65536) <> 0)
+        UNION (SELECT 64 WHERE $1 & (16|32|64|128|256|512|1024|2048|4096|8192|16384|32768|65536|131072) <> 0)
 -- 'E': if oE
-        UNION (SELECT 64 WHERE $1 & (8|64) <> 0)
--- 'c'ontent: if oecCx
-        UNION (SELECT 128 WHERE $1 & (8|16|128|256|32768) <> 0)
+        UNION (SELECT 128 WHERE $1 & (16|128) <> 0)
+-- 'c'ontent: if ovcCx
+        UNION (SELECT 256 WHERE $1 & (16|32|256|512|65536) <> 0)
 -- 'C': if oC
-        UNION (SELECT 256 WHERE $1 & (8|256) <> 0)
+        UNION (SELECT 512 WHERE $1 & (16|512) <> 0)
 -- 'f'ields: if oefF
-        UNION (SELECT 512 WHERE $1 & (8|16|512|1024) <> 0)
+        UNION (SELECT 1024 WHERE $1 & (16|32|1024|2048) <> 0)
 -- 'F': if oF
-        UNION (SELECT 1024 WHERE $1 & (8|1024) <> 0)
--- 'n'ews: if oenN
-        UNION (SELECT 2048 WHERE $1 & (8|16|2048|4096) <> 0)
+        UNION (SELECT 2048 WHERE $1 & (16|2048) <> 0)
+-- 'n'ews: if ovnN
+        UNION (SELECT 4096 WHERE $1 & (16|32|4096|8192) <> 0)
 -- 'N': if oN
-        UNION (SELECT 4096 WHERE $1 & (8|4096) <> 0)
--- 'u'ploaded: if oeuU
-        UNION (SELECT 8192 WHERE $1 & (8|16|8192|16384) <> 0)
+        UNION (SELECT 8192 WHERE $1 & (16|8192) <> 0)
+-- 'u'ploaded: if ovuU
+        UNION (SELECT 16384 WHERE $1 & (16|32|16384|32768) <> 0)
 -- 'U': if oU
-        UNION (SELECT 16384 WHERE $1 & (8|16384) <> 0)
--- 'x'ternal messages: if oexX
-        UNION (SELECT 32768 WHERE $1 & (8|16|32768|65536) <> 0)
+        UNION (SELECT 32768 WHERE $1 & (16|32768) <> 0)
+-- 'x'ternal messages: if ovxX
+        UNION (SELECT 65536 WHERE $1 & (16|32|65536|131072) <> 0)
 -- X: if oX
-        UNION (SELECT 65536 WHERE $1 & (8|65536) <> 0)
+        UNION (SELECT 131072 WHERE $1 & (16|131072) <> 0)
     ) AS internal;
 $$;
 
@@ -192,7 +192,7 @@ CREATE OR REPLACE VIEW v_c_appears_in_cg(contact_id, group_id) AS
 -- View:
 -- contact_id member/invited/declined in group_id because of a subgroups
 CREATE OR REPLACE VIEW v_cig_membership_inherited(contact_id, group_id, flags) AS
-    SELECT contact_in_group.contact_id, v_subgroups.father_id, bit_or(flags) & 7
+    SELECT contact_in_group.contact_id, v_subgroups.father_id, bit_or(flags) & 15
     FROM contact_in_group
     JOIN v_subgroups ON contact_in_group.group_id=v_subgroups.child_id
     GROUP BY contact_in_group.contact_id, v_subgroups.father_id
@@ -210,7 +210,7 @@ CREATE OR REPLACE VIEW v_cig_perm_inherited_gmg(contact_id, group_id, flags) AS
 -- View:
 -- What 'flags' permissions does contact_id has over group_id, just because he's member of group 'admin'
 CREATE OR REPLACE VIEW v_cig_perm_inherited_admin(contact_id, group_id, flags) AS
-    SELECT contact.id, contact_group.id AS group_id, cig_add_perm_dependencies(8) AS flags
+    SELECT contact.id, contact_group.id AS group_id, cig_add_perm_dependencies(16) AS flags
     FROM contact_group, contact
     JOIN v_c_member_of ON contact.id=v_c_member_of.contact_id
     WHERE v_c_member_of.group_id = 8
@@ -219,7 +219,7 @@ CREATE OR REPLACE VIEW v_cig_perm_inherited_admin(contact_id, group_id, flags) A
 -- View:
 -- What 'flags' permissions does contact_id has over group_id, just because he's member of group 'observer'
 CREATE OR REPLACE VIEW v_cig_perm_inherited_observer(contact_id, group_id, flags) AS
-    SELECT contact.id, contact_group.id AS group_id, cig_add_perm_dependencies(16) AS flags
+    SELECT contact.id, contact_group.id AS group_id, cig_add_perm_dependencies(32) AS flags
     FROM contact_group, contact
     JOIN v_c_member_of ON contact.id=v_c_member_of.contact_id
     WHERE v_c_member_of.group_id = 9
@@ -239,9 +239,9 @@ CREATE OR REPLACE VIEW v_cig_perm(contact_id, group_id, flags) AS
         FROM v_cig_perm_inherited_gmg
         UNION
             (
-            SELECT contact_in_group.contact_id, contact_in_group.group_id, flags & ~7
+            SELECT contact_in_group.contact_id, contact_in_group.group_id, flags & ~15
             FROM contact_in_group
-            WHERE flags & ~7 <> 0
+            WHERE flags & ~15 <> 0
             )
         UNION
             (
@@ -292,7 +292,7 @@ CREATE OR REPLACE VIEW v_c_can_see_c(contact_id_1, contact_id_2) AS
     SELECT DISTINCT v_cig_perm.contact_id AS contact_id_1, v_c_appears_in_cg.contact_id
     FROM v_cig_perm
     JOIN v_c_appears_in_cg ON v_cig_perm.group_id=v_c_appears_in_cg.group_id
-    WHERE flags & 128 <> 0
+    WHERE flags & 256 <> 0
     ;
 
 -- vim: set et ts=4 ft=sql:
