@@ -2296,10 +2296,10 @@ class AllEventsNotReactedSince(Filter):
             '   JOIN contact_group ON (contact_in_group.group_id'
             '                          = contact_group.id)'
             '   WHERE contact_in_group.contact_id=contact.id'
-            '    AND contact_group.date >= %%(date)s'
-            '    AND flags & %s <> 0'
+            '    AND contact_group.date >= %(date)s'
+            '    AND flags & {} <> 0'
             '   )'
-            % (perms.MEMBER | perms.DECLINED),
+            .foramat(perms.MEMBER | perms.DECLINED | perms.CANCELED),
             {'date': value})
 
     def to_html(self, value):
@@ -2323,18 +2323,20 @@ class AllEventsReactionYearRatioLess(Filter):
             '                        = contact_group.id)'
             ' WHERE contact_in_group.contact_id=contact.id'
             '  AND contact_group.date >= %(refdate)s'
-            '  AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0)'
-            '     < ' + str(value/100) + ''
+            '  AND flags & {flags_active} <> 0)'
+            '     < {value}'
             ' * (SELECT COUNT(*)'
             '    FROM contact_in_group'
             '    JOIN contact_group ON (contact_in_group.group_id'
             '                           = contact_group.id)'
             '    WHERE contact_in_group.contact_id=contact.id'
             '     AND contact_group.date >= %(refdate)s'
-            '     AND flags & ' + str(perms.MEMBER
-                                      | perms.INVITED
-                                      | perms.DECLINED) + ''
-            '         <> 0)',
+            '     AND flags & {flags_proposed} <> 0)'
+            .format(
+                value=value/100,
+                flags_active=perms.MEMBER | perms.DECLINED | perms.CANCELED,
+                flags_proposed=(perms.MEMBER | perms.INVITED
+                                | perms.DECLINED | perms.CANCELED)),
             {'refdate':
                 (datetime.today() - timedelta(365)).strftime('%Y-%m-%d')})
 
@@ -2359,19 +2361,20 @@ class AllEventsReactionYearRatioMore(Filter):
             '                        = contact_group.id)'
             ' WHERE contact_in_group.contact_id=contact.id'
             '  AND contact_group.date >= %(refdate)s'
-            '  AND flags & ' + str(perms.MEMBER | perms.DECLINED) + ' <> 0)'
-            '     > ' + str(value/100) + ''
-            '       * (SELECT COUNT(*)'
-            '          FROM contact_in_group'
-            '          JOIN contact_group ON (contact_in_group.group_id'
-            '                                 = contact_group.id)'
-            '          WHERE contact_in_group.contact_id=contact.id'
-            '           AND contact_group.date >= %(refdate)s'
-            '           AND flags & ' + str(perms.MEMBER
-                                            | perms.INVITED
-                                            | perms.DECLINED) + ''
-            '               <> 0'
-            '         )',
+            '  AND flags & {flags_active} <> 0)'
+            '     > {value}'
+            ' * (SELECT COUNT(*)'
+            '    FROM contact_in_group'
+            '    JOIN contact_group ON (contact_in_group.group_id'
+            '                           = contact_group.id)'
+            '    WHERE contact_in_group.contact_id=contact.id'
+            '     AND contact_group.date >= %(refdate)s'
+            '     AND flags & {flags_proposed} <> 0)'
+            .format(
+                value=value/100,
+                flags_active=perms.MEMBER | perms.DECLINED | perms.CANCELED,
+                flags_proposed=(perms.MEMBER | perms.INVITED
+                                | perms.DECLINED | perms.CANCELED)),
             {'refdate':
                 (datetime.today() - timedelta(365)).strftime('%Y-%m-%d')})
 
