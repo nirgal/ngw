@@ -81,3 +81,5 @@ Check https://docs.djangoproject.com/en/1.7/howto/outputting-pdf/
 postgresql 9.2 supports json type for contact_message.syncinfo
 
 Quick search: Make the drop down list nicer (picture, email, ...)
+
+Add a way to move a message to another event.
