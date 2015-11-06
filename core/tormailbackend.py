@@ -53,7 +53,7 @@ def validate_ssl_hostname(cert, expected_sslhostname):
 class SMTP_SSL_TOR(smtplib.SMTP_SSL):
     '''
     This is a smtplib.SMTP like object, but that use local TOR.
-    Only support smtps, sslv3. Does enforce certificate validation.
+    Only support smtps, tls12. Does enforce certificate validation.
     TODO: starttls would be better, but python2 checks are a pain. Waiting for
     python3 support in debian django...
     '''
@@ -68,7 +68,7 @@ class SMTP_SSL_TOR(smtplib.SMTP_SSL):
 
         new_socket = ssl.wrap_socket(
             s, self.keyfile, self.certfile,
-            ssl_version=ssl.PROTOCOL_TLSv1,
+            ssl_version=ssl.PROTOCOL_TLSv1_2,
             ca_certs='/etc/ssl/certs/ca-certificates.crt',
             cert_reqs=ssl.CERT_REQUIRED)
         cert = new_socket.getpeercert()
