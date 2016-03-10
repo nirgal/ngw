@@ -4,8 +4,6 @@
 .gnupg
 apache.conf
 apache_error.log
-backup.sh
-backups/
 mailing/templates
 !mailing/templates/resetpassword.odt
 mailing/generated
