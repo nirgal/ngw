@@ -179,5 +179,7 @@ EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
 # If you enable the vpn extension, you'll need to define these values:
 # VPN_GROUP = 52  # Group of people allowed to connect to the VPN
 # VPN_FIELD_PASSWORD = 2  # Field containing the VPN password
+# VPN_BASEIP = '10.7.0.0'  # Base IP address
+# VPN_MAXIP = '10.7.255.255'  # Maximum IP address
 
 # vim: set et ts=4 ft=python: #
