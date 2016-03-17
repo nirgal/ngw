@@ -43,7 +43,7 @@ def cmd_auth(login, domain, password):
         logger.info('User %s has no password', login)
         return False
 
-    logger.debug('Checking passord for user %s', login)
+    logger.debug('Checking password for user %s', login)
     if check_password(password, dbpassword):
         logger.info('User %s auth successful', login)
         return True
