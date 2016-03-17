@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'ngw.extensions.externalmessages',  # Needed for translations
     # 'ngw.extensions.xmpp',
     'django.contrib.admin',  # for static files, but disabled in urls.py
+    # 'ngw.extensions.vpn',  # VPN scripts. See VPN_* bellow
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )
@@ -161,7 +162,7 @@ FILE_UPLOAD_PERMISSIONS = 0o664
 # Uncomment next line to enable GPG keyring
 # GPG_HOME = '/var/lib/ngw/'
 
-# If you enable xmpp extension, you'll need to define these 3 values:
+# If you enable the xmpp extension, you'll need to define these 3 values:
 # XMPP_DOMAIN = 'myxmppdomain.net'
 # XMPP_GROUP = 284
 # XMPP_ROSTERNAME = 'Ngw contacts'  # Name of the group in the roster
@@ -174,5 +175,9 @@ EMAIL_PORT = 465
 # DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
 EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
+
+# If you enable the vpn extension, you'll need to define these values:
+# VPN_GROUP = 52  # Group of people allowed to connect to the VPN
+# VPN_FIELD_PASSWORD = 2  # Field containing the VPN password
 
 # vim: set et ts=4 ft=python: #
