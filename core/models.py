@@ -447,7 +447,10 @@ class Contact(NgwModel):
         # return ContactField.objects.filter(contact_group__in=groups)
         group_ids = [g.id for g in groups]
         # print("group_ids=", group_ids)
-        return ContactField.objects.filter(contact_group_id__in=group_ids)
+        # Password is handled by a special form, exclude it:
+        return (ContactField.objects
+                            .filter(contact_group_id__in=group_ids)
+                            .exclude(id=FIELD_PASSWORD))
 
     def get_fieldvalues_by_type(self, type_):
         if isinstance(type_, ContactField):

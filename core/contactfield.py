@@ -2,10 +2,12 @@ import json
 import os
 from datetime import datetime
 
+import crack
 import magic
 from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import AdminDateWidget
+from django.contrib.auth.hashers import make_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template import Context, Template, loader
 from django.utils import formats, html, http
@@ -459,18 +461,25 @@ class PasswordContactField(ContactField):
         return '********'
 
     def get_form_fields(self):
-        return None
+        return forms.CharField(label=self.name, max_length=255,
+                               required=False, help_text=self.hint,
+                               widget=forms.PasswordInput)
 
     def formfield_value_to_db_value(self, value):
-        raise NotImplementedError()
+        return make_password(value)
 
     def db_value_to_formfield_value(self, value):
-        raise NotImplementedError('Cannot reverse hash of a password')
+        return ''  # Do not show previous password hash
 
     @classmethod
     def validate_unicode_value(cls, value,
                                choice_group_id=None, choice_group2_id=None):
-        return True  # No check
+        try:
+            crack.FascistCheck(value)
+        except ValueError:
+            return False
+        else:
+            return True
 register_contact_field_type(PasswordContactField, 'PASSWORD',
                             ugettext_lazy('Password'), has_choice=0)
 

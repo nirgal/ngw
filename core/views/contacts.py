@@ -1014,9 +1014,9 @@ class ContactEditForm(forms.ModelForm):
 
         # 2/ In ContactFields
         for cf in self.cfields:
-            if cf.type == FTYPE_PASSWORD:
-                continue
             newvalue = data[str(cf.id)]
+            if cf.type == FTYPE_PASSWORD and not newvalue:
+                continue  # Ignore entries when password is empty (no change)
             # if cf.type == 'FILE' && newvalue == False:
             #    TODO: delete the old file
             if isinstance(newvalue, UploadedFile):
