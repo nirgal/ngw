@@ -128,6 +128,9 @@ class Command(BaseCommand):
             logger.critical(msg)
             raise CommandError(msg)
 
+        addr = ip_int_to_str(addr)
+        gate_addr = ip_int_to_str(gate_addr)
+
         output = 'ifconfig-push {} {}'.format(addr, gate_addr)
         logger.debug('{} ({}): {}'.format(login, cid, output))
         f.write(output+'\n')
