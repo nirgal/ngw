@@ -612,8 +612,11 @@ class BaseContactListView(NgwListView):
 
         def _quote_csv(col_html):
             u = html.strip_tags(str(col_html))
-            u = u.rstrip('\n\r')
-            u = re.sub('\n+', '\n', u)  # remove duplicates \n
+            u = u.rstrip('\n\r')  # remove trailing \n
+            # drop spaces at the begining of the line:
+            u = re.sub('^[ \t\n\r\f\v]+', '', u, flags=re.MULTILINE)
+            u = re.sub('[ \t\n\r\f\v]*\n', '\n', u)  # remove duplicates \n
+            # Do the actual escaping/quoting
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
         header_done = False
