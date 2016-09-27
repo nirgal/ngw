@@ -3,6 +3,7 @@ Contact managing views
 '''
 
 import os
+import re
 from datetime import date
 
 import crack
@@ -612,6 +613,7 @@ class BaseContactListView(NgwListView):
         def _quote_csv(col_html):
             u = html.strip_tags(str(col_html))
             u = u.rstrip('\n\r')
+            u = re.sub('\n+', '\n', u)  # remove duplicates \n
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
         header_done = False

@@ -9,10 +9,11 @@ import socket
 import ssl
 import time
 
-import socks  # You need package python-socksipy
 from django.conf import settings
 from django.core.mail.backends.smtp import EmailBackend
 from django.core.mail.utils import DNS_NAME
+
+import socks  # You need package python-socksipy
 
 
 def _validate_wildcard_name(valid_for, expected):
