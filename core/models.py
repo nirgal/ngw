@@ -2126,7 +2126,7 @@ class GroupFilterIsInvited(Filter):
     def get_param_types(self):
         return ()
 GroupFilterIsInvited.internal_name = 'ginvited'
-GroupFilterIsInvited.human_name = ugettext_lazy('has been invited in group')
+GroupFilterIsInvited.human_name = ugettext_lazy('is invited in group')
 
 
 class GroupFilterIsNotInvited(Filter):
@@ -2158,7 +2158,7 @@ class GroupFilterIsNotInvited(Filter):
         return ()
 GroupFilterIsNotInvited.internal_name = 'gnotinvited'
 GroupFilterIsNotInvited.human_name = ugettext_lazy(
-    'has not been invited in group')
+    'is not invited in group')
 
 
 class GroupFilterDeclinedInvitation(Filter):
