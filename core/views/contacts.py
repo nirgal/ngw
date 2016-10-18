@@ -658,10 +658,11 @@ class BaseContactListView(NgwListView):
             else:
                 noemails.append(contact.name)
 
-        messages.add_message(
-            request, messages.WARNING,
-            _('The following people do not have an email address: {}')
-            .format(', '.join(noemails)))
+        if noemails:
+            messages.add_message(
+                request, messages.WARNING,
+                _('The following people do not have an email address: {}')
+                .format(', '.join(noemails)))
 
         response = HttpResponse(status=303)
         response['Location'] = 'mailto:?bcc=' + ','.join(emails)
