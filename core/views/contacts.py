@@ -651,12 +651,19 @@ class BaseContactListView(NgwListView):
         emails = []
         noemails = []
         for contact in queryset:
-            # only the first email
+            # only the first email of each contact
             c_emails = contact.get_fieldvalues_by_type('EMAIL')
             if c_emails:
                 emails.append(c_emails[0])
             else:
                 noemails.append(contact.name)
+
+        if emails:
+            messages.add_message(
+                request, messages.SUCCESS,
+                mark_safe('<a href="{}">{}</a>'.format(
+                          'mailto:?bcc=' + ', '.join(emails),
+                          _('List generated. Click here.'))))
 
         if noemails:
             messages.add_message(
@@ -664,9 +671,7 @@ class BaseContactListView(NgwListView):
                 _('The following people do not have an email address: {}')
                 .format(', '.join(noemails)))
 
-        response = HttpResponse(status=303)
-        response['Location'] = 'mailto:?bcc=' + ','.join(emails)
-        return response
+        return None
     action_bcc.short_description = ugettext_lazy(
         "Send email locally (thunderbird or similar)")
 

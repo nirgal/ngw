@@ -88,5 +88,3 @@ postgresql 9.2 supports json type for contact_message.syncinfo
 Quick search: Make the drop down list nicer (picture, email, ...)
 
 Add a way to move a message to another event.
-
-When sending a message via thunderbird, system sends a 303 redirecting to mailto:addresses. But an empty page stays on firefox. The user should have a kind of feedback.
