@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from ngw.core.models import Config, Contact
 
 
@@ -19,3 +21,10 @@ def contactcount(request):
         return {'contactcount': Contact.objects.count()}
     else:
         return ()
+
+
+def extra_header_links(request):
+    """
+    This context processor just add a "extra_header_links" key
+    """
+    return {'extra_header_links': settings.EXTRA_BANNER_LINKS}

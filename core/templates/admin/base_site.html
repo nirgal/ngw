@@ -61,6 +61,11 @@
 
 {% block nav-global %}
 {% if user.is_authenticated %}
+<div id=extratabs>
+    {% for links in extra_header_links %}
+    <a class="extra" href="{{ links.1 }}">{{ links.0 }}</a>
+    {% endfor %}
+</div>
 <div id=tabs>
     <a href="/" {{ nav|nav_is_active:""}}>{% trans "news" %}</a>
     <a href="/contactgroups/" {{ nav|nav_is_active:"contactgroups"}}>{% trans "groups" %}</a>

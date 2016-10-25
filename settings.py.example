@@ -69,6 +69,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'ngw.core.context_processors.banner',
     'ngw.core.context_processors.contactcount',
+    'ngw.core.context_processors.extra_header_links',
 )
 
 ROOT_URLCONF = 'ngw.urls'
@@ -181,5 +182,10 @@ EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
 # VPN_FIELD_PASSWORD = 2  # Field containing the VPN password
 # VPN_BASEIP = '10.7.0.0'  # Base IP address
 # VPN_MAXIP = '10.7.255.255'  # Maximum IP address
+
+EXTRA_HOME_LINKS = (
+    ('forum', '/phpbb3'),
+    ('wiki', '/wiki'),
+)
 
 # vim: set et ts=4 ft=python: #
