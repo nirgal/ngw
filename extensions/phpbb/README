@@ -8,7 +8,7 @@ su - postgres -c "psql -c '\password phpbb3'"
 su - postgres -c "createdb phpbb3 -O phpbb3"
 
 Install the packages:
-aptitude install phpbb3 php5-pgsql php5-curl php5-cli sudo
+aptitude install phpbb3 phpbb3-l10n php5-pgsql php5-curl php5-cli sudo
 
 You will want to setup things manually.
 /etc/phpbb3/database.inc.php should contain something like:
@@ -58,7 +58,7 @@ In the admin control panel, in general, in client communication, in authenticati
 See https://bugs.debian.org/778553 if you get a blank page there.
 
 
-Install french packs:
+Install french packs (might not be necessary anymore with phpbb3-i10n):
 wget http://www.phpbb.com/files/language_packs_30x/lang_fr.tar.gz
 wget http://www.phpbb.com/files/language_packs_30x/prosilver_fr.tar.gz
 wget http://www.phpbb.com/files/language_packs_30x/subsilver2_fr.tar.gz
