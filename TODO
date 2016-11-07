@@ -2,8 +2,6 @@
 BUGS
 ====================================================================================================
 
-Crash when loging with a contact who has a password, but no real access. (Access denied, but not nice).
-
 
 ====================================================================================================
 VALIDATED IMPROVEMENTS

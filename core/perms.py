@@ -233,7 +233,9 @@ def cig_flags_int(cid, gid):
         ' WHERE contact_id={} AND group_id={}'
         .format(cid, gid))
     row = cursor.fetchone()
-    return row[0] or 0
+    if row is None:
+        return 0
+    return row[0]
 
 
 def cig_flags_direct_int(cid, gid):
@@ -248,7 +250,9 @@ def cig_flags_direct_int(cid, gid):
         ' WHERE contact_id={} AND group_id={}'
         .format(cid, gid))
     row = cursor.fetchone()
-    return row[0] or 0
+    if row is None:
+        return 0
+    return row[0]
 
 
 def cig_perms_int(cid, gid):
@@ -260,7 +264,9 @@ def cig_perms_int(cid, gid):
         'SELECT flags FROM v_cig_perm WHERE contact_id={} AND group_id={}'
         .format(cid, gid))
     row = cursor.fetchone()
-    return row[0] or 0
+    if row is None:
+        return 0
+    return row[0]
 
 
 def c_operatorof_cg(cid, gid):
@@ -376,4 +382,6 @@ def c_can_see_c(cid1, cid2):
         "   AND contact_id_2=%s)",
         [cid1, cid2])
     row = cursor.fetchone()
+    if row is None:
+        return False
     return row[0]
