@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-24 15:25+0000\n"
+"POT-Creation-Date: 2017-01-23 17:03+0000\n"
 "PO-Revision-Date: 2015-07-16 09:46+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
@@ -128,7 +128,7 @@ msgstr "Modification"
 msgid "log"
 msgstr "historique"
 
-#: models.py:122 templates/admin/base_site.html:69
+#: models.py:122 templates/admin/base_site.html:74
 msgid "logs"
 msgstr "historique"
 
@@ -192,7 +192,7 @@ msgid "Login information deleted for user {name}."
 msgstr "Identifiants de connexion effacés pour l'utilisateur {name}"
 
 #: models.py:298 models.py:764 models.py:1258 models.py:1458
-#: views/contacts.py:606 views/contacts.py:1414 views/contactsearch.py:40
+#: views/contacts.py:606 views/contacts.py:1416 views/contactsearch.py:40
 #: views/fields.py:113 views/fields.py:216
 msgid "Name"
 msgstr "Nom"
@@ -271,7 +271,7 @@ msgstr "groupe de contacts"
 msgid "contact groups"
 msgstr "groupes de contacts"
 
-#: models.py:817 templates/admin/base_site.html:67 views/groups.py:287
+#: models.py:817 templates/admin/base_site.html:72 views/groups.py:287
 #: views/groups.py:305
 msgid "events"
 msgstr "événements"
@@ -484,7 +484,7 @@ msgstr "texte"
 msgid "news item"
 msgstr "nouvelle"
 
-#: models.py:2604 templates/admin/base_site.html:65 views/news.py:48
+#: models.py:2604 templates/admin/base_site.html:70 views/news.py:48
 #: views/news.py:154
 msgid "news"
 msgstr "nouvelles"
@@ -816,7 +816,7 @@ msgstr "Déconnexion"
 msgid "Quick contact search"
 msgstr "Recherche rapide de contacts"
 
-#: templates/admin/base_site.html:66 views/groups.py:672 views/groups.py:696
+#: templates/admin/base_site.html:71 views/groups.py:672 views/groups.py:696
 msgid "groups"
 msgstr "groupes"
 
@@ -938,7 +938,7 @@ msgstr "Ajouter à un groupe"
 msgid "VCard"
 msgstr "Carte de visite"
 
-#: templates/contact_detail.html:103 views/contacts.py:1198
+#: templates/contact_detail.html:103 views/contacts.py:1200
 msgid "Change password"
 msgstr "Changer le mot de passe"
 
@@ -946,7 +946,7 @@ msgstr "Changer le mot de passe"
 msgid "Filters"
 msgstr "Filtres"
 
-#: templates/contact_detail.html:107 views/contacts.py:1551
+#: templates/contact_detail.html:107 views/contacts.py:1553
 msgid "Default group"
 msgstr "Groupe par défaut"
 
@@ -1377,12 +1377,12 @@ msgstr "Les choix ont été enregistrés avec succès."
 msgid "Editing choices for {}"
 msgstr "Modification des choix pour {}"
 
-#: views/choices.py:197 views/contacts.py:1103 views/fields.py:368
+#: views/choices.py:197 views/contacts.py:1105 views/fields.py:368
 #: views/groups.py:850 views/news.py:91
 msgid "Adding a new {}"
 msgstr "Ajout d'un(e) nouvel(le) {}"
 
-#: views/choices.py:209 views/contacts.py:1119 views/fields.py:380
+#: views/choices.py:209 views/contacts.py:1121 views/fields.py:380
 #: views/groups.py:863 views/news.py:103
 msgid "add"
 msgstr "ajouter"
@@ -1448,7 +1448,7 @@ msgstr "Événements"
 msgid "Membership"
 msgstr "Appartenance"
 
-#: views/contacts.py:752 views/contacts.py:1059
+#: views/contacts.py:752 views/contacts.py:1061
 msgid "This is a virtual group. It cannot have members."
 msgstr "Ceci est un groupe virtuel. Il ne peux pas avoir de membres."
 
@@ -1474,84 +1474,84 @@ msgstr "ajouter des contacts à"
 msgid "Details for {}"
 msgstr "Détails de {}"
 
-#: views/contacts.py:864 views/contacts.py:1111 views/contacts.py:1202
-#: views/contacts.py:1270 views/contacts.py:1336 views/groups.py:608
+#: views/contacts.py:864 views/contacts.py:1113 views/contacts.py:1204
+#: views/contacts.py:1272 views/contacts.py:1338 views/groups.py:608
 #: views/groups.py:1151 views/groups.py:1220 views/messages.py:268
 msgid "members"
 msgstr "membres"
 
-#: views/contacts.py:1053
-msgid "You are not authorized to change members of that group."
-msgstr "Désolé. Vous n'êtes pas autorisé à changer les membres de ce groupe."
+#: views/contacts.py:1055
+msgid "You are not authorized to see members of that group."
+msgstr "Vous n'êtes pas autorisé à voir les membres de ce groupe."
 
-#: views/contacts.py:1083
+#: views/contacts.py:1085
 msgid "Contact {} has been saved."
 msgstr "Le contact {} a été enregistré."
 
-#: views/contacts.py:1100 views/fields.py:364 views/groups.py:847
+#: views/contacts.py:1102 views/fields.py:364 views/groups.py:847
 #: views/news.py:88
 msgid "Editing {}"
 msgstr "Modification de {}"
 
-#: views/contacts.py:1117 views/fields.py:378 views/groups.py:860
+#: views/contacts.py:1119 views/fields.py:378 views/groups.py:860
 #: views/news.py:101
 msgid "edit"
 msgstr "modifier"
 
-#: views/contacts.py:1150
+#: views/contacts.py:1152
 msgid "The passwords must match!"
 msgstr "Les mots de passe doivent être identiques!"
 
-#: views/contacts.py:1186 views/contacts.py:1287
+#: views/contacts.py:1188 views/contacts.py:1289
 msgid "Password has been changed successfully!"
 msgstr "Le mot de passe a été changé avec succès!"
 
-#: views/contacts.py:1206
+#: views/contacts.py:1208
 msgid "password"
 msgstr "mot de passe"
 
-#: views/contacts.py:1266
+#: views/contacts.py:1268
 msgid "Generate a new password and print a letter"
 msgstr "Générer un nouveau mot de passe et imprimer une lettre"
 
-#: views/contacts.py:1274
+#: views/contacts.py:1276
 msgid "password letter"
 msgstr "Courrier de mot de passe"
 
-#: views/contacts.py:1307
+#: views/contacts.py:1309
 msgid "File generation failed"
 msgstr "La génération de fichier a échoué"
 
-#: views/contacts.py:1337 views/generic.py:528 views/groups.py:930
+#: views/contacts.py:1339 views/generic.py:528 views/groups.py:930
 #: views/groups.py:1222 views/news.py:155
 msgid "delete"
 msgstr "supprimer"
 
-#: views/contacts.py:1361
+#: views/contacts.py:1363
 msgid "No name"
 msgstr "Sans nom"
 
-#: views/contacts.py:1364
+#: views/contacts.py:1366
 msgid "Filter has been added successfully!"
 msgstr "Le filtre a été ajouté avec succès!"
 
-#: views/contacts.py:1395
+#: views/contacts.py:1397
 msgid "User custom filters"
 msgstr "Filtres personnalisés de l'utilisateur."
 
-#: views/contacts.py:1400 views/contacts.py:1481
+#: views/contacts.py:1402 views/contacts.py:1483
 msgid "custom filters"
 msgstr "filtres personnalisés"
 
-#: views/contacts.py:1417
+#: views/contacts.py:1419
 msgid "Shared"
 msgstr "Partagé"
 
-#: views/contacts.py:1419
+#: views/contacts.py:1421
 msgid "Allow other users to use that filter."
 msgstr "Autoriser les autres utilisateurs à utiliser ce filtre."
 
-#: views/contacts.py:1441
+#: views/contacts.py:1443
 msgid ""
 "[Permission was denied to explain that filter. You probably don't have "
 "access to the fields / group names it is using.]<br>Raw filter={}"
@@ -1559,47 +1559,47 @@ msgstr ""
 "[La permission d'expliquer le filtre a été refusée. Vous n'avez probablement "
 "pas accès au champs / groupes qu'il utilise.]<br>Filtre brut={}"
 
-#: views/contacts.py:1446
+#: views/contacts.py:1448
 msgid "[This filter uses a field that doesn't exist anymore.]"
 msgstr "[Ce filtre utilise a un champ qui n'existe plus.]"
 
-#: views/contacts.py:1478
+#: views/contacts.py:1480
 msgid "User custom filter renaming"
 msgstr "Changement de nom du filtre utilisateur personnalisé"
 
-#: views/contacts.py:1490
+#: views/contacts.py:1492
 msgid "Filter has been renamed."
 msgstr "Le filtre a été renommé."
 
-#: views/contacts.py:1519
+#: views/contacts.py:1521
 msgid "Filter has been deleted."
 msgstr "Le filtre a été effacé."
 
-#: views/contacts.py:1546
+#: views/contacts.py:1548
 msgid "Create new personnal group"
 msgstr "Créer un nouveau groupe personnel"
 
-#: views/contacts.py:1559
+#: views/contacts.py:1561
 msgid "Group of {}"
 msgstr "Groupe de {}"
 
-#: views/contacts.py:1560
+#: views/contacts.py:1562
 msgid "This is the default group of {}"
 msgstr "Ceci est le groupe par défaut de {}"
 
-#: views/contacts.py:1574
+#: views/contacts.py:1576
 msgid "Personnal group created."
 msgstr "Groupe personnel créé."
 
-#: views/contacts.py:1599
+#: views/contacts.py:1601
 msgid "Default group has been changed successfully."
 msgstr "Le groupe par défaut a été modifié avec succès."
 
-#: views/contacts.py:1606
+#: views/contacts.py:1608
 msgid "User default group"
 msgstr "Groupe par défaut de l'utilisateur"
 
-#: views/contacts.py:1609
+#: views/contacts.py:1611
 msgid "default group"
 msgstr "groupe par défaut"
 

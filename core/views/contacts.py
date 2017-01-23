@@ -1047,10 +1047,12 @@ class ContactEditMixin(ModelFormMixin):
 
     def check_perm_groupuser(self, group, user):
         if group:
-            if not group.userperms & perms.CHANGE_MEMBERS:
+            if not group.userperms & perms.SEE_MEMBERS:
+                # CHANGE_MEMBERS is for adding new members, removing them
+                # SEE_MEMBERS is enough here
                 messages.add_message(
                     self.request, messages.ERROR,
-                    _('You are not authorized to change members of that'
+                    _('You are not authorized to see members of that'
                       ' group.'))
                 raise PermissionDenied
             if group.virtual:
@@ -1063,7 +1065,7 @@ class ContactEditMixin(ModelFormMixin):
             if cid == user.id:
                 # The user can change himself
                 pass
-            elif perms.c_can_change_members_cg(user.id, GROUP_EVERYBODY):
+            elif perms.c_can_see_c(user.id, cid):
                 pass
             else:
                 raise PermissionDenied
