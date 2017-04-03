@@ -245,7 +245,11 @@ class EventListView(NgwUserAcl, NgwListView):
         # 'visible_member_count',
         )
     list_display_links = 'name',
-    search_fields = 'name', 'description', 'budget_code'
+    search_fields = 'name', 'description', 'budget_code', 'date'
+
+    actions = (
+        'action_csv_export',  # See NgwListView
+    )
 
     # def get_list_display(self, request):
     #    columns = [

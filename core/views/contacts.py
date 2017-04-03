@@ -3,7 +3,6 @@ Contact managing views
 '''
 
 import os
-import re
 from datetime import date
 
 import crack
@@ -11,8 +10,6 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import filters
-from django.contrib.admin.utils import (display_for_field, display_for_value,
-                                        label_for_field, lookup_field)
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import UploadedFile
@@ -470,7 +467,7 @@ class BaseContactListView(NgwListView):
     list_filter = CustomColumnsFilter,
 
     actions = (
-        'action_csv_export',
+        'action_csv_export',  # See NgwListView
         'action_vcard_export',
         'action_bcc',
         'add_to_group',
@@ -606,46 +603,6 @@ class BaseContactListView(NgwListView):
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'
     name_with_relative_link.allow_tags = True
-
-    def action_csv_export(self, request, queryset):
-        result = ''
-
-        def _quote_csv(col_html):
-            u = html.strip_tags(str(col_html))
-            u = u.rstrip('\n\r')  # remove trailing \n
-            # drop spaces at the begining of the line:
-            u = re.sub('^[ \t\n\r\f\v]+', '', u, flags=re.MULTILINE)
-            u = re.sub('[ \t\n\r\f\v]*\n', '\n', u)  # remove duplicates \n
-            # Do the actual escaping/quoting
-            return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
-
-        header_done = False
-        for row in queryset:
-            if not header_done:
-                for i, field_name in enumerate(self.list_display):
-                    text, attr = label_for_field(
-                        field_name, type(row), self, True)
-                    if i:  # not first column
-                        result += ','
-                    result += _quote_csv(text)
-                result += '\n'
-                header_done = True
-            for i, field_name in enumerate(self.list_display):
-                if i:  # not first column
-                    result += ','
-                f, attr, value = lookup_field(field_name, row, self)
-                if value is None:
-                    continue
-                if f is None:
-                    col_html = display_for_value(value, False)
-                else:
-                    col_html = display_for_field(value, f)
-
-                result += _quote_csv(col_html)
-            result += '\n'
-        return HttpResponse(result, content_type='text/csv; charset=utf-8')
-    action_csv_export.short_description = ugettext_lazy(
-        "CSV format export (Spreadsheet format)")
 
     def action_bcc(self, request, queryset):
         emails = []

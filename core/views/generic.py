@@ -3,6 +3,7 @@ Base view class; View helpers
 '''
 
 import operator
+import re
 from collections import OrderedDict
 from functools import reduce
 
@@ -11,17 +12,21 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import helpers
 from django.contrib.admin.templatetags.admin_static import static
+from django.contrib.admin.utils import (display_for_field, display_for_value,
+                                        label_for_field, lookup_field)
 from django.contrib.admin.views.main import ChangeList
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import models
 from django.db.models.fields import BLANK_CHOICE_DASH
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.http.response import HttpResponseBase
+from django.utils import html
 from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
 from django.views.decorators.cache import never_cache
 from django.views.generic import DeleteView, TemplateView
 from django.views.generic.base import ContextMixin
@@ -505,6 +510,45 @@ class NgwListView(TemplateView):
 
     get = post = theview
 
+    def action_csv_export(self, request, queryset):
+        result = ''
+
+        def _quote_csv(col_html):
+            u = html.strip_tags(str(col_html))
+            u = u.rstrip('\n\r')  # remove trailing \n
+            # drop spaces at the begining of the line:
+            u = re.sub('^[ \t\n\r\f\v]+', '', u, flags=re.MULTILINE)
+            u = re.sub('[ \t\n\r\f\v]*\n', '\n', u)  # remove duplicates \n
+            # Do the actual escaping/quoting
+            return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+        header_done = False
+        for row in queryset:
+            if not header_done:
+                for i, field_name in enumerate(self.list_display):
+                    text, attr = label_for_field(
+                        field_name, type(row), self, True)
+                    if i:  # not first column
+                        result += ','
+                    result += _quote_csv(text)
+                result += '\n'
+                header_done = True
+            for i, field_name in enumerate(self.list_display):
+                if i:  # not first column
+                    result += ','
+                f, attr, value = lookup_field(field_name, row, self)
+                if value is None:
+                    continue
+                if f is None:
+                    col_html = display_for_value(value, False)
+                else:
+                    col_html = display_for_field(value, f)
+
+                result += _quote_csv(col_html)
+            result += '\n'
+        return HttpResponse(result, content_type='text/csv; charset=utf-8')
+    action_csv_export.short_description = ugettext_lazy(
+        "CSV format export (Spreadsheet format)")
 
 #######################################################################
 #
@@ -514,6 +558,8 @@ class NgwListView(TemplateView):
 
 # Helper function that is never call directly, hence the lack of
 # authentification check
+
+
 class NgwDeleteView(DeleteView):
     template_name = 'delete.html'
     success_url = '../'
