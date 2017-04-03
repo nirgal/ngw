@@ -527,7 +527,7 @@ class BaseContactListView(NgwListView):
 
                 attribute_name = 'html_'+prop
                 attribute = membership_extended_widget_factory(request, cg)
-                attribute.short_description = cg.name
+                attribute.short_description = str(cg)
                 setattr(self, attribute_name, attribute)
                 list_display.append(attribute_name)
 
