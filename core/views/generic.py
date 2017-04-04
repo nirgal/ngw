@@ -521,8 +521,8 @@ class NgwListView(TemplateView):
             u = re.sub('[ \t\n\r\f\v]*\n', '\n', u)  # remove duplicates \n
             # Unquote
             u = u.replace('&quot;', '"').replace('&#39;', "'")
-            # Do the actual escaping/quoting
-            return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
+            # Do the actual escaping/quoting (quotes doubling for libreoffice)
+            return '"' + u.replace('"', '""') + '"'
 
         header_done = False
         for row in queryset:
