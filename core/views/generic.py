@@ -519,6 +519,8 @@ class NgwListView(TemplateView):
             # drop spaces at the begining of the line:
             u = re.sub('^[ \t\n\r\f\v]+', '', u, flags=re.MULTILINE)
             u = re.sub('[ \t\n\r\f\v]*\n', '\n', u)  # remove duplicates \n
+            # Unquote
+            u = u.replace('&quot;', '"').replace('&#39;', "'")
             # Do the actual escaping/quoting
             return '"' + u.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
