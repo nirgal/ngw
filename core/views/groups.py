@@ -29,9 +29,9 @@ from django.views.generic import (CreateView, FormView, TemplateView,
 from django.views.generic.edit import ModelFormMixin
 
 from ngw.core import perms
-from ngw.core.models import (FIELD_DEFAULT_GROUP, GROUP_EVERYBODY, Contact,
-                             ContactGroup, ContactInGroup, GroupInGroup,
-                             GroupManageGroup, hooks)
+from ngw.core.models import (FIELD_DEFAULT_GROUP, GROUP_EVERYBODY, Config,
+                             Contact, ContactGroup, ContactInGroup,
+                             GroupInGroup, GroupManageGroup, hooks)
 from ngw.core.nav import Navbar
 from ngw.core.views.contacts import BaseContactListView
 from ngw.core.views.generic import (InGroupAcl, NgwDeleteView, NgwListView,
@@ -678,6 +678,8 @@ class ContactGroupForm(forms.ModelForm):
             initial=field_initial)
 
         # Add fields for kind of permissions
+        event_default_perms = Config.get_event_default_perms()
+
         for flag in 'oveEcCfFnNuUxX':
             field_name = 'admin_{}_groups'.format(flag)
             if instance:
@@ -692,7 +694,7 @@ class ContactGroupForm(forms.ModelForm):
                         "User doesn't have a default group"
                     field_initial = int(default_group_id),
                 else:
-                    field_initial = None
+                    field_initial = event_default_perms.get(flag, None)
             self.fields[field_name] = forms.MultipleChoiceField(
                 label=perms.FLAGGROUPLABEL[flag],
                 required=False,

@@ -164,6 +164,15 @@ class Config(NgwModel):
         except (Config.DoesNotExist, ValueError):
             return 200
 
+    @staticmethod
+    def get_event_default_perms():
+        try:
+            object_query_page_length = Config.objects.get(
+                pk='event_default_perms')
+            return json.loads(object_query_page_length.text)
+        except (Config.DoesNotExist, ValueError):
+            return {}
+
 
 class Choice(NgwModel):
     django_id = models.AutoField(primary_key=True)  # not used
