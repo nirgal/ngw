@@ -404,8 +404,12 @@ class CalendarQueryView(View):
         qs = ContactGroup.objects.with_user_perms(request.user.id,
                                                   perms.SEE_CG)
         qs = qs.filter(
+            # start within boundaries:
             Q(date__gte=str_min_date, date__lte=str_max_date)
-            | Q(end_date__gte=str_min_date, end_date__lte=str_max_date))
+            # or end within boundaries:
+            | Q(end_date__gte=str_min_date, end_date__lte=str_max_date)
+            # or start before and end after (this is a long event):
+            | Q(date__lte=str_min_date, end_date__gte=str_max_date))
         qs = qs.order_by('date')
         # qs = qs.distinct()
 
