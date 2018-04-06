@@ -83,6 +83,7 @@ class Command(NoArgsCommand):
         os.unlink(self.get_pid_filename())
 
     def process_all_messages(self):
+        n = 0
         for msg in ContactMsg.objects.filter():
             backend = msg.get_backend()
             func_name = 'sync_msg'
@@ -93,3 +94,6 @@ class Command(NoArgsCommand):
                     'Module "{}" does not define a "{}" function'
                     .format(backend, func_name)))
             func(msg)
+            n = n + 1
+        if n:
+            self.logger.debug('Processed {} message(s).'.format(n))
