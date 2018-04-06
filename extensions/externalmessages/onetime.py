@@ -191,13 +191,29 @@ one to read it, please repport that.</p>''')
 
     try:
         message.send()
-    except smtplib.SMTPException as err:
+
+    except smtplib.SMTPRecipientsRefused as err:
+        logger.critical('%s', err)
+        # Here, err.recipients is a dictionary with a single entry, like
+        # { 'toto@riseup.net': (550, b'5.1.1 <eliandre@riseup.net>:
+        # Recipient address rejected: User unknown')}
+        errmsg = err.recipients.popitem()[1]
+        logger.info('errmsg 1 %s', errmsg)
+        errmsg = errmsg[1]
+        logger.info('errmsg 2 %s', errmsg)
+        return
+
+    except smtplib.SMTPResponseException as err:
         logger.critical('%s', err)
         if err.smtp_code // 100 == 4:
             logger.warning('Temporarary SMTP failure: %s', err)
         if err.smtp_code == 450:
             logger.info('Message rate exceeded: giving up for now')
             SMTP_SERVER_CONGESTION = True
+        return
+
+    except smtplib.SMTPException as err:  # All other errors
+        logger.critical('%s', err)
         return
 
     sync_info['email_sent'] = True
