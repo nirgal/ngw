@@ -2770,13 +2770,18 @@ class ContactMsg(NgwModel):
                            .format(_('Not stored externally')))
 
             if 'email_sent' in sync_info:
-                if self.read_date:
-                    result += (
-                        '<span style="color:green;" title="{}">✉</span>'
-                        .format(_('Notification sent and read')))
+                if sync_info['email_sent']:
+                    if self.read_date:
+                        result += (
+                            '<span style="color:green;" title="{}">✉</span>'
+                            .format(_('Notification sent and read')))
+                    else:
+                        result += (
+                            '<span style="color:red;" title="{}">✉</span>'
+                            .format(_('Notification sent but unread')))
                 else:
-                    result += ('<span style="color:red;" title="{}">✉</span>'
-                               .format(_('Notification sent but unread')))
+                    result += ('<span style="color:red;" title="{}">☠</span>'
+                               .format(_('Notification cannot be sent')))
         return mark_safe(result)
     nice_flags.short_description = ugettext_lazy('Flags')
 
