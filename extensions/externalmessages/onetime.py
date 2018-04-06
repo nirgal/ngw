@@ -31,6 +31,7 @@ logger = logging.getLogger('msgsync')
 # otid: Onetime ID
 # answer_password: Onetime password to get answers
 # email_sent: True if notification email was sent
+#             False if we should give up (User unknown)
 # deleted: True if remote server returns 404 (deleted on remote end)
 
 TIMEOUT = 30  # seconds
@@ -123,7 +124,7 @@ def send_notification(msg):
 
     sync_info = json.loads(msg.sync_info)
     if 'email_sent' in sync_info:
-        return  # already sent
+        return  # already sent or gave up
     if 'otid' not in sync_info:
         return  # Message is not ready on external storage
 
@@ -191,17 +192,18 @@ one to read it, please repport that.</p>''')
 
     try:
         message.send()
+        sync_info['email_sent'] = True
 
     except smtplib.SMTPRecipientsRefused as err:
-        logger.critical('%s', err)
         # Here, err.recipients is a dictionary with a single entry, like
         # { 'toto@riseup.net': (550, b'5.1.1 <eliandre@riseup.net>:
         # Recipient address rejected: User unknown')}
-        errmsg = err.recipients.popitem()[1]
-        logger.info('errmsg 1 %s', errmsg)
-        errmsg = errmsg[1]
-        logger.info('errmsg 2 %s', errmsg)
-        return
+        errmsg = str(err.recipients.popitem()[1][1], 'utf-8', 'replace')
+        logger.warning(
+            'Giving up on onetime message notification for message %s: %s',
+            msg.id, errmsg)
+        sync_info['email_sent'] = False
+        # no return here
 
     except smtplib.SMTPResponseException as err:
         logger.critical('%s', err)
@@ -213,10 +215,10 @@ one to read it, please repport that.</p>''')
         return
 
     except smtplib.SMTPException as err:  # All other errors
+        # including smtplib.SMTPServerDisconnected
         logger.critical('%s', err)
         return
 
-    sync_info['email_sent'] = True
     msg.sync_info = json.dumps(sync_info)
     msg.save()
 
