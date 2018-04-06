@@ -90,6 +90,8 @@ class TextContactField(ContactField):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ,
                 FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull,
                 FieldFilterNotNull,)
+
+
 register_contact_field_type(TextContactField, 'TEXT',
                             ugettext_lazy('Text'), has_choice=0)
 
@@ -106,6 +108,8 @@ class LongTextContactField(ContactField):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ,
                 FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull,
                 FieldFilterNotNull,)
+
+
 register_contact_field_type(LongTextContactField, 'LONGTEXT',
                             ugettext_lazy('Long Text'), has_choice=0)
 
@@ -131,6 +135,8 @@ class NumberContactField(ContactField):
         except ValueError:
             return False
         return True
+
+
 register_contact_field_type(NumberContactField, 'NUMBER',
                             ugettext_lazy('Number'), has_choice=0)
 
@@ -160,6 +166,8 @@ class DateContactField(ContactField):
         return (FieldFilterEQ, FieldFilterLE, FieldFilterGE, FieldFilterAGE_GE,
                 FieldFilterVALID_GT, FieldFilterFUTURE, FieldFilterNull,
                 FieldFilterNotNull,)
+
+
 register_contact_field_type(DateContactField, 'DATE',
                             ugettext_lazy('Date'), has_choice=0)
 
@@ -193,6 +201,8 @@ class DateTimeContactField(ContactField):
 
     def get_filters_classes(self):
         return (FieldFilterEQ, FieldFilterNull, FieldFilterNotNull,)
+
+
 register_contact_field_type(DateTimeContactField, 'DATETIME',
                             ugettext_lazy('Date time'), has_choice=0)
 
@@ -237,6 +247,8 @@ class EmailContactField(ContactField):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ,
                 FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull,
                 FieldFilterNotNull,)
+
+
 register_contact_field_type(EmailContactField, 'EMAIL',
                             ugettext_lazy('E.Mail'), has_choice=0)
 
@@ -257,6 +269,8 @@ class PhoneContactField(ContactField):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ,
                 FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull,
                 FieldFilterNotNull,)
+
+
 register_contact_field_type(PhoneContactField, 'PHONE',
                             ugettext_lazy('Phone'), has_choice=0)
 
@@ -281,6 +295,8 @@ class RibContactField(ContactField):
         return (FieldFilterStartsWith, FieldFilterEQ, FieldFilterNEQ,
                 FieldFilterLIKE, FieldFilterILIKE, FieldFilterNull,
                 FieldFilterNotNull,)
+
+
 register_contact_field_type(RibContactField, 'RIB',
                             ugettext_lazy('French bank account'), has_choice=0)
 
@@ -319,6 +335,8 @@ class ChoiceContactField(ContactField):
     def get_filters_classes(self):
         return (FieldFilterChoiceEQ, FieldFilterChoiceNEQ,
                 FieldFilterNull, FieldFilterNotNull,)
+
+
 register_contact_field_type(ChoiceContactField, 'CHOICE',
                             ugettext_lazy('Choice'), has_choice=1)
 
@@ -374,6 +392,8 @@ class MultipleChoiceContactField(ContactField):
     def get_filters_classes(self):
         return (FieldFilterMultiChoiceHAS, FieldFilterMultiChoiceHASNOT,
                 FieldFilterNull, FieldFilterNotNull,)
+
+
 register_contact_field_type(MultipleChoiceContactField, 'MULTIPLECHOICE',
                             ugettext_lazy('Multiple choice'), has_choice=1)
 
@@ -449,6 +469,8 @@ class MultipleDoubleChoiceContactField(ContactField):
     def get_filters_classes(self):
         return (FieldFilterDoubleChoiceHAS, FieldFilterDoubleChoiceHASNOT,
                 FieldFilterNull, FieldFilterNotNull,)
+
+
 register_contact_field_type(MultipleDoubleChoiceContactField, 'DOUBLECHOICE',
                             ugettext_lazy('Double choices'), has_choice=2)
 
@@ -480,6 +502,8 @@ class PasswordContactField(ContactField):
             return False
         else:
             return True
+
+
 register_contact_field_type(PasswordContactField, 'PASSWORD',
                             ugettext_lazy('Password'), has_choice=0)
 
@@ -572,6 +596,8 @@ class FileContactField(ContactField):
             'content_type': content_type,
             'charset': charset,
             'size': uploadedFile.size}
+
+
 register_contact_field_type(FileContactField, 'FILE',
                             ugettext_lazy('File'), has_choice=0)
 
@@ -629,6 +655,8 @@ class ImageContactField(FileContactField):
                 print('Key', key, 'not found in', value)
                 return False
         return True
+
+
 register_contact_field_type(ImageContactField, 'IMAGE',
                             ugettext_lazy('Image'), has_choice=0)
 

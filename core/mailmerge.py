@@ -88,7 +88,6 @@ def ngw_mailmerge(filename_in, fields, target_dir):
 if __name__ == "__main__":
     # xcontext = oo_bootstrap()
     for name in sys.argv[1:]:
-        name = unicode(name, 'utf8')
         filename = ngw_mailmerge(
             "/usr/lib/ngw/mailing/templates/resetpassword.odt",
             {'name': name}, '.')

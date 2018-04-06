@@ -53,5 +53,6 @@ def groups_for_user(environ, username):
     finally:
         db.close_old_connections()
 
+
 check_password = wsgi_checkpassword
 application = get_wsgi_application()

@@ -62,6 +62,7 @@ def _register_flag(intval, code, requires, conflicts, text, group_label,
     FLAGDEPENDS[code] = requires
     FLAGCONFLICTS[code] = conflicts
 
+
 # That information contains:
 # int value (see above)
 # character letter value, kinda human friendly

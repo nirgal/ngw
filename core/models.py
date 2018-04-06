@@ -1382,6 +1382,8 @@ def contact_field_initialized_by_manager(sender, **kwargs):
     assert field.type is not None, \
         'Polymorphic abstract class must be created with type defined'
     field.polymorphic_upgrade()
+
+
 models.signals.post_init.connect(
     contact_field_initialized_by_manager, ContactField)
 
@@ -1390,6 +1392,8 @@ def contact_field_saved(**kwargs):
     field = kwargs['instance']
     if field.sort_weight % 10:  # To avoid recursion
         ContactField.objects.renumber()
+
+
 models.signals.post_save.connect(contact_field_saved, ContactField)
 
 
@@ -1470,6 +1474,8 @@ class NameFilterStartsWith(Filter):
 
     def get_param_types(self):
         return (str,)
+
+
 NameFilterStartsWith.internal_name = 'startswith'
 NameFilterStartsWith.human_name = ugettext_lazy('has a word starting with')
 
@@ -1523,6 +1529,8 @@ class FieldFilterStartsWith(FieldFilterOp1):
 
     def get_param_types(self):
         return (str,)
+
+
 FieldFilterStartsWith.internal_name = 'startswith'
 FieldFilterStartsWith.human_name = ugettext_lazy('has a word starting with')
 
@@ -1540,6 +1548,8 @@ class FieldFilterEQ(FieldFilterOp1):
 
     def get_param_types(self):
         return (str,)
+
+
 FieldFilterEQ.internal_name = 'eq'
 FieldFilterEQ.human_name = '='
 
@@ -1559,6 +1569,8 @@ class FieldFilterNEQ(FieldFilterOp1):
 
     def get_param_types(self):
         return (str,)
+
+
 FieldFilterNEQ.internal_name = 'neq'
 FieldFilterNEQ.human_name = '≠'
 
@@ -1576,6 +1588,8 @@ class FieldFilterLE(FieldFilterOp1):
 
     def get_param_types(self):
         return (str)
+
+
 FieldFilterLE.internal_name = 'le'
 FieldFilterLE.human_name = '≤'
 
@@ -1593,6 +1607,8 @@ class FieldFilterGE(FieldFilterOp1):
 
     def get_param_types(self):
         return (str,)
+
+
 FieldFilterGE.internal_name = 'ge'
 FieldFilterGE.human_name = '≥'
 
@@ -1610,6 +1626,8 @@ class FieldFilterLIKE(FieldFilterOp1):
 
     def get_param_types(self):
         return (str,)
+
+
 FieldFilterLIKE.internal_name = 'like'
 FieldFilterLIKE.human_name = 'SQL LIKE'
 
@@ -1627,6 +1645,8 @@ class FieldFilterILIKE(FieldFilterOp1):
 
     def get_param_types(self):
         return (str,)
+
+
 FieldFilterILIKE.internal_name = 'ilike'
 FieldFilterILIKE.human_name = 'SQL ILIKE'
 
@@ -1644,6 +1664,8 @@ class FieldFilterNull(FieldFilterOp0):
 
     def get_param_types(self):
         return ()
+
+
 FieldFilterNull.internal_name = 'null'
 FieldFilterNull.human_name = ugettext_lazy('is undefined')
 
@@ -1661,6 +1683,8 @@ class FieldFilterNotNull(FieldFilterOp0):
 
     def get_param_types(self):
         return ()
+
+
 FieldFilterNotNull.internal_name = 'notnull'
 FieldFilterNotNull.human_name = ugettext_lazy('is defined')
 
@@ -1678,6 +1702,8 @@ class FieldFilterIEQ(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterIEQ.internal_name = 'ieq'
 FieldFilterIEQ.human_name = '='
 
@@ -1695,6 +1721,8 @@ class FieldFilterINE(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterINE.internal_name = 'ineq'
 FieldFilterINE.human_name = '≠'
 
@@ -1712,6 +1740,8 @@ class FieldFilterILT(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterILT.internal_name = 'ilt'
 FieldFilterILT.human_name = '<'
 
@@ -1729,6 +1759,8 @@ class FieldFilterIGT(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterIGT.internal_name = 'igt'
 FieldFilterIGT.human_name = '>'
 
@@ -1746,6 +1778,8 @@ class FieldFilterILE(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterILE.internal_name = 'ile'
 FieldFilterILE.human_name = '≤'
 
@@ -1763,6 +1797,8 @@ class FieldFilterIGE(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterIGE.internal_name = 'ige'
 FieldFilterIGE.human_name = '≥'
 
@@ -1782,6 +1818,8 @@ class FieldFilterAGE_GE(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterAGE_GE.internal_name = 'agege'
 FieldFilterAGE_GE.human_name = ugettext_lazy('Age (years) ≥')
 
@@ -1801,6 +1839,8 @@ class FieldFilterVALID_GT(FieldFilterOp1):
 
     def get_param_types(self):
         return (int,)
+
+
 FieldFilterVALID_GT.internal_name = 'validitygt'
 FieldFilterVALID_GT.human_name = ugettext_lazy('date until event ≥')
 
@@ -1819,6 +1859,8 @@ class FieldFilterFUTURE(FieldFilterOp0):
 
     def get_param_types(self):
         return ()
+
+
 FieldFilterFUTURE.internal_name = 'future'
 FieldFilterFUTURE.human_name = ugettext_lazy('In the future')
 
@@ -1846,6 +1888,8 @@ class FieldFilterChoiceEQ(FieldFilterOp1):
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
+
+
 FieldFilterChoiceEQ.internal_name = 'ceq'
 FieldFilterChoiceEQ.human_name = '='
 
@@ -1875,6 +1919,8 @@ class FieldFilterChoiceNEQ(FieldFilterOp1):
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
+
+
 FieldFilterChoiceNEQ.internal_name = 'cneq'
 FieldFilterChoiceNEQ.human_name = '≠'
 
@@ -1912,6 +1958,8 @@ class FieldFilterMultiChoiceHAS(FieldFilterOp1):
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
+
+
 FieldFilterMultiChoiceHAS.internal_name = 'mchas'
 FieldFilterMultiChoiceHAS.human_name = ugettext_lazy('contains')
 
@@ -1948,6 +1996,8 @@ class FieldFilterMultiChoiceHASNOT(FieldFilterOp1):
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group,)
+
+
 FieldFilterMultiChoiceHASNOT.internal_name = 'mchasnot'
 FieldFilterMultiChoiceHASNOT.human_name = ugettext_lazy("doesn't contain")
 
@@ -1994,6 +2044,8 @@ class FieldFilterDoubleChoiceHAS(FieldFilterOp1):
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group, field.choice_group2)
+
+
 FieldFilterDoubleChoiceHAS.internal_name = 'dchas'
 FieldFilterDoubleChoiceHAS.human_name = ugettext_lazy('contains')
 
@@ -2040,6 +2092,8 @@ class FieldFilterDoubleChoiceHASNOT(FieldFilterOp1):
     def get_param_types(self):
         field = ContactField.objects.get(pk=self.field_id)
         return (field.choice_group, field.choice_group2)
+
+
 FieldFilterDoubleChoiceHASNOT.internal_name = 'dchasnot'
 FieldFilterDoubleChoiceHASNOT.human_name = ugettext_lazy("doesn't contain")
 
@@ -2071,6 +2125,8 @@ class GroupFilterIsMember(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterIsMember.internal_name = 'memberof'
 GroupFilterIsMember.human_name = ugettext_lazy('is member of group')
 
@@ -2102,6 +2158,8 @@ class GroupFilterIsNotMember(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterIsNotMember.internal_name = 'notmemberof'
 GroupFilterIsNotMember.human_name = ugettext_lazy(
     'is not member of group')
@@ -2134,6 +2192,8 @@ class GroupFilterIsInvited(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterIsInvited.internal_name = 'ginvited'
 GroupFilterIsInvited.human_name = ugettext_lazy('is invited in group')
 
@@ -2165,6 +2225,8 @@ class GroupFilterIsNotInvited(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterIsNotInvited.internal_name = 'gnotinvited'
 GroupFilterIsNotInvited.human_name = ugettext_lazy(
     'is not invited in group')
@@ -2197,6 +2259,8 @@ class GroupFilterDeclinedInvitation(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterDeclinedInvitation.internal_name = "gdeclined"
 GroupFilterDeclinedInvitation.human_name = ugettext_lazy(
     'has declined invitation in group')
@@ -2229,6 +2293,8 @@ class GroupFilterNotDeclinedInvitation(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterNotDeclinedInvitation.internal_name = 'gnotdeclined'
 GroupFilterNotDeclinedInvitation.human_name = ugettext_lazy(
     'has not declined invitation in group')
@@ -2261,6 +2327,8 @@ class GroupFilterCanceledMembership(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterCanceledMembership.internal_name = "gcanceled"
 GroupFilterCanceledMembership.human_name = ugettext_lazy(
     'membership was canceled in group')
@@ -2293,6 +2361,8 @@ class GroupFilterNotCanceledMembership(Filter):
 
     def get_param_types(self):
         return ()
+
+
 GroupFilterNotCanceledMembership.internal_name = 'gnotcanceled'
 GroupFilterNotCanceledMembership.human_name = ugettext_lazy(
     'membership was not canceled in group')
@@ -2321,6 +2391,8 @@ class AllEventsNotReactedSince(Filter):
 
     def get_param_types(self):
         return (str,)  # TODO: Accept date parameters
+
+
 AllEventsNotReactedSince.internal_name = 'notreactedsince'
 AllEventsNotReactedSince.human_name = ugettext_lazy(
     'has not reacted to any invitation since')
@@ -2359,6 +2431,8 @@ class AllEventsReactionYearRatioLess(Filter):
 
     def get_param_types(self):
         return (int,)
+
+
 AllEventsReactionYearRatioLess.internal_name = 'yearreactionratioless'
 AllEventsReactionYearRatioLess.human_name = ugettext_lazy(
     '1 year invitation reaction percentage less than')
@@ -2397,6 +2471,8 @@ class AllEventsReactionYearRatioMore(Filter):
 
     def get_param_types(self):
         return (int,)
+
+
 AllEventsReactionYearRatioMore.internal_name = 'yearreactionratiomore'
 AllEventsReactionYearRatioMore.human_name = ugettext_lazy(
     '1 year invitation reaction percentage more than')

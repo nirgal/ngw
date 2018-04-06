@@ -242,7 +242,8 @@ class FieldEditForm(forms.ModelForm):
         if not self.delete_incompatible:
             deletion_details = []
             for cfv in self.instance.values.all():
-                if not new_cls.validate_unicode_value(cfv.value, choice_group_id, choice_group2_id) \
+                if not new_cls.validate_unicode_value(
+                        cfv.value, choice_group_id, choice_group2_id) \
                    or self.instance.has_choice != new_cls.has_choice:
                     deletion_details.append((cfv.contact, str(cfv)))
             if deletion_details:

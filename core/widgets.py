@@ -149,6 +149,7 @@ class FlagsField(forms.MultiValueField):
         # print("compressed", result)
         return result
 
+
 #######################################################################
 #
 # Double choices field & widget
