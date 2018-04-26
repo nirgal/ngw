@@ -195,18 +195,20 @@ one to read it, please repport that.</p>''')
         sync_info['email_sent'] = True
 
     except smtplib.SMTPRecipientsRefused as err:
+        logger.critical('SMTPRecipientsRefused: %s', err)
+        return
         # Here, err.recipients is a dictionary with a single entry, like
         # { 'toto@riseup.net': (550, b'5.1.1 <eliandre@riseup.net>:
         # Recipient address rejected: User unknown')}
-        errmsg = str(err.recipients.popitem()[1][1], 'utf-8', 'replace')
-        logger.warning(
-            'Giving up on onetime message notification for message %s: %s',
-            msg.id, errmsg)
-        sync_info['email_sent'] = False
-        # no return here
+        # errmsg = str(err.recipients.popitem()[1][1], 'utf-8', 'replace')
+        # logger.warning(
+        #     'Giving up on onetime message notification for message %s: %s',
+        #     msg.id, errmsg)
+        # sync_info['email_sent'] = False
+        # # no return here
 
     except smtplib.SMTPResponseException as err:
-        logger.critical('%s', err)
+        logger.critical('SMTPResponseException: %s', err)
         if err.smtp_code // 100 == 4:
             logger.warning('Temporarary SMTP failure: %s', err)
         if err.smtp_code == 450:
@@ -216,7 +218,7 @@ one to read it, please repport that.</p>''')
 
     except smtplib.SMTPException as err:  # All other errors
         # including smtplib.SMTPServerDisconnected
-        logger.critical('%s', err)
+        logger.critical('SMTPException %s', err)
         return
 
     msg.sync_info = json.dumps(sync_info)
