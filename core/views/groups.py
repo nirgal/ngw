@@ -242,7 +242,7 @@ class EventListView(NgwUserAcl, NgwListView):
     list_display = (
         'name', 'date', 'days', 'description_not_too_long',
         'budget_code',
-        # 'visible_member_count',
+        'visible_member_count',
         )
     list_display_links = 'name',
     search_fields = 'name', 'description', 'budget_code', 'date'
