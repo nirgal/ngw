@@ -34,6 +34,10 @@ div.loaderror
 <script src="{% static "javascript/xgcalendar/plugin/xgcalendar.js" %}?v=1.2.0.4" type="text/javascript"></script>
 {% endblock %}
 
+{% block content_title %}
+{% comment %}We need as much space as possible on that page{% endcomment %}
+{% endblock %}
+
 {% block content %}
 <div id="content-main">
 
@@ -112,7 +116,7 @@ $(document).ready(function() {
         extParam: [{'name': 'csrfmiddlewaretoken', 'value': '{{ csrf_token }}'}],
     };
     var _MH = document.documentElement.clientHeight;
-    op.height = _MH-160; //container height
+    op.height = _MH-140; //container height
     op.eventItems = __CURRENTDATA;
     $("#xgcalendarp").bcalendar(op);
 
@@ -225,7 +229,7 @@ $(document).ready(function() {
 function resized() {
     var op=$("#xgcalendarp").BcalGetOp();
     var _MH = document.documentElement.clientHeight;
-    op.height = _MH-160; //container height
+    op.height = _MH-140; //container height
     $("#xgcalendarp").BCalReload();
 }
 $(window).resize(resized);
