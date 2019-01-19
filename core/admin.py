@@ -1,4 +1,4 @@
-# This file is unused
+# This file was unused
 
 from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
@@ -11,6 +11,7 @@ from ngw.core.views.groups import ContactGroupForm, ContactGroupListView
 from ngw.core.views.messages import (MessageContactFilter,
                                      MessageDirectionFilter, MessageListView,
                                      MessageReadFilter)
+
 
 # Globally disable delete selected
 admin.site.disable_action('delete_selected')

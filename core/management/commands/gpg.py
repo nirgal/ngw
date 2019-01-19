@@ -1,14 +1,14 @@
 import logging
 
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 
 from ngw.core.gpg import loadkeyring
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'Gpg dump'
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         logger = logging.getLogger('gpgdump')
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter(

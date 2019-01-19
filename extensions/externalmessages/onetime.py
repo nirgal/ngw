@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
-import http
+import http.client
 import json
 import logging
 import smtplib
@@ -18,6 +18,7 @@ from django.utils.encoding import force_str, force_text
 from django.utils.translation import activate as language_activate
 from django.utils.translation import ugettext as _
 
+import ngw.core.contactfield  # noqa required for polymorphic upgrades
 from ngw.core.models import ContactMsg
 
 SUPPORTS_EXPIRATION = True

@@ -1,15 +1,15 @@
 import logging
 
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 
 from ngw.core import perms
 from ngw.core.models import GROUP_EVERYBODY, Contact
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'Recover lost contacts'
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         logger = logging.getLogger('contactrecover')
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter(

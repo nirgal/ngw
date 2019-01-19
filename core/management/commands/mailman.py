@@ -1,5 +1,3 @@
-from optparse import make_option
-
 from django.core.management.base import BaseCommand, CommandError
 
 from ngw.core import mailman
@@ -8,23 +6,23 @@ from ngw.core.models import ContactGroup
 
 class Command(BaseCommand):
     help = 'Synchronise with an external mailman mailing list'
-    args = 'filename dump|normalize|check'
-    option_list = BaseCommand.option_list + (
-        make_option(
-            '-g', '--group',
-            action='store',
-            dest='groupid',
-            type='int',
-            help='specify groupid'),
-        )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+                '-g', '--group',
+                type=int,
+                dest='groupid',
+                help='specify groupid')
+        parser.add_argument(
+                'filename')
+        parser.add_argument(
+                'action',
+                choices=('dump', 'normalize', 'check'))
 
     def handle(self, *args, **options):
-        if len(args) != 2:
-            raise CommandError('Need exactly 2 arguments')
+        action = options['action']
 
-        action = args[1]
-
-        filecontent = open(args[0]).read()
+        filecontent = open(options['filename']).read()
 
         if action == 'dump':
             mailman_members = mailman.parse_who_result(filecontent)

@@ -1,9 +1,8 @@
 import logging
 import subprocess
-from optparse import make_option
 
 from django.conf import settings
-from django.core.management.base import CommandError, NoArgsCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from ngw.core.models import FIELD_LOGIN, ContactFieldValue, ContactGroup
 
@@ -62,27 +61,27 @@ def subscribe_everyone(login, allusers, exclude=None):
         cross_subscribe(login, username)
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'ngw/ejabberd synchronisation tools'
-    option_list = NoArgsCommand.option_list + (
-        make_option(
+
+    def add_arguments(self, parser):
+        parser.add_argument(
             '-x', '--exclude',
             action='append', dest='exclude', default=[],
             metavar='USERNAME',
-            help="exclude username from suball"),
-        make_option(
+            help="exclude username from suball")
+        parser.add_argument(
             '--subs',
             action='append', dest='add_subs', default=[],
             metavar='USERNAME1:USERNAME2',
-            help="user1:user2 cross subscribe user1 and user2"),
-        make_option(
+            help="user1:user2 cross subscribe user1 and user2")
+        parser.add_argument(
             '--suball',
             action='store', dest='suball',
             metavar='USERNAME',
-            help="Subscribe a user to everyone"),
-        )
+            help="Subscribe a user to everyone")
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         verbosity = options.get('verbosity', '1')
         if verbosity == '3':
             loglevel = logging.DEBUG

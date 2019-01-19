@@ -1,11 +1,11 @@
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 
 from ngw.core.models import ContactGroup
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'Creates missing media folders'
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         for group in ContactGroup.objects.all():
             group.check_static_folder_created()

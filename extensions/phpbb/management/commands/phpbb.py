@@ -1,8 +1,5 @@
-from __future__ import print_function
-
 import logging
 import sys
-from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -12,12 +9,13 @@ from ngw.extensions.phpbb import print_and_call, sync_user_all
 
 class Command(BaseCommand):
     help = 'PHPBB3 synchronisation tool'
-    option_list = BaseCommand.option_list + (
-        make_option(
+
+    def add_arguments(self, parser):
+        parser.add_argument(
             '-u', '--user',
             action="append", type="int",
-            help="Synchronisation only acts on specified NGW user id."),
-    )
+            help="Synchronisation only acts on specified NGW user id."
+        )
 
     def handle(self, *args, **options):
         verbosity = options.get('verbosity', '1')

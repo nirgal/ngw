@@ -5,15 +5,15 @@ import sys
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 
 from ngw.core.models import ContactMsg
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'External message synchronisation'
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         self.setup_logger(**options)
         self.acquire_lock()
         try:

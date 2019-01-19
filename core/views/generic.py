@@ -14,7 +14,7 @@ from django.contrib.admin import helpers
 from django.contrib.admin.templatetags.admin_static import static
 from django.contrib.admin.utils import (display_for_field, display_for_value,
                                         label_for_field, lookup_field)
-from django.contrib.admin.views.main import ChangeList
+from django.contrib.admin.views.main import IS_POPUP_VAR, ChangeList
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import models
@@ -172,6 +172,7 @@ class NgwListView(TemplateView):
     list_max_show_all = 1000
     list_editable = ()
     ordering = None
+    show_full_result_count = True
     paginator = Paginator
     preserve_filters = True
 
@@ -231,8 +232,7 @@ class NgwListView(TemplateView):
         """
         # If self.actions is explicitly set to None that means that we don't
         # want *any* actions enabled on this page.
-        from django.contrib.admin.views.main import _is_changelist_popup
-        if self.actions is None or _is_changelist_popup(request):
+        if self.actions is None or IS_POPUP_VAR in request.GET:
             return OrderedDict()
 
         actions = []

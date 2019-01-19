@@ -28,3 +28,13 @@ def extra_header_links(request):
     This context processor just add a "extra_header_links" key
     """
     return {'extra_header_links': settings.EXTRA_BANNER_LINKS}
+
+
+def has_permission(request):
+    """
+    Hard code has_permission for admin header
+    """
+    return {
+        'has_permission':
+            hasattr(request, 'user') and request.user.is_authenticated()
+        }
