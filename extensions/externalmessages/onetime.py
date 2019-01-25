@@ -82,7 +82,8 @@ def send_to_onetime(msg):
     msg_text = subprocess.check_output(
         ['openssl', 'enc', '-aes-256-cbc',
          '-pass', 'pass:{}'.format(passphrase),
-         '-e', '-base64'],
+         '-e', '-base64',
+         '-md', 'md5'],
         input=msg_text)
 
     ot_conn.request('POST', '/', urllib.parse.urlencode({
@@ -284,7 +285,8 @@ def read_answers(msg):
                 response_text = subprocess.check_output(
                     ['openssl', 'enc', '-aes-256-cbc',
                      '-pass', 'pass:{}'.format(passphrase),
-                     '-d', '-base64', '-A'],
+                     '-d', '-base64', '-A',
+                     '-md', 'md5'],
                     input=response_text)
                 response_text = force_text(response_text)
             except subprocess.CalledProcessError:
@@ -293,7 +295,8 @@ def read_answers(msg):
                     response_text = subprocess.check_output(
                         ['openssl', 'enc', '-aes-256-cbc',
                          '-pass', 'pass:',
-                         '-d', '-base64', '-A'],
+                         '-d', '-base64', '-A',
+                         '-md', 'md5'],
                         input=response_text)
                     response_text = force_text(response_text)
                 except subprocess.CalledProcessError:
