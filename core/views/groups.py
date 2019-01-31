@@ -255,7 +255,11 @@ class EventListView(NgwUserAcl, NgwListView):
     #    columns = [
     #        'name', 'date', 'days', 'description_not_too_long',
     #        'budget_code']
-    #    if request.REQUEST.get('showmembers', 0):
+    #    if request.method == 'POST':
+    #        querydict = request.POST
+    #    else:
+    #        querydict = request.GET
+    #    if querydict.get('showmembers', 0):
     #        columns += ['visible_member_count']
     #    return columns
 
@@ -368,13 +372,17 @@ class CalendarQueryView(View):
         timezone: 1
         '''
 
-        showdate = request.REQUEST.get('showdate')
+        if request.method == 'POST':
+            querydict = request.POST
+        else:
+            querydict = request.GET
+        showdate = querydict.get('showdate')
         # print('showdate:', showdate)
         # showdate = datetime.strptime(showdate, '%d/%m/%Y').date()
         showdate = datetime.strptime(showdate, '%m/%d/%Y').date()
         # print('showdate:', showdate)
 
-        viewtype = request.REQUEST.get('viewtype', 'month')
+        viewtype = querydict.get('viewtype', 'month')
 
         year = showdate.year
         month = showdate.month

@@ -745,7 +745,11 @@ class GroupAddManyView(NgwUserAcl, FormView):
     template_name = 'group_add_contacts_to.html'  # TODO: rename
 
     def get_initial(self):
-        return {'ids': self.request.REQUEST['ids']}
+        if self.request.method == 'POST':
+            querydict = self.request.POST
+        else:
+            querydict = self.request.GET
+        return {'ids': querydict['ids']}
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -754,7 +758,11 @@ class GroupAddManyView(NgwUserAcl, FormView):
 
     def get_context_data(self, **kwargs):
         context = {}
-        ids = self.request.REQUEST['ids'].split(',')
+        if self.request.method == 'POST':
+            querydict = self.request.POST
+        else:
+            querydict = self.request.GET
+        ids = querydict['ids'].split(',')
         context['title'] = _('Add {} contact(s) to a group').format(len(ids))
         context['nav'] = Navbar(Contact.get_class_navcomponent())
         context['nav'].add_component(('add_to_group', _('add contacts to')))

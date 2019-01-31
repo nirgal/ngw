@@ -218,7 +218,11 @@ class SendMessageView(InGroupAcl, FormView):
         return kwargs
 
     def get_initial(self):
-        return {'ids': self.request.REQUEST['ids']}
+        if self.request.method == 'POST':
+            querydict = self.request.POST
+        else:
+            querydict = self.request.GET
+        return {'ids': querydict['ids']}
 
     def form_valid(self, form):
         contacts_noemail = form.send_message(self.contactgroup)
@@ -252,7 +256,11 @@ class SendMessageView(InGroupAcl, FormView):
         # if group.date and group.date <= now().date():
         #    return HttpResponse('Date error. Event is over.')
 
-        ids = self.request.REQUEST['ids'].split(',')
+        if self.request.method == 'POST':
+            querydict = self.request.POST
+        else:
+            querydict = self.request.GET
+        ids = querydict['ids'].split(',')
         nbcontacts = len(ids)
         noemails = []
         for contact in Contact.objects.filter(id__in=ids):
