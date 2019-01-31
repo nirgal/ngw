@@ -3,6 +3,7 @@ from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.views.generic.base import RedirectView
+from django.views.i18n import javascript_catalog
 
 from ngw.core.gpg import GpgLookupView
 from ngw.core.views.choices import Choice2EditView, ChoiceEditView
@@ -112,9 +113,11 @@ urlpatterns = [
 
     url('^test$', TestView.as_view()),
 
-    url('^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
-    url('^jsi18n/(?P<packages>\S+?)/$',
-        'django.views.i18n.javascript_catalog'),
+    url('^jsi18n/$', javascript_catalog, js_info_dict),
+    url('^jsi18n/(?P<packages>\S+?)/$', javascript_catalog),
+    # Django 1.10:
+    # url('^jsi18n/$', JavaScriptCatalog.as_view(), js_info_dict),
+    # url('^jsi18n/(?P<packages>\S+?)/$', JavaScriptCatalog.as_view()),
 
     url('session_security/', include('session_security.urls')),
 
