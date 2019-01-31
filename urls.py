@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.views import login as login_view
 from django.views.generic.base import RedirectView
 from django.views.i18n import javascript_catalog
 
@@ -123,8 +124,7 @@ urlpatterns = [
 
     url('^hook_change_password$', HookPasswordView.as_view()),
 
-    url('^login$',
-        'django.contrib.auth.views.login', {'template_name': 'login.html'}),
+    url('^login$', login_view, {'template_name': 'login.html'}),
     url('^logout$', LogoutView.as_view(), name='logout'),
 
     url('^logs$', LogListView.as_view(), name='log_list'),

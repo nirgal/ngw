@@ -5,7 +5,7 @@
 {{form.media|safe}}
 
 <div class=fullpagebox>
-<form method="post" action="{% url 'django.contrib.auth.views.login' %}">
+<form action="{{ app_path }}" method="post">
 {% csrf_token %}
 {% if form.errors %}
 <ul class=errorlist>
