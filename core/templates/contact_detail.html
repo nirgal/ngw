@@ -99,10 +99,10 @@ var imagefile_size_big = '500px';
   {# <a class=button href="http://maps.google.com/maps?q={{ contact.get_addr_semicol }}">Google map</a> #}
   {% endif %}
   {% if contact.get_username %}
-    {% if 'F' in group_user_perms or user.id = contact.id %}
+    {% if 'F' in group_user_perms or user.id == contact.id %}
         <a class=button href="pass">{% trans "Change password" %}</a>
     {% endif %}
-    {% if 'F' in group_user_ngw_perms or user.id = contact.id %}
+    {% if 'F' in group_user_ngw_perms or user.id == contact.id %}
         <a class=button href="{{contact.get_absolute_url}}filters/">{% trans "Filters" %}</a>
         <a class=button href="{{contact.get_absolute_url}}default_group">{% trans "Default group" %}</a>
     {% endif %}
