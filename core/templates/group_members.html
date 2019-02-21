@@ -78,7 +78,7 @@
     <a class="button default" href="javascript:show_column_selection();"> {% trans "Select displayed columns" %}</a>
     <a class=button href="{{cg.get_absolute_url}}edit">{% trans "Edit" %}</a>
     {% if not cg.date and not cg.virtual %}
-    <a class=button href="add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Create a new contact in that group" %}</a>
+    <a class=button href="add">{% trans "Create a new contact in that group" %}</a>
     {% endif %}
 </div>
 {% endblock %}

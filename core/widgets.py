@@ -91,7 +91,7 @@ class FlagsWidget(forms.widgets.MultiWidget):
             except IndexError:
                 widget_value = None
             if id_:
-                final_attrs = dict(final_attrs, id=id_of(i))
+                final_attrs = dict(final_attrs, id=id_of(i), required=False)
 
             flag = enumerated_flags[i]
             field_name = name + '_{}'.format(i)
@@ -130,13 +130,14 @@ class FlagsWidget(forms.widgets.MultiWidget):
 class FlagsField(forms.MultiValueField):
     widget = FlagsWidget
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         localize = kwargs.get('localize', False)
-        fields = []
-        for intval, longname in perms.INTTOTEXT.items():
-            fields.append(forms.BooleanField(
-                label=longname, localize=localize, required=False))
-        super().__init__(fields, *args, **kwargs)
+        if 'fields' not in kwargs:
+            kwargs['fields'] = []
+            for intval, longname in perms.INTTOTEXT.items():
+                kwargs['fields'].append(forms.BooleanField(
+                    label=longname, localize=localize))
+        super().__init__(**kwargs)
 
     def compress(self, data_list):
         # print("compressing", data_list)

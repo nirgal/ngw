@@ -13,23 +13,32 @@ function check_footer_bottom() {
         theHeight=window.innerHeight;
     else if (document.documentElement && document.documentElement.clientHeight)
         theHeight=document.documentElement.clientHeight;
-    else if (document.body)
-        theHeight=document.body.clientHeight;
+    else
+	return; /* can't do it :( */
 
     if (!$('#footer').outerHeight())
-        return;
+        return; // No footer
 
     min_height = theHeight - $('#header').outerHeight() - $('#footer').outerHeight();
-    // remove breadcrumbs:
-    min_height -= $('.breadcrumbs').outerHeight();
-    // remove submenu:
-    min_height -= $('#submenucontainer').outerHeight();
-    // remove messages:
-    min_height -= $('.messagelist').outerHeight();
 
-    // remove margins:
-    min_height -= $('#content').outerHeight(true) - $('#content').outerHeight(false);
-//alert('margin='+($('#content').outerHeight(true) - $('#content').outerHeight(false)));
+    // remove breadcrumbs:
+    removeh = $('.breadcrumbs').outerHeight();
+    if (!isNaN(removeh))
+        min_height -= removeh;
+
+    // remove submenu:
+    removeh = $('#submenucontainer').outerHeight();
+    if (!isNaN(removeh))
+        min_height -= removeh;
+
+    // remove messages:
+    removeh = $('.messagelist').outerHeight();
+    if (!isNaN(removeh))
+        min_height -= removeh;
+
+    // remove content margins:
+    //SHOULD WORK, BUT DOESN'T: min_height -= $('#content').outerHeight(true) - $('#content').outerHeight(false);
+    min_height -= 40; // margin of content
     if (min_height > 0)
         $('#content').css('min-height', min_height+'px');
 }

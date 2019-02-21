@@ -17,6 +17,8 @@ Fix "manage changepassword".
 
 Remove many people from a group in a single move
 
+"Edit field" ask for which group (?!)
+
 ====================================================================================================
 CODE REFACTOR
 ====================================================================================================

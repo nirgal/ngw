@@ -1,11 +1,15 @@
-#branding h1 {
-    margin-bottom: 0;
+#header {
+    height: inherit; /* django 1.10 default is 40px */
+    line-height: inherit; /* django 1.10 default is 40px */
+    padding-bottom: 0; /* django 1.10 default is 10px */
 }
+
 #header .quicksearch {
-	border-color:#417690;
-	background-image:url(../admin/img/icon_searchbox.png);
-	background-repeat:no-repeat;
-	padding-left:20px;
+    border-color:#417690;
+    background-image:url(/static/admin/img/search.svg);
+    background-repeat: no-repeat;
+    background-position: 3px 3px;
+    padding-left:20px;
 }
 
 #header #extratabs {
@@ -47,7 +51,7 @@
 }
 
 div.breadcrumbs {
-    border-top: none;
+    padding: 2px 40px; /* default is 10px 40px */
 }
 
 #submenucontainer {
@@ -73,6 +77,10 @@ a .submenuitem:hover, .activesubmenuitem {
     background: white;
 }
 
+/* hide the <br> at the end of #content */
+#content > br.clear {
+    display: none;
+}
 
 #footer {
     text-align: center;
@@ -93,37 +101,24 @@ a .submenuitem:hover, .activesubmenuitem {
 }
 
 /* We want links in submit-row to look like submit buttons */
-.submit-row a.button:link, .submit-row a.button:visited {
+.submit-row a.button {
     display: inline-block;
-    background: white url(../admin/img/nav-bg.gif) bottom repeat-x;
-    font-family: "Lucida Grande", Verdana, Arial, sans-serif;
-    color: black;
+    line-height: 15px;
+    padding: 10px 15px;
     margin: 0 0 0 5px;
-    font-size: 11px;
-    border: 1px solid #bbb;
-    border-color: #ddd #aaa #aaa #ddd;
-}
-.submit-row a.button:hover {
-    text-decoration: none;
-}
-.submit-row a.button.default:link, .submit-row a.button.default:visited {
-    border: 2px solid #5b80b2;
-    background: #7CA0C7 url(../admin/img/default-bg.gif) bottom repeat-x;
-    font-weight: bold;
-    color: white;
 }
 
-
-h1.boxheader {
+/* TODO: Are these necessary ? */
+h1.boxheader { /* unused by admin */
     margin-bottom: 0px;
 }
-div.box {
+div.box { /* unused by admin */
     border: 1px solid #999;
     padding: 1ex;
     margin-bottom: 2ex;
 }
 
-div.fullpagebox {
+div.fullpagebox { /* unused by admin */
     border: 1px solid #999;
     width:50%;
     margin-left:auto;
@@ -134,14 +129,12 @@ div.fullpagebox {
     padding:3ex;
 }
 
-
-
-.padded {
+.padded { /* unused by admin */
     padding: 1ex;
     bbackground: yellow;
 }
 
-.maxsized {
+.maxsized { /* unused by admin */
 	max-height: 500px;
 	/*overflow-y: auto;*/
 	overflow: auto;
@@ -149,6 +142,8 @@ div.fullpagebox {
 .maxsized > li:last-child {
    margin-bottom:0;
 }
+/* END TODO: Are these necessary ? */
+
 
 ul.onelinechoices {
     margin-left: 0 !important;
@@ -159,10 +154,17 @@ ul.onelinechoices li {
     display: inline-block;
 }
 
+
+
+/* TODO: Are these necessary ? */
 /* Hack for admin multiple select widget */
+/*
 .selector h2 {
     margin-bottom: 0px;
-}
+}*/
+/* Note that we already have that for ".module h2" */
+/* END TODO: Are these necessary ? */
+
 
 /* Inline membership edition */
 /* credit: http://www.csslab.cl/2008/01/30/ventana-modal-solo-con-css/ */
@@ -198,27 +200,34 @@ ul.onelinechoices li {
     margin-left: 2ex;
 }
 
-.right-list {
+
+/* TODO: Are these necessary ? */
+.right-list { /* unused by admin */
 	max-width: 100%;
 	direction: rtl;
 	text-align: left;
 }
+/* END TODO: Are these necessary ? */
 
 /* autocomplete adds the ui-autocomplete-loading class to the textbox when it is _busy_ */
 #changelist-filter {
-    z-index: 0;			/* prevent "filter" block to overlap search autocomplete */
+    z-index: 0;			/* prevent "filter" block to overlap search autocomplete on /contacts/ */
 }
+/*
 .ui-autocomplete {
         max-height: 20em;
         overflow-y: auto;
-        /* prevent horizontal scrollbar */
+        * prevent horizontal scrollbar *
         overflow-x: hidden;
 }
+*/
 
+/* xgcalendar: week day names are smaller */
 th.mv-dayname {
     padding: 0 0 1ex 1ex;
 }
 
+/* style for DoubleChoicesWidget */
 select.doublechoicefirst {
     float: left;
     clear: both;
@@ -227,7 +236,8 @@ select.doublechoicesecond {
     float: left;
 }
 
-/* container for field images */
+/* container for field images (unsued by admin) */
+/* TODO: clean up / check used */
 .field_image_container {
     width:50px;
     height:50px;
@@ -238,4 +248,21 @@ select.doublechoicesecond {
     max-width:100%;
     max-height:100%;
     object-fit:contain;
+}
+
+
+/* changelist toolbar: We want "reset" inputs to look exactly like "submit" */
+#changelist #toolbar form input[type="reset"] {
+    border: 1px solid #ccc;
+    padding: 2px 10px;
+    margin: 0;
+    vertical-align: middle;
+    background: #fff;
+    box-shadow: 0 -15px 20px -10px rgba(0, 0, 0, 0.15) inset;
+    cursor: pointer;
+    color: #333;
+}
+#changelist #toolbar form input[type="reset"]:focus,
+#changelist #toolbar form input[type="reset"]:hover {
+    border-color: #999;
 }

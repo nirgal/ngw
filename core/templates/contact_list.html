@@ -268,7 +268,7 @@ function submit_column_selection() {
 
 <div id=basic_search {% if filter %}style="display:none;"{% endif %}>
     <form id="quickfilter_displayedform" onsubmit="return quick_search_submit()">
-        <img src="{% static "admin/img/icon_searchbox.png" %}" alt="Search" style="vertical-align:middle;">
+        <img src="{% static "admin/img/search.svg" %}" alt="Search" style="vertical-align:middle;">
         <input name=filter id=defaultfocus style="width:auto;">
         &nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:advanced_search();">{% trans "Advanced search" %}</a>
     </form>

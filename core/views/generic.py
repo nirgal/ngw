@@ -175,6 +175,7 @@ class NgwListView(TemplateView):
     show_full_result_count = True
     paginator = Paginator
     preserve_filters = True
+    empty_value_display = '-'
 
     # Actions
     actions = []
@@ -193,6 +194,9 @@ class NgwListView(TemplateView):
             js.append('actions{}.js'.format(extra))
         return forms.Media(js=[static('admin/js/{}'.format(url))
                                for url in js])
+
+    def get_empty_value_display(self):
+        return self.empty_value_display
 
     def get_ordering(self, request):
         # This method is copied exactly fom BaseModelAdmin

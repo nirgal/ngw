@@ -14,27 +14,23 @@ NGW is a kind of groupware. It supports customizable contacts, groups, events, n
 
 It provide a high level of permission settings including which group can see/change which contact fields, which other groups.
 
-It can also pilot permission to jabber and phpbb installation as extensions.
+It can also pilot permission to a jabber installation as extensions.
 
 This is the installation guide, intended for system administrators.
 
 
 Debian repository setup (optional)
 ==================================
-It is recommanded to use Debian 8 (Jessie) or above. All the source is available, so you can use other settings if you want, but you are on your own, then.
+It is recommanded to use Debian 9 (Stretch) or above. All the source is available, so you can use other settings if you want, but you are on your own, then.
 
 Here's a suggested /etc/apt/sources.list::
 
-    deb     http://http.debian.net/debian/       jessie           main
-    deb-src http://http.debian.net/debian/       jessie           main
-    deb     http://security.debian.org/          jessie/updates   main
-    deb-src http://security.debian.org/          jessie/updates   main
-    deb     http://ftp.debian.org/debian         jessie-backports main
-    deb-src http://ftp.debian.org/debian         jessie-backports main
-
-Make sure you defined wich default Debian version you want, so that backports are not installed automatically::
-
-    echo 'APT::Default-Release "jessie";' > /etc/apt/apt.conf.d/10_defaultrelease
+    deb     http://http.debian.net/debian/       stretch           main
+    deb-src http://http.debian.net/debian/       stretch           main
+    deb     http://security.debian.org/          stretch/updates   main
+    deb-src http://security.debian.org/          stretch/updates   main
+    deb     http://ftp.debian.org/debian         stretch-backports main
+    deb-src http://ftp.debian.org/debian         stretch-backports main
 
 If you want the packages from nirgal.com, have a look at the README file at http://nirgal.com/debian/
 
@@ -44,11 +40,11 @@ Requirements
 
 Standard packages::
 
-    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socksipy python3-uno python3-cracklib python3-magic python3-pil tor make python3-gnupg libjs-jquery-ui openssl
+    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socksipy python3-uno python3-cracklib python3-magic python3-pil tor make python3-gnupg libjs-jquery-ui openssl python3-django-session-security
 
 If you set up nirgal.com repository as described above, just run::
 
-    aptitude install libjs-xgcalendar python3-django-session-security python3-decoratedstr oomailing
+    aptitude install libjs-xgcalendar python3-decoratedstr
 
 If you did not, ``python3-django-session-security`` is now officially in debian. The sources of the other packages are available at nirgal.com/debian.
 
@@ -140,10 +136,6 @@ Generate self-signed certificate::
 
 User or group ``www-data`` should have write access to ``/usr/lib/ngw/media/fields``, ``/usr/lib/ngw/media/g`` and ``/usr/lib/ngw/media/messages``. If you want to run the debug ``runserver`` command from time to time, I suggest you ``chown :www-data`` that folder, with ``g+ws`` mode.
 
-The web server also needs to have write permission to where the pdf are generated::
-
-    # chown www-data: /usr/lib/ngw/mailing/generated/
-
 You may want to add ``SSLHonorCipherOrder on`` in ``/etc/apache2/mods-available/ssl.conf`` too.
 
 Cron
@@ -159,14 +151,6 @@ You may also want to setup some kind of backup here.
 
 Optionnal extensions
 ====================
-
-phpbb3 synchronisation
-----------------------
-
-You can use ngw groups to manage phpbb3 permissions, so that some contacts will
-automatically have access to some forums.
-
-See ``extentions/phpbb3/README``
 
 ejabberd synchronisation
 ------------------------

@@ -311,6 +311,9 @@ class Contact(NgwModel):
     USERNAME_FIELD = 'name'  # Needed by contrib.auth
     REQUIRED_FIELDS = []  # Needed by contrib.auth
 
+    # See https://docs.djangoproject.com/en/1.5/ref/contrib/auth/#methods
+    is_anonymous = False  # Always returns False. Unlike AnonymousUser.
+    is_authenticated = True  # Always returns True. Unlike AnonymousUser.
     is_active = True  # FIXME
     is_staff = True  # FIXME XXX XXX
 
@@ -331,20 +334,6 @@ class Contact(NgwModel):
 
     def __str__(self):
         return self.name
-
-    def is_anonymous():
-        '''
-        Always returns False. Unlike AnonymousUser.
-        See https://docs.djangoproject.com/en/1.5/ref/contrib/auth/#methods
-        '''
-        return False
-
-    def is_authenticated(self):
-        '''
-        Always returns True. Unlike AnonymousUser.
-        See https://docs.djangoproject.com/en/1.5/ref/contrib/auth/#methods
-        '''
-        return True
 
     def check_password(self, raw_password):
         """

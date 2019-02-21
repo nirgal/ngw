@@ -8,7 +8,7 @@
 {% block submitbar %}
     {% if 'E' in cg_perms %}
     <div class="submit-row">
-    <a class=button href="add"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
+    <a class=button href="add"><img src="{% static "admin/img/icon-addlink.svg" %}" border=0> {% trans "Add" %} {{ objtype.get_class_verbose_name }}</a>
     </div>
     {% endif %}
 {% endblock %}

@@ -52,11 +52,11 @@ div.loaderror
     <a class=button id="sfnextbtn" href="javascript:void(0);" title="{% trans "Go forward one month" %}" style="float:left; margin-left:.5ex;">►</a>
     <a class=button id="sfnextyear" href="javascript:void(0);" title="{% trans "Go forward one year" %}" style="float:left; margin-left:.5ex;">⏩</a>
 
-    <a class=button href="/events/add" style="float:right;"><img src="{% static "admin/img/icon_addlink.gif" %}" border=0> {% trans "Add event" %}</a>
+    <a class=button href="/events/add" style="float:right;"><img src="{% static "admin/img/icon-addlink.svg" %}" border=0> {% trans "Add event" %}</a>
     <div style="float:right">
         <form id="changelist-search" action="../" method="get">
         <div>
-        <input style="background:url({% static "admin/img/icon_searchbox.png" %}) bottom left no-repeat; padding-left:20px;" type="text" size="20" name="q" value="{% trans 'Search' %}"
+        <input style="background:white url({% static "admin/img/search.svg" %}) no-repeat scroll 3px 12px; padding-left:20px; color:black; height:inherit; line-height:inherit; cursor:inherit;" type="text" size="20" name="q" value="{% trans 'Search' %}"
             onclick="if (this.value=='{% trans 'Search' %}') { this.value=''; }"
             onblur="if (this.value=='') { this.value='{% trans 'Search' %}'; }"
         >
