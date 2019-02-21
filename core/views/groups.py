@@ -623,10 +623,13 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         context['nav'] = cg.get_smart_navbar() \
                            .add_component(('members', _('members')))
         context['active_submenu'] = 'members'
-
         context.update(kwargs)
         result = super().get_context_data(**context)
         return result
+
+        # context = InGroupAcl.get_context_data(self, **context)
+        # context = BaseContactListView.get_context_data(self, **context)
+        # return context
 
     def get_actions(self, request):
         actions = super().get_actions(request)
