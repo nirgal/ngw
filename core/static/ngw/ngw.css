@@ -109,15 +109,6 @@ a .submenuitem:hover, .activesubmenuitem {
 }
 
 /* TODO: Are these necessary ? */
-h1.boxheader { /* unused by admin */
-    margin-bottom: 0px;
-}
-div.box { /* unused by admin */
-    border: 1px solid #999;
-    padding: 1ex;
-    margin-bottom: 2ex;
-}
-
 div.fullpagebox { /* unused by admin */
     border: 1px solid #999;
     width:50%;

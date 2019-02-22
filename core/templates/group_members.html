@@ -28,19 +28,21 @@
     {% if "g" in display %}
         {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
             {% if forloop.first %}
-                <h1 class=boxheader>{% trans "Sub groups" %}</h1>
-                <div class=box>
-                    {% trans "People in sub-groups automatically are members / invited." %}
-                    <br>
+                <div class=module>
+                    <h2>{% trans "Sub groups" %}</h2>
+                    <div class=padded>
+                        {% trans "People in sub-groups automatically are members / invited." %}
+                        <br>
             {% endif %}
-                    ‣ {{ sg|group_with_link }}
-                    {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
-                    {% if forloop.first %}( {% trans "including" %} {% else %}, {% endif %}
-                    {{ ssg|group_with_link }}
-                    {% if forloop.last %}){% endif %}
-                    {% endfor %}
-                    <br>
+                        ‣ {{ sg|group_with_link }}
+                        {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
+                        {% if forloop.first %}( {% trans "including" %} {% else %}, {% endif %}
+                        {{ ssg|group_with_link }}
+                        {% if forloop.last %}){% endif %}
+                        {% endfor %}
+                        <br>
             {% if forloop.last %}
+                    </div>
                 </div>
             {% endif %}
         {% endfor %}
@@ -50,23 +52,27 @@
     {% if "a" in display %}
     {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
         {% if forloop.first %}
-        <h1 class=boxheader>{% trans "Groups that have some access to" %} {{ cg }}</h1>
-        <div class=box>
+            <div class=module>
+                <h2>{% trans "Groups that have some access to" %} {{ cg }}</h2>
+                <div class=padded>
         {% endif %}
         ‣ {{ sg|group_with_link }}<br>
         {% if forloop.last %}
-        </div>
+                </div>
+             </div>
         {% endif %}
     {% endfor %}
     {% endif %}
 
     {% for p in cg.get_birthday_members %}
         {% if forloop.first %}
-            <h1 class=boxheader>{% trans "Happy birthday to" %}</h1>
-            <div class=box>
+            <div class=module>
+                <h2>{% trans "Happy birthday to" %}</h2>
+                <div class=padded>
         {% endif %}
-        ‣ {{ p }}<br>
+                ‣ {{ p }}<br>
         {% if forloop.last %}
+                </div>
             </div>
         {% endif %}
     {% endfor %}
