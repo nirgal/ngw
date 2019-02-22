@@ -591,7 +591,7 @@ class BaseContactListView(NgwListView):
         result = super().get_context_data(**context)
         result['fields_form'] = FieldSelectForm(
             self.request.user, initial={'fields': self.fields})
-        result['display'] = self.cl.params.get('display', '')
+        result['display'] = self.cl.params.get('display', 'mg')  # TODO
         result['filter'] = self.filter_str
         result['filter_html'] = self.filter_html
         result['reset_filter_link'] = self.cl.get_query_string({}, 'q')
