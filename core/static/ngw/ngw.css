@@ -1,6 +1,6 @@
 #header {
-    height: inherit; /* django 1.10 default is 40px */
-    line-height: inherit; /* django 1.10 default is 40px */
+    height: auto; /* django 1.10 default is 40px */
+    line-height: normal; /* django 1.10 default is 40px */
     padding-bottom: 0; /* django 1.10 default is 10px */
 }
 
@@ -108,8 +108,8 @@ a .submenuitem:hover, .activesubmenuitem {
     margin: 0 0 0 5px;
 }
 
-/* TODO: Are these necessary ? */
-div.fullpagebox { /* unused by admin */
+/* used on login.html, news ... (unused by admin) */
+div.fullpagebox {
     border: 1px solid #999;
     width:50%;
     margin-left:auto;
@@ -125,7 +125,7 @@ div.fullpagebox { /* unused by admin */
     bbackground: yellow;
 }
 
-.maxsized { /* unused by admin */
+.maxsized { /* used on home, for the list of groups the user if admin of */
 	max-height: 500px;
 	/*overflow-y: auto;*/
 	overflow: auto;
@@ -133,7 +133,6 @@ div.fullpagebox { /* unused by admin */
 .maxsized > li:last-child {
    margin-bottom:0;
 }
-/* END TODO: Are these necessary ? */
 
 
 ul.onelinechoices {
@@ -192,13 +191,10 @@ ul.onelinechoices li {
 }
 
 
-/* TODO: Are these necessary ? */
-.right-list { /* unused by admin */
+/* used by message filter by name, for very long names */
+select.not-too-large {
 	max-width: 100%;
-	direction: rtl;
-	text-align: left;
 }
-/* END TODO: Are these necessary ? */
 
 /* autocomplete adds the ui-autocomplete-loading class to the textbox when it is _busy_ */
 #changelist-filter {
