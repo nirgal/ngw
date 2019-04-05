@@ -115,8 +115,9 @@ $(document).ready(function() {
         weekstartday: {{ weekdaystart }},
         extParam: [{'name': 'csrfmiddlewaretoken', 'value': '{{ csrf_token }}'}],
     };
-    var _MH = document.documentElement.clientHeight;
-    op.height = _MH-140; //container height
+    // var _MH = document.documentElement.clientHeight;
+    // op.height = _MH-140; //container height
+    op.height = 1000;
     op.eventItems = __CURRENTDATA;
     $("#xgcalendarp").bcalendar(op);
 
@@ -226,6 +227,7 @@ $(document).ready(function() {
 
 });
 
+/*
 function resized() {
     var op=$("#xgcalendarp").BcalGetOp();
     var _MH = document.documentElement.clientHeight;
@@ -233,6 +235,7 @@ function resized() {
     $("#xgcalendarp").BCalReload();
 }
 $(window).resize(resized);
+*/
 
 </script>
 </div>
