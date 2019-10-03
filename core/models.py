@@ -15,8 +15,9 @@ from django.db import connection, models
 from django.http import Http404
 from django.utils import formats, html
 from django.utils.safestring import mark_safe
+from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext as _
-from django.utils.translation import pgettext_lazy, ugettext_lazy
+from django.utils.translation import ugettext_lazy
 
 from ngw.core import perms
 from ngw.core.nav import Navbar

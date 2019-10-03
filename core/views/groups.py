@@ -451,7 +451,7 @@ class CalendarQueryView(View):
 
         # dates must be transformed in pseuso-regular expressions
         jsonresponse = (
-            re.compile('"/Date\((\d+)\)/"')
+            re.compile(r'"/Date\((\d+)\)/"')
               .sub('"\\/Date(\\1)\\/"', jsonresponse))
         return HttpResponse(jsonresponse, content_type='application/json')
     get = post

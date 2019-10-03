@@ -22,7 +22,6 @@ from ngw.core.models import ChoiceGroup, ContactField, ContactGroup
 from ngw.core.views.generic import (InGroupAcl, NgwAdminAcl, NgwDeleteView,
                                     NgwListView)
 
-
 ###############################################################################
 #
 # List of fields

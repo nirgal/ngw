@@ -1,7 +1,7 @@
 from django.utils.translation import ugettext as _
 
-
 # TODO: We should realy make all the calls to Navbar from url.py
+
 
 class Navbar(object):
     '''

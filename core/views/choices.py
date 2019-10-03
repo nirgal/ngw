@@ -14,7 +14,6 @@ from ngw.core import perms
 from ngw.core.models import ChoiceGroup, ContactField
 from ngw.core.views.generic import InGroupAcl
 
-
 #######################################################################
 #
 # Choice groups edit / add

@@ -27,7 +27,6 @@ from ngw.core import perms
 from ngw.core.models import ContactField, ContactFieldValue
 from ngw.core.views.generic import InGroupAcl, NgwUserAcl
 
-
 ###############################################################################
 #
 # File list / upload

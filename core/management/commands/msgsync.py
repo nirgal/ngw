@@ -46,14 +46,14 @@ class Command(BaseCommand):
 
         try:
             pid_file = open(pid_filename, 'a+')
-        except:
+        except OSError:
             self.logger.critical(
                 "Can't open file {} in read/write mode".format(pid_filename))
             sys.exit(1)
 
         try:
             fcntl.flock(pid_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except:
+        except BlockingIOError:
             # Another process is currently modifying the pid file.
             self.logger.critical(
                 "Can't lock pid file {}. Aborting.".format(pid_filename))

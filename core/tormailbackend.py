@@ -10,7 +10,6 @@ import ssl
 import time
 
 import socks  # You need package python3-socks
-
 from django.conf import settings
 from django.core.mail.backends.smtp import EmailBackend
 from django.core.mail.utils import DNS_NAME
@@ -149,7 +148,7 @@ class TorEmailBackend(EmailBackend):
             if self.username and self.password:
                 self.connection.login(self.username, self.password)
             return True
-        except:
+        except OSError:  # (smtplib.SMTPException, socks.ProxyError)
             if not self.fail_silently:
                 raise
 

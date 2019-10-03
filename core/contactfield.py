@@ -33,7 +33,6 @@ from ngw.core.models import (AllEventsNotReactedSince,
                              NameFilterStartsWith, register_contact_field_type)
 from ngw.core.widgets import DoubleChoicesField, OnelineCheckboxSelectMultiple
 
-
 #                            GroupFilterIsMember, GroupFilterIsNotMember,
 #                            GroupFilterIsInvited, GroupFilterIsNotInvited,
 #                            GroupFilterDeclinedInvitation,

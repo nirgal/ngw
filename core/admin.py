@@ -12,7 +12,6 @@ from ngw.core.views.messages import (MessageContactFilter,
                                      MessageDirectionFilter, MessageListView,
                                      MessageReadFilter)
 
-
 # Globally disable delete selected
 admin.site.disable_action('delete_selected')
 

@@ -37,12 +37,12 @@ from ngw.core.models import (GROUP_ADMIN, GROUP_USER_NGW, LOG_ACTION_DEL,
 from ngw.core.nav import Navbar
 from ngw.core.views.decorators import login_required, require_group
 
-
 #######################################################################
 #
 # Access Control Lists
 #
 #######################################################################
+
 
 class NgwUserAcl(object):
     '''

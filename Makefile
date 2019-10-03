@@ -15,7 +15,7 @@ README.html: README.rst
 	rst2html README.rst README.html
 
 isort:
-	isort -c --diff --dont-skip __init__.py -b fcntl -b ssl -p ngw -o gnupg `find -name '*py' | grep -v ./core/wsgi.py`
+	isort -c --diff --dont-skip __init__.py `find -name '*py' | grep -v ./core/wsgi.py`
 
 flake8:
-	flake8 --builtins=FileNotFoundError --exclude=.svn,CVS,.bzr,.hg,.git,__pycache__,.tox,.eggs,*.egg,wsgi.py .
+	flake8 --exclude=.svn,CVS,.bzr,.hg,.git,__pycache__,.tox,.eggs,*.egg,wsgi.py .

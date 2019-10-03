@@ -16,7 +16,6 @@ from ngw.core import perms
 from ngw.core.models import ContactGroupNews
 from ngw.core.views.generic import InGroupAcl, NgwDeleteView
 
-
 #######################################################################
 #
 # News list

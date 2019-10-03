@@ -24,7 +24,6 @@ from ngw.core import perms
 from ngw.core.models import Contact, ContactInGroup, ContactMsg
 from ngw.core.views.generic import InGroupAcl, NgwListView
 
-
 #######################################################################
 #
 # Messages list
