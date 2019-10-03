@@ -31,7 +31,7 @@ from ngw.core.models import (AllEventsNotReactedSince,
                              FieldFilterNotNull, FieldFilterNull,
                              FieldFilterStartsWith, FieldFilterVALID_GT,
                              NameFilterStartsWith, register_contact_field_type)
-from ngw.core.widgets import DoubleChoicesField, OnelineCheckboxSelectMultiple
+from ngw.core.widgets import DoubleChoicesField
 
 #                            GroupFilterIsMember, GroupFilterIsNotMember,
 #                            GroupFilterIsInvited, GroupFilterIsNotInvited,
@@ -370,7 +370,8 @@ class MultipleChoiceContactField(ContactField):
             label=self.name, required=False,
             help_text=self.hint,
             choices=self.choice_group.ordered_choices,
-            widget=OnelineCheckboxSelectMultiple())
+            widget=forms.CheckboxSelectMultiple(
+                attrs={'class': 'onelinechoices'}))
 
     def formfield_value_to_db_value(self, value):
         return ','.join(value)

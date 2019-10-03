@@ -169,6 +169,20 @@ def int_to_flags(intflags):
     return result
 
 
+def flags_to_int(strflags):
+    '''
+    Converts a membership / permission string such as 'meE'
+    into a integer sur as MEMBER|SEE_CG|CHANGE_CG
+    '''
+    result = 0
+    i = 0
+    for flag, intval in FLAGTOINT.items():
+        if flag in strflags:
+            result |= intval
+        i += 1
+    return result
+
+
 def int_to_text(flags, inherited_flags):
     '''
     Converts a membership / permission integers such as MEMBER|SEE_CG|CHANGE_CG
