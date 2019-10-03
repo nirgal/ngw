@@ -107,7 +107,10 @@ LOG_ACTION_DEL = 3
 class Log(NgwModel):
     id = models.AutoField(primary_key=True)
     dt = models.DateTimeField(ugettext_lazy('Date UTC'), auto_now=True)
-    contact = models.ForeignKey('Contact')
+    contact = models.ForeignKey(
+            'Contact',
+            on_delete=models.SET_NULL,
+            null=True)
     action = models.IntegerField(ugettext_lazy('Action'))
     target = models.TextField()
     target_repr = models.TextField(ugettext_lazy('Target'))
@@ -177,7 +180,9 @@ class Config(NgwModel):
 
 class Choice(NgwModel):
     django_id = models.AutoField(primary_key=True)  # not used
-    choice_group = models.ForeignKey('ChoiceGroup', related_name='choices')
+    choice_group = models.ForeignKey('ChoiceGroup',
+                                     on_delete=models.CASCADE,
+                                     related_name='choices')
     key = models.CharField(ugettext_lazy('Key'),
                            blank=False, max_length=255)
     value = models.CharField(ugettext_lazy('Value'),
@@ -1258,16 +1263,19 @@ class ContactField(NgwModel):
     hint = models.TextField(ugettext_lazy('Hint'), blank=True)
     type = models.CharField(ugettext_lazy('Type'), max_length=15,
                             default='TEXT')
-    contact_group = models.ForeignKey(ContactGroup,
-                                      verbose_name=ugettext_lazy('Only for'))
+    contact_group = models.ForeignKey(
+            ContactGroup, on_delete=models.PROTECT,
+            verbose_name=ugettext_lazy('Only for'))
     sort_weight = models.IntegerField()
     choice_group = models.ForeignKey(
-        ChoiceGroup,
-        verbose_name=ugettext_lazy('Choice group'), null=True, blank=True)
+            ChoiceGroup, on_delete=models.PROTECT,
+            verbose_name=ugettext_lazy('Choice group'),
+            null=True, blank=True)
     choice_group2 = models.ForeignKey(
-        ChoiceGroup, related_name='second_choices_set',
-        verbose_name=ugettext_lazy('Second choice group'),
-        null=True, blank=True)
+            ChoiceGroup, on_delete=models.PROTECT,
+            related_name='second_choices_set',
+            verbose_name=ugettext_lazy('Second choice group'),
+            null=True, blank=True)
     system = models.BooleanField(ugettext_lazy('System locked'), default=False)
     default = models.TextField(ugettext_lazy('Default value'), blank=True)
 
@@ -2566,8 +2574,12 @@ class OrBoundFilter(BaseBoundFilter):
 
 class ContactFieldValue(NgwModel):
     django_id = models.AutoField(primary_key=True)  # not used
-    contact = models.ForeignKey(Contact, related_name='values')
-    contact_field = models.ForeignKey(ContactField, related_name='values')
+    contact = models.ForeignKey(
+            Contact, on_delete=models.CASCADE,
+            related_name='values')
+    contact_field = models.ForeignKey(
+            ContactField, on_delete=models.CASCADE,
+            related_name='values')
     value = models.TextField(blank=True)
 
     class Meta:
@@ -2592,10 +2604,14 @@ class ContactFieldValue(NgwModel):
 
 class GroupInGroup(NgwModel):
     django_id = models.AutoField(primary_key=True)  # not used
-    father = models.ForeignKey(ContactGroup,
-                               related_name='direct_gig_subgroups')
-    subgroup = models.ForeignKey(ContactGroup,
-                                 related_name='direct_gig_supergroups')
+    father = models.ForeignKey(
+            ContactGroup,
+            on_delete=models.PROTECT,  # TODO
+            related_name='direct_gig_subgroups')
+    subgroup = models.ForeignKey(
+            ContactGroup,
+            on_delete=models.PROTECT,  # TODO
+            related_name='direct_gig_supergroups')
 
     class Meta:
         db_table = 'group_in_group'
@@ -2610,10 +2626,12 @@ class GroupInGroup(NgwModel):
 
 class GroupManageGroup(NgwModel):
     django_id = models.AutoField(primary_key=True)  # not used
-    father = models.ForeignKey(ContactGroup,
-                               related_name='direct_gmg_subgroups')
-    subgroup = models.ForeignKey(ContactGroup,
-                                 related_name='direct_gmg_supergroups')
+    father = models.ForeignKey(
+            ContactGroup, on_delete=models.CASCADE,
+            related_name='direct_gmg_subgroups')
+    subgroup = models.ForeignKey(
+            ContactGroup, on_delete=models.CASCADE,
+            related_name='direct_gmg_supergroups')
     flags = models.IntegerField()
 
     class Meta:
@@ -2630,8 +2648,8 @@ class GroupManageGroup(NgwModel):
 
 class ContactInGroup(NgwModel):
     id = models.AutoField(primary_key=True)
-    contact = models.ForeignKey(Contact)
-    group = models.ForeignKey(ContactGroup)
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
+    group = models.ForeignKey(ContactGroup, on_delete=models.CASCADE)
     flags = models.IntegerField()
     note = models.TextField(blank=True)
 
@@ -2663,11 +2681,12 @@ class ContactInGroup(NgwModel):
 class ContactGroupNews(NgwModel):
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(
-        Contact, null=True, blank=True,
-        on_delete=models.SET_NULL)
+        Contact, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        )
     contact_group = models.ForeignKey(
-        ContactGroup, null=True, blank=True,
-        on_delete=models.SET_NULL,
+        ContactGroup, on_delete=models.CASCADE,
+        null=True, blank=True,
         related_name='news_set')
     date = models.DateTimeField()
     title = models.CharField(ugettext_lazy('title'), max_length=64)
@@ -2699,14 +2718,18 @@ class ContactMsgManager(models.Manager):
 
 class ContactMsg(NgwModel):
     id = models.AutoField(primary_key=True)
-    contact = models.ForeignKey(Contact, verbose_name=ugettext_lazy('Contact'))
-    group = models.ForeignKey(ContactGroup, related_name='message_set')
+    contact = models.ForeignKey(
+            Contact, on_delete=models.CASCADE,
+            verbose_name=ugettext_lazy('Contact'))
+    group = models.ForeignKey(
+            ContactGroup, on_delete=models.CASCADE,
+            related_name='message_set')
     send_date = models.DateTimeField()
     read_date = models.DateTimeField(null=True, blank=True)
     read_by = models.ForeignKey(
         Contact,
-        null=True, related_name='msgreader',
-        on_delete=models.SET_NULL)
+        on_delete=models.PROTECT,  # TODO
+        null=True, related_name='msgreader')
     is_answer = models.BooleanField(default=False)
     subject = models.CharField(
         ugettext_lazy('Subject'),
