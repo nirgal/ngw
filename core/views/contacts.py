@@ -13,12 +13,12 @@ from django.contrib.admin import filters
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import UploadedFile
-from django.core.urlresolvers import reverse
 from django.db.models.query import RawQuerySet, sql
 from django.http import (Http404, HttpResponse, HttpResponseRedirect,
                          StreamingHttpResponse)
 from django.shortcuts import get_object_or_404
 from django.template import loader
+from django.urls import reverse
 from django.utils import html
 from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe

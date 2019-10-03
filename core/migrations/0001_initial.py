@@ -346,8 +346,8 @@ class Migration(migrations.Migration):
                 ('sort_weight', models.IntegerField()),
                 ('system', models.BooleanField(default=False, verbose_name='System locked')),
                 ('default', models.TextField(blank=True, verbose_name='Default value')),
-                ('choice_group', models.ForeignKey(to='ngw.ChoiceGroup', null=True, verbose_name='Choice group', blank=True)),
-                ('choice_group2', models.ForeignKey(to='ngw.ChoiceGroup', null=True, verbose_name='Second choice group', related_name='second_choices_set', blank=True)),
+                ('choice_group', models.ForeignKey(to='ngw.ChoiceGroup', null=True, verbose_name='Choice group', blank=True, on_delete=models.CASCADE)),
+                ('choice_group2', models.ForeignKey(to='ngw.ChoiceGroup', null=True, verbose_name='Second choice group', related_name='second_choices_set', blank=True, on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'contact fields',
@@ -362,8 +362,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('django_id', models.AutoField(serialize=False, primary_key=True)),
                 ('value', models.TextField(blank=True)),
-                ('contact', models.ForeignKey(related_name='values', to=settings.AUTH_USER_MODEL)),
-                ('contact_field', models.ForeignKey(related_name='values', to='ngw.ContactField')),
+                ('contact', models.ForeignKey(related_name='values', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
+                ('contact_field', models.ForeignKey(related_name='values', to='ngw.ContactField', on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'contact field values',
@@ -401,8 +401,8 @@ class Migration(migrations.Migration):
                 ('date', models.DateTimeField()),
                 ('title', models.CharField(verbose_name='title', max_length=64)),
                 ('text', models.TextField(verbose_name='text')),
-                ('author', models.ForeignKey(to=settings.AUTH_USER_MODEL, null=True, blank=True)),
-                ('contact_group', models.ForeignKey(to='ngw.ContactGroup', null=True, related_name='news_set', blank=True)),
+                ('author', models.ForeignKey(to=settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)),
+                ('contact_group', models.ForeignKey(to='ngw.ContactGroup', null=True, related_name='news_set', blank=True, on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'news',
@@ -418,8 +418,8 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(serialize=False, primary_key=True)),
                 ('flags', models.IntegerField()),
                 ('note', models.TextField(blank=True)),
-                ('contact', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
-                ('group', models.ForeignKey(to='ngw.ContactGroup')),
+                ('contact', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
+                ('group', models.ForeignKey(to='ngw.ContactGroup', on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'contacts in group',
@@ -438,9 +438,9 @@ class Migration(migrations.Migration):
                 ('subject', models.CharField(default='No title', verbose_name='Subject', max_length=64)),
                 ('text', models.TextField()),
                 ('sync_info', models.TextField(blank=True)),
-                ('contact', models.ForeignKey(to=settings.AUTH_USER_MODEL, verbose_name='Contact')),
-                ('group', models.ForeignKey(related_name='message_set', to='ngw.ContactGroup')),
-                ('read_by', models.ForeignKey(to=settings.AUTH_USER_MODEL, related_name='msgreader', null=True)),
+                ('contact', models.ForeignKey(to=settings.AUTH_USER_MODEL, verbose_name='Contact', on_delete=models.CASCADE)),
+                ('group', models.ForeignKey(related_name='message_set', to='ngw.ContactGroup', on_delete=models.CASCADE)),
+                ('read_by', models.ForeignKey(to=settings.AUTH_USER_MODEL, related_name='msgreader', null=True, on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'messages',
@@ -454,8 +454,8 @@ class Migration(migrations.Migration):
             name='GroupInGroup',
             fields=[
                 ('django_id', models.AutoField(serialize=False, primary_key=True)),
-                ('father', models.ForeignKey(related_name='direct_gig_subgroups', to='ngw.ContactGroup')),
-                ('subgroup', models.ForeignKey(related_name='direct_gig_supergroups', to='ngw.ContactGroup')),
+                ('father', models.ForeignKey(related_name='direct_gig_subgroups', to='ngw.ContactGroup', on_delete=models.CASCADE)),
+                ('subgroup', models.ForeignKey(related_name='direct_gig_supergroups', to='ngw.ContactGroup', on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'groups in group',
@@ -469,8 +469,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('django_id', models.AutoField(serialize=False, primary_key=True)),
                 ('flags', models.IntegerField()),
-                ('father', models.ForeignKey(related_name='direct_gmg_subgroups', to='ngw.ContactGroup')),
-                ('subgroup', models.ForeignKey(related_name='direct_gmg_supergroups', to='ngw.ContactGroup')),
+                ('father', models.ForeignKey(related_name='direct_gmg_subgroups', to='ngw.ContactGroup', on_delete=models.CASCADE)),
+                ('subgroup', models.ForeignKey(related_name='direct_gmg_supergroups', to='ngw.ContactGroup', on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'groups managing group',
@@ -490,7 +490,7 @@ class Migration(migrations.Migration):
                 ('property', models.TextField(null=True, blank=True)),
                 ('property_repr', models.TextField(blank=True, verbose_name='Property', null=True)),
                 ('change', models.TextField(blank=True, verbose_name='Change', null=True)),
-                ('contact', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('contact', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'logs',
@@ -527,13 +527,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='contactfield',
             name='contact_group',
-            field=models.ForeignKey(to='ngw.ContactGroup', verbose_name='Only for'),
+            field=models.ForeignKey(to='ngw.ContactGroup', verbose_name='Only for', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='choice',
             name='choice_group',
-            field=models.ForeignKey(related_name='choices', to='ngw.ChoiceGroup'),
+            field=models.ForeignKey(related_name='choices', to='ngw.ChoiceGroup', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

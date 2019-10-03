@@ -80,13 +80,3 @@ def group_with_link(contact_group):
 @register.filter
 def perms_int_to_flags(intperms):
     return perms.int_to_flags(intperms)
-
-
-@register.assignment_tag
-def view_row_to_items(view, row):
-    return view.row_to_items(row)
-
-
-@register.assignment_tag
-def view_headers(view, row):
-    return view.result_headers(row)
