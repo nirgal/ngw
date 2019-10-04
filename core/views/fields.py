@@ -12,6 +12,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import html
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
 from django.views.generic import CreateView, UpdateView, View
@@ -67,7 +68,8 @@ class FieldListView(InGroupAcl, NgwListView):
         'clean_type_as_html',
         'contact_group',
         'locked',
-        # 'move_it', 'sort_weight',
+        # 'move_it',
+        # 'sort_weight',
         )
     list_display_links = None
     search_fields = 'name', 'hint'
@@ -79,11 +81,10 @@ class FieldListView(InGroupAcl, NgwListView):
             raise PermissionDenied
 
     def move_it(self, field):
-        return (
+        return mark_safe(
             '<a href=' + str(field.id) + '/moveup>Up</a>'
             + ' <a href=' + str(field.id) + '/movedown>Down</a>')
     move_it.short_description = ugettext_lazy('Move')
-    move_it.allow_tags = True
 
     def get_root_queryset(self):
         qs = ContactField.objects \
@@ -104,35 +105,34 @@ class FieldListView(InGroupAcl, NgwListView):
     def name_with_link(self, field):
         html_name = html.escape(field.name)
         if field.perm & perms.CHANGE_CG:
-            return (
-                '<a href="../../{}/fields/{}/">{}</a>'
-                .format(field.contact_group.id, field.id, html_name))
+            return html.format_html(
+                mark_safe('<a href="../../{}/fields/{}/">{}</a>'),
+                field.contact_group.id,
+                field.id,
+                html_name)
         else:
             return html_name
     name_with_link.short_description = ugettext_lazy('Name')
     name_with_link.admin_order_field = 'name'
-    name_with_link.allow_tags = True
 
     def clean_type_as_html(self, field):
-        html_type = field.type_as_html()
+        html_type = mark_safe(field.type_as_html())
         if not field.perm & perms.CHANGE_CG:
             # ugly hack to remove links
             html_type = html.strip_tags(str(html_type))
         return html_type
     clean_type_as_html.short_description = ugettext_lazy('Type')
     clean_type_as_html.admin_order_field = 'type'
-    clean_type_as_html.allow_tags = True
 
     def locked(self, field):
         if field.system:
-            return (
+            return html.format_html(
                 '<img src="{}ngw/lock.png" alt="locked"'
-                ' width="10" height="10">'
-                .format(settings.STATIC_URL))
+                ' width="10" height="10">',
+                settings.STATIC_URL)
         return ''
     locked.short_description = ugettext_lazy('Locked')
     locked.admin_order_field = 'system'
-    locked.allow_tags = True
 
 
 ###############################################################################
@@ -149,7 +149,8 @@ class FieldMoveUpView(NgwAdminAcl, View):
         cf = get_object_or_404(ContactField, pk=id)
         cf.sort_weight -= 15
         cf.save()
-        return HttpResponseRedirect(reverse('field_list'))
+        return HttpResponseRedirect(
+                reverse('field_list', args=(self.kwargs['gid'],)))
 
 
 class FieldMoveDownView(NgwAdminAcl, View):
@@ -159,7 +160,8 @@ class FieldMoveDownView(NgwAdminAcl, View):
         cf = get_object_or_404(ContactField, pk=id)
         cf.sort_weight += 15
         cf.save()
-        return HttpResponseRedirect(reverse('field_list'))
+        return HttpResponseRedirect(
+                reverse('field_list', args=(self.kwargs['gid'],)))
 
 
 ###############################################################################

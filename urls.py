@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.views import login as login_view
 from django.views.generic.base import RedirectView
-from django.views.i18n import javascript_catalog
+from django.views.i18n import JavaScriptCatalog
 
 from ngw.core.gpg import GpgLookupView
 from ngw.core.views.choices import Choice2EditView, ChoiceEditView
@@ -85,7 +85,7 @@ groups_urlpatterns = [
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/delete$', NewsDeleteView.as_view()),
     url(r'^(?P<gid>\d+)/mailman$', MailmanSyncView.as_view()),
 
-    url(r'^(?P<gid>\d+)/fields/$', FieldListView.as_view()),
+    url(r'^(?P<gid>\d+)/fields/$', FieldListView.as_view(), name='field_list'),
     url(r'^(?P<gid>\d+)/fields/add$', FieldCreateView.as_view()),
     url(r'^(?P<gid>\d+)/fields/(?P<id>\d+)/$',
         RedirectView.as_view(url='edit', permanent=True)),
@@ -104,21 +104,12 @@ groups_urlpatterns = [
 ]
 
 
-js_info_dict = {
-    'packages': ('ngw.core', 'django.contrib.admin',),
-    }
-
-
 urlpatterns = [
     url(r'^$', HomeView.as_view()),
 
     url(r'^test$', TestView.as_view()),
 
-    url(r'^jsi18n/$', javascript_catalog, js_info_dict),
-    url(r'^jsi18n/(?P<packages>\S+?)/$', javascript_catalog),
-    # Django 1.10:
-    # url(r'^jsi18n/$', JavaScriptCatalog.as_view(), js_info_dict),
-    # url(r'^jsi18n/(?P<packages>\S+?)/$', JavaScriptCatalog.as_view()),
+    url(r'^jsi18n/$', JavaScriptCatalog.as_view(), name='javascript-catalog'),
 
     url(r'session_security/', include('session_security.urls')),
 

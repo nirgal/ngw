@@ -90,16 +90,16 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
         if group.field_group:
             fields = group.contactfield_set.all()
             if fields:
-                return ', '.join(
-                    ['<a href="' + f.get_absolute_url() + '">'
-                     + html.escape(f.name) + '</a>'
-                     for f in fields])
+                return html.format_html_join(
+                        ', ',
+                        '<a href="{}">{}</a>',
+                        ((f.get_absolute_url(), f.name) for f in fields))
+
             else:
                 return _('Yes (but none yet)')
         else:
             return _('No')
     rendered_fields.short_description = ugettext_lazy('Contact fields')
-    rendered_fields.allow_tags = True
 
     def visible_member_count(self, group):
         # This is totally ineficient
@@ -146,9 +146,8 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
                         title=_('Has fields'),
                         title_long=_('Being a members yields new fields.')))
 
-        return res
+        return mark_safe(res)
     flags.short_description = ugettext_lazy('Flags')
-    flags.allow_tags = True
 
     def get_root_queryset(self):
         return (ContactGroup

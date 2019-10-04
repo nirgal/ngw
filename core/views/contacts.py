@@ -416,11 +416,13 @@ def field_widget(contact_field, contact_with_extra_fields):
     attrib_name = DISP_FIELD_PREFIX + str(contact_field.id)
     raw_value = getattr(contact_with_extra_fields, attrib_name)
     if raw_value:
-        return contact_field.format_value_html(raw_value)
+        html_value = contact_field.format_value_html(raw_value)
+        return mark_safe(html_value)
     else:
         try:
             default_html_func = getattr(contact_field, 'default_value_html')
-            return default_html_func()
+            html_value = default_html_func()
+            return mark_safe(html_value)
         except AttributeError:
             return ''
 
@@ -545,7 +547,8 @@ class BaseContactListView(NgwListView):
                 attribute = field_widget_factory(cf)
                 attribute.short_description = cf.name
                 attribute.admin_order_field = prop
-                attribute.allow_tags = True
+                # TODO: Investigate why there are so many warnings:
+                # attribute.allow_tags = True
                 setattr(self, attribute_name, attribute)
                 list_display.append(attribute_name)
             else:
@@ -598,12 +601,13 @@ class BaseContactListView(NgwListView):
         return result
 
     def name_with_relative_link(self, contact):
-        return '<a href="{id}/"><b>{name}</a></b>'.format(
-            id=contact.id,
-            name=html.escape(contact.name))
+        return html.format_html(
+                mark_safe('<a href="{id}/"><b>{name}</a></b>'),
+                id=contact.id,
+                name=html.escape(contact.name)
+                )
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'
-    name_with_relative_link.allow_tags = True
 
     def action_bcc(self, request, queryset):
         emails = []
