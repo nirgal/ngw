@@ -5,12 +5,12 @@ Contact managing views
 import os
 from datetime import date
 
-import crack
 from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import filters
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.contrib.auth import password_validation
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models.query import RawQuerySet, sql
@@ -1110,6 +1110,7 @@ class ContactCreateView(InGroupAcl, ContactEditMixin, CreateView):
 
 
 class ContactPasswordForm(forms.ModelForm):
+    # TODO: Use admin SetPasswordForm ?
     class Meta:
         model = Contact
         fields = []
@@ -1117,15 +1118,11 @@ class ContactPasswordForm(forms.ModelForm):
     confirm_password = forms.CharField(widget=forms.PasswordInput())
 
     def clean(self):
-        if (self.cleaned_data.get('new_password', '')
+        new_password = self.cleaned_data.get('new_password', '')
+        if (new_password
            != self.cleaned_data.get('confirm_password', '')):
             raise forms.ValidationError(_('The passwords must match!'))
-
-        try:
-            crack.FascistCheck(self.cleaned_data.get('new_password', ''))
-        except ValueError as err:
-            raise forms.ValidationError("{}".format(err))
-
+        password_validation.validate_password(new_password)
         return self.cleaned_data
 
     def save(self, request):

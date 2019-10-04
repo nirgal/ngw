@@ -2,11 +2,11 @@ import json
 import os
 from datetime import datetime
 
-import crack
 import magic
 from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import AdminDateWidget
+from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import make_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template import Context, Template, loader
@@ -497,7 +497,7 @@ class PasswordContactField(ContactField):
     def validate_unicode_value(cls, value,
                                choice_group_id=None, choice_group2_id=None):
         try:
-            crack.FascistCheck(value)
+            password_validation.validate_password(value)
         except ValueError:
             return False
         else:
