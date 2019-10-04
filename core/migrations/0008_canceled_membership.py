@@ -8,6 +8,12 @@ from django.conf import settings
 from django.db import migrations
 
 
+def functions_sql():
+    sqlfile=os.path.join(settings.BASE_DIR, 'core/migrations/functions.sql')
+    with open(sqlfile) as f:
+        return f.read()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -16,7 +22,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql=open(os.path.join(settings.BASE_DIR, 'core/migrations/functions.sql')).read()
+            sql=functions_sql()
         ),
         migrations.RunSQL(
             sql = 'UPDATE contact_in_group SET flags = (flags & (~7))<<1|(flags&7)'
