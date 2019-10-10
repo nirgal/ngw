@@ -26,7 +26,7 @@ class ChoicesWidget(forms.MultiWidget):
         widgets = []
         attrs_value = attrs or {}
         attrs_key = attrs or {}
-        attrs_value['style'] = 'width:90%'
+        attrs_value['style'] = 'width:85%'
         attrs_key['style'] = 'width:7%; margin-left:1ex;'
 
         for i in range(ndisplay):
