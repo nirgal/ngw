@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-09-08 16:05+0000\n"
+"POT-Creation-Date: 2019-10-10 14:13+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: onetime.py:42
+#: onetime.py:44
 msgid "The expiration date must be in the future."
 msgstr "La date d'expiration doit être dans le futur."
 
-#: onetime.py:46
+#: onetime.py:48
 msgid "The expiration date can't be more that {} days in the future."
 msgstr "La date d'expiration ne peux pas être plus de {} jours dans le futur."
 
-#: onetime.py:151
+#: onetime.py:154
 #, python-brace-format
 msgid ""
 "Hello\n"
@@ -49,10 +49,10 @@ msgid ""
 msgstr ""
 "Salut\n"
 "\n"
-"Vous pouvez lire votre message sur https://onetime.info/{otid}#"
-"{passphrase_out}\n"
-"ou http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out} si vous "
-"utilisez tor [1].\n"
+"Vous pouvez lire votre message sur https://onetime.info/{otid}"
+"#{passphrase_out}\n"
+"ou http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out} si vous utilisez "
+"tor [1].\n"
 "\n"
 "Attention, ce message ne sera affiché qu'une seule fois, puis effacé. Ayez\n"
 "un stylo à porté de main avant de cliquer sur le lien.\n"
@@ -64,7 +64,7 @@ msgstr ""
 "\n"
 "[1] https://www.torproject.org/"
 
-#: onetime.py:167
+#: onetime.py:170
 #, python-brace-format
 msgid ""
 "<p>Hello</p>\n"
@@ -91,8 +91,9 @@ msgstr ""
 "<p>Vous pouvez lire votre message sur \n"
 "<a href=\"https://onetime.info/{otid}#{passphrase_out}\">\n"
 "https://onetime.info/{otid}#{passphrase_out}</a><br>\n"
-"ou <a href=\"http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out}"
-"\">http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out}</a>\n"
+"ou <a href=\"http://7z4nl4ojzggwicx5.onion/{otid}"
+"#{passphrase_out}\">http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out}</"
+"a>\n"
 "si vous utilisez <a href=\"https://www.torproject.org/\">tor</a>.</p>\n"
 "\n"
 "<p>Attention, ce message ne sera affiché qu'une seule fois, puis effacé. "
