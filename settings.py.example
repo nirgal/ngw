@@ -42,7 +42,7 @@ INSTALLED_APPS = (
     # admin used for static files, but not in urls.py
     # (and it needs to be after ngw.core for templates override)
     # 'django.contrib.admin',
-    'django.contrib.admin.apps.SimpleAdminConfig',
+    'django.contrib.admin.apps.SimpleAdminConfig',  # We use admin templates
     # 'ngw.extensions.vpn',
 )
 
@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.http.ConditionalGetMiddleware',  # ETag
     # set up request.user from session:
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
@@ -125,6 +126,7 @@ DATABASES = {
     # },
 }
 
+
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -186,9 +188,6 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # We have short time sessions anyways
 CSRF_COOKIE_AGE = 24*3600  # One day
 CSRF_COOKIE_SECURE = True  # We are not using http, only https
 
-# Output the "Etag" header for caching
-USE_ETAGS = True
-
 APPEND_SLASH = False
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
@@ -221,7 +220,7 @@ EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
 # VPN_BASEIP = '10.7.0.0'  # Base IP address
 # VPN_MAXIP = '10.7.255.255'  # Maximum IP address
 
-EXTRA_HOME_LINKS = (
+EXTRA_BANNER_LINKS = (
     # ('forum', '/phpbb3'),
     ('wiki', '/wiki'),
 )
