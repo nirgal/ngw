@@ -18,13 +18,20 @@ sys.path.append('/usr/lib')
 # os.environ["DJANGO_SETTINGS_MODULE"] = "ngw.settings"
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ngw.settings")
 
-
+import django
 from django import db
 from django.contrib import auth
-from django.contrib.auth.handlers.modwsgi import \
-    check_password as wsgi_checkpassword
 from django.core.wsgi import get_wsgi_application
 from django.utils.encoding import force_bytes
+from ngw.core import perms
+
+django.setup()  # required before the following imports
+
+from django.contrib.auth.handlers import modwsgi
+from ngw.core.models import ContactGroup
+
+
+UserModel = auth.get_user_model()
 
 
 def groups_for_user(environ, username):
@@ -32,12 +39,6 @@ def groups_for_user(environ, username):
     Authorizes a user based on groups
     """
 
-    # We cannot load these modules before calling get_wsgi_application()
-    # So they must be defined here.
-    from ngw.core import perms
-    from ngw.core.models import ContactGroup
-
-    UserModel = auth.get_user_model()
     db.reset_queries()
 
     try:
@@ -54,5 +55,5 @@ def groups_for_user(environ, username):
         db.close_old_connections()
 
 
-check_password = wsgi_checkpassword
+check_password = modwsgi.check_password
 application = get_wsgi_application()

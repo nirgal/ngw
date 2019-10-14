@@ -21,16 +21,15 @@ This is the installation guide, intended for system administrators.
 
 Debian repository setup (optional)
 ==================================
-It is recommanded to use Debian 9 (Stretch) or above. All the source is available, so you can use other settings if you want, but you are on your own, then.
+
+It is recommanded to use Debian 10 (Buster) or above. All sources are available, so you can use other settings if you want to, but you are on your own then.
 
 Here's a suggested /etc/apt/sources.list::
 
-    deb     http://http.debian.net/debian/       stretch           main
-    deb-src http://http.debian.net/debian/       stretch           main
-    deb     http://security.debian.org/          stretch/updates   main
-    deb-src http://security.debian.org/          stretch/updates   main
-    deb     http://ftp.debian.org/debian         stretch-backports main
-    deb-src http://ftp.debian.org/debian         stretch-backports main
+    deb     http://http.debian.net/debian/       buster           main
+    deb-src http://http.debian.net/debian/       buster           main
+    deb     http://security.debian.org/          buster/updates   main
+    deb-src http://security.debian.org/          buster/updates   main
 
 If you want the packages from nirgal.com, have a look at the README file at http://nirgal.com/debian/
 
@@ -40,7 +39,7 @@ Requirements
 
 Standard packages::
 
-    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socksipy python3-uno python3-cracklib python3-magic python3-pil tor make python3-gnupg libjs-jquery-ui openssl python3-django-session-security
+    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socks python3-uno python3-cracklib python3-magic python3-pil tor make python3-gnupg libjs-jquery-ui openssl python3-django-session-security isort flake8
 
 If you set up nirgal.com repository as described above, just run::
 
@@ -64,7 +63,7 @@ That way, you can have upgrades with a simple ``git pull``. You need to run the 
     echo "Running $0" >&2
     make
 
-The source is now fully flake8 compliant. See http://flake8.readthedocs.org/
+The source is flake8 compliant. See http://flake8.readthedocs.org/
 
 Please ensure you are committing correct code by invoking ``make flake8`` before any commit. You'll need to install ``flake8`` package.
 Then it is recommended you create a ``.git/hooks/pre-commit`` 755 file to do that automatically::
