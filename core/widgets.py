@@ -4,7 +4,7 @@ Custom widgets for use in forms.
 
 from django import forms
 from django.core.exceptions import ValidationError
-from django.utils.safestring import mark_safe
+from django.templatetags.static import static
 from django.utils.translation import ugettext as _
 
 from ngw.core import perms
@@ -233,6 +233,10 @@ MAX_DOUBLECHOICE_LENGTH = 20
 
 
 class DoubleChoicesWidget(forms.widgets.MultiWidget):
+    class Media:
+        js = (static('ngw/doublechoice.js'),)
+    template_name = 'widgets/doublechoice.html'
+
     def __init__(self, sub_count, sub_choice1, sub_choice2, attrs=None):
         # print('attrs:', attrs)
         widgets = []
@@ -252,18 +256,6 @@ class DoubleChoicesWidget(forms.widgets.MultiWidget):
         result = []
         for pair in value.split(','):
             result += pair.split('-')
-        return result
-
-    def render(self, name, value, attrs=None):
-        result = super().render(name, value, attrs)
-        final_attrs = self.build_attrs(attrs)
-        id_ = final_attrs.get('id', None)
-        js = """
-        <script>
-        doublechoice_show('{id}', 1);
-        </script>
-        """
-        result += mark_safe(js.format(id=id_))
         return result
 
 

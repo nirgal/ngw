@@ -11,7 +11,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import helpers
-from django.contrib.admin.templatetags.admin_static import static
+from django.contrib.admin.templatetags.admin_static import static  # FIXME
 from django.contrib.admin.utils import (display_for_field, display_for_value,
                                         label_for_field, lookup_field)
 from django.contrib.admin.views.main import IS_POPUP_VAR, ChangeList
