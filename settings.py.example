@@ -103,17 +103,6 @@ DATABASES = {
         'PORT': '',  # Set to empty string for default.
     },
 
-    # Enable this block if you want phpbb3 extension:
-    # 'phpbb3': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'phpbb3',
-    #     'USER': 'phpbb3',
-    #     'PASSWORD': 'XXX',
-    #     'HOST': 'localhost',
-    #     'PORT': '',
-    #     'OPTIONS': {'autocommit': True},
-    # },
-
     # Enable this block if you want jabber extension:
     # 'jabber': {
     #     'ENGINE': 'django.db.backends.postgresql',
@@ -221,7 +210,6 @@ EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
 # VPN_MAXIP = '10.7.255.255'  # Maximum IP address
 
 EXTRA_BANNER_LINKS = (
-    # ('forum', '/phpbb3'),
     ('wiki', '/wiki'),
 )
 
