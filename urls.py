@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth.views import login as login_view
+from django.contrib.auth.views import LoginView, LogoutView
 from django.views.generic.base import RedirectView
 from django.views.i18n import JavaScriptCatalog
 
@@ -14,8 +14,7 @@ from ngw.core.views.contacts import (ContactCreateView, ContactDeleteView,
                                      DefaultGroupView, FilterAddView,
                                      FilterDeleteView, FilterEditView,
                                      FilterListView, GroupAddManyView,
-                                     HookPasswordView, PassLetterView,
-                                     PasswordView)
+                                     PassLetterView, PasswordView)
 from ngw.core.views.contactsearch import (ContactSearchAutocompleteView,
                                           ContactSearchColumnFiltersView,
                                           ContactSearchColumnsView,
@@ -39,7 +38,7 @@ from ngw.core.views.logs import LogListView
 from ngw.core.views.mailman import MailmanSyncView
 from ngw.core.views.messages import (MessageDetailView, MessageListView,
                                      SendMessageView)
-from ngw.core.views.misc import HomeView, LogoutView, TestView
+from ngw.core.views.misc import HomeView, TestView
 from ngw.core.views.news import (NewsCreateView, NewsDeleteView, NewsEditView,
                                  NewsListView)
 
@@ -113,10 +112,12 @@ urlpatterns = [
 
     url(r'session_security/', include('session_security.urls')),
 
-    url(r'^hook_change_password$', HookPasswordView.as_view()),
-
-    url(r'^login$', login_view, {'template_name': 'login.html'}),
-    url(r'^logout$', LogoutView.as_view(), name='logout'),
+    url(r'^login$',
+        LoginView.as_view(template_name='login.html'),
+        name='login'),
+    url(r'^logout$',
+        LogoutView.as_view(template_name='logout.html'),
+        name='logout'),
 
     url(r'^logs$', LogListView.as_view(), name='log_list'),
 

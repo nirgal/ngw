@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-10 14:09+0000\n"
-"PO-Revision-Date: 2019-10-10 16:11+0100\n"
+"POT-Creation-Date: 2019-10-18 14:12+0000\n"
+"PO-Revision-Date: 2019-10-18 16:16+0100\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -128,11 +128,11 @@ msgstr "Modification"
 msgid "log"
 msgstr "historique"
 
-#: models.py:126 templates/admin/base_site.html:74
+#: models.py:126 templates/admin/base_site.html:71
 msgid "logs"
 msgstr "historique"
 
-#: models.py:145 templates/contact_list.html:92 templates/group_fields.html:11
+#: models.py:145 templates/contact_list.html:94 templates/group_fields.html:11
 #: templates/list.html:78 templates/news.html:55
 msgid "Add"
 msgstr "Ajouter"
@@ -271,7 +271,7 @@ msgstr "groupe de contacts"
 msgid "contact groups"
 msgstr "groupes de contacts"
 
-#: models.py:821 templates/admin/base_site.html:72 views/groups.py:294
+#: models.py:821 templates/admin/base_site.html:69 views/groups.py:294
 #: views/groups.py:312
 msgid "events"
 msgstr "événements"
@@ -484,7 +484,7 @@ msgstr "texte"
 msgid "news item"
 msgstr "nouvelle"
 
-#: models.py:2698 templates/admin/base_site.html:70 views/news.py:47
+#: models.py:2698 templates/admin/base_site.html:67 views/news.py:47
 #: views/news.py:153
 msgid "news"
 msgstr "nouvelles"
@@ -815,20 +815,20 @@ msgstr "Désolé. Vous n'êtes pas autorisé à parcourir cette page."
 msgid "Sorry. A server error occured."
 msgstr "Désolé. Une erreur est survenue sur le serveur."
 
-#: templates/admin/base_site.html:43
+#: templates/admin/base_site.html:40
 msgid "Profile"
 msgstr "Profil"
 
-#: templates/admin/base_site.html:44
+#: templates/admin/base_site.html:41
 msgid "Log out"
 msgstr "Déconnexion"
 
-#: templates/admin/base_site.html:52 templates/admin/base_site.html:53
-#: templates/admin/base_site.html:54
+#: templates/admin/base_site.html:49 templates/admin/base_site.html:50
+#: templates/admin/base_site.html:51
 msgid "Quick contact search"
 msgstr "Recherche rapide de contacts"
 
-#: templates/admin/base_site.html:71 views/groups.py:690 views/groups.py:716
+#: templates/admin/base_site.html:68 views/groups.py:690 views/groups.py:716
 msgid "groups"
 msgstr "groupes"
 
@@ -875,7 +875,7 @@ msgid "Search"
 msgstr "Rechercher"
 
 #: templates/choice_edit.html:10 templates/contact_default_group.html:23
-#: templates/contact_in_group.html:14 templates/edit.html:25
+#: templates/contact_in_group.html:14 templates/edit.html:27
 #: templates/filter_form.html:22 templates/membership_inlineform.html:18
 msgid "Save"
 msgstr "Enregistrer"
@@ -966,84 +966,84 @@ msgstr "Groupe par défaut"
 msgid "Remove from group"
 msgstr "Retirer du groupe"
 
-#: templates/contact_list.html:25
+#: templates/contact_list.html:27
 msgid "loading"
 msgstr "chargement"
 
-#: templates/contact_list.html:66
+#: templates/contact_list.html:68
 msgid "Select"
 msgstr "Sélectionner"
 
-#: templates/contact_list.html:96 templates/delete.html:15
+#: templates/contact_list.html:98 templates/delete.html:15
 #: templates/membership_inlineform.html:18
 msgid "Cancel"
 msgstr "Annuler"
 
-#: templates/contact_list.html:158
+#: templates/contact_list.html:160
 msgid "Error while fetching "
 msgstr "Erreur lors du téléchargement de "
 
-#: templates/contact_list.html:254
+#: templates/contact_list.html:256
 msgid "Internal representation of the filter"
 msgstr "Représentation interne du filtre"
 
-#: templates/contact_list.html:263
+#: templates/contact_list.html:265
 msgid "Current filter"
 msgstr "Filtre courant"
 
-#: templates/contact_list.html:273
+#: templates/contact_list.html:275
 msgid "Advanced search"
 msgstr "Recherche avancée"
 
-#: templates/contact_list.html:281 templates/contact_list.html:289
+#: templates/contact_list.html:283 templates/contact_list.html:291
 msgid "Add condition"
 msgstr "Ajouter une condition"
 
-#: templates/contact_list.html:290
+#: templates/contact_list.html:292
 msgid "Remove filter"
 msgstr "Retirer le filtre"
 
-#: templates/contact_list.html:291
+#: templates/contact_list.html:293
 msgid "Save filter"
 msgstr "Enregistrer le filtre"
 
-#: templates/contact_list.html:302
+#: templates/contact_list.html:304
 msgid "And"
 msgstr "Et"
 
-#: templates/contact_list.html:303
+#: templates/contact_list.html:305
 msgid "Or"
 msgstr "Ou"
 
-#: templates/contact_list.html:311
+#: templates/contact_list.html:313
 msgid "Field"
 msgstr "Champ"
 
-#: templates/contact_list.html:312
+#: templates/contact_list.html:314
 msgid "Group"
 msgstr "Groupe"
 
-#: templates/contact_list.html:313
+#: templates/contact_list.html:315
 msgid "Event"
 msgstr "Événement"
 
-#: templates/contact_list.html:314
+#: templates/contact_list.html:316
 msgid "Saved"
 msgstr "Enregistré"
 
-#: templates/contact_list.html:322
+#: templates/contact_list.html:324
 msgid "Displayed columns"
 msgstr "Colonnes affichées"
 
-#: templates/contact_list.html:332
+#: templates/contact_list.html:334
 msgid "Save column selection as my default"
 msgstr "Enregistrer la sélection de colonne comme défaut"
 
-#: templates/contact_list.html:333
+#: templates/contact_list.html:335
 msgid "Set columns"
 msgstr "Définir les colonnes"
 
-#: templates/contact_list.html:342 templates/group_members.html:84
+#: templates/contact_list.html:344 templates/group_members.html:84
 msgid "Select displayed columns"
 msgstr "Sélectionner les colonnes affichées"
 
@@ -1057,15 +1057,15 @@ msgstr ""
 msgid "Yes I'm Sure"
 msgstr "Oui je suis sûr"
 
-#: templates/edit.html:26
+#: templates/edit.html:28
 msgid "Save and add another"
 msgstr "Enregistrer et ajouter un autre"
 
-#: templates/edit.html:27
+#: templates/edit.html:29
 msgid "Save and continue editing"
 msgstr "Enregistrer et continuer à modifier"
 
-#: templates/edit.html:29 templates/filter_form.html:23
+#: templates/edit.html:31 templates/filter_form.html:23
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -1232,23 +1232,31 @@ msgstr "Messages non-lus"
 msgid "You are operator of theses groups"
 msgstr "Vous êtes opérateur de ces groupes"
 
-#: templates/login.html:12
+#: templates/login.html:8 templates/loginold.html:17
+msgid "That web site requires javascript."
+msgstr "Ce site web nécessite javascript."
+
+#: templates/login.html:13 templates/loginold.html:21
+msgid "That web site requires cookies."
+msgstr "Ce site web nécessite des cookies."
+
+#: templates/loginold.html:12
 msgid "Your username and password didn't match. Please try again."
 msgstr ""
 "Votre nom d'utilisateur et votre mot de passe ne correspondent pas. Essayez "
 "encore."
 
-#: templates/login.html:17
-msgid "That web site requires javascript."
-msgstr "Ce site web nécessite javascript."
-
-#: templates/login.html:21
-msgid "That web site requires cookies."
-msgstr "Ce site web nécessite des cookies."
-
-#: templates/login.html:40
+#: templates/loginold.html:40
 msgid "Login"
 msgstr "Connexion"
+
+#: templates/logout.html:6
+msgid "Have a nice day!"
+msgstr "Bonne journée!"
+
+#: templates/logout.html:8
+msgid "Log in again"
+msgstr "Connectez-vous à nouveau"
 
 #: templates/membership_inlineform.html:12
 msgid "Declined invitation"
@@ -1977,11 +1985,7 @@ msgstr "Message à {contactname} dans le groupe {groupname}"
 msgid "{contactname} in group {groupname}"
 msgstr "contact {contactname} dans le groupe {groupname}"
 
-#: views/misc.py:37
-msgid "Have a nice day!<br><br><a href=\"{}\">Login again</a>."
-msgstr "Bonne journée!<br><br><a href=\"{}\">Se connecter à nouveau</a>."
-
-#: views/misc.py:97
+#: views/misc.py:76
 msgid "Lastest news"
 msgstr "Dernières nouvelles"
 
@@ -1997,13 +2001,16 @@ msgstr "La nouvelle {} a été enregistrée."
 msgid "Access"
 msgstr "Accès"
 
-#: widgets.py:299
+#: widgets.py:291
 msgid "You must choose a column #1 for each column #2."
 msgstr "Vous devez définir la première colonne pour chaque seconde colonne."
 
-#: widgets.py:302
+#: widgets.py:294
 msgid "You must choose a column #2 for each column #1."
 msgstr "Vous devez définir la seconde colonne pour chaque première colonne."
+
+#~ msgid "Have a nice day!<br><br><a href=\"{}\">Login again</a>."
+#~ msgstr "Bonne journée!<br><br><a href=\"{}\">Se connecter à nouveau</a>."
 
 #~ msgid "has been invited in group"
 #~ msgstr "a été invité dans le groupe"

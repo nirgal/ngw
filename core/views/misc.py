@@ -4,11 +4,8 @@ Miscalaneous views
 
 import os
 
-from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import logout as auth_logout
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView
 
@@ -17,28 +14,7 @@ from ngw.core.models import Contact, ContactGroup, ContactGroupNews
 from ngw.core.nav import Navbar
 from ngw.core.views.generic import NgwUserAcl
 
-__all__ = ['LogoutView', 'HomeView', 'TestView']
-
-
-class LogoutView(TemplateView):
-    '''
-    Logout view
-    '''
-
-    template_name = 'message.html'
-
-    def get(self, request, *args, **kwargs):
-        auth_logout(request)
-        return super().get(self, request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = {
-            'message': mark_safe(
-                _('Have a nice day!<br><br><a href="{}">Login again</a>.')
-                .format(settings.LOGIN_URL))
-        }
-        context.update(kwargs)
-        return super().get_context_data(**context)
+__all__ = ['HomeView', 'TestView']
 
 
 class HomeView(NgwUserAcl, TemplateView):

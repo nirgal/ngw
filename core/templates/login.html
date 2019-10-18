@@ -1,22 +1,14 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/login.html" %}
 {% load i18n %}
 
 {% block content %}
-{{form.media|safe}}
 
-<div class=fullpagebox>
-<form action="{{ app_path }}" method="post">
-{% csrf_token %}
-{% if form.errors %}
-<ul class=errorlist>
-<li>{% trans "Your username and password didn't match. Please try again." %}</li>
-</ul>
-{% endif %}
 <noscript>
 <ul class=errorlist>
 <li>{% trans "That web site requires javascript." %}</li>
 </ul>
 </noscript>
+
 <ul class=errorlist id=cookies_needed style="display:none;">
 <li>{% trans "That web site requires cookies." %}</li>
 </ul>
@@ -24,23 +16,8 @@
 if (!document.cookie)
     document.getElementById('cookies_needed').style.display='block';
 </script>
-<table class=objchange align=center>
-<tr>
-    <td>{{ form.username.label_tag }}</td>
-    <td>{{ form.username }}</td>
-</tr>
-<tr>
-    <td>{{ form.password.label_tag }}</td>
-    <td>{{ form.password }}</td>
-</tr>
-</table>
 
-<br>
-<div align=center>
-<input style="float:none !important;" type="submit" value="{% trans "Login" %}"/></div>
-<input type="hidden" name="next" value="{{ next }}" />
-</form>
-</div>
+{{ block.super }}
 
 {% endblock %}
 {# vim: set et ts=4 ft=htmldjango: #}

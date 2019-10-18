@@ -20,11 +20,9 @@ from django.shortcuts import get_object_or_404
 from django.template import loader
 from django.urls import reverse
 from django.utils import html
-from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DetailView, FormView,
                                   TemplateView, UpdateView, View)
 from django.views.generic.edit import ModelFormMixin
@@ -1188,23 +1186,24 @@ class PasswordView(InGroupAcl, UpdateView):
 #
 #######################################################################
 
-
-class HookPasswordView(View):
-    '''
-    This view allow a user to change his password through a post.
-    That view allow other modules to change the central password.
-    '''
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        username = request.META['REMOTE_USER']  # Apache external auth
-        request.user = Contact.objects.get_by_natural_key(username)
-        return super().dispatch(request, *args, **kwargs)
-
-    def post(self, request):
-        # TODO check password strength
-        newpassword_plain = request.POST['password']
-        request.user.set_password(newpassword_plain, request=request)
-        return HttpResponse('OK')
+# from django.views.decorators.csrf import csrf_exempt
+# from django.utils.decorators import method_decorator
+# class HookPasswordView(View):
+#     '''
+#     This view allow a user to change his password through a post.
+#     That view allow other modules to change the central password.
+#     '''
+#     @method_decorator(csrf_exempt)
+#     def dispatch(self, request, *args, **kwargs):
+#         username = request.META['REMOTE_USER']  # Apache external auth
+#         request.user = Contact.objects.get_by_natural_key(username)
+#         return super().dispatch(request, *args, **kwargs)
+#
+#     def post(self, request):
+#         # TODO check password strength
+#         newpassword_plain = request.POST['password']
+#         request.user.set_password(newpassword_plain, request=request)
+#         return HttpResponse('OK')
 
 
 #######################################################################
