@@ -186,6 +186,8 @@ class FlagsWidget(forms.CheckboxSelectMultiple):
         return self.id_for_flag(id_, flag)
 
     def get_context(self, name, value, attrs):
+        if not value:
+            value = 0
         # Here value is an integer (bit aray of permissions)
         value = perms.int_to_flags(value)  # Change into a string
         value = [char for char in value]  # Then into an array of letters
