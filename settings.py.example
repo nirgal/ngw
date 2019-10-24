@@ -183,9 +183,6 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 # Default is group writable files:
 FILE_UPLOAD_PERMISSIONS = 0o664
 
-# Uncomment next line to enable password reset though libreoffice mailings:
-# PASSWORD_LETTER = '/usr/lib/ngw/mailing/templates/resetpassword.odt'
-
 # Uncomment next line to enable GPG keyring
 # GPG_HOME = '/var/lib/ngw/'
 

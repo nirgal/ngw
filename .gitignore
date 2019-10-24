@@ -4,9 +4,6 @@
 .gnupg
 apache.conf
 apache_error.log
-mailing/templates
-!mailing/templates/resetpassword.odt
-mailing/generated
 settings.py
 media/fields/*
 media/g/*

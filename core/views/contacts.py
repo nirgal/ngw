@@ -2,11 +2,9 @@
 Contact managing views
 '''
 
-import os
 from datetime import date
 
 from django import forms
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import filters
 from django.contrib.admin.widgets import FilteredSelectMultiple
@@ -14,8 +12,7 @@ from django.contrib.auth import password_validation
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models.query import RawQuerySet, sql
-from django.http import (Http404, HttpResponse, HttpResponseRedirect,
-                         StreamingHttpResponse)
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template import loader
 from django.urls import reverse
@@ -23,13 +20,12 @@ from django.utils import html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
-from django.views.generic import (CreateView, DetailView, FormView,
-                                  TemplateView, UpdateView, View)
+from django.views.generic import (CreateView, FormView, TemplateView,
+                                  UpdateView, View)
 from django.views.generic.edit import ModelFormMixin
 
 from ngw.core import perms
 from ngw.core.contactsearch import parse_filterstring
-from ngw.core.mailmerge import ngw_mailmerge
 from ngw.core.models import (FIELD_COLUMNS, FIELD_DEFAULT_GROUP,
                              GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
                              LOG_ACTION_ADD, LOG_ACTION_CHANGE, Config,
@@ -1171,11 +1167,6 @@ class PasswordView(InGroupAcl, UpdateView):
             context['nav'] = Navbar(Contact.get_class_navcomponent())
         context['nav'].add_component(contact.get_navcomponent())
         context['nav'].add_component(('password', _('password')))
-        try:
-            context['PASSWORD_LETTER'] = settings.PASSWORD_LETTER
-            # So here the 'reset by letter' button will be enabled
-        except AttributeError:
-            pass  # it's ok not to have a letter
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -1204,81 +1195,6 @@ class PasswordView(InGroupAcl, UpdateView):
 #         newpassword_plain = request.POST['password']
 #         request.user.set_password(newpassword_plain, request=request)
 #         return HttpResponse('OK')
-
-
-#######################################################################
-#
-# Contact change password with pdf
-#
-#######################################################################
-
-
-class PassLetterView(InGroupAcl, DetailView):
-    '''
-    Reset the password and generate a ready to print pdf letter with it.
-    '''
-    is_group_required = False
-    model = Contact
-    pk_url_kwarg = 'cid'
-    template_name = 'password_letter.html'
-
-    def check_perm_groupuser(self, group, user):
-        if int(self.kwargs['cid']) == user.id:
-            return  # Ok for oneself
-        if not perms.c_can_write_fields_cg(user.id, GROUP_USER):
-            raise PermissionDenied
-
-    def get_context_data(self, **kwargs):
-        contact = self.object
-        context = {}
-        context['title'] = _('Generate a new password and print a letter')
-        context['contact'] = contact
-        if self.contactgroup:
-            context['nav'] = self.contactgroup.get_smart_navbar()
-            context['nav'].add_component(('members', _('members')))
-        else:
-            context['nav'] = Navbar(Contact.get_class_navcomponent())
-        context['nav'].add_component(contact.get_navcomponent())
-        context['nav'].add_component(('password letter', _('password letter')))
-        context.update(kwargs)
-        return super().get_context_data(**context)
-
-    def post(self, request, *args, **kwargs):
-        contact = self.get_object()
-
-        new_password = Contact.objects.make_random_password()
-
-        # record the value
-        # Generated and mailed:
-        contact.set_password(new_password, '2', request=request)
-        messages.add_message(request, messages.SUCCESS,
-                             _('Password has been changed successfully!'))
-
-        fields = {}
-        for cf in contact.get_contactfields(request.user.id):
-            try:
-                cfv = ContactFieldValue.objects.get(
-                    contact_id=contact.id, contact_field_id=cf.id)
-            except ContactFieldValue.DoesNotExist:
-                continue
-            fields[cf.name] = str(cfv).replace('\r', '')
-            # if cfv:
-            #    rows.append((cf.name, mark_safe(cfv.as_html())))
-        fields['name'] = contact.name
-        fields['password'] = new_password
-
-        filename = ngw_mailmerge(
-            settings.PASSWORD_LETTER,
-            fields,
-            '/usr/lib/ngw/mailing/generated/')
-        if not filename:
-            return HttpResponse(_('File generation failed'))
-
-        fullpath = os.path.join('/usr/lib/ngw/mailing/generated/', filename)
-        response = StreamingHttpResponse(
-            open(fullpath, 'rb'), content_type='application/pdf')
-        os.unlink(fullpath)
-        return response
 
 
 #######################################################################
@@ -1578,53 +1494,3 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
 
         context.update(kwargs)
         return super().get_context_data(**context)
-
-
-#######################################################################
-#
-# Make batch pdf for password generation
-#
-#######################################################################
-
-
-# @login_required()
-# @require_group(GROUP_ADMIN)
-# def contact_make_login_mailing(request):
-#     # select contacts whose password is in state 'Registered', with both
-#     # 'Adress' and 'City' not null
-#     q = Contact.objects
-#     q = q.extra(where=["EXISTS (SELECT * FROM contact_field_value "
-# " WHERE contact_field_value.contact_id = contact.id "
-# " AND contact_field_value.contact_field_id = {field_id}"
-# " AND value='{value}')".format(field_id=FIELD_PASSWORD_STATUS,
-#                                value='1' )])
-#     q = q.extra(where=['EXISTS (SELECT * FROM contact_field_value
-#       WHERE contact_field_value.contact_id = contact.id
-#       AND contact_field_value.contact_field_id = {field_id})'
-#       .format(field_id=FIELD_STREET)])
-#     q.extra(where=['EXISTS (SELECT * FROM contact_field_value '
-#       'WHERE contact_field_value.contact_id = contact.id'
-#       'AND contact_field_value.contact_field_id = {field_id})'
-#       .format(field_id=FIELD_CITY)])
-#     ids = [ row.id for row in q ]
-#     #print(ids)
-#     if not ids:
-#         return HttpResponse('No waiting mail')
-#
-#     result = ngw_mailmerge('/usr/lib/ngw/mailing/forms/welcome.odt',
-#                            [str(id) for id in ids])
-#     if not result:
-#         return HttpResponse('File generation failed')
-#     #print(result)
-#     filename = os.path.basename(result)
-#     if subprocess.call([
-#         'sudo',
-#         '/usr/bin/mvoomail',
-#         os.path.splitext(filename)[0],
-#         '/usr/lib/ngw/mailing/generated/']):
-#         return HttpResponse('File move failed')
-#     for row in q:
-#         contact = row[0]
-#         contact.set_fieldvalue(request, FIELD_PASSWORD_STATUS, '2')
-#
-#     return HttpResponse('File generated in /usr/lib/ngw/mailing/generated/')

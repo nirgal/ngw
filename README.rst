@@ -31,7 +31,7 @@ Here's a suggested /etc/apt/sources.list::
     deb     http://security.debian.org/          buster/updates   main
     deb-src http://security.debian.org/          buster/updates   main
 
-If you want the packages from nirgal.com, have a look at the README file at http://nirgal.com/debian/
+If you want the packages from nirgal.com, have a look at the README file at https://nirgal.com/debian/
 
 
 Requirements
@@ -39,13 +39,13 @@ Requirements
 
 Standard packages::
 
-    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socks python3-uno python3-cracklib python3-magic python3-pil tor make python3-gnupg libjs-jquery-ui openssl python3-django-session-security isort flake8
+    aptitude install python3-django python3-psycopg2 postgresql libapache2-mod-wsgi-py3 gettext python3-socks python3-cracklib python3-magic python3-pil tor make python3-gnupg libjs-jquery-ui openssl python3-django-session-security isort flake8
 
 If you set up nirgal.com repository as described above, just run::
 
     aptitude install libjs-xgcalendar python3-decoratedstr
 
-If you did not, ``python3-django-session-security`` is now officially in debian. The sources of the other packages are available at nirgal.com/debian.
+The sources of the other packages are available at nirgal.com/debian.
 
 
 Use the source
