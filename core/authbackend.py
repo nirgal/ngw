@@ -16,7 +16,7 @@ class NgwAuthBackend(object):
     # required by contrib.auth:
     supports_inactive_user = False
 
-    def authenticate(self, username=None, password=None):
+    def authenticate(self, request, username=None, password=None):
         if not username or not password:
             return None
 
