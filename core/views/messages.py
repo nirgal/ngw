@@ -342,9 +342,13 @@ class MessageDetailView(InGroupAcl, DetailView):
         context['active_submenu'] = 'messages'
 
         # 201505
-        cig = ContactInGroup.objects.get(contact_id=self.object.contact.id,
-                                         group_id=cg.id)
-        if cig:
+        try:
+            cig = ContactInGroup.objects.get(
+                    contact_id=self.object.contact.id,
+                    group_id=cg.id)
+        except ContactInGroup.DoesNotExist:
+            pass
+        else:
             context['membership_note'] = cig.note
         flags = perms.cig_flags_int(self.object.contact.id, cg.id)
         flags_direct = perms.cig_flags_direct_int(self.object.contact.id,
