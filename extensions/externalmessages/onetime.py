@@ -87,7 +87,7 @@ def send_to_onetime(msg):
         input=msg_text)
 
     ot_conn.request('POST', '/', urllib.parse.urlencode({
-        'subject': msg.subject.encode(settings.DEFAULT_CHARSET),
+        'subject': '(no subject)',
         'message': msg_text,
         'once': True,
         'expiration': days,
@@ -306,7 +306,7 @@ def read_answers(msg):
             group_id=msg.group_id,
             contact_id=msg.contact_id,
             send_date=timezone.now(),
-            subject=jresponse['subject'],
+            subject='Re: ' + msg.subject,
             text=response_text,
             is_answer=True,
             sync_info=json.dumps({
