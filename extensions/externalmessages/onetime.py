@@ -87,7 +87,6 @@ def send_to_onetime(msg):
         input=msg_text)
 
     ot_conn.request('POST', '/', urllib.parse.urlencode({
-        'subject': '(no subject)',
         'message': msg_text,
         'once': True,
         'expiration': days,
