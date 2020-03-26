@@ -547,7 +547,9 @@ class NgwListView(TemplateView):
                 if f is None:
                     col_html = display_for_value(value, False)
                 else:
-                    col_html = display_for_field(value, f)
+                    col_html = display_for_field(
+                            value, f,
+                            self.get_empty_value_display())
 
                 result += _quote_csv(col_html)
             result += '\n'
