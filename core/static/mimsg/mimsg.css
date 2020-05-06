@@ -1,0 +1,85 @@
+.msg-headers {
+	background: #cdcdcd;
+	font-family: "Sans";
+	font-size: 10pt;
+}
+
+.msg-headers > div {
+	font-weight: bold;
+	padding: 4px;
+	line-height: normal;
+}
+	@media screen {
+		.msg-headers > div {
+		background-color: #308cc6;
+		color: #ffffff;
+	    border: solid #000000 1px;
+	}
+}
+
+.msg-headers table {
+	width: 100% ! important;
+	border-width: 0px;
+	line-height: normal;
+	padding: 2px;
+	text-align: left;
+	border-collapse: separate;
+}
+
+.msg-headers table th {
+	font-family: "Sans";
+	font-size: 13px;
+	padding: 0px;
+	white-space: nowrap;
+	border-spacing: 0px;
+	text-align: left;
+	vertical-align: top;
+	background-color: #efefef;
+	color: #000000;
+	border: 1px;
+}
+
+.msg-headers table td {
+  font-family: "Sans";
+  font-size: 13px;
+  padding: 0px;
+  border-spacing: 0px;
+  text-align: left;
+  vertical-align: top;
+  width: 100%;
+  background-color: #efefef;
+  color: #000000;
+  border: 1px;
+}
+
+@media screen {
+	.msg-headers > table.outer {
+	width: auto;
+	border-spacing: 0;
+	background-color: #efefef;
+	color: #000000;
+	border-bottom: solid #000000 1px;
+	border-left: solid #000000 1px;
+	border-right: solid #000000 1px;
+	}
+}
+
+
+.msg-headers {
+	margin-bottom: 10px;
+}
+
+hr.preattachment {
+	margin:10px 0px;
+}
+a.attachment {
+	display:inline-block;
+	padding: 4px 10px 4px 45px;
+	background: url("icon_attachment.svg") no-repeat 5px 0px;
+	line-height: 28px;
+}
+
+
+.msg-textbody {
+    padding: 50px;
+}

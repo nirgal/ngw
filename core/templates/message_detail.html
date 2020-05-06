@@ -1,5 +1,44 @@
 {% extends "admin/base_site.html" %}
-{% load i18n ngwtags %}
+{% load static i18n ngwtags %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "mimsg/mimsg.css" %}">
+
+<script type=module>
+import { MiMsgPart, normalizeCRLF, randomId, arrayIndexOfArray, parse_message,
+         textEncode, textDecode, htmlEscape
+       } from '{% static "mimsg/mimsg.js" %}';
+
+/*
+ * Converts a Uint8Array message in html
+ * Supports for obsolete messages that are plain text without headers
+ */
+function msg_to_html(u8arr) {
+    /* Begin of temporary hack for obsolete non-mime messages */
+    const mimehint = textEncode('MIME-Version:');
+    var mimepos = arrayIndexOfArray(u8arr, mimehint);
+    if (mimepos == -1 || mimepos > 20000) {
+        // Assume this is an old non-mime message (no RFC822 headers)
+        return textDecode(u8arr).replace(/\n/g, '<br>');
+    }
+    /* End of hack, here we assume this is a RFC822 formatted message */
+
+    var msg = parse_message(u8arr);
+    return msg.toHtml();
+}
+
+window.addEventListener('load', function() {
+    for (let msg of document.getElementsByClassName('rawmimsg')) {
+        let content = msg.dataset.raw;
+        content = normalizeCRLF(content);
+        content = textEncode(content);
+        content = msg_to_html(content);
+        msg.innerHTML = content;
+    }
+});
+    </script>
+{% endblock %}
 
 {% block submenu %}
 {% include "group_submenu.html" %}
@@ -32,7 +71,7 @@
     </span>
     <br>
     <br>
-    {{ object.text|linebreaksbr }}
+    <div class=rawmimsg data-raw="{{ object.text }}">{% trans "Analyzing message..." %}</div>
 </div>
 
 {% for message in object.get_related_messages %}

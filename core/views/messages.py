@@ -2,8 +2,11 @@
 Messages managing views
 '''
 
+import email
 import json
 from datetime import date, timedelta
+from email.message import EmailMessage
+from email.utils import formatdate
 from importlib import import_module
 
 from django import forms
@@ -144,6 +147,21 @@ except ImportError as e:
                                 .format(EXTERNAL_MESSAGE_BACKEND_NAME, e)))
 
 
+def MimefyMessage(subject, text, files):
+    policy = email.policy.EmailPolicy(utf8=True, linesep='\r\n')
+    msg = EmailMessage(policy)
+    msg['Date'] = formatdate()
+    msg['Subject'] = subject
+    msg.set_content(text, 'utf-8')
+    for f in files:
+        maintype, subtype = f.content_type.split('/')
+        msg.add_attachment(f.read(), maintype=maintype, subtype=subtype,
+                           filename=f.name)
+
+    str = msg.as_string()
+    return str
+
+
 class SendMessageForm(forms.Form):
     def __init__(self, contactgroup, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -164,6 +182,9 @@ class SendMessageForm(forms.Form):
         self.fields['message'] = forms.CharField(
             label=_('Message'),
             widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '20'}))
+        self.fields['files'] = forms.FileField(
+            required=False,
+            widget=forms.ClearableFileInput(attrs={'multiple': True}))
 
     def support_expiration_date(self):
         return getattr(EXTERNAL_MESSAGE_BACKEND, 'SUPPORTS_EXPIRATION', False)
@@ -175,6 +196,13 @@ class SendMessageForm(forms.Form):
         if date_cleaner:
             expiration_date = date_cleaner(expiration_date)
         return expiration_date
+
+    def clean_files(self):
+        # Hack for multiple files
+        if self.files:
+            return self.files.getlist('files')
+        else:
+            return []
 
     def send_message(self, group):
         contacts_noemail = []
@@ -197,7 +225,9 @@ class SendMessageForm(forms.Form):
             contact_msg = ContactMsg(contact=contact, group=group)
             contact_msg.send_date = now()
             contact_msg.subject = self.cleaned_data['subject']
-            contact_msg.text = self.cleaned_data['message']
+            contact_msg.text = MimefyMessage(self.cleaned_data['subject'],
+                                             self.cleaned_data['message'],
+                                             self.cleaned_data['files'])
             contact_msg.sync_info = json_sync_info
             contact_msg.save()
         return contacts_noemail
