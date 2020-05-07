@@ -177,8 +177,8 @@ class SendMessageForm(forms.Form):
                 widget=AdminDateWidget,
                 initial=initial_date)
         self.fields['subject'] = forms.CharField(
-            label=_('Subject'), max_length=64,
-            widget=forms.widgets.Input(attrs={'size': '64'}))
+            label=_('Subject'), max_length=900,
+            widget=forms.widgets.Input(attrs={'size': '900'}))
         self.fields['message'] = forms.CharField(
             label=_('Message'),
             widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '20'}))
