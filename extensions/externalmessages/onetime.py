@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
+# import email
 import http.client
 import json
 import logging
@@ -76,6 +77,11 @@ def send_to_onetime(msg):
         else:
             days = 21
 
+    # Hack into headers:
+    # message = email.message_from_string(msg.text)
+    # message['toto'] = 'toto'
+    # msg_text = message.as_string(message.policy.clone(linesep='\r\n'))
+
     msg_text = msg.text.encode(settings.DEFAULT_CHARSET)
     passphrase = get_random_string(
         16, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_')
@@ -99,8 +105,8 @@ def send_to_onetime(msg):
     response = ot_conn.getresponse()
     if response.status != 200:
         logger.error(
-            "Temporary storage server error: %s %s",
-            response.status, response.reason)
+            "onetime.info error while storing message %s: %s %s",
+            msg.id, response.status, response.reason)
         logger.error("%s", response.read())
         return
     # jresponse = json.load(response)
