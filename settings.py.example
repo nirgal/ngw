@@ -198,6 +198,8 @@ EMAIL_PORT = 465
 # EMAIL_HOST_PASSWORD = 'password'
 # DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024**3
+
 EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
 
 # If you enable the vpn extension, you'll need to define these values:

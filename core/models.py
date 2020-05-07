@@ -2731,7 +2731,7 @@ class ContactMsg(NgwModel):
     is_answer = models.BooleanField(default=False)
     subject = models.CharField(
         ugettext_lazy('Subject'),
-        max_length=64, default='No title')
+        max_length=998, default='No title')
     text = models.TextField()
     sync_info = models.TextField(blank=True)  # json data for external storage
 
