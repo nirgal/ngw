@@ -155,6 +155,7 @@ def MimefyMessage(subject, text, files):
     msg.set_content(text, 'utf-8')
     for f in files:
         maintype, subtype = f.content_type.split('/')
+        f.seek(0)
         msg.add_attachment(f.read(), maintype=maintype, subtype=subtype,
                            filename=f.name)
 
