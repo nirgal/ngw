@@ -1087,9 +1087,12 @@ export class MiMsgPart {
                 let u8arr = this.bodyAsBinary();
                 let charset = contentTypeHeader.attrs['charset'];
                 let text = textDecode(u8arr, charset);
-                html += htmlEscape(text).replace(/\n/g, '<br>') + '<br>';
+                let htmlblock = htmlEscape(text);
+                htmlblock = htmlblock.replace(/([\t\r\n >^])(https?:\/\/[^\t\r\n <"]+)/gi, '$1<a href="$2" target="_blank">$2</a>');  // links
+                htmlblock = htmlblock.replace(/\n/g, '<br>');  // CR
+                html += htmlblock + '<br>';
                 displayedInline = true;
-            } else if (contentType.startsWith('image/')) {
+            } else if (contentType === 'image/gif' || contentType === 'image/jpeg' || contentType === 'image/png' || contentType === 'image/svg+xml') {
                 html += '<hr class=preattachment>';
                 let b64txt = this.bodyAsBase64();
                 html += `<img src="data:${contentType};base64,${b64txt}"><br>`;
