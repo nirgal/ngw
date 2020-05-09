@@ -179,10 +179,11 @@ class SendMessageForm(forms.Form):
                 initial=initial_date)
         self.fields['subject'] = forms.CharField(
             label=_('Subject'), max_length=900,
-            widget=forms.widgets.Input(attrs={'size': '900'}))
+            widget=forms.widgets.Input(
+                attrs={'size': '64', 'style': 'width:100%'}))
         self.fields['message'] = forms.CharField(
             label=_('Message'),
-            widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '20'}))
+            widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '25'}))
         self.fields['files'] = forms.FileField(
             required=False,
             widget=forms.ClearableFileInput(attrs={'multiple': True}))
