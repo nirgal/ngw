@@ -183,15 +183,6 @@ def initial_data(apps, schema_editor):
             choice_group_id=None,
             system=True),
         ContactField(
-            id=8,
-            name='GSM',
-            hint='',
-            type='PHONE',
-            contact_group_id=1,
-            sort_weight=50,
-            choice_group_id=None,
-            system=True),
-        ContactField(
             id=9,
             name='Rue',
             hint='',
@@ -236,14 +227,6 @@ def initial_data(apps, schema_editor):
             sort_weight=140,
             choice_group_id=1,
             system=True),
-        ContactField(
-            id=73,
-            name='phpbb user id',
-            hint='Identifiant du forum. Ne pas toucher.',
-            type='NUMBER',
-            contact_group_id=53,
-            sort_weight=400,
-            choice_group_id=None),
         ContactField(
             id=75,
             name='Status du mot de passe',
