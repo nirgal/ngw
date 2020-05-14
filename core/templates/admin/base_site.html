@@ -54,7 +54,7 @@
         onsubmit="v=escape_quote(document.forms['header_quicksearch']['disp_filter'].value); l = '/contacts/?q='+{% if can_search_names and can_search_logins %}'or(nfilter(startswith,'+v+'),ffilter(1,eq,'+v+'))';{% elif can_search_names %}'nfilter(startswith,'+v+')';{% else %}'ffilter(1,eq,'+v+')'{% endif %}; document.location=l; return false;">
         <input type=hidden name=filter>
         <input id="qsearch" name=disp_filter value="{% trans "Quick contact search" %}" size=30 class=quicksearch
-            onclick="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
+            onfocus="if (this.value=='{% trans "Quick contact search" %}') { this.value=''; }"
             onblur="if (this.value=='') { this.value='{% trans "Quick contact search" %}'; } $('#header_quicksearch').removeAttr('data-dirty')"
         >
     </form>
