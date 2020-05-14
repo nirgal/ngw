@@ -56,10 +56,7 @@ div.loaderror
     <div style="float:right">
         <form id="changelist-search" action="../" method="get">
         <div>
-        <input style="background:white url({% static "admin/img/search.svg" %}) no-repeat scroll 3px 12px; padding-left:20px; color:black; height:inherit; line-height:inherit; cursor:inherit;" type="text" size="20" name="q" value="{% trans 'Search' %}"
-            onfocus="if (this.value=='{% trans 'Search' %}') { this.value=''; }"
-            onblur="if (this.value=='') { this.value='{% trans 'Search' %}'; }"
-        >
+        <input style="background:white url({% static "admin/img/search.svg" %}) no-repeat scroll 3px 12px; padding-left:20px; color:black; height:inherit; line-height:inherit; cursor:inherit;" type="text" size="20" name="q" placeholder="{% trans 'Search' %}">
         </div>
         </form>
     </div>
