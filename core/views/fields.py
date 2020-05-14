@@ -7,10 +7,10 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import filters
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.urls import reverse
 from django.utils import html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
