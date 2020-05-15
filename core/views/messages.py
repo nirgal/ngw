@@ -100,7 +100,7 @@ class MessageContactFilter(filters.SimpleListFilter):
 
 
 class MessageListView(InGroupAcl, NgwListView):
-    list_display = 'nice_flags', 'nice_date', 'contact', 'subject'
+    list_display = 'nice_flags', 'nice_date', 'contact', 'subject', 'nice_size'
     list_display_links = 'subject',
     template_name = 'message_list.html'
     list_filter = (

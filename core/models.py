@@ -13,6 +13,7 @@ from django.contrib.auth.models import BaseUserManager
 from django.core.exceptions import PermissionDenied
 from django.db import connection, models
 from django.http import Http404
+from django.template import Context, Template
 from django.utils import formats, html
 from django.utils.safestring import mark_safe
 from django.utils.translation import pgettext_lazy
@@ -2795,6 +2796,12 @@ class ContactMsg(NgwModel):
                                .format(_('Notification cannot be sent')))
         return mark_safe(result)
     nice_flags.short_description = ugettext_lazy('Flags')
+
+    def nice_size(self):
+        template = Template('{{size|filesizeformat}}')
+        context = Context({'size': len(self.text)})
+        return template.render(context)
+    nice_size.short_description = ugettext_lazy('Size')
 
     def get_backend(self):
         '''
