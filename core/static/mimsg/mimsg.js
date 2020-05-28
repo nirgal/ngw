@@ -1088,7 +1088,7 @@ export class MiMsgPart {
                 let charset = contentTypeHeader.attrs['charset'];
                 let text = textDecode(u8arr, charset);
                 let htmlblock = htmlEscape(text);
-                htmlblock = htmlblock.replace(/([\t\r\n >^])(https?:\/\/[^\t\r\n <"]+)/gi, '$1<a href="$2" target="_blank">$2</a>');  // links
+                htmlblock = htmlblock.replace(/([\t\r\n >^])(https?:\/\/[^\t\r\n <"]+)/gi, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');  // links
                 htmlblock = htmlblock.replace(/\n/g, '<br>');  // CR
                 html += htmlblock + '<br>';
                 displayedInline = true;
