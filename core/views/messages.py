@@ -147,9 +147,10 @@ except ImportError as e:
                                 .format(EXTERNAL_MESSAGE_BACKEND_NAME, e)))
 
 
-def MimefyMessage(subject, text, files):
+def MimefyMessage(contact_to, subject, text, files):
     policy = email.policy.EmailPolicy(utf8=True, linesep='\r\n')
     msg = EmailMessage(policy)
+    msg['To'] = contact_to.get_email_to()
     msg['Date'] = formatdate()
     msg['Subject'] = subject
     msg.set_content(text, 'utf-8')
@@ -227,7 +228,8 @@ class SendMessageForm(forms.Form):
             contact_msg = ContactMsg(contact=contact, group=group)
             contact_msg.send_date = now()
             contact_msg.subject = self.cleaned_data['subject']
-            contact_msg.text = MimefyMessage(self.cleaned_data['subject'],
+            contact_msg.text = MimefyMessage(contact,
+                                             self.cleaned_data['subject'],
                                              self.cleaned_data['message'],
                                              self.cleaned_data['files'])
             contact_msg.sync_info = json_sync_info

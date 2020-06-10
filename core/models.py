@@ -697,6 +697,16 @@ class Contact(NgwModel):
         value_str = json.dumps(value)
         self.set_fieldvalue(request, FIELD_FILTERS, value_str)
 
+    def get_email_to(self):
+        '''
+        Return "name <email>"
+        '''
+        result = self.name
+        c_mails = self.get_fieldvalues_by_type('EMAIL')
+        if c_mails:
+            result += ' <{}>'.format(c_mails[0])
+        return result
+
 
 #######################################################################
 # ContactGroup

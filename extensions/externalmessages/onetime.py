@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
-# import email
+import email
 import http.client
 import json
 import logging
@@ -77,12 +77,15 @@ def send_to_onetime(msg):
         else:
             days = 21
 
-    # Hack into headers:
-    # message = email.message_from_string(msg.text)
-    # message['toto'] = 'toto'
-    # msg_text = message.as_string(message.policy.clone(linesep='\r\n'))
+    # Hack into headers: The TO value doesn't need to be stored remotely
+    message = email.message_from_string(msg.text, policy=email.policy.SMTP)
+    try:
+        del message['to']
+    except KeyError:
+        logger.warning("Message %s doesn't have a To:", msg.id)
+    msg_text = message.as_string()
 
-    msg_text = msg.text.encode(settings.DEFAULT_CHARSET)
+    msg_text = msg_text.encode(settings.DEFAULT_CHARSET)
     passphrase = get_random_string(
         16, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_')
     msg_text = subprocess.check_output(
@@ -306,6 +309,15 @@ def read_answers(msg):
                     response_text = force_text(response_text)
                 except subprocess.CalledProcessError:
                     logger.error("Message decryption failed.")
+
+        # Hack into headers: Add the "From"
+        mailmessage = email.message_from_string(response_text,
+                                                policy=email.policy.SMTP)
+        mailmessage['From'] = msg.contact.get_email_to()
+        if not mailmessage.get('Subject', None):
+            mailmessage['Subject'] = 'Re: ' + msg.subject
+        response_text = mailmessage.as_string(
+                mailmessage.policy.clone(linesep='\r\n'))
 
         answer_msg = ContactMsg(
             group_id=msg.group_id,
