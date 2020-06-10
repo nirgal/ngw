@@ -69,6 +69,29 @@
 	margin-bottom: 10px;
 }
 
+
+.msg-headers .showraw {
+	display: none;
+	float: right;
+	cursor: pointer;
+}
+
+
+.msg-headers-full {
+    display: none;
+    background-color: #efefef;
+    font-family: "Sans";
+    font-size: 10pt;
+    width: 100%;
+    border: 1px black solid;
+    margin-bottom: 10px;
+}
+
+.msg-headers-full > div {
+    padding: 5px;
+}
+
+
 hr.preattachment {
 	margin:10px 0px;
 }

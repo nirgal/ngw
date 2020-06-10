@@ -224,6 +224,13 @@ export function randomId(len=16, alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk
     return res;
 }
 
+
+/*
+function showRawheaders() {
+    alert("Show raw clicked");
+}
+*/
+
 // FIXME: RFC2047 6.2 Display of 'encoded-word's
 // Decoding and display of encoded-words occurs *after* a
 // structured field body is parsed into tokens.  It is therefore
@@ -1004,12 +1011,15 @@ export class MiMsgPart {
      */
     headersToHtml() {
         const wantedHeaders = ['from', 'to', 'cc', 'bcc', 'date'];
+        let messageId = this.getHeaderValue("message-id");
+        let messageRawHeadersId = messageId+"-raw-headers";
 
         var html = '';
         html += '<div class="msg-headers">';
 
         let subject = this.getHeaderValue('subject', 'No subject');
-        html += '<div>' + htmlEscape(subject) + '</div>';
+        let showRawHeaders = '<div class="showraw">'+gettext("Raw headers")+'</div>'
+        html += '<div>' + showRawHeaders + htmlEscape(subject) + '</div>';
 
         html += '<table class=outer><tbody><tr><td width="100%">';
         html += '<table><tbody>';
@@ -1035,6 +1045,11 @@ export class MiMsgPart {
         html += '</table></table>';
 
         html += '</div>';
+
+        html += '<div class="msg-headers-full" id="'+messageRawHeadersId+'"><div>';
+        html += htmlEscape(this.rawheaders).replace(/\r\n/g, '<br>');
+        html += '</div></div>';
+
         return html;
     }
 
@@ -1159,6 +1174,7 @@ function rfc822_split_headers(u8arr) {
     const CRLF = new Uint8Array([13, 10]); // \r\n
     var start = 0;
     var headers = []; // raw headers lines, unfolded, but not base64/quoted-pritable decoded
+    var rawheaders = ''; // raw headers lines, folded, unparsed
     while (true) {
         var headerline, i, firstChar;
         i = arrayIndexOfArray(u8arr, CRLF, start);
@@ -1176,6 +1192,7 @@ function rfc822_split_headers(u8arr) {
         if (headerline === '') {
             break;
         }
+        rawheaders += headerline + '\r\n';
         firstChar = headerline.charAt(0);
         if (firstChar === ' ' || firstChar === '\t')
             // folded multiline header
@@ -1191,6 +1208,7 @@ function rfc822_split_headers(u8arr) {
         if (header)
             result.headers.push(header);
     }
+    result.rawheaders = rawheaders;
     result.body = u8arr.slice(start);
     return result;
 }
