@@ -2743,6 +2743,7 @@ class ContactMsg(NgwModel):
     subject = models.CharField(
         ugettext_lazy('Subject'),
         max_length=998, default='No title')
+    has_attachment = models.BooleanField(default=False)
     text = models.TextField()
     sync_info = models.TextField(blank=True)  # json data for external storage
 
@@ -2804,6 +2805,8 @@ class ContactMsg(NgwModel):
                 else:
                     result += ('<span style="color:red;" title="{}">☠</span>'
                                .format(_('Notification cannot be sent')))
+        if self.has_attachment:
+            result += '<span title="{}">📎</span>'.format(_('Attachment'))
         return mark_safe(result)
     nice_flags.short_description = ugettext_lazy('Flags')
 

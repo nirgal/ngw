@@ -70,6 +70,24 @@ class MessageReadFilter(filters.SimpleListFilter):
         return queryset.filter(read_date__isnull=filter_unread)
 
 
+class MessageAttachmentFilter(filters.SimpleListFilter):
+    title = ugettext_lazy('has attachment')
+    parameter_name = 'attachment'
+
+    def lookups(self, request, view):
+        return (
+            ('1', _('Yes')),
+            ('0', _('No')),
+        )
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val is None:
+            return queryset
+        filter_attachment = val == '1'
+        return queryset.filter(has_attachment=filter_attachment)
+
+
 class MessageContactFilter(filters.SimpleListFilter):
     title = ugettext_lazy('contact')
     parameter_name = 'contact'
@@ -104,7 +122,8 @@ class MessageListView(InGroupAcl, NgwListView):
     list_display_links = 'subject',
     template_name = 'message_list.html'
     list_filter = (
-        MessageDirectionFilter, MessageReadFilter, MessageContactFilter)
+        MessageDirectionFilter, MessageReadFilter, MessageContactFilter,
+        MessageAttachmentFilter)
     append_slash = False
     search_fields = 'subject', 'text',
 
@@ -232,6 +251,8 @@ class SendMessageForm(forms.Form):
                                              self.cleaned_data['subject'],
                                              self.cleaned_data['message'],
                                              self.cleaned_data['files'])
+            if self.cleaned_data['files']:
+                contact_msg.has_attachment = True
             contact_msg.sync_info = json_sync_info
             contact_msg.save()
         return contacts_noemail

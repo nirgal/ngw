@@ -318,6 +318,11 @@ def read_answers(msg):
             mailmessage['Subject'] = 'Re: ' + msg.subject
         response_text = mailmessage.as_string(
                 mailmessage.policy.clone(linesep='\r\n'))
+        has_attachment = False
+        for part in mailmessage.walk():
+            if (part.get_content_maintype() == 'multipart'
+                    and part.get_content_subtype() != 'alternative'):
+                has_attachment = True
 
         answer_msg = ContactMsg(
             group_id=msg.group_id,
@@ -326,6 +331,7 @@ def read_answers(msg):
             subject='Re: ' + msg.subject,
             text=response_text,
             is_answer=True,
+            has_attachment=has_attachment,
             sync_info=json.dumps({
                 'backend': __name__,
                 'otid': sync_info['otid'],
