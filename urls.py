@@ -36,8 +36,8 @@ from ngw.core.views.groups import (CalendarQueryView, CalendarView,
                                    GroupEditView, GroupMemberListView)
 from ngw.core.views.logs import LogListView
 from ngw.core.views.mailman import MailmanSyncView
-from ngw.core.views.messages import (MessageDetailView, MessageListView,
-                                     SendMessageView)
+from ngw.core.views.messages import (MessageDeleteView, MessageDetailView,
+                                     MessageListView, SendMessageView)
 from ngw.core.views.misc import HomeView, TestView
 from ngw.core.views.news import (NewsCreateView, NewsDeleteView, NewsEditView,
                                  NewsListView)
@@ -74,6 +74,8 @@ groups_urlpatterns = [
         MessageListView.as_view(), name='message_list'),
     url(r'^(?P<gid>\d+)/messages/(?P<mid>\d+)$',
         MessageDetailView.as_view(), name='message_detail'),
+    url(r'^(?P<gid>\d+)/messages/(?P<mid>\d+)/delete$',
+        MessageDeleteView.as_view(), name='message_delete'),
     url(r'^(?P<gid>\d+)/news/$', NewsListView.as_view(), name='news_list'),
     url(r'^(?P<gid>\d+)/news/add$', NewsCreateView.as_view()),
     url(r'^(?P<gid>\d+)/news/(?P<nid>\d+)/$',

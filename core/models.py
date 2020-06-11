@@ -2754,6 +2754,10 @@ class ContactMsg(NgwModel):
         ordering = '-send_date',
     objects = ContactMsgManager()
 
+    def __str__(self):
+        return '<Message {}>'.format(
+            self.id)
+
     def nice_date(self):
         return formats.date_format(self.send_date, 'DATETIME_FORMAT')
     nice_date.short_description = ugettext_lazy('Date UTC')

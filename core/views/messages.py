@@ -25,7 +25,7 @@ from django.views.generic import DetailView, FormView
 
 from ngw.core import perms
 from ngw.core.models import Contact, ContactInGroup, ContactMsg
-from ngw.core.views.generic import InGroupAcl, NgwListView
+from ngw.core.views.generic import InGroupAcl, NgwDeleteView, NgwListView
 
 #######################################################################
 #
@@ -458,3 +458,27 @@ class MessageDetailView(InGroupAcl, DetailView):
 #             return HttpResponse('Bad group')
 #
 #         return JsonResponse({'test': 'ok'})
+
+
+#######################################################################
+#
+# Messages delete
+#
+#######################################################################
+
+
+class MessageDeleteView(InGroupAcl, NgwDeleteView):
+    model = ContactMsg
+    pk_url_kwarg = 'mid'
+
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.WRITE_MSGS:
+            raise PermissionDenied
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['nav'] = self.contactgroup.get_smart_navbar() \
+            .add_component(('messages', _('messages'))) \
+            .add_component(('delete', _('delete')))
+        context.update(kwargs)
+        return super().get_context_data(**context)

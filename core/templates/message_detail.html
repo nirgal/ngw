@@ -85,15 +85,19 @@ window.addEventListener('load', function() {
 {% endif %}
 {% endfor %}
 
-{% if 'X' in cg_perms and object.is_answer %}
+{% if 'X' in cg_perms %}
 <div class="submit-row">
 <form method=post>
 {% csrf_token %}
-{% if reply_url %}
+{% if object.is_answer and reply_url %}
 <a class='button' href="{{reply_url}}">{% trans "Reply" %}</a>
 {% endif %}
+{% if object.is_answer %}
 <input type=submit name=unread value="{% trans "Flag as unread" %}">
+{% endif %}
+<p class="deletelink-box"><a href="{{ object.id }}/delete" class="deletelink">{% trans "Delete" %}</a></p>
 </form>
+
 </div>
 {% endif %}
 
