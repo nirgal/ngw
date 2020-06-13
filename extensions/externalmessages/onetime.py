@@ -314,8 +314,12 @@ def read_answers(msg):
         mailmessage = email.message_from_string(response_text,
                                                 policy=email.policy.SMTP)
         mailmessage['From'] = msg.contact.get_email_to()
-        if not mailmessage.get('Subject', None):
+        subject = mailmessage.get('Subject', None)
+        if subject is None:
             mailmessage['Subject'] = 'Re: ' + msg.subject
+        elif not subject:  # exists but is empty
+            mailmessage.replace_header('Subject', 'Re: ' + msg.subject)
+
         response_text = mailmessage.as_string(
                 mailmessage.policy.clone(linesep='\r\n'))
         has_attachment = False
