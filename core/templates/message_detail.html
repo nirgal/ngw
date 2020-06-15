@@ -4,40 +4,41 @@
 {% block extrahead %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static "mimsg/mimsg.css" %}">
+<link rel=preload href="{% static "mimsg/mimsg.js" %}?v=6" as=script>
 
 <script type=module>
-import { MiMsgPart, normalizeCRLF, randomId, arrayIndexOfArray, parse_message,
-         textEncode, textDecode, htmlEscape
-       } from '{% static "mimsg/mimsg.js" %}';
-
-/*
- * Converts a Uint8Array message in html
- * Supports for obsolete messages that are plain text without headers
- */
-function msg_to_html(u8arr) {
-    /* Begin of temporary hack for obsolete non-mime messages */
-    const mimehint = textEncode('MIME-Version:');
-    var mimepos = arrayIndexOfArray(u8arr, mimehint);
-    if (mimepos == -1 || mimepos > 20000) {
-        // Assume this is an old non-mime message (no RFC822 headers)
-        return textDecode(u8arr).replace(/\n/g, '<br>');
-    }
-    /* End of hack, here we assume this is a RFC822 formatted message */
-
-    var msg = parse_message(u8arr);
-    return msg.toHtml();
-}
-
-window.addEventListener('load', function() {
-    for (let msg of document.getElementsByClassName('rawmimsg')) {
-        let content = msg.dataset.raw;
-        content = normalizeCRLF(content);
-        content = textEncode(content);
-        content = msg_to_html(content);
-        msg.innerHTML = content;
-    }
-});
-    </script>
+//import { MiMsgPart, normalizeCRLF, randomId, arrayIndexOfArray, parse_message,
+//         textEncode, textDecode, htmlEscape
+//       } from '{% static "mimsg/mimsg.js" %}';
+//
+///*
+// * Converts a Uint8Array message in html
+// * Supports for obsolete messages that are plain text without headers
+// */
+//function msg_to_html(u8arr) {
+//    /* Begin of temporary hack for obsolete non-mime messages */
+//    const mimehint = textEncode('MIME-Version:');
+//    var mimepos = arrayIndexOfArray(u8arr, mimehint);
+//    if (mimepos == -1 || mimepos > 20000) {
+//        // Assume this is an old non-mime message (no RFC822 headers)
+//        return textDecode(u8arr).replace(/\n/g, '<br>');
+//    }
+//    /* End of hack, here we assume this is a RFC822 formatted message */
+//
+//    var msg = parse_message(u8arr);
+//    return msg.toHtml();
+//}
+//
+//window.addEventListener('load', function() {
+//    for (let msg of document.getElementsByClassName('rawmimsg')) {
+//        let content = msg.dataset.raw;
+//        content = normalizeCRLF(content);
+//        content = textEncode(content);
+//        content = msg_to_html(content);
+//        msg.innerHTML = content;
+//    }
+//});
+</script>
 {% endblock %}
 
 {% block submenu %}
@@ -71,7 +72,70 @@ window.addEventListener('load', function() {
     </span>
     <br>
     <br>
-    <div class=rawmimsg data-raw="{{ object.text }}">{% trans "Analyzing message..." %}</div>
+    <div class=rawmimsg data-messageid="{{ object.id }}">{% trans "Reading message..." %}</div>
+
+
+<script type=module>
+import { MiMsgPart, normalizeCRLF, randomId, arrayIndexOfArray, parse_message,
+         textEncode, textDecode, htmlEscape
+       } from '{% static "mimsg/mimsg.js" %}';
+
+/*
+ * Converts a Uint8Array message in html
+ * Supports for obsolete messages that are plain text without headers
+ */
+function msg_to_html(u8arr) {
+    /* Begin of temporary hack for obsolete non-mime messages */
+    const mimehint = textEncode('MIME-Version:');
+    var mimepos = arrayIndexOfArray(u8arr, mimehint);
+    if (mimepos == -1 || mimepos > 20000) {
+        // Assume this is an old non-mime message (no RFC822 headers)
+        return textDecode(u8arr).replace(/\n/g, '<br>');
+    }
+    /* End of hack, here we assume this is a RFC822 formatted message */
+
+    var msg = parse_message(u8arr);
+    return msg.toHtml();
+}
+
+let url = './{{ object.id }}/blob';
+let xhr = new XMLHttpRequest();
+
+xhr.onload = function() {
+    if (xhr.status != 200) {
+        alert(`Failed to load message: Server returned status ${xhr.status}`);
+        return;
+    }
+    let contentType = xhr.getResponseHeader('Content-Type');
+    if (contentType != 'message/rfc822') {
+        alert(`Unsupported content-type ${contentType}. Please try again.`);
+        return;
+    }
+
+    document.getElementsByClassName('rawmimsg')[0].innerHTML = 'Parsing RFC822 message';
+    let u8arr = new Uint8Array(xhr.response);
+    let html = msg_to_html(u8arr);
+
+    document.getElementsByClassName('rawmimsg')[0].innerHTML = html;
+};
+xhr.onerror = function() { // only triggers if the request couldn't be made at all
+  alert(`Network Error. Please try again.`);
+};
+xhr.onprogress = function(event) { // triggers periodically
+  // event.loaded - how many bytes downloaded
+  // event.lengthComputable = true if the server sent Content-Length header
+  // event.total - total number of bytes (if lengthComputable)
+  //alert(`Received ${event.loaded} of ${event.total}`);
+  let message = `Loading message. Received ${event.loaded} of ${event.total} bytes.`;
+  document.getElementsByClassName('rawmimsg')[0].innerHTML = message;
+};
+xhr.open('GET', url);
+xhr.responseType = 'arraybuffer';
+xhr.send();
+</script>
+
+
+
 </div>
 
 {% for message in object.get_related_messages %}

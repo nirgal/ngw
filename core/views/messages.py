@@ -15,13 +15,14 @@ from django.contrib import messages
 from django.contrib.admin import filters
 from django.contrib.admin.widgets import AdminDateWidget
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import translation
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
 from django.views.generic import DetailView, FormView
+from django.views.generic.detail import BaseDetailView
 
 from ngw.core import perms
 from ngw.core.models import Contact, ContactInGroup, ContactMsg
@@ -431,6 +432,26 @@ class MessageDetailView(InGroupAcl, DetailView):
             return HttpResponseRedirect(
                 self.contactgroup.get_absolute_url() + 'messages/')
         raise Http404
+
+
+class MessageBlobView(InGroupAcl, BaseDetailView):
+    model = ContactMsg
+    pk_url_kwarg = 'mid'
+
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.VIEW_MSGS:
+            raise PermissionDenied
+
+    def get_object(self, queryset=None):
+        msg = super().get_object(queryset)
+        # Check the group match the one of the url
+        if msg.group_id != self.contactgroup.id:
+            raise PermissionDenied
+        return msg
+
+    def render_to_response(self, context):
+        return HttpResponse(context['object'].text,
+                            content_type='message/rfc822')
 
 
 #######################################################################
