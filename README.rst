@@ -137,6 +137,8 @@ User or group ``www-data`` should have write access to ``/usr/lib/ngw/media/fiel
 
 You may want to add ``SSLHonorCipherOrder on`` in ``/etc/apache2/mods-available/ssl.conf`` too.
 
+Make sure ``/etc/mime.types`` serves ``.mjs`` files as ``application/javascript``. This is the default in Debian 11+ (bullseye).
+
 Cron
 ====
 

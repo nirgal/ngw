@@ -4,40 +4,74 @@
 {% block extrahead %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static "mimsg/mimsg.css" %}">
-<link rel=preload href="{% static "mimsg/mimsg.js" %}?v=6" as=script>
+<link rel=preload href="{% static "mimsg/mimsg.mjs" %}" as=script>
 
 <script type=module>
-//import { MiMsgPart, normalizeCRLF, randomId, arrayIndexOfArray, parse_message,
-//         textEncode, textDecode, htmlEscape
-//       } from '{% static "mimsg/mimsg.js" %}';
-//
-///*
-// * Converts a Uint8Array message in html
-// * Supports for obsolete messages that are plain text without headers
-// */
-//function msg_to_html(u8arr) {
-//    /* Begin of temporary hack for obsolete non-mime messages */
-//    const mimehint = textEncode('MIME-Version:');
-//    var mimepos = arrayIndexOfArray(u8arr, mimehint);
-//    if (mimepos == -1 || mimepos > 20000) {
-//        // Assume this is an old non-mime message (no RFC822 headers)
-//        return textDecode(u8arr).replace(/\n/g, '<br>');
-//    }
-//    /* End of hack, here we assume this is a RFC822 formatted message */
-//
-//    var msg = parse_message(u8arr);
-//    return msg.toHtml();
-//}
-//
-//window.addEventListener('load', function() {
-//    for (let msg of document.getElementsByClassName('rawmimsg')) {
-//        let content = msg.dataset.raw;
-//        content = normalizeCRLF(content);
-//        content = textEncode(content);
-//        content = msg_to_html(content);
-//        msg.innerHTML = content;
-//    }
-//});
+import { arrayIndexOfArray, parse_message, textEncode, textDecode
+       } from '{% static "mimsg/mimsg.mjs" %}';
+
+/*
+ * Converts a Uint8Array message in html
+ * Supports for obsolete messages that are plain text without headers
+ */
+function msg_to_html(u8arr) {
+    /* Begin of temporary hack for obsolete non-mime messages */
+    const mimehint = textEncode('MIME-Version:');
+    var mimepos = arrayIndexOfArray(u8arr, mimehint);
+    if (mimepos == -1 || mimepos > 20000) {
+        // Assume this is an old non-mime message (no RFC822 headers)
+        return textDecode(u8arr).replace(/\n/g, '<br>');
+    }
+    /* End of hack, here we assume this is a RFC822 formatted message */
+
+    var msg = parse_message(u8arr);
+    return msg.toHtml();
+}
+
+function async_read_message(domElem) {
+    let xhr = new XMLHttpRequest();
+    xhr.domElem = domElem;
+    
+    xhr.onprogress = function(event) { // triggers periodically
+        // event.loaded - how many bytes downloaded
+        // event.lengthComputable = true if the server sent Content-Length header
+        // event.total - total number of bytes (if lengthComputable)
+        //alert(`Received ${event.loaded} of ${event.total}`);
+        let message = `Loading message. Received ${event.loaded} of ${event.total} bytes.`;
+        this.domElem.innerHTML = message;
+    };
+
+    xhr.onerror = function() { // only triggers if the request couldn't be made at all
+        this.domElem.innerHTML = "{% trans "Network Error. Please try again later." %}";
+    };
+
+    xhr.onload = function() {
+        if (xhr.status != 200) {
+            this.domElem.innerHTML = `Failed to load message: Server returned status ${xhr.status}. Please try again later.`;
+            return;
+        }
+        let contentType = xhr.getResponseHeader('Content-Type');
+        if (contentType != 'message/rfc822') {
+            this.domElem.innerHTML = `Unsupported content-type ${contentType}. Expected message/rfc822.`;
+            return;
+        }
+        
+        let u8arr = new Uint8Array(xhr.response);
+        let html = msg_to_html(u8arr);
+    
+        this.domElem.innerHTML = html;
+    };
+
+    xhr.open('GET', domElem.dataset.url);
+    xhr.responseType = 'arraybuffer';
+    xhr.send();
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    for (let domElem of document.getElementsByClassName('rawmimsg')) {
+        async_read_message(domElem);
+    }
+});
 </script>
 {% endblock %}
 
@@ -72,70 +106,7 @@
     </span>
     <br>
     <br>
-    <div class=rawmimsg data-messageid="{{ object.id }}">{% trans "Reading message..." %}</div>
-
-
-<script type=module>
-import { MiMsgPart, normalizeCRLF, randomId, arrayIndexOfArray, parse_message,
-         textEncode, textDecode, htmlEscape
-       } from '{% static "mimsg/mimsg.js" %}';
-
-/*
- * Converts a Uint8Array message in html
- * Supports for obsolete messages that are plain text without headers
- */
-function msg_to_html(u8arr) {
-    /* Begin of temporary hack for obsolete non-mime messages */
-    const mimehint = textEncode('MIME-Version:');
-    var mimepos = arrayIndexOfArray(u8arr, mimehint);
-    if (mimepos == -1 || mimepos > 20000) {
-        // Assume this is an old non-mime message (no RFC822 headers)
-        return textDecode(u8arr).replace(/\n/g, '<br>');
-    }
-    /* End of hack, here we assume this is a RFC822 formatted message */
-
-    var msg = parse_message(u8arr);
-    return msg.toHtml();
-}
-
-let url = './{{ object.id }}/blob';
-let xhr = new XMLHttpRequest();
-
-xhr.onload = function() {
-    if (xhr.status != 200) {
-        alert(`Failed to load message: Server returned status ${xhr.status}`);
-        return;
-    }
-    let contentType = xhr.getResponseHeader('Content-Type');
-    if (contentType != 'message/rfc822') {
-        alert(`Unsupported content-type ${contentType}. Please try again.`);
-        return;
-    }
-
-    document.getElementsByClassName('rawmimsg')[0].innerHTML = 'Parsing RFC822 message';
-    let u8arr = new Uint8Array(xhr.response);
-    let html = msg_to_html(u8arr);
-
-    document.getElementsByClassName('rawmimsg')[0].innerHTML = html;
-};
-xhr.onerror = function() { // only triggers if the request couldn't be made at all
-  alert(`Network Error. Please try again.`);
-};
-xhr.onprogress = function(event) { // triggers periodically
-  // event.loaded - how many bytes downloaded
-  // event.lengthComputable = true if the server sent Content-Length header
-  // event.total - total number of bytes (if lengthComputable)
-  //alert(`Received ${event.loaded} of ${event.total}`);
-  let message = `Loading message. Received ${event.loaded} of ${event.total} bytes.`;
-  document.getElementsByClassName('rawmimsg')[0].innerHTML = message;
-};
-xhr.open('GET', url);
-xhr.responseType = 'arraybuffer';
-xhr.send();
-</script>
-
-
-
+    <div class=rawmimsg data-msgid="{{ object.id }}" data-url="./{{ object.id }}/blob">{% trans "Reading message..." %}</div>
 </div>
 
 {% for message in object.get_related_messages %}
