@@ -125,19 +125,10 @@ You need to create and tune your ``settings.py``. It is recommended to use ``set
 Apache
 ======
 
-Enable ssl in apache::
-
-    # a2enmod ssl
-
-Generate self-signed certificate::
-
-    # openssl req -nodes -x509 -days 3650 -new -newkey rsa:2048 -subj /CN=ngw.example.net -keyout ngw.key -out ngw.crt
-
 User or group ``www-data`` should have write access to ``/usr/lib/ngw/media/fields``, ``/usr/lib/ngw/media/g`` and ``/usr/lib/ngw/media/messages``. If you want to run the debug ``runserver`` command from time to time, I suggest you ``chown :www-data`` that folder, with ``g+ws`` mode.
 
-You may want to add ``SSLHonorCipherOrder on`` in ``/etc/apache2/mods-available/ssl.conf`` too.
-
 Make sure ``/etc/mime.types`` serves ``.mjs`` files as ``application/javascript``. This is the default in Debian 11+ (bullseye).
+
 
 Cron
 ====
