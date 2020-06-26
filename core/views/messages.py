@@ -77,8 +77,8 @@ class MessageAttachmentFilter(filters.SimpleListFilter):
 
     def lookups(self, request, view):
         return (
-            ('1', _('Yes')),
-            ('0', _('No')),
+            ('1', _('With')),
+            ('0', _('Without')),
         )
 
     def queryset(self, request, queryset):
