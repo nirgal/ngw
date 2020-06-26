@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-06-11 09:11+0000\n"
-"PO-Revision-Date: 2020-06-11 11:14+0200\n"
+"POT-Creation-Date: 2020-06-26 13:02+0000\n"
+"PO-Revision-Date: 2020-06-26 15:05+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Lokalize 19.12.0\n"
+"X-Generator: Lokalize 20.04.1\n"
 
 #: contactfield.py:71
 msgid "There must be 23 non blank characters."
@@ -103,7 +103,7 @@ msgstr "Fichier"
 msgid "Image"
 msgstr "Image"
 
-#: models.py:108 models.py:2759 views/logs.py:27
+#: models.py:108 models.py:2763 views/logs.py:27
 msgid "Date UTC"
 msgstr "Date UTC"
 
@@ -197,7 +197,7 @@ msgstr "Identifiants de connexion effacés pour l'utilisateur {name}"
 msgid "Name"
 msgstr "Nom"
 
-#: models.py:333 views/messages.py:92
+#: models.py:333 views/messages.py:93
 msgid "contact"
 msgstr "contact"
 
@@ -493,7 +493,7 @@ msgstr "nouvelles"
 msgid "Contact"
 msgstr "Contact"
 
-#: models.py:2744 templates/message_detail.html:62 views/messages.py:201
+#: models.py:2744 templates/message_detail.html:97 views/messages.py:202
 msgid "Subject"
 msgstr "Sujet"
 
@@ -501,59 +501,60 @@ msgstr "Sujet"
 msgid "message"
 msgstr "message"
 
-#: models.py:2753 views/messages.py:143 views/messages.py:392
+#: models.py:2753 views/messages.py:144 views/messages.py:393
+#: views/messages.py:502
 msgid "messages"
 msgstr "messages"
 
-#: models.py:2773 templates/message_detail.html:61 views/messages.py:43
+#: models.py:2777 templates/message_detail.html:96 views/messages.py:44
 msgid "Received"
 msgstr "Reçu"
 
-#: models.py:2776 views/messages.py:62
+#: models.py:2780 views/messages.py:63
 msgid "Read"
 msgstr "Lu"
 
-#: models.py:2779 views/messages.py:61
+#: models.py:2783 views/messages.py:62
 msgid "Unread"
 msgstr "Non lu"
 
-#: models.py:2781 templates/message_detail.html:61 views/messages.py:44
+#: models.py:2785 templates/message_detail.html:96 views/messages.py:45
 msgid "Sent"
 msgstr "Envoyé"
 
-#: models.py:2787
+#: models.py:2791
 msgid "Stored externally"
 msgstr "Stocké en externe"
 
-#: models.py:2790
+#: models.py:2794
 msgid "External storage expired"
 msgstr "Stockage externe expiré"
 
-#: models.py:2793
+#: models.py:2797
 msgid "Not stored externally"
 msgstr "Non stocké en externe"
 
-#: models.py:2800
+#: models.py:2804
 msgid "Notification sent and read"
 msgstr "Notification envoyée et lue"
 
-#: models.py:2804
+#: models.py:2808
 msgid "Notification sent but unread"
 msgstr "Notification envoyée mais non lue"
 
-#: models.py:2807
+#: models.py:2811
 msgid "Notification cannot be sent"
 msgstr "Échec lors de l'envoi de la notification"
 
-#: models.py:2809
+#: models.py:2813
 msgid "Attachment"
 msgstr "Pièce jointe"
 
-#: models.py:2811 views/groups.py:150
+#: models.py:2815 views/groups.py:150
 msgid "Flags"
 msgstr "État"
 
-#: models.py:2817
+#: models.py:2821
 msgid "Size"
 msgstr "Taille"
 
@@ -1072,6 +1073,7 @@ msgid "Save and continue editing"
 msgstr "Enregistrer et continuer à modifier"
 
 #: templates/edit.html:31 templates/filter_form.html:23
+#: templates/message_detail.html:133
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -1266,35 +1268,40 @@ msgstr "Membre annulé"
 msgid "More..."
 msgstr "Plus..."
 
-#: templates/message_detail.html:51
+#: templates/message_detail.html:45
+msgid "Network Error. Please try again later."
+msgstr "Erreur réseau. Veuillez réessayer ultérieurement."
+
+#: templates/message_detail.html:86
 msgid "Show debug information"
 msgstr "Afficher informations débogage"
 
-#: templates/message_detail.html:52
+#: templates/message_detail.html:87
 msgid "From"
 msgstr "De"
 
-#: templates/message_detail.html:52
+#: templates/message_detail.html:87
 msgid "To"
 msgstr "À"
 
-#: templates/message_detail.html:64
+#: templates/message_detail.html:99
 msgid "Read by recipent"
 msgstr "Lu par le destinataire"
 
-#: templates/message_detail.html:74
-msgid "Analyzing message..."
-msgstr "Analyse du message..."
+#: templates/message_detail.html:109
+#| msgid "Analyzing message..."
+msgid "Reading message..."
+msgstr "Lecture du message..."
 
-#: templates/message_detail.html:79
+#: templates/message_detail.html:114
 msgid "Related messages"
 msgstr "Messages liés"
 
-#: templates/message_detail.html:93
+#: templates/message_detail.html:128
 msgid "Reply"
 msgstr "Répondre"
 
-#: templates/message_detail.html:95
+#: templates/message_detail.html:131
 msgid "Flag as unread"
 msgstr "Marquer comme non lu"
 
@@ -1471,7 +1478,7 @@ msgstr "Détails de {}"
 
 #: views/contacts.py:828 views/contacts.py:1077 views/contacts.py:1165
 #: views/contacts.py:1220 views/groups.py:623 views/groups.py:1171
-#: views/groups.py:1240 views/messages.py:330
+#: views/groups.py:1240 views/messages.py:331
 msgid "members"
 msgstr "membres"
 
@@ -1506,7 +1513,7 @@ msgid "password"
 msgstr "mot de passe"
 
 #: views/contacts.py:1221 views/generic.py:581 views/groups.py:950
-#: views/groups.py:1242 views/news.py:154
+#: views/groups.py:1242 views/messages.py:503 views/news.py:154
 msgid "delete"
 msgstr "supprimer"
 
@@ -1705,7 +1712,7 @@ msgstr "Super-groupes"
 msgid "Yes (but none yet)"
 msgstr "Oui (mais aucun)"
 
-#: views/groups.py:101 views/messages.py:80
+#: views/groups.py:101
 msgid "No"
 msgstr "Non"
 
@@ -1883,79 +1890,83 @@ msgstr "Synchronisation mailman"
 msgid "mailman"
 msgstr "mailman"
 
-#: views/messages.py:38
+#: views/messages.py:39
 msgid "direction"
 msgstr "direction"
 
-#: views/messages.py:56
+#: views/messages.py:57
 msgid "read status"
 msgstr "statut lu"
 
-#: views/messages.py:74
+#: views/messages.py:75
 msgid "has attachment"
 msgstr "pièce jointe"
 
-#: views/messages.py:79
-msgid "Yes"
-msgstr "Oui"
+#: views/messages.py:80
+msgid "With"
+msgstr "Avec"
 
-#: views/messages.py:141
+#: views/messages.py:81
+msgid "Without"
+msgstr "Sans"
+
+#: views/messages.py:142
 msgid "Messages for {}"
 msgstr "Messages pour {}"
 
-#: views/messages.py:197
+#: views/messages.py:198
 msgid "Expiration date"
 msgstr "Date d'expiration"
 
-#: views/messages.py:205
+#: views/messages.py:206
 msgid "Message"
 msgstr "Message"
 
-#: views/messages.py:285
+#: views/messages.py:286
 msgid "Message stored."
 msgstr "Message stocké."
 
-#: views/messages.py:287
+#: views/messages.py:288
 msgid "{} messages stored."
 msgstr "{} messages stockés."
 
-#: views/messages.py:292
+#: views/messages.py:293
 msgid "One contact doesn't have an email address."
 msgstr "Un contact n'a pas d'adresse de courriel."
 
-#: views/messages.py:294
+#: views/messages.py:295
 msgid "{} contacts don't have an email address."
 msgstr "{} contacts n'ont pas d'adresse de courriel."
 
-#: views/messages.py:300
+#: views/messages.py:301
 msgid " The message will be kept here until you define his email address."
 msgstr ""
 " Le message sera conservé jusqu'à ce que vous définissiez son adresse de "
 "courriel"
 
-#: views/messages.py:326
+#: views/messages.py:327
 msgid "Send message in {}"
 msgstr "Envoi de message dans {}"
 
-#: views/messages.py:331
+#: views/messages.py:332
 msgid "send message"
 msgstr "envoyer message"
 
-#: views/messages.py:373
+#: views/messages.py:374
 msgid "You don't have the permission to mark that message as read."
 msgstr "Vous n'avez pas la permission de marquer ce message comme lu."
 
-#: views/messages.py:379
+#: views/messages.py:380
 #, python-brace-format
 msgid "Message from {contactname} in group {groupname}"
 msgstr "Message de {contactname} dans le groupe {groupname}"
 
-#: views/messages.py:384
+#: views/messages.py:385
 #, python-brace-format
 msgid "Message to {contactname} in group {groupname}"
 msgstr "Message à {contactname} dans le groupe {groupname}"
 
-#: views/messages.py:416
+#: views/messages.py:417
 #, python-brace-format
 msgid "{contactname} in group {groupname}"
 msgstr "contact {contactname} dans le groupe {groupname}"
@@ -1983,6 +1994,9 @@ msgstr "Vous devez définir la première colonne pour chaque seconde colonne."
 #: widgets.py:296
 msgid "You must choose a column #2 for each column #1."
 msgstr "Vous devez définir la seconde colonne pour chaque première colonne."
+
+#~ msgid "Yes"
+#~ msgstr "Oui"
 
 #~ msgid "Your username and password didn't match. Please try again."
 #~ msgstr ""

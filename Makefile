@@ -19,3 +19,7 @@ isort:
 
 flake8:
 	flake8 --exclude=.svn,CVS,.bzr,.hg,.git,__pycache__,.tox,.eggs,*.egg,wsgi.py .
+
+makemessages:
+	cd core && ../manage.py makemessages --locale fr -v 2 && ../manage.py makemessages --locale fr -v 2 -d djangojs --extension js,mjs
+	cd extensions/externalmessages && ../../manage.py makemessages --locale fr -v 2

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-10 14:13+0000\n"
+"POT-Creation-Date: 2020-06-26 13:02+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: onetime.py:44
+#: onetime.py:45
 msgid "The expiration date must be in the future."
 msgstr "La date d'expiration doit être dans le futur."
 
-#: onetime.py:48
+#: onetime.py:49
 msgid "The expiration date can't be more that {} days in the future."
 msgstr "La date d'expiration ne peux pas être plus de {} jours dans le futur."
 
-#: onetime.py:154
+#: onetime.py:162
 #, python-brace-format
 msgid ""
 "Hello\n"
@@ -64,7 +64,7 @@ msgstr ""
 "\n"
 "[1] https://www.torproject.org/"
 
-#: onetime.py:170
+#: onetime.py:178
 #, python-brace-format
 msgid ""
 "<p>Hello</p>\n"
