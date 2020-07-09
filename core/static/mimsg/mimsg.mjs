@@ -1129,8 +1129,6 @@ export class MiMsgPart {
         }
 
         if (!displayedInline) {
-            let b64txt = this.bodyAsBase64();
-
             const contentDispositionHeader = this.getHeader('content-disposition');
             var filename;
             if (contentDispositionHeader)
@@ -1140,11 +1138,12 @@ export class MiMsgPart {
 
             html += '<hr class=preattachment>';
 
-            // TODO check browser compatibility
-            // https://medium.com/octopus-labs-london/downloading-a-base-64-pdf-from-an-api-request-in-javascript-6b4c603515eb
-            // https://stackoverflow.com/questions/33154646/data-uri-link-a-href-data-doesnt-work-in-microsoft-edge
+            let blob = new Blob([this.bodyAsBinary()],
+                                {type: contentType, endings: 'native'});
+            let url = URL.createObjectURL(blob);
+
             filename = htmlEscape(filename, /[&<"]/g);
-            html += `<a href="data:${contentType};base64,${b64txt}" download="${filename}" class=attachment>${filename}</a>`;
+            html += `<a href="${url}" download="${filename}" class=attachment>${filename}</a>`;
         }
 
         let contentDescription = this.getHeaderValue('content-description', '');
