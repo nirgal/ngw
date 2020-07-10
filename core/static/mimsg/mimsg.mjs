@@ -1094,6 +1094,13 @@ export class MiMsgPart {
                 let alt = '';
                 if (contentDescription)
                     alt = ` alt="${ htmlEscape(contentDescription)}"`;
+                else {
+                    const contentDispositionHeader = this.getHeader('content-disposition');
+                    if (contentDispositionHeader) {
+                        let filename = contentDispositionHeader.attrs['filename'];
+                        alt = ` alt="${ htmlEscape(filename)}"`;
+                    }
+                }
                 html += `<img src="${url}"${alt}><br>`;
                 displayedInline = true;
             } else if (contentType === 'message/rfc822') {
