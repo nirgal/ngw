@@ -1090,7 +1090,11 @@ export class MiMsgPart {
                 let blob = new Blob([this.bodyAsBinary()],
                                     {type: contentType, endings: 'native'});
                 let url = URL.createObjectURL(blob);
-                html += `<img src="${url}"><br>`;
+                let contentDescription = this.getHeaderValue('content-description', '');
+                let alt = '';
+                if (contentDescription)
+                    alt = ` alt="${ htmlEscape(contentDescription)}"`;
+                html += `<img src="${url}"${alt}><br>`;
                 displayedInline = true;
             } else if (contentType === 'message/rfc822') {
                 html += this.body.toHtml();  // Encapsulated message
