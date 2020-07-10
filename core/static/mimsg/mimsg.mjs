@@ -986,27 +986,6 @@ export class MiMsgPart {
 
 
     /**
-     * Returns this.body as a base64 compact string (no spaces)
-     */
-    bodyAsBase64() {
-        if (this.getContentTransfertEncoding() === 'base64') {  // avoid b64->bin->b64 conversions
-           let b64txt;
-            if (typeof(this.body) === 'string') {
-                b64txt = this.body;
-            } else if (this.body instanceof Uint8Array) {
-                b64txt = textDecode(this.body);  // base64 is utf-8 compatible
-            } else {
-                console.error('Unsupported Content-Transfert-Encoding / typeof(this.body)');
-                return '';
-            }
-            b64txt = b64txt.replace(/[ \r\n\t]/g, '');
-            return b64txt;
-        }
-        return uint8ArrayToBase64(this.bodyAsBinary());
-    }
-
-
-    /**
      * Returns the headers as HTML
      */
     headersToHtml() {
@@ -1052,7 +1031,6 @@ export class MiMsgPart {
 
         return html;
     }
-
 
 
     /**
@@ -1109,8 +1087,10 @@ export class MiMsgPart {
                 displayedInline = true;
             } else if (contentType === 'image/gif' || contentType === 'image/jpeg' || contentType === 'image/png' || contentType === 'image/svg+xml') {
                 html += '<hr class=preattachment>';
-                let b64txt = this.bodyAsBase64();
-                html += `<img src="data:${contentType};base64,${b64txt}"><br>`;
+                let blob = new Blob([this.bodyAsBinary()],
+                                    {type: contentType, endings: 'native'});
+                let url = URL.createObjectURL(blob);
+                html += `<img src="${url}"><br>`;
                 displayedInline = true;
             } else if (contentType === 'message/rfc822') {
                 html += this.body.toHtml();  // Encapsulated message
