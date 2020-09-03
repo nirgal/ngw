@@ -598,7 +598,7 @@ class ContactGroupForm(forms.ModelForm):
     class Meta:
         model = ContactGroup
         fields = [
-            'name', 'description', 'date', 'end_date', 'budget_code',
+            'name', 'description', 'date', 'end_date', 'busy', 'budget_code',
             # 'sticky',
             # 'virtual',
             'field_group', 'mailman_address']
@@ -681,6 +681,13 @@ class ContactGroupForm(forms.ModelForm):
                 # use start date is available
                 data['end_date'] = data['date']
             # else this is a permanent group without any date
+
+        busy = data.get('busy', False)
+        if busy and not start_date:
+            self.add_error(
+                'busy',
+                _('Busy flag requires dates.'))
+
         return data
 
     def save(self, commit=True):
