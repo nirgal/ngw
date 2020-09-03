@@ -170,71 +170,71 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
 #
 #######################################################################
 
-class WeekDate:
-    def __init__(self, date, events):
-        self.date = date
-        self.events = events
+# class WeekDate:
+#     def __init__(self, date, events):
+#         self.date = date
+#         self.events = events
+#
+#     def days(self):
+#         for i in range(7):
+#             dt = self.date + timedelta(days=i)
+#             events = self.events.get(dt, [])
+#             yield dt, events
 
-    def days(self):
-        for i in range(7):
-            dt = self.date + timedelta(days=i)
-            events = self.events.get(dt, [])
-            yield dt, events
 
-
-class YearMonthCal:
-    def __init__(self, year, month, events):
-        self.year = year
-        self.month = month
-        self.events = events
-
-    def prev_month(self):
-        year, month = self.year, self.month
-        month -= 1
-        if month < 1:
-            month = 12
-            year -= 1
-        return '{}-{}'.format(year, month)
-
-    def next_month(self):
-        year, month = self.year, self.month
-        month += 1
-        if month > 12:
-            month = 1
-            year += 1
-        return '{}-{}'.format(year, month)
-
-    def prev_year(self):
-        return '{}-{}'.format(self.year-1, self.month)
-
-    def next_year(self):
-        return '{}-{}'.format(self.year+1, self.month)
-
-    def weeks(self):
-        first_day_of_week = formats.get_format('FIRST_DAY_OF_WEEK')
-
-        first_day_of_month = date(self.year, self.month, 1)
-        first_day_of_month_isocal = first_day_of_month.isocalendar()
-
-        first_day_of_month_isoweekday = first_day_of_month_isocal[2]
-        # 1=monday, 7=sunday
-        first_week_date = first_day_of_month - timedelta(
-            days=(first_day_of_month_isoweekday-first_day_of_week) % 7)
-
-        nextyear, nextmonth = self.year, self.month
-        nextmonth += 1
-        if nextmonth > 12:
-            nextmonth = 1
-            nextyear += 1
-        next_month_start = date(nextyear, nextmonth, 1)
-
-        dt = first_week_date
-        while dt < next_month_start:
-            yield WeekDate(dt, self.events)
-            dt += timedelta(days=7)
-
-    def first_day(self):
-        return datetime(self.year, self.month, 1)
+# class YearMonthCal:
+#     def __init__(self, year, month, events):
+#         self.year = year
+#         self.month = month
+#         self.events = events
+#
+#     def prev_month(self):
+#         year, month = self.year, self.month
+#         month -= 1
+#         if month < 1:
+#             month = 12
+#             year -= 1
+#         return '{}-{}'.format(year, month)
+#
+#     def next_month(self):
+#         year, month = self.year, self.month
+#         month += 1
+#         if month > 12:
+#             month = 1
+#             year += 1
+#         return '{}-{}'.format(year, month)
+#
+#     def prev_year(self):
+#         return '{}-{}'.format(self.year-1, self.month)
+#
+#     def next_year(self):
+#         return '{}-{}'.format(self.year+1, self.month)
+#
+#     def weeks(self):
+#         first_day_of_week = formats.get_format('FIRST_DAY_OF_WEEK')
+#
+#         first_day_of_month = date(self.year, self.month, 1)
+#         first_day_of_month_isocal = first_day_of_month.isocalendar()
+#
+#         first_day_of_month_isoweekday = first_day_of_month_isocal[2]
+#         # 1=monday, 7=sunday
+#         first_week_date = first_day_of_month - timedelta(
+#             days=(first_day_of_month_isoweekday-first_day_of_week) % 7)
+#
+#         nextyear, nextmonth = self.year, self.month
+#         nextmonth += 1
+#         if nextmonth > 12:
+#             nextmonth = 1
+#             nextyear += 1
+#         next_month_start = date(nextyear, nextmonth, 1)
+#
+#         dt = first_week_date
+#         while dt < next_month_start:
+#             yield WeekDate(dt, self.events)
+#             dt += timedelta(days=7)
+#
+#     def first_day(self):
+#         return datetime(self.year, self.month, 1)
 
 
 class EventListView(NgwUserAcl, NgwListView):
@@ -315,6 +315,7 @@ class CalendarView(NgwUserAcl, TemplateView):
         context.update(kwargs)
         return super().get_context_data(**context)
 
+
 # ----------------------------------------------------------------------
 
 
@@ -375,6 +376,12 @@ class CalendarQueryView(View):
             querydict = request.POST
         else:
             querydict = request.GET
+
+        # Show only events relative to that contact:
+        cid = self.kwargs.get('cid', None)
+        if cid:
+            cid = int(cid)
+
         showdate = querydict.get('showdate')
         # print('showdate:', showdate)
         # showdate = datetime.strptime(showdate, '%d/%m/%Y').date()
@@ -410,6 +417,10 @@ class CalendarQueryView(View):
 
         qs = ContactGroup.objects.with_user_perms(request.user.id,
                                                   perms.SEE_CG)
+
+        if cid is not None:
+            qs = qs.with_member(cid)
+
         qs = qs.filter(
             # start within boundaries:
             Q(date__gte=str_min_date, date__lte=str_max_date)
@@ -454,6 +465,7 @@ class CalendarQueryView(View):
               .sub('"\\/Date(\\1)\\/"', jsonresponse))
         return HttpResponse(jsonresponse, content_type='application/json')
     get = post
+
 
 #######################################################################
 #

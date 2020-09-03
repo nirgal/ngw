@@ -104,8 +104,12 @@ $(document).ready(function() {
         onWeekOrMonthToDay: wtd,
         onBeforeRequestData: cal_beforerequest,
         onAfterRequestData: cal_afterrequest,
-        onRequestDataError: cal_onerror, 
+        onRequestDataError: cal_onerror,
+        {% if cid %}
+            url: "/contacts/{{ cid }}/calendar/query" ,  //url for get event data by ajax request(post)
+        {% else %}
         url: "/events/calendar/query" ,  //url for get event data by ajax request(post)
+        {% endif %}
         //quickAddUrl: "/calendar/add" ,   //url for quick add event data by ajax request(post)
         //quickUpdateUrl: "/calendar/update" ,   //url for quick update event data by ajax request(post)
         //quickDeleteUrl:  "/calendar/delete",  //url for quick delete event data by ajax request(post)

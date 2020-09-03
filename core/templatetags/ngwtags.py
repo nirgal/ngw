@@ -60,6 +60,16 @@ def get_notnull(object, index):
 
 
 @register.filter
+def group_is_event(contact_groups_query):
+    return contact_groups_query.filter(date__isnull=False)
+
+
+@register.filter
+def group_is_not_event(contact_groups_query):
+    return contact_groups_query.filter(date__isnull=True)
+
+
+@register.filter
 def group_visible_by(contact_groups_query, user_id):
     # TODO This is supposed to be better, but is actually much slower :(
     return contact_groups_query.with_user_perms(

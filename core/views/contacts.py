@@ -16,7 +16,7 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.template import loader
 from django.urls import reverse
-from django.utils import html
+from django.utils import formats, html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
@@ -1492,5 +1492,30 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
         context['nav'].add_component(contact.get_navcomponent())
         context['nav'].add_component(('default_group', _('default group')))
 
+        context.update(kwargs)
+        return super().get_context_data(**context)
+
+
+#######################################################################
+#
+# Contact Calendar
+#
+#######################################################################
+
+class ContactCalendarView(NgwUserAcl, TemplateView):
+    template_name = 'calendar.html'
+
+    def get_context_data(self, **kwargs):
+        cid = int(self.kwargs['cid'])
+        contact = get_object_or_404(Contact, pk=cid)
+
+        context = {}
+        context['title'] = _("{name}'s Calendar").format(
+            name=contact.name)
+        context['nav'] = Navbar(Contact.get_class_navcomponent())
+        context['nav'].add_component(contact.get_navcomponent())
+        context['nav'].add_component(('calendar', _('calendar')))
+        context['weekdaystart'] = formats.get_format('FIRST_DAY_OF_WEEK')
+        context['contactid'] = cid
         context.update(kwargs)
         return super().get_context_data(**context)
