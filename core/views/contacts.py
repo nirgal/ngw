@@ -1505,6 +1505,12 @@ class DefaultGroupView(NgwUserAcl, UpdateView):
 class ContactCalendarView(NgwUserAcl, TemplateView):
     template_name = 'calendar.html'
 
+    def check_perm_user(self, user):
+        if int(self.kwargs.get('cid', 0)) == user.id:
+            return  # Ok for oneself
+        if not user.is_admin():
+            raise PermissionDenied
+
     def get_context_data(self, **kwargs):
         cid = int(self.kwargs['cid'])
         contact = get_object_or_404(Contact, pk=cid)
