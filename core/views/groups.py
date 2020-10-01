@@ -551,9 +551,52 @@ class MemberFilter(filters.SimpleListFilter):
             return q
 
 
+class AvailableFilter(filters.SimpleListFilter):
+    '''
+    Filter people according to their availability (member/invited in another
+    group...)
+    '''
+    title = ugettext_lazy('availability')
+    parameter_name = 'busy'
+
+    def __init__(self, request, params, model, view):
+        super().__init__(request, params, model, view)
+        self.contactgroup = view.contactgroup
+
+    def lookups(self, request, view):
+        # busy query value can be:
+        #   0 for not in another full-time group
+        #   1 for member
+        #   2 for invite
+        #   3 for member + invite (member there can be several groups)
+        return (
+            ('02', _('Available')),  # not bit0
+            ('0', _('Available and not invited elsewhere')),
+            ('2', _('Available but invited elsewhere')),
+            ('13', _('Not available')),  # bit0
+        )
+
+    def queryset(self, request, q):
+        busy = self.value()
+        if not busy:  # doesn't match '0'
+            return q
+        gid = self.contactgroup.id
+        q.add_busy(gid)
+        colname = 'COALESCE(busy_{}_sub.busy,0)'.format(gid)
+        or_conditions = []
+        for digit in busy:
+            or_conditions.append('{} = {}'.format(colname, digit))
+        q = q.filter('(' + ') OR ('.join(or_conditions) + ')')
+        print('(' + ') OR ('.join(or_conditions) + ')')
+        return q
+
+
 class GroupMemberListView(InGroupAcl, BaseContactListView):
     template_name = 'group_members.html'
-    list_filter = BaseContactListView.list_filter + (MemberFilter,)
+    list_filter = BaseContactListView.list_filter + (
+            MemberFilter,
+            AvailableFilter
+            )
 
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.SEE_MEMBERS:

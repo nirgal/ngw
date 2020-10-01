@@ -183,6 +183,9 @@ class ContactQuerySet(RawQuerySet):
         Add a "busy" column with a summary of availability of that contact for
         that group.
         '''
+        colname = 'busy_{}'.format(group_id)
+        if colname in self.qry_fields:
+            return  # already there!
         self.qry_from.append('''
             LEFT JOIN (
                 SELECT
@@ -198,10 +201,10 @@ class ContactQuerySet(RawQuerySet):
                          FROM contact_group WHERE id={gid})
                 AND v_cig_membership_inherited.group_id != {gid}
                 GROUP BY contact_id
-            ) AS busy_{gid}
-            ON contact.id=busy_{gid}.contact_id'''.format(gid=group_id))
-        self.qry_fields['busy_{}'.format(group_id)] = (
-            'COALESCE(busy_{}.busy)'.format(group_id))
+            ) AS busy_{gid}_sub
+            ON contact.id=busy_{gid}_sub.contact_id'''.format(gid=group_id))
+        self.qry_fields[colname] = (
+            'COALESCE(busy_{}_sub.busy, 0)'.format(group_id))
 
     def filter(self, extrawhere=None, pk__in=None):
         if extrawhere is not None:
@@ -455,10 +458,14 @@ def field_widget_factory(contact_field):
 
 def busy_widget(request, contact_with_extra_fields, group_id):
     busy = getattr(contact_with_extra_fields, 'busy_{}'.format(group_id))
-    if busy == 1:
+    if busy & 1:
         return _('Busy')
-    elif busy == 2:
+    elif busy & 2:
         return _('Invited')
+    elif busy == 0:
+        return _('Available')
+    else:
+        return 'Error {}'.format(busy)
 
 
 def busy_widget_factory(request, group_id):
@@ -590,7 +597,7 @@ class BaseContactListView(NgwListView):
                 if current_cg is not None:
                     q.add_busy(current_cg.id)
                     self.busy = busy_widget_factory(request, current_cg.id)
-                    self.busy.short_description = _('Busy')
+                    self.busy.short_description = _('Agenda')
                     list_display.append('busy')
             else:
                 raise ValueError('Invalid field '+prop)
