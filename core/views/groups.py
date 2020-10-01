@@ -573,7 +573,7 @@ class AvailableFilter(filters.SimpleListFilter):
             ('02', _('Available')),  # not bit0
             ('0', _('Available and not invited elsewhere')),
             ('2', _('Available but invited elsewhere')),
-            ('13', _('Not available')),  # bit0
+            ('13', _('Unavailable')),  # bit0
         )
 
     def queryset(self, request, q):
