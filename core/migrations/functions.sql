@@ -295,4 +295,32 @@ CREATE OR REPLACE VIEW v_c_can_see_c(contact_id_1, contact_id_2) AS
     WHERE flags & 256 <> 0
     ;
 
+
+-- List of events of contact #1 during 2017:
+-- SELECT * FROM v_cig_membership_inherited JOIN contact_group ON v_cig_membership_inherited.group_id=contact_group.id WHERE contact_group.date IS NOT NULL AND daterange(contact_group.date, contact_group.end_date, '[]') && daterange('2017-01-01', '2017-12-31', '[]') AND contact_id=1;
+
+-- Occupation of contacts during August 2017:
+-- SELECT contact_id,  bit_or(flags) & 3 FROM v_cig_membership_inherited JOIN contact_group ON v_cig_membership_inherited.group_id=contact_group.id WHERE contact_group.date IS NOT NULL AND daterange(contact_group.date, contact_group.end_date, '[]') && daterange('2017-08-01', '2017-08-31', '[]') GROUP BY contact_id;
+
+-- Availability of contacts during August 2017:
+-- SELECT
+-- 	contact_list.id,
+-- 	COALESCE(business, 0) AS business
+-- FROM (
+-- 	SELECT id FROM contact
+-- ) AS contact_list
+-- LEFT JOIN (
+-- 	SELECT contact_id,  bit_or(flags) & 3 AS business
+-- 	FROM v_cig_membership_inherited
+-- 	JOIN contact_group
+-- 		ON v_cig_membership_inherited.group_id=contact_group.id
+-- 	WHERE contact_group.date IS NOT NULL
+-- 	AND daterange(contact_group.date, contact_group.end_date, '[]') && daterange('2017-08-01', '2017-08-31', '[]')
+-- 	GROUP BY contact_id
+-- ) AS availability
+-- ON contact_list.id=availability.contact_id
+-- ORDER BY contact_list.id
+-- ;
+
+
 -- vim: set et ts=4 ft=sql:

@@ -8,13 +8,15 @@ from django.views.i18n import JavaScriptCatalog
 
 from ngw.core.gpg import GpgLookupView
 from ngw.core.views.choices import Choice2EditView, ChoiceEditView
-from ngw.core.views.contacts import (ContactCalendarView, ContactCreateView,
-                                     ContactDeleteView, ContactDetailView,
-                                     ContactEditView, ContactListView,
-                                     ContactVcardView, DefaultGroupView,
-                                     FilterAddView, FilterDeleteView,
-                                     FilterEditView, FilterListView,
-                                     GroupAddManyView, PasswordView)
+from ngw.core.views.contacts import (ContactCalendarView,
+                                     ContactCheckAvailableView,
+                                     ContactCreateView, ContactDeleteView,
+                                     ContactDetailView, ContactEditView,
+                                     ContactListView, ContactVcardView,
+                                     DefaultGroupView, FilterAddView,
+                                     FilterDeleteView, FilterEditView,
+                                     FilterListView, GroupAddManyView,
+                                     PasswordView)
 from ngw.core.views.contactsearch import (ContactSearchAutocompleteView,
                                           ContactSearchColumnFiltersView,
                                           ContactSearchColumnsView,
@@ -141,6 +143,7 @@ urlpatterns = [
     url(r'^contacts/(?P<cid>\d+)/$',
         ContactDetailView.as_view(), name='contact_detail'),
     url(r'^contacts/add_to_group$', GroupAddManyView.as_view()),
+    url(r'^contacts/check_available$', ContactCheckAvailableView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/edit$', ContactEditView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/pass$',
         PasswordView.as_view(), name='contact_pass'),

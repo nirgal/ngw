@@ -2,6 +2,7 @@
 Contact managing views
 '''
 
+import json
 from datetime import date
 
 from django import forms
@@ -32,8 +33,8 @@ from ngw.core.models import (FIELD_COLUMNS, FIELD_DEFAULT_GROUP,
                              Contact, ContactField, ContactFieldValue,
                              ContactGroup, ContactInGroup, Log)
 from ngw.core.nav import Navbar
-from ngw.core.views.generic import (InGroupAcl, NgwDeleteView, NgwListView,
-                                    NgwUserAcl)
+from ngw.core.views.generic import (InGroupAcl, NgwAdminAcl, NgwDeleteView,
+                                    NgwListView, NgwUserAcl)
 from ngw.core.widgets import FlagsField
 
 DISP_NAME = 'name'
@@ -177,6 +178,31 @@ class ContactQuerySet(RawQuerySet):
             AND read_date IS NULL
         )'''.format(group_id=group_id)
 
+    def add_busy(self, group_id):
+        '''
+        Add a "busy" column with a summary of availability of that contact for
+        that group.
+        '''
+        self.qry_from.append('''
+            LEFT JOIN (
+                SELECT
+                    contact_id,
+                    bit_or(flags) & 3 AS busy
+                FROM v_cig_membership_inherited
+                JOIN contact_group
+                    ON v_cig_membership_inherited.group_id=contact_group.id
+                WHERE contact_group.date IS NOT NULL
+                AND daterange(contact_group.date, contact_group.end_date, '[]')
+                    -- && daterange('2017-08-01', '2017-08-31', '[]')
+                    && ( SELECT daterange(date, end_date, '[]')
+                         FROM contact_group WHERE id={gid})
+                AND v_cig_membership_inherited.group_id != {gid}
+                GROUP BY contact_id
+            ) AS busy_{gid}
+            ON contact.id=busy_{gid}.contact_id'''.format(gid=group_id))
+        self.qry_fields['busy_{}'.format(group_id)] = (
+            'COALESCE(busy_{}.busy)'.format(group_id))
+
     def filter(self, extrawhere=None, pk__in=None):
         if extrawhere is not None:
             self.qry_where.append(extrawhere)
@@ -276,7 +302,7 @@ def get_default_columns(user):
     if not default_fields:
         default_fields = ''
     for fname in default_fields.split(','):
-        if fname == 'name':
+        if fname == 'name' or fname == 'busy':
             pass
         elif fname.startswith(DISP_GROUP_PREFIX):
             try:
@@ -319,7 +345,8 @@ def get_available_columns(user_id):
     Return all available columns on contact list, based on user permission.
     Used in column selection.
     '''
-    result = [(DISP_NAME, 'Name')]
+    result = [(DISP_NAME, _('Name')),
+              ('busy', _('Busy'))]
     for cf in ContactField.objects.with_user_perms(user_id):
         result.append((DISP_FIELD_PREFIX+str(cf.id), cf.name))
     for cg in (
@@ -424,6 +451,19 @@ def field_widget(contact_field, contact_with_extra_fields):
 def field_widget_factory(contact_field):
     return lambda contact_with_extra_fields: \
         field_widget(contact_field, contact_with_extra_fields)
+
+
+def busy_widget(request, contact_with_extra_fields, group_id):
+    busy = getattr(contact_with_extra_fields, 'busy_{}'.format(group_id))
+    if busy == 1:
+        return _('Busy')
+    elif busy == 2:
+        return _('Invited')
+
+
+def busy_widget_factory(request, group_id):
+    return lambda contact_with_extra_fields: \
+        busy_widget(request, contact_with_extra_fields, group_id)
 
 
 class CustomColumnsFilter(filters.ListFilter):
@@ -545,6 +585,13 @@ class BaseContactListView(NgwListView):
                 # attribute.allow_tags = True
                 setattr(self, attribute_name, attribute)
                 list_display.append(attribute_name)
+            elif prop == 'busy':
+                current_cg = self.contactgroup
+                if current_cg is not None:
+                    q.add_busy(current_cg.id)
+                    self.busy = busy_widget_factory(request, current_cg.id)
+                    self.busy.short_description = _('Busy')
+                    list_display.append('busy')
             else:
                 raise ValueError('Invalid field '+prop)
 
@@ -695,6 +742,10 @@ class GroupAddManyForm(forms.Form):
                 ],
             )
         self.fields['flags'] = FlagsField(label=ugettext_lazy('Membership'))
+        # self.fields['available_only'] = forms.BooleanField(
+        #     required=False,
+        #     label=_('Only available contacts'),
+        #     initial=True)
 
     def clean(self):
         data = super().clean()
@@ -722,6 +773,14 @@ class GroupAddManyForm(forms.Form):
 
         contact_ids = self.cleaned_data['ids'].split(',')
         contacts = Contact.objects.filter(pk__in=contact_ids)
+
+        # if self.cleaned_data['available_only'] and target_group.is_event():
+        #     start_date = target_group.date
+        #     end_date = target_group.end_date or target_group.date
+        #     contacts = contacts.extra(
+        #         tables=('',),
+        #         where=...
+        #         )
 
         # Check selected contacts are visible
         contacts = contacts.extra(
@@ -778,6 +837,46 @@ class GroupAddManyView(NgwUserAcl, FormView):
         target_group = get_object_or_404(ContactGroup, pk=group_id)
         return target_group.get_absolute_url() + 'members/'
 
+
+class ContactCheckAvailableView(NgwAdminAcl, View):
+    # ContactCheckAvailableView(NgwUserAcl, View):
+    def post(self, request, *args, **kwargs):
+        if self.request.method == 'POST':
+            querydict = self.request.POST
+        else:
+            querydict = self.request.GET
+        ids = querydict['ids']
+        ids = querydict['ids'].split(',')
+        contacts = ContactQuerySet(Contact._default_manager.model,
+                                   using=Contact._default_manager._db)
+        contacts = contacts.filter(pk__in=ids)
+        contacts.add_busy(909)
+        response = []
+        for contact in contacts:
+            response.append({
+                'name': contact.name,
+                'busy': contact.busy_909 or 0,
+                })
+        jsonresponse = json.dumps(response)
+        return HttpResponse(jsonresponse, content_type='application/json')
+        # from django.db.models.expressions import RawSQL
+        # Contact.objects
+        #        .filter(pk__in=(1,2,3,4,5,6,7,8,9,10,11))
+        #        .annotate(availability=RawSQL('''
+        #           SELECT bit_or(flags) & 3
+        #           FROM v_cig_membership_inherited
+        #           JOIN contact_group
+        #               ON v_cig_membership_inherited.group_id=contact_group.id
+        #           WHERE contact_group.date IS NOT NULL
+        #               AND daterange(contact_group.date,
+        #                             contact_group.end_date,
+        #                             '[]')
+        #                  && daterange(%s, %s, '[]')
+        #               AND v_cig_membership_inherited.contact_id=contact.id
+        #           ''',
+        #           ('2017-08-01', '2017-08-31')))
+
+    get = post
 
 #######################################################################
 #
