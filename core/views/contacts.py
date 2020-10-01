@@ -458,9 +458,9 @@ def field_widget_factory(contact_field):
 
 def busy_widget(request, contact_with_extra_fields, group_id):
     busy = getattr(contact_with_extra_fields, 'busy_{}'.format(group_id))
-    if busy & 1:
+    if busy & perms.MEMBER:
         return _('Busy')
-    elif busy & 2:
+    elif busy & perms.INVITED:
         return _('Invited')
     elif busy == 0:
         return _('Available')
@@ -649,10 +649,20 @@ class BaseContactListView(NgwListView):
         return result
 
     def name_with_relative_link(self, contact):
+        current_cg = self.contactgroup
+
+        flags = ''
+        if current_cg is not None:
+            busyname = 'busy_{}'.format(current_cg.id)
+            busy = getattr(contact, busyname, None)
+            if busy is not None and busy & perms.MEMBER:
+                flags = ' <span title="Busy elsewhere">🐝</span>'
+
         return html.format_html(
-                mark_safe('<a href="{id}/"><b>{name}</a></b>'),
+                mark_safe('<a href="{id}/"><b>{name}</a></b> {flags}'),
                 id=contact.id,
-                name=html.escape(contact.name)
+                name=html.escape(contact.name),
+                flags=mark_safe(flags),
                 )
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'

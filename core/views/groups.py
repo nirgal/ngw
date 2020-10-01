@@ -565,15 +565,15 @@ class AvailableFilter(filters.SimpleListFilter):
 
     def lookups(self, request, view):
         # busy query value can be:
-        #   0 for not in another full-time group
-        #   1 for member
-        #   2 for invite
-        #   3 for member + invite (member there can be several groups)
+        #   0: for not in another full-time group
+        #   1: perms.MEMBER
+        #   2: perms.INVITED
+        #   3: perms.MEMBER | perms.INVITED (both over several groups)
         return (
-            ('02', _('Available')),  # not bit0
+            ('02', _('Available')),
             ('0', _('Available and not invited elsewhere')),
             ('2', _('Available but invited elsewhere')),
-            ('13', _('Unavailable')),  # bit0
+            ('13', _('Unavailable')),
         )
 
     def queryset(self, request, q):
