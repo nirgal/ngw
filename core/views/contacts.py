@@ -606,6 +606,7 @@ class BaseContactListView(NgwListView):
         if current_cg is not None:
             q.add_group(current_cg.id)
             q.add_messages(current_cg.id)
+            q.add_busy(current_cg.id)
             self.group_status = membership_extended_widget_factory(
                 request, current_cg)
             self.group_status.short_description = _('Status')
