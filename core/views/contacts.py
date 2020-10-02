@@ -595,7 +595,8 @@ class BaseContactListView(NgwListView):
             elif prop == 'busy':
                 current_cg = self.contactgroup
                 if current_cg is not None:
-                    q.add_busy(current_cg.id)
+                    if current_cg.date:
+                        q.add_busy(current_cg.id)
                     self.busy = busy_widget_factory(request, current_cg.id)
                     self.busy.short_description = _('Agenda')
                     list_display.append('busy')
@@ -653,7 +654,7 @@ class BaseContactListView(NgwListView):
         current_cg = self.contactgroup
 
         flags = ''
-        if current_cg is not None:
+        if current_cg is not None and current_cg.date:
             busyname = 'busy_{}'.format(current_cg.id)
             busy = getattr(contact, busyname, None)
             if busy is not None and busy & perms.MEMBER:
