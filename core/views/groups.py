@@ -173,6 +173,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
 class EventListView(NgwUserAcl, NgwListView):
     list_display = (
         'name', 'date', 'days', 'description_not_too_long',
+        'busy',
         'budget_code',
         'visible_member_count',
         )
