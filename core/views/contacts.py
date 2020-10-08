@@ -178,33 +178,54 @@ class ContactQuerySet(RawQuerySet):
             AND read_date IS NULL
         )'''.format(group_id=group_id)
 
-    def add_busy(self, group_id):
+    def add_busy(self, group_id=None):
         '''
         Add a "busy" column with a summary of availability of that contact for
         that group.
         '''
-        colname = 'busy_{}'.format(group_id)
+        colname = 'busy'
         if colname in self.qry_fields:
             return  # already there!
-        self.qry_from.append('''
-            LEFT JOIN (
-                SELECT
-                    contact_id,
-                    bit_or(flags) & 3 AS busy
-                FROM v_cig_membership_inherited
-                JOIN contact_group
-                    ON v_cig_membership_inherited.group_id=contact_group.id
-                WHERE contact_group.date IS NOT NULL
-                AND daterange(contact_group.date, contact_group.end_date, '[]')
-                    -- && daterange('2017-08-01', '2017-08-31', '[]')
-                    && ( SELECT daterange(date, end_date, '[]')
-                         FROM contact_group WHERE id={gid})
-                AND v_cig_membership_inherited.group_id != {gid}
-                GROUP BY contact_id
-            ) AS busy_{gid}_sub
-            ON contact.id=busy_{gid}_sub.contact_id'''.format(gid=group_id))
-        self.qry_fields[colname] = (
-            'COALESCE(busy_{}_sub.busy, 0)'.format(group_id))
+        if group_id is not None:
+            self.qry_from.append('''
+                LEFT JOIN (
+                    SELECT
+                        contact_id,
+                        bit_or(flags) & 3 AS busy
+                    FROM v_cig_membership_inherited
+                    JOIN contact_group
+                        ON v_cig_membership_inherited.group_id=contact_group.id
+                    WHERE contact_group.date IS NOT NULL
+                    AND daterange(contact_group.date,
+                                  contact_group.end_date,
+                                  '[]')
+                        -- && daterange('2017-08-01', '2017-08-31', '[]')
+                        && ( SELECT daterange(date, end_date, '[]')
+                             FROM contact_group WHERE id={gid})
+                    AND v_cig_membership_inherited.group_id != {gid}
+                    GROUP BY contact_id
+                ) AS busy_sub
+                ON contact.id=busy_sub.contact_id
+                '''.format(gid=group_id))
+        else:
+            self.qry_from.append('''
+                LEFT JOIN (
+                    SELECT
+                        contact_id,
+                        bit_or(flags) & 3 AS busy
+                    FROM v_cig_membership_inherited
+                    JOIN contact_group
+                        ON v_cig_membership_inherited.group_id=contact_group.id
+                    WHERE contact_group.date IS NOT NULL
+                    AND daterange(contact_group.date,
+                                  contact_group.end_date,
+                                  '[]')
+                        @> current_date
+                    GROUP BY contact_id
+                ) AS busy_sub
+                ON contact.id=busy_sub.contact_id
+                ''')
+        self.qry_fields[colname] = 'COALESCE(busy, 0)'
 
     def filter(self, extrawhere=None, pk__in=None):
         if extrawhere is not None:
@@ -456,23 +477,6 @@ def field_widget_factory(contact_field):
         field_widget(contact_field, contact_with_extra_fields)
 
 
-def busy_widget(request, contact_with_extra_fields, group_id):
-    busy = getattr(contact_with_extra_fields, 'busy_{}'.format(group_id))
-    if busy & perms.MEMBER:
-        return _('Busy')
-    elif busy & perms.INVITED:
-        return _('Invited')
-    elif busy == 0:
-        return _('Available')
-    else:
-        return 'Error {}'.format(busy)
-
-
-def busy_widget_factory(request, group_id):
-    return lambda contact_with_extra_fields: \
-        busy_widget(request, contact_with_extra_fields, group_id)
-
-
 class CustomColumnsFilter(filters.ListFilter):
     '''
     This is not really a filter. This acutally adds columns to the query.
@@ -528,6 +532,8 @@ class BaseContactListView(NgwListView):
         q = ContactQuerySet(Contact._default_manager.model,
                             using=Contact._default_manager._db)
 
+        current_cg = self.contactgroup
+
         list_display = []
 
         request = self.request
@@ -548,6 +554,10 @@ class BaseContactListView(NgwListView):
 
         for prop in self.fields:
             if prop == 'name':
+                if current_cg is not None and current_cg.date:
+                    q.add_busy(current_cg.id)
+                else:
+                    q.add_busy()
                 list_display.append('name_with_relative_link')
             elif prop.startswith(DISP_GROUP_PREFIX):
                 groupid = int(prop[len(DISP_GROUP_PREFIX):])
@@ -593,21 +603,16 @@ class BaseContactListView(NgwListView):
                 setattr(self, attribute_name, attribute)
                 list_display.append(attribute_name)
             elif prop == 'busy':
-                current_cg = self.contactgroup
                 if current_cg is not None:
                     if current_cg.date:
                         q.add_busy(current_cg.id)
-                    self.busy = busy_widget_factory(request, current_cg.id)
-                    self.busy.short_description = _('Agenda')
-                    list_display.append('busy')
+                        list_display.append('agenda')
             else:
                 raise ValueError('Invalid field '+prop)
 
-        current_cg = self.contactgroup
         if current_cg is not None:
             q.add_group(current_cg.id)
             q.add_messages(current_cg.id)
-            q.add_busy(current_cg.id)
             self.group_status = membership_extended_widget_factory(
                 request, current_cg)
             self.group_status.short_description = _('Status')
@@ -654,11 +659,13 @@ class BaseContactListView(NgwListView):
         current_cg = self.contactgroup
 
         flags = ''
-        if current_cg is not None and current_cg.date:
-            busyname = 'busy_{}'.format(current_cg.id)
-            busy = getattr(contact, busyname, None)
-            if busy is not None and busy & perms.MEMBER:
-                flags = ' <span title="Busy elsewhere">🐝</span>'
+        busy = getattr(contact, 'busy', None)
+        if busy is not None and busy & perms.MEMBER:
+            if current_cg is not None and current_cg.date:
+                hint = _('Busy elsewhere')
+            else:
+                hint = _('Busy')
+            flags = ' <span title="{}">🐝</span>'.format(html.escape(hint))
 
         return html.format_html(
                 mark_safe('<a href="{id}/"><b>{name}</a></b> {flags}'),
@@ -668,6 +675,19 @@ class BaseContactListView(NgwListView):
                 )
     name_with_relative_link.short_description = ugettext_lazy('Name')
     name_with_relative_link.admin_order_field = 'name'
+
+    def agenda(self, contact):
+        busy = getattr(contact, 'busy')
+        if busy & perms.MEMBER:
+            return _('Busy')
+        elif busy & perms.INVITED:
+            return _('Invited')
+        elif busy == 0:
+            return _('Available')
+        else:
+            return 'Error {}'.format(busy)
+    agenda.short_description = ugettext_lazy('Agenda')
+    agenda.admin_order_field = 'busy'
 
     def action_bcc(self, request, queryset):
         emails = []

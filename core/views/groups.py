@@ -582,7 +582,7 @@ class AvailableFilter(filters.SimpleListFilter):
             return q
         gid = self.contactgroup.id
         q.add_busy(gid)
-        colname = 'COALESCE(busy_{}_sub.busy,0)'.format(gid)
+        colname = 'COALESCE(busy,0)'
         or_conditions = []
         for digit in busy:
             or_conditions.append('{} = {}'.format(colname, digit))
