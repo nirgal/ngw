@@ -1028,21 +1028,6 @@ class ContactGroup(NgwModel):
         return [f for f in self.get_filters()
                 if f.__class__.internal_name == name][0]
 
-    def get_birthday_members(self):
-        q = self.get_all_members()
-        w2 = (
-            "EXISTS ("
-            "   SELECT *"
-            "   FROM contact_field_value"
-            "   WHERE contact_field_value.contact_id=contact.id"
-            "   AND contact_field_value.contact_field_id={}"
-            "   AND contact_field_value.value LIKE '{}'"
-            ")".format(
-                FIELD_BIRTHDAY,
-                datetime.today().strftime('%%%%-%m-%d')))
-        q = q.extra(where=[w2])
-        return q
-
     def get_default_display(self):
         if not self.date:
             return 'mg'

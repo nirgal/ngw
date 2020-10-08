@@ -63,19 +63,6 @@
         {% endif %}
     {% endfor %}
     {% endif %}
-
-    {% for p in cg.get_birthday_members %}
-        {% if forloop.first %}
-            <div class=module>
-                <h2>{% trans "Happy birthday to" %}</h2>
-                <div class=padded>
-        {% endif %}
-                ‣ {{ p }}<br>
-        {% if forloop.last %}
-                </div>
-            </div>
-        {% endif %}
-    {% endfor %}
 {% endblock %}
 
     
