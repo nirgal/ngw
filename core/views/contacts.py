@@ -196,6 +196,7 @@ class ContactQuerySet(RawQuerySet):
                     FROM v_cig_membership_inherited
                     JOIN contact_group
                         ON v_cig_membership_inherited.group_id=contact_group.id
+                        AND contact_group.busy  -- Only "busy" group
                     WHERE contact_group.date IS NOT NULL
                     AND daterange(contact_group.date,
                                   contact_group.end_date,
@@ -217,6 +218,7 @@ class ContactQuerySet(RawQuerySet):
                     FROM v_cig_membership_inherited
                     JOIN contact_group
                         ON v_cig_membership_inherited.group_id=contact_group.id
+                        AND contact_group.busy  -- Only "busy" group
                     WHERE contact_group.date IS NOT NULL
                     AND daterange(contact_group.date,
                                   contact_group.end_date,
