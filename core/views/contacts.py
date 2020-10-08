@@ -27,10 +27,10 @@ from django.views.generic.edit import ModelFormMixin
 
 from ngw.core import perms
 from ngw.core.contactsearch import parse_filterstring
-from ngw.core.models import (FIELD_COLUMNS, FIELD_DEFAULT_GROUP,
-                             GROUP_EVERYBODY, GROUP_USER, GROUP_USER_NGW,
-                             LOG_ACTION_ADD, LOG_ACTION_CHANGE, Config,
-                             Contact, ContactField, ContactFieldValue,
+from ngw.core.models import (FIELD_BIRTHDAY, FIELD_COLUMNS,
+                             FIELD_DEFAULT_GROUP, GROUP_EVERYBODY, GROUP_USER,
+                             GROUP_USER_NGW, LOG_ACTION_ADD, LOG_ACTION_CHANGE,
+                             Config, Contact, ContactField, ContactFieldValue,
                              ContactGroup, ContactInGroup, Log)
 from ngw.core.nav import Navbar
 from ngw.core.views.generic import (InGroupAcl, NgwAdminAcl, NgwDeleteView,
@@ -180,8 +180,9 @@ class ContactQuerySet(RawQuerySet):
 
     def add_busy(self, group_id=None):
         '''
-        Add a "busy" column with a summary of availability of that contact for
-        that group.
+        Add a "busy" column with a summary of availability of that contact.
+        Use the date of the group, if any.
+        Use current date otherwith.
         '''
         colname = 'busy'
         if colname in self.qry_fields:
@@ -226,6 +227,43 @@ class ContactQuerySet(RawQuerySet):
                 ON contact.id=busy_sub.contact_id
                 ''')
         self.qry_fields[colname] = 'COALESCE(busy, 0)'
+
+    def add_birthday(self, cg=None):
+        '''
+        Add a "birthday" column for that that contact.
+        Use the date of the group, if any.
+        Use current date otherwith.
+        '''
+        colname = 'birthday'
+        if colname in self.qry_fields:
+            return  # already there!
+        if cg is not None:
+            self.qry_from.append(
+                '''
+                LEFT JOIN contact_field_value AS cfvbirthday
+                ON (contact.id = cfvbirthday.contact_id
+                    AND cfvbirthday.contact_field_id = {fid}
+                    AND daterange('{startdate}'::date,
+                                  '{enddate}'::date,
+                                 '[]')
+                        @> birthday_after_date(value::date,
+                                               '{startdate}'::date)
+                    )
+                '''.format(
+                    startdate=cg.date,
+                    enddate=cg.end_date,
+                    fid=FIELD_BIRTHDAY))
+        else:
+            self.qry_from.append(
+                '''
+                LEFT JOIN contact_field_value AS cfvbirthday
+                 ON (contact.id = cfvbirthday.contact_id
+                     AND cfvbirthday.contact_field_id = {fid}
+                     AND to_char(value::date, 'MM-DD')
+                       = to_char(current_date, 'MM-DD')
+                     )
+                '''.format(fid=FIELD_BIRTHDAY))
+        self.qry_fields[colname] = 'cfvbirthday.value'
 
     def filter(self, extrawhere=None, pk__in=None):
         if extrawhere is not None:
@@ -556,8 +594,10 @@ class BaseContactListView(NgwListView):
             if prop == 'name':
                 if current_cg is not None and current_cg.date:
                     q.add_busy(current_cg.id)
+                    q.add_birthday(current_cg)
                 else:
                     q.add_busy()
+                    q.add_birthday()
                 list_display.append('name_with_relative_link')
             elif prop.startswith(DISP_GROUP_PREFIX):
                 groupid = int(prop[len(DISP_GROUP_PREFIX):])
@@ -659,13 +699,43 @@ class BaseContactListView(NgwListView):
         current_cg = self.contactgroup
 
         flags = ''
+        birthday = getattr(contact, 'birthday', None)
+        if birthday is not None:
+            birthday = date(*[int(c) for c in birthday.split('-')])
+            if current_cg is not None and current_cg.date:
+                anniversary = date(  # Next aniversary after event start date
+                    current_cg.date.year,
+                    birthday.month,
+                    birthday.day)
+                if anniversary < current_cg.date:
+                    try:
+                        anniversary = date(
+                            anniversary.year + 1,
+                            anniversary.month,
+                            anniversary.day)
+                    except ValueError:  # Febuary 29th
+                        anniversary = date(
+                            anniversary.year + 1,
+                            anniversary.month,
+                            anniversary.day - 1)
+                age = anniversary.year - birthday.year
+                # Translators: This is the next birthday strftime(3) format,
+                # detailled, but without the year
+                stranniv = anniversary.strftime(_('%A %B %e'))
+                hint = _('{age} years on {date}').format(
+                        date=stranniv,
+                        age=age)
+            else:
+                age = date.today().year - birthday.year
+                hint = _('{age} years today').format(age=age)
+            flags += ' <span title="{}">🎂</span>'.format(html.escape(hint))
         busy = getattr(contact, 'busy', None)
         if busy is not None and busy & perms.MEMBER:
             if current_cg is not None and current_cg.date:
                 hint = _('Busy elsewhere')
             else:
                 hint = _('Busy')
-            flags = ' <span title="{}">🐝</span>'.format(html.escape(hint))
+            flags += ' <span title="{}">🐝</span>'.format(html.escape(hint))
 
         return html.format_html(
                 mark_safe('<a href="{id}/"><b>{name}</a></b> {flags}'),

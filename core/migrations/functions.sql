@@ -322,5 +322,22 @@ CREATE OR REPLACE VIEW v_c_can_see_c(contact_id_1, contact_id_2) AS
 -- ORDER BY contact_list.id
 -- ;
 
+-- returns the first birthday after (or equal) to start:
+create or replace function birthday_after_date(birthdate date, start date) returns date as $$
+declare
+  d date;
+begin
+  /* the bith day of the year of start is */
+  d = (to_char(start, 'YYYY') || '-' || to_char(birthdate, 'MM-DD'))::date;
+  if d < start  /* handle end of year borner */
+  then
+    d = d + '1 year'::interval;
+  end if;
+  return d;
+end;
+$$ language plpgsql
+immutable
+returns null on null input;
+
 
 -- vim: set et ts=4 ft=sql:
