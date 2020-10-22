@@ -234,7 +234,8 @@ class EventListView(NgwUserAcl, NgwListView):
 
     def action_mark_busy(self, request, queryset):
         queryset_ok = queryset.extra(where=(
-            "v_cig_perm.flags & 128 != 0".format(perms.CHANGE_CG),))
+            "v_cig_perm.flags & 128 != 0".format(perms.CHANGE_CG),
+            "not busy"))
         ids = [row.id for row in queryset_ok]
         if ids:
             ContactGroup.objects.filter(id__in=ids).update(busy=True)
@@ -245,7 +246,8 @@ class EventListView(NgwUserAcl, NgwListView):
                           len(ids))
                     .format(nb=len(ids)))
         queryset_nok = queryset.extra(where=(
-            "v_cig_perm.flags & 128 = 0".format(perms.CHANGE_CG),))
+            "v_cig_perm.flags & 128 = 0".format(perms.CHANGE_CG),
+            "not busy"))
         ids = [row.id for row in queryset_nok]
         if ids:
             messages.add_message(
@@ -261,7 +263,8 @@ class EventListView(NgwUserAcl, NgwListView):
 
     def action_mark_available(self, request, queryset):
         queryset_ok = queryset.extra(where=(
-            "v_cig_perm.flags & 128 != 0".format(perms.CHANGE_CG),))
+            "v_cig_perm.flags & 128 != 0".format(perms.CHANGE_CG),
+            "busy"))
         ids = [row.id for row in queryset_ok]
         if ids:
             ContactGroup.objects.filter(id__in=ids).update(busy=False)
@@ -272,7 +275,8 @@ class EventListView(NgwUserAcl, NgwListView):
                           len(ids))
                     .format(nb=len(ids)))
         queryset_nok = queryset.extra(where=(
-            "v_cig_perm.flags & 128 = 0".format(perms.CHANGE_CG),))
+            "v_cig_perm.flags & 128 = 0".format(perms.CHANGE_CG),
+            "busy"))
         ids = [row.id for row in queryset_nok]
         if ids:
             messages.add_message(
