@@ -23,7 +23,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import formats, html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
-from django.utils.translation import ugettext_lazy
+from django.utils.translation import ugettext_lazy, ungettext
 from django.views.generic import (CreateView, FormView, TemplateView,
                                   UpdateView, View)
 from django.views.generic.edit import ModelFormMixin
@@ -181,6 +181,8 @@ class EventListView(NgwUserAcl, NgwListView):
     search_fields = 'name', 'description', 'budget_code', 'date'
 
     actions = (
+        'action_mark_busy',
+        'action_mark_available',
         'action_csv_export',  # See NgwListView
     )
 
@@ -229,6 +231,60 @@ class EventListView(NgwUserAcl, NgwListView):
 
         context.update(kwargs)
         return super().get_context_data(**context)
+
+    def action_mark_busy(self, request, queryset):
+        queryset_ok = queryset.extra(where=(
+            "v_cig_perm.flags & 128 != 0".format(perms.CHANGE_CG),))
+        ids = [row.id for row in queryset_ok]
+        if ids:
+            ContactGroup.objects.filter(id__in=ids).update(busy=True)
+            messages.add_message(
+                request, messages.SUCCESS,
+                ungettext('One group was updated.',
+                          '{nb} groups were updated.',
+                          len(ids))
+                    .format(nb=len(ids)))
+        queryset_nok = queryset.extra(where=(
+            "v_cig_perm.flags & 128 = 0".format(perms.CHANGE_CG),))
+        ids = [row.id for row in queryset_nok]
+        if ids:
+            messages.add_message(
+                request, messages.ERROR,
+                ungettext("One group was not updated because you don't have"
+                          " the permission to change it.",
+                          "{nb} groups were not updated because you don't"
+                          " have the permission to change then.",
+                          len(ids))
+                    .format(nb=len(ids)))
+    action_mark_busy.short_description = ugettext_lazy(
+            "Update: member are unavailable")
+
+    def action_mark_available(self, request, queryset):
+        queryset_ok = queryset.extra(where=(
+            "v_cig_perm.flags & 128 != 0".format(perms.CHANGE_CG),))
+        ids = [row.id for row in queryset_ok]
+        if ids:
+            ContactGroup.objects.filter(id__in=ids).update(busy=False)
+            messages.add_message(
+                request, messages.SUCCESS,
+                ungettext('One group was updated.',
+                          '{nb} groups were updated.',
+                          len(ids))
+                    .format(nb=len(ids)))
+        queryset_nok = queryset.extra(where=(
+            "v_cig_perm.flags & 128 = 0".format(perms.CHANGE_CG),))
+        ids = [row.id for row in queryset_nok]
+        if ids:
+            messages.add_message(
+                request, messages.ERROR,
+                ungettext("One group was not updated because you don't have"
+                          " the permission to change it.",
+                          "{nb} groups were not updated because you don't"
+                          " have the permission to change then.",
+                          len(ids))
+                    .format(nb=len(ids)))
+    action_mark_available.short_description = ugettext_lazy(
+            "Update: member are available")
 
 
 #######################################################################
