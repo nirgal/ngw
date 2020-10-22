@@ -173,7 +173,7 @@ class ContactGroupListView(NgwUserAcl, NgwListView):
 class EventListView(NgwUserAcl, NgwListView):
     list_display = (
         'name', 'date', 'days', 'description_not_too_long',
-        'busy',
+        'busy_nice',
         'budget_code',
         'visible_member_count',
         )
@@ -203,6 +203,12 @@ class EventListView(NgwUserAcl, NgwListView):
         return delta.days + 1
     days.short_description = ugettext_lazy('Days')
     days.admin_order_field = 'days'
+
+    def busy_nice(self, group):
+        if group.busy:
+            return '🐝'
+    busy_nice.short_description = ugettext_lazy('Members unavailable')
+    busy_nice.admin_order_field = 'busy'
 
     def visible_member_count(self, group):
         if group.userperms & perms.SEE_MEMBERS:
@@ -259,7 +265,7 @@ class EventListView(NgwUserAcl, NgwListView):
                           len(ids))
                     .format(nb=len(ids)))
     action_mark_busy.short_description = ugettext_lazy(
-            "Update: member are unavailable")
+            "Update: members are unavailable")
 
     def action_mark_available(self, request, queryset):
         queryset_ok = queryset.extra(where=(
@@ -288,7 +294,7 @@ class EventListView(NgwUserAcl, NgwListView):
                           len(ids))
                     .format(nb=len(ids)))
     action_mark_available.short_description = ugettext_lazy(
-            "Update: member are available")
+            "Update: members are available")
 
 
 #######################################################################
