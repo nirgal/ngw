@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-10-22 14:41+0000\n"
-"PO-Revision-Date: 2020-10-22 16:43+0200\n"
+"PO-Revision-Date: 2020-11-05 11:00+0100\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -233,7 +233,7 @@ msgstr "Occupé"
 #: models.py:791
 msgid "Members are unavailable for other events at the same time"
 msgstr ""
-"Les members sont indisponible pour les autres événements au même moment"
+"Les membres sont indisponibles pour les autres événements au même moment"
 
 #: models.py:793 templates/group_members.html:18
 msgid "Budget code"
