@@ -5,6 +5,71 @@
 {% include "group_submenu.html" %}
 {% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+<style>
+.contactchoices li {
+    list-style-type: none;
+}
+.contactchoices .busy::after {
+        content: '🐝';
+}
+</style>
+
+{# { ids|json_script:"hello-data" } since django 2.1 #}
+<script>
+var ids={{ json_ids }};
+function check_availability(gid, update_checkboxes) {
+    /* busycontact class are always updated.
+       checkbox checked is only updated if update_checkboxes
+    */
+    if (gid) {
+        let xhr = new XMLHttpRequest();
+        let url = '/contacts/check_available?group=' + gid + '&ids=' + ids;
+        xhr.open('GET', url);
+        xhr.responseType = 'json';
+        xhr.onload = function() {
+            if (xhr.status != 200) {
+                alert('Error fetching contact status');
+                return;
+            }
+
+            for (info of xhr.response) {
+                let box = document.querySelector('input[type="checkbox"][value="'+info.id+'"]');
+                if (update_checkboxes)
+                    box.checked = !info.busy;
+                let li = box.parentElement.parentElement;
+                if (info.busy)
+                    li.classList.add('busy');
+                else
+                    li.classList.remove('busy');
+            }
+        }
+        xhr.send();
+    } else {
+        // gid is empty
+        for (box of document.querySelectorAll('.contactchoices input[type="checkbox"]')) {
+            if (update_checkboxes)
+                box.checked = true;
+            let li = box.parentElement.parentElement;
+            li.classList.remove('busy');
+        }
+    }
+}
+            
+function group_changed() {
+    let gid = this.value;
+    check_availability(gid, true);
+}
+window.addEventListener('load', function() {
+    let groupSelect = document.getElementById('id_group');
+    check_availability(groupSelect.value, false);
+    groupSelect.addEventListener('change', group_changed);
+});
+
+</script>
+{% endblock %}
+
 {% block bodyclass %}change-form{% endblock %}
 
 {% block content %}

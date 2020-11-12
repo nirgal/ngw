@@ -33,8 +33,8 @@ from ngw.core.models import (FIELD_BIRTHDAY, FIELD_COLUMNS,
                              Config, Contact, ContactField, ContactFieldValue,
                              ContactGroup, ContactInGroup, Log)
 from ngw.core.nav import Navbar
-from ngw.core.views.generic import (InGroupAcl, NgwAdminAcl, NgwDeleteView,
-                                    NgwListView, NgwUserAcl)
+from ngw.core.views.generic import (InGroupAcl, NgwDeleteView, NgwListView,
+                                    NgwUserAcl)
 from ngw.core.widgets import FlagsField
 
 DISP_NAME = 'name'
@@ -853,10 +853,20 @@ class GroupAddManyForm(forms.Form):
                 ],
             )
         self.fields['flags'] = FlagsField(label=ugettext_lazy('Membership'))
-        # self.fields['available_only'] = forms.BooleanField(
-        #     required=False,
-        #     label=_('Only available contacts'),
-        #     initial=True)
+
+        contact_ids = kwargs['initial']['ids'].split(',')
+        contacts = Contact.objects.filter(pk__in=contact_ids)
+        contacts = contacts.extra(
+            tables=('v_c_can_see_c',),
+            where=(
+                'v_c_can_see_c.contact_id_1={}'.format(self.user.id),
+                'v_c_can_see_c.contact_id_2=contact.id'))
+        self.fields['contacts'] = forms.MultipleChoiceField(
+                label=_('Contacts'),
+                choices=[(contact.id, contact.name) for contact in contacts],
+                initial=contact_ids,
+                widget=forms.widgets.CheckboxSelectMultiple(
+                    attrs={'class': 'contactchoices'}))
 
     def clean(self):
         data = super().clean()
@@ -882,16 +892,8 @@ class GroupAddManyForm(forms.Form):
         group_id = self.cleaned_data['group']
         target_group = get_object_or_404(ContactGroup, pk=group_id)
 
-        contact_ids = self.cleaned_data['ids'].split(',')
+        contact_ids = self.cleaned_data['contacts']
         contacts = Contact.objects.filter(pk__in=contact_ids)
-
-        # if self.cleaned_data['available_only'] and target_group.is_event():
-        #     start_date = target_group.date
-        #     end_date = target_group.end_date or target_group.date
-        #     contacts = contacts.extra(
-        #         tables=('',),
-        #         where=...
-        #         )
 
         # Check selected contacts are visible
         contacts = contacts.extra(
@@ -911,7 +913,7 @@ class GroupAddManyForm(forms.Form):
 
 class GroupAddManyView(NgwUserAcl, FormView):
     form_class = GroupAddManyForm
-    template_name = 'group_add_contacts_to.html'  # TODO: rename
+    template_name = 'group_add_contacts_to.html'
 
     def get_initial(self):
         if self.request.method == 'POST':
@@ -931,10 +933,11 @@ class GroupAddManyView(NgwUserAcl, FormView):
             querydict = self.request.POST
         else:
             querydict = self.request.GET
-        ids = querydict['ids'].split(',')
+        ids = [int(id) for id in querydict['ids'].split(',')]
         context['title'] = _('Add {} contact(s) to a group').format(len(ids))
         context['nav'] = Navbar(Contact.get_class_navcomponent())
         context['nav'].add_component(('add_to_group', _('add contacts to')))
+        context['json_ids'] = mark_safe(json.dumps(ids))
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -949,43 +952,35 @@ class GroupAddManyView(NgwUserAcl, FormView):
         return target_group.get_absolute_url() + 'members/'
 
 
-class ContactCheckAvailableView(NgwAdminAcl, View):
-    # ContactCheckAvailableView(NgwUserAcl, View):
+class ContactCheckAvailableView(NgwUserAcl, View):
     def post(self, request, *args, **kwargs):
         if self.request.method == 'POST':
             querydict = self.request.POST
         else:
             querydict = self.request.GET
         ids = querydict['ids']
+        gid = querydict['group']
         ids = querydict['ids'].split(',')
         contacts = ContactQuerySet(Contact._default_manager.model,
                                    using=Contact._default_manager._db)
         contacts = contacts.filter(pk__in=ids)
-        contacts.add_busy(909)
+        cg = ContactGroup.objects.get(pk=gid)
         response = []
-        for contact in contacts:
-            response.append({
-                'name': contact.name,
-                'busy': contact.busy_909 or 0,
-                })
+        if cg.is_event():
+            contacts.add_busy(gid)
+            for contact in contacts:
+                response.append({
+                    'id': contact.id,
+                    'busy': contact.busy or 0,
+                    })
+        else:
+            for contact in contacts:
+                response.append({
+                    'id': contact.id,
+                    'busy': 0,
+                    })
         jsonresponse = json.dumps(response)
         return HttpResponse(jsonresponse, content_type='application/json')
-        # from django.db.models.expressions import RawSQL
-        # Contact.objects
-        #        .filter(pk__in=(1,2,3,4,5,6,7,8,9,10,11))
-        #        .annotate(availability=RawSQL('''
-        #           SELECT bit_or(flags) & 3
-        #           FROM v_cig_membership_inherited
-        #           JOIN contact_group
-        #               ON v_cig_membership_inherited.group_id=contact_group.id
-        #           WHERE contact_group.date IS NOT NULL
-        #               AND daterange(contact_group.date,
-        #                             contact_group.end_date,
-        #                             '[]')
-        #                  && daterange(%s, %s, '[]')
-        #               AND v_cig_membership_inherited.contact_id=contact.id
-        #           ''',
-        #           ('2017-08-01', '2017-08-31')))
 
     get = post
 
