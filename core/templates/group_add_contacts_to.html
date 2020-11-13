@@ -37,9 +37,9 @@ function check_availability(gid, update_checkboxes) {
             for (info of xhr.response) {
                 let box = document.querySelector('input[type="checkbox"][value="'+info.id+'"]');
                 if (update_checkboxes)
-                    box.checked = !info.busy;
+                    box.checked = ((info.busy & 1) == 0);
                 let li = box.parentElement.parentElement;
-                if (info.busy)
+                if (info.busy & 1)
                     li.classList.add('busy');
                 else
                     li.classList.remove('busy');
