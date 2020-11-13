@@ -844,7 +844,7 @@ class GroupAddManyForm(forms.Form):
                     .with_user_perms(user.id, perms.CHANGE_MEMBERS)
                     .order_by('name')]),
                 (_('Events'), [
-                    (group.id, str(group))
+                    (group.id, group.str_with_busy())
                     for group in ContactGroup
                     .objects
                     .filter(date__isnull=0)

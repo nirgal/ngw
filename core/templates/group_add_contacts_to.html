@@ -23,6 +23,13 @@ function check_availability(gid, update_checkboxes) {
     /* busycontact class are always updated.
        checkbox checked is only updated if update_checkboxes
     */
+    let busy_target = false;  // does the target group makes its member busy?
+    if (gid) {
+        let group_option = document.getElementById('id_group');
+        let target_name = group_option[group_option.selectedIndex].text;
+        busy_target = target_name.indexOf('🐝') != -1;
+    }
+
     if (gid) {
         let xhr = new XMLHttpRequest();
         let url = '/contacts/check_available?group=' + gid + '&ids=' + ids;
@@ -36,8 +43,12 @@ function check_availability(gid, update_checkboxes) {
 
             for (info of xhr.response) {
                 let box = document.querySelector('input[type="checkbox"][value="'+info.id+'"]');
-                if (update_checkboxes)
-                    box.checked = ((info.busy & 1) == 0);
+                if (update_checkboxes) {
+                    if (busy_target)
+                        box.checked = ((info.busy & 1) == 0);
+                    else
+                        box.checked = true;
+                }
                 let li = box.parentElement.parentElement;
                 if (info.busy & 1)
                     li.classList.add('busy');

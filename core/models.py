@@ -828,6 +828,17 @@ class ContactGroup(NgwModel):
     def __repr__(self):
         return '<ContactGroup {} {}>'.format(self.id, self.name)
 
+    def str_with_busy(self):
+        """ Returns the name of the group, and the date if there's one
+        and a busy indicator
+        """
+        result = self.name
+        if self.date:
+            result += ' ‧ ' + formats.date_format(self.date, "DATE_FORMAT")
+        if self.busy:
+            result += ' ‧ 🐝'
+        return result
+
     def get_smart_navbar(self):
         nav = Navbar()
         if self.date:
