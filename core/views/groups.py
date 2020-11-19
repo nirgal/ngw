@@ -421,6 +421,9 @@ class CalendarQueryView(View):
         if cid is not None:
             qs = qs.with_member(cid)
 
+        # Don't show personnal unavailability events
+        qs = qs.filter(perso_unavail=False)
+
         qs = qs.filter(
             # start within boundaries:
             Q(date__gte=str_min_date, date__lte=str_max_date)
@@ -708,7 +711,8 @@ class ContactGroupForm(forms.ModelForm):
     class Meta:
         model = ContactGroup
         fields = [
-            'name', 'description', 'date', 'end_date', 'busy', 'budget_code',
+            'name', 'description', 'date', 'end_date', 'busy',
+            'perso_unavail', 'budget_code',
             # 'sticky',
             # 'virtual',
             'field_group', 'mailman_address']

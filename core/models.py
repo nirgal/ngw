@@ -773,6 +773,12 @@ class ContactGroupQuerySet(models.query.QuerySet):
 
 
 class ContactGroup(NgwModel):
+    """
+    There are 3 main kind of groups:
+    - Permanent groups
+    - Events (these have dates)
+    - Personnal Busy period (dates + personnal_busy)
+    """
     id = models.AutoField(primary_key=True)
     name = models.CharField(ugettext_lazy('Name'), max_length=255)
     description = models.TextField(ugettext_lazy('Description'), blank=True)
@@ -790,6 +796,8 @@ class ContactGroup(NgwModel):
         help_text=ugettext_lazy(
             "Do the members become unavailable for other events at the same"
             " time?"))
+    perso_unavail = models.BooleanField(
+        ugettext_lazy('Personal unavailability'), default=False)
     budget_code = models.CharField(
         ugettext_lazy('Budget code'), max_length=10, blank=True)
     system = models.BooleanField(ugettext_lazy('System locked'), default=False)

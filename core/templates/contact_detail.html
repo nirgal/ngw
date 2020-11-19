@@ -40,7 +40,7 @@ var imagefile_size_big = '500px';
 
     <h2>{% trans "Groups" %}</h2>
 
-    {% for g in contact.get_directgroups_member|group_is_not_event|group_visible_by:request.user.id %}
+    {% for g in contact.get_directgroups_member|group_is_permanent|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Member of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         {% if not g.date %}
@@ -53,7 +53,7 @@ var imagefile_size_big = '500px';
         <br>
     {% endfor %}
 
-    {% for g in contact.get_directgroups_invited|group_is_not_event|group_visible_by:request.user.id %}
+    {% for g in contact.get_directgroups_invited|group_is_permanent|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Invited in groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         {% if not g.date %}
@@ -66,25 +66,25 @@ var imagefile_size_big = '500px';
         <br>
     {% endfor %}
 
-    {% for g in contact.get_directgroups_declined|group_is_not_event|group_visible_by:request.user.id %}
+    {% for g in contact.get_directgroups_declined|group_is_permanent|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Declined invitation in groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
     {% endfor %}
 
-    {% for g in contact.get_directgroups_canceled|group_is_not_event|group_visible_by:request.user.id %}
+    {% for g in contact.get_directgroups_canceled|group_is_permanent|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Membership canceled in groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
     {% endfor %}
 
-    {% for g in contact.get_directgroups_operator|group_is_not_event|group_visible_by:request.user.id %}
+    {% for g in contact.get_directgroups_operator|group_is_permanent|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Operator of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
     {% endfor %}
 
-    {% for g in contact.get_directgroups_viewer|group_is_not_event|group_visible_by:request.user.id %}
+    {% for g in contact.get_directgroups_viewer|group_is_permanent|group_visible_by:request.user.id %}
         {% if forloop.first %}{% trans "Viewer of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
@@ -142,7 +142,24 @@ var imagefile_size_big = '500px';
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         <br>
     {% endfor %}
+
+
+    <h2>{% trans "Personnal unavailabilities" %}</h2>
+    {% for g in contact.get_directgroups_member|group_is_perso_unavail|group_visible_by:request.user.id %}
+        {% if forloop.first %}{% trans "Member of groups" %}:<br>{% endif %}
+        &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
+        {% if not g.date %}
+            {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
+            {% if forloop.first %}( {% trans "implies" %} {%else%}, {% endif %}
+            {{ sg|group_with_link }}
+            {% if forloop.last %}){% endif %}
+            {% endfor %}
+        {% endif %}
+        <br>
+    {% endfor %}
+
 </div>
+
 
 <div class="submit-row">
   <a class="button default" href="edit">{% trans "Edit" %}</a>
