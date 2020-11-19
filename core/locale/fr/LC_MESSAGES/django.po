@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-11-19 10:09+0000\n"
-"PO-Revision-Date: 2020-11-19 11:21+0100\n"
+"POT-Creation-Date: 2020-11-19 14:41+0000\n"
+"PO-Revision-Date: 2020-11-19 15:42+0100\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -231,11 +231,10 @@ msgid "Busy"
 msgstr "Occupé"
 
 #: models.py:791
-#| msgid "Members are unavailable for other events at the same time"
 msgid "Do the members become unavailable for other events at the same time?"
 msgstr ""
-"Est ce que les membres deviennent indisponibles pour les autres événements au"
-" même moment?"
+"Est ce que les membres deviennent indisponibles pour les autres événements "
+"au même moment?"
 
 #: models.py:794 templates/group_members.html:18
 msgid "Budget code"
@@ -966,7 +965,7 @@ msgstr "Observateur des groupes"
 msgid "Events"
 msgstr "Événements"
 
-#: templates/contact_detail.html:148 templates/group_members.html:72
+#: templates/contact_detail.html:148 templates/group_members.html:73
 msgid "Edit"
 msgstr "Modifier"
 
@@ -1071,7 +1070,7 @@ msgstr "Enregistrer la sélection de colonne comme défaut"
 msgid "Set columns"
 msgstr "Définir les colonnes"
 
-#: templates/contact_list.html:344 templates/group_members.html:71
+#: templates/contact_list.html:344 templates/group_members.html:72
 msgid "Select displayed columns"
 msgstr "Sélectionner les colonnes affichées"
 
@@ -1155,23 +1154,33 @@ msgstr "Dates: Du <b>%(start_date)s</b> au <b>%(end_date)s</b>"
 msgid "Mailing list"
 msgstr "Liste de diffusion"
 
-#: templates/group_members.html:32 views/groups.py:87
+#: templates/group_members.html:20
+#| msgid "Do the members become unavailable for other events at the same time?"
+msgid "Members are <b>unavailable</b> for other events. 🐝"
+msgstr "Les membres sont <b>indisponibles</b> pour les autres événements. 🐝"
+
+#: templates/group_members.html:20
+#| msgid "Do the members become unavailable for other events at the same time?"
+msgid "Members are <b>available</b> for other events."
+msgstr "Les membres sont <b>disponibles</b> pour les autres événements. 🐝"
+
+#: templates/group_members.html:33 views/groups.py:87
 msgid "Sub groups"
 msgstr "Sous-groupes"
 
-#: templates/group_members.html:34
+#: templates/group_members.html:35
 msgid "People in sub-groups automatically are members / invited."
 msgstr "Les personnes des sous-groupes sont automatiquement membres / invités."
 
-#: templates/group_members.html:39
+#: templates/group_members.html:40
 msgid "including"
 msgstr "y compris"
 
-#: templates/group_members.html:56
+#: templates/group_members.html:57
 msgid "Groups that have some access to"
 msgstr "Groupes qui ont un accès à"
 
-#: templates/group_members.html:74
+#: templates/group_members.html:75
 msgid "Create a new contact in that group"
 msgstr "Créer un nouveau contact dans ce groupe"
 
@@ -1491,7 +1500,6 @@ msgid "Membership"
 msgstr "Appartenance"
 
 #: views/contacts.py:865
-#| msgid "Contact"
 msgid "Contacts"
 msgstr "Contacts"
 
@@ -1832,8 +1840,8 @@ msgstr[0] ""
 "Un groupe n'a pas été mis à jour car vous n'avez pas la permission de le "
 "changer."
 msgstr[1] ""
-"{nb} groupes n'ont pas été mis à jour car vous n'avez pas la permission de"
-" les changer."
+"{nb} groupes n'ont pas été mis à jour car vous n'avez pas la permission de "
+"les changer."
 
 #: views/groups.py:268
 msgid "Update: members are unavailable"
@@ -1896,12 +1904,10 @@ msgid "Send a message (external storage)"
 msgstr "Envoyer un message (stockage externe)"
 
 #: views/groups.py:723
-#| msgid "Members unavailable"
 msgid "Yes: Members become unavailable 🐝"
 msgstr "Oui: Les membres deviennent indisponibles 🐝"
 
 #: views/groups.py:726
-#| msgid "Members are unavailable for other events at the same time"
 msgid "No: Allow other events at the same time"
 msgstr "Non: Autoriser les autres événements au moment"
 
