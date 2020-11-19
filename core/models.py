@@ -788,7 +788,8 @@ class ContactGroup(NgwModel):
     busy = models.BooleanField(
         ugettext_lazy('Busy'), default=False,
         help_text=ugettext_lazy(
-            "Members are unavailable for other events at the same time"))
+            "Do the members become unavailable for other events at the same"
+            " time?"))
     budget_code = models.CharField(
         ugettext_lazy('Budget code'), max_length=10, blank=True)
     system = models.BooleanField(ugettext_lazy('System locked'), default=False)

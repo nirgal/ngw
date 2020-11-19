@@ -716,6 +716,16 @@ class ContactGroupForm(forms.ModelForm):
             'date': AdminDateWidget,
             # (attrs={'onchange': mark_safe("alert('ok');")}),
             'end_date': AdminDateWidget,
+            'busy': forms.widgets.RadioSelect(
+                choices=(
+                    (
+                        True,
+                        _('Yes: Members become unavailable 🐝')
+                    ), (
+                        False,
+                        _('No: Allow other events at the same time')
+                    )),
+                ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -786,17 +796,27 @@ class ContactGroupForm(forms.ModelForm):
                     'end_date',
                     _('The end date must be after the start date.'))
         else:
-            # The is no end date
+            # There is no end date
             if start_date:
                 # use start date is available
                 data['end_date'] = data['date']
             # else this is a permanent group without any date
 
-        busy = data.get('busy', False)
-        if busy and not start_date:
-            self.add_error(
-                'busy',
-                _('Busy flag requires dates.'))
+        # busy check
+        busy = data.get('busy', None)
+        if start_date:
+            if 'busy' not in self.data:  # do use uncleaned data from self
+                self.add_error('busy', forms.ValidationError(
+                    _('This field is required'),
+                    code='required'))
+        else:
+            # Be permissive about choices not made for groups
+            if busy is None:
+                data['busy'] = False
+            elif busy:
+                self.add_error('busy', forms.ValidationError(
+                    _('Busy flag requires dates.'),
+                    code='invalid'))
 
         return data
 
@@ -922,6 +942,12 @@ class GroupEditMixin(ModelFormMixin):
             return HttpResponseRedirect(base_url + '/add')
         else:
             return HttpResponseRedirect(base_url + '/' + str(cg.id) + '/')
+
+    def get_initial(self):
+        result = super().get_initial()
+        if self.object is None:
+            result['busy'] = None  # Force no default value
+        return result
 
     def get_context_data(self, **kwargs):
         context = {}
