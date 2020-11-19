@@ -14,7 +14,13 @@
 .contactchoices .busy::after {
         content: '🐝';
 }
+.loading_status {
+        padding-left: 10px;
+}
 </style>
+
+{% trans "Loading availabilities..." as loading_availabilities %}
+{% trans "Sorry, availabilities can't be loaded. Please try again later." as loading_error %}
 
 {# { ids|json_script:"hello-data" } since django 2.1 #}
 <script>
@@ -31,13 +37,15 @@ function check_availability(gid, update_checkboxes) {
     }
 
     if (gid) {
+        let loading_node = document.querySelector('.loading_status');  // Dom node
+        loading_node.innerHTML = '{{ loading_availabilities|escapejs }}';
         let xhr = new XMLHttpRequest();
         let url = '/contacts/check_available?group=' + gid + '&ids=' + ids;
         xhr.open('GET', url);
         xhr.responseType = 'json';
         xhr.onload = function() {
             if (xhr.status != 200) {
-                alert('Error fetching contact status');
+                loading_node.innerHTML = '{{ loading_error|escapejs }}';
                 return;
             }
 
@@ -55,6 +63,7 @@ function check_availability(gid, update_checkboxes) {
                 else
                     li.classList.remove('busy');
             }
+            loading_node.innerHTML = '';
         }
         xhr.send();
     } else {
@@ -74,6 +83,9 @@ function group_changed() {
 }
 window.addEventListener('load', function() {
     let groupSelect = document.getElementById('id_group');
+    let loadingStatus = document.createElement("span");
+    loadingStatus.className = 'loading_status';
+    groupSelect.after(loadingStatus);
     check_availability(groupSelect.value, false);
     groupSelect.addEventListener('change', group_changed);
 });

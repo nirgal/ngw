@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-11-19 14:41+0000\n"
-"PO-Revision-Date: 2020-11-19 15:45+0100\n"
+"POT-Creation-Date: 2020-11-19 15:17+0000\n"
+"PO-Revision-Date: 2020-11-19 16:18+0100\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -1105,7 +1105,17 @@ msgstr "Filtre"
 msgid "That user has no custom filter."
 msgstr "Cet utilisateur n'a aucun filtre personnalisé."
 
-#: templates/group_add_contacts_to.html:99
+#: templates/group_add_contacts_to.html:22
+msgid "Loading availabilities..."
+msgstr "Chargement des disponibilités..."
+
+#: templates/group_add_contacts_to.html:23
+msgid "Sorry, availabilities can't be loaded. Please try again later."
+msgstr ""
+"Désolé, les disponibilités ne peuvent pas être chargées. Veuillez réessayer"
+" plus tard."
+
+#: templates/group_add_contacts_to.html:112
 msgid "Add to group"
 msgstr "Ajouter au groupe"
 
@@ -1155,12 +1165,10 @@ msgid "Mailing list"
 msgstr "Liste de diffusion"
 
 #: templates/group_members.html:20
-#| msgid "Do the members become unavailable for other events at the same time?"
 msgid "Members are <b>unavailable</b> for other events. 🐝"
 msgstr "Les membres sont <b>indisponibles</b> pour les autres événements. 🐝"
 
 #: templates/group_members.html:20
-#| msgid "Do the members become unavailable for other events at the same time?"
 msgid "Members are <b>available</b> for other events."
 msgstr "Les membres sont <b>disponibles</b> pour les autres événements."
 
