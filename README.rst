@@ -164,3 +164,14 @@ Right now, keys needs to be imported by hand: ``gpg --homedir /var/lib/ngw/ --im
 Add ``Listen 11371`` at the end of the ``/etc/apache2/ports.conf`` to have an ``hkp://`` compatible server (Download only)
 
 Uncomment gpg keyring directory in ``settings.py`` (``GPG_HOME``)
+
+License
+=======
+
+Unless otherwise specified, the project is licensed using a BSD-2 license. See LICENSE for the full text.
+
+Files in core/static/ngw/twemoji are from the Twitter emoji project at https://github.com/twitter/twemoji
+(C) Twitter using a BSD-2 license.
+
+Files in core/static/ngw/notoemoji are from the Noto Emoji at https://github.com/googlefonts/noto-emoji
+They use an Apache License 2.0.

@@ -730,14 +730,16 @@ class BaseContactListView(NgwListView):
             else:
                 age = date.today().year - birthday.year
                 hint = _('{age} years today').format(age=age)
-            flags += ' <span title="{}">🎂</span>'.format(html.escape(hint))
+            flags += ' <span class=iconbirthday title="{}"></span>'.format(
+                    html.escape(hint))
         busy = getattr(contact, 'busy', None)
         if busy is not None and busy & perms.MEMBER:
             if current_cg is not None and current_cg.date:
                 hint = _('Busy elsewhere')
             else:
                 hint = _('Busy')
-            flags += ' <span title="{}">🐝</span>'.format(html.escape(hint))
+            flags += ' <span class=iconbusy title="{}"></span>'.format(
+                    html.escape(hint))
 
         return html.format_html(
                 mark_safe('<a href="{id}/"><b>{name}</a></b> {flags}'),
@@ -844,7 +846,7 @@ class GroupAddManyForm(forms.Form):
                     .with_user_perms(user.id, perms.CHANGE_MEMBERS)
                     .order_by('name')]),
                 (_('Events'), [
-                    (group.id, group.str_with_busy())
+                    (group.id, str(group))
                     for group in ContactGroup
                     .objects
                     .filter(date__isnull=0)
@@ -965,21 +967,24 @@ class ContactCheckAvailableView(NgwUserAcl, View):
                                    using=Contact._default_manager._db)
         contacts = contacts.filter(pk__in=ids)
         cg = ContactGroup.objects.get(pk=gid)
-        response = []
+        resp_contacts = []
         if cg.is_event():
             contacts.add_busy(gid)
             for contact in contacts:
-                response.append({
+                resp_contacts.append({
                     'id': contact.id,
                     'busy': contact.busy or 0,
                     })
         else:
             for contact in contacts:
-                response.append({
+                resp_contacts.append({
                     'id': contact.id,
                     'busy': 0,
                     })
-        jsonresponse = json.dumps(response)
+        jsonresponse = json.dumps({
+            'event_busy': cg.busy,
+            'contacts': resp_contacts,
+            })
         return HttpResponse(jsonresponse, content_type='application/json')
 
     get = post

@@ -206,7 +206,7 @@ class EventListView(NgwUserAcl, NgwListView):
 
     def busy_nice(self, group):
         if group.busy:
-            return '🐝'
+            return mark_safe('<span class=iconbusy></span>')
     busy_nice.short_description = ugettext_lazy('Members unavailable')
     busy_nice.admin_order_field = 'busy'
 
@@ -724,7 +724,7 @@ class ContactGroupForm(forms.ModelForm):
                 choices=(
                     (
                         True,
-                        _('Yes: Members become unavailable 🐝')
+                        _('Yes: Members become unavailable')
                     ), (
                         False,
                         _('No: Allow other events at the same time')

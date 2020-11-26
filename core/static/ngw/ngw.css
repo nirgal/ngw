@@ -253,3 +253,18 @@ select.doublechoicesecond {
 #changelist #toolbar form input[type="reset"]:hover {
     border-color: #999;
 }
+
+.iconbusy {
+	display: inline;
+	content: url('notoemoji/emoji_u1f41d.svg');
+	width: 1.5em;
+	vertical-align: text-bottom;
+}
+.iconbirthday {
+	display: inline;
+	/*content: url('notoemoji/emoji_u1f382.svg');*/
+	content: url('twemoji/1f382.svg');
+	width: 1.5em;
+	vertical-align: text-bottom;
+}
+

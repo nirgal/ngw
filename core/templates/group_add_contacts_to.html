@@ -11,12 +11,16 @@
 .contactchoices li {
     list-style-type: none;
 }
-.contactchoices .busy::after {
-        content: '🐝';
+.contactchoices .iconbusy {
+        display: none;
+}
+.contactchoices .busy .iconbusy {
+        display: inline;
 }
 .loading_status {
         padding-left: 10px;
 }
+
 </style>
 
 {% trans "Loading availabilities..." as loading_availabilities %}
@@ -29,12 +33,6 @@ function check_availability(gid, update_checkboxes) {
     /* busycontact class are always updated.
        checkbox checked is only updated if update_checkboxes
     */
-    let busy_target = false;  // does the target group makes its member busy?
-    if (gid) {
-        let group_option = document.getElementById('id_group');
-        let target_name = group_option[group_option.selectedIndex].text;
-        busy_target = target_name.indexOf('🐝') != -1;
-    }
 
     if (gid) {
         let loading_node = document.querySelector('.loading_status');  // Dom node
@@ -49,7 +47,9 @@ function check_availability(gid, update_checkboxes) {
                 return;
             }
 
-            for (info of xhr.response) {
+            let busy_target = xhr.response.event_busy;  // does the target group makes its member busy?
+
+            for (info of xhr.response.contacts) {
                 let box = document.querySelector('input[type="checkbox"][value="'+info.id+'"]');
                 if (update_checkboxes) {
                     if (busy_target)
@@ -82,10 +82,19 @@ function group_changed() {
     check_availability(gid, true);
 }
 window.addEventListener('load', function() {
+    // Add a loading/error message area:
     let groupSelect = document.getElementById('id_group');
     let loadingStatus = document.createElement("span");
     loadingStatus.className = 'loading_status';
     groupSelect.after(loadingStatus);
+
+    // Add busy icons:
+    for (let box of document.querySelectorAll('.contactchoices input[type="checkbox"]')) {
+        let busyIcon = document.createElement("span");
+        busyIcon.className = 'iconbusy';
+        box.parentNode.appendChild(busyIcon);
+    }
+
     check_availability(groupSelect.value, false);
     groupSelect.addEventListener('change', group_changed);
 });
