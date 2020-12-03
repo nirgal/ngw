@@ -850,6 +850,7 @@ class GroupAddManyForm(forms.Form):
                     for group in ContactGroup
                     .objects
                     .filter(date__isnull=0)
+                    .filter(perso_unavail=False)
                     .with_user_perms(user.id, perms.CHANGE_MEMBERS)
                     .order_by('-date', 'name')]),
                 ],
