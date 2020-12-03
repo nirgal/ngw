@@ -17,7 +17,7 @@
     {% endif %}
     {% if cg.budget_code %}<br>{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b>{% endif %}
     {% if cg.mailman_address %}<br>{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b>{% endif %}
-    {% if cg.busy %}<br>{% trans "Members are <b>unavailable</b> for other events." %} <span class=iconbusy></span>{% else %}{% trans "Members are <b>available</b> for other events." %}{% endif %}
+    <br>{% if cg.busy %}{% trans "Members are <b>unavailable</b> for other events." %} <span class=iconbusy></span>{% else %}{% trans "Members are <b>available</b> for other events." %}{% endif %}
 </div>
     {{ block.super }}
 {% endblock %}
