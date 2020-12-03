@@ -222,6 +222,7 @@ class EventListView(NgwUserAcl, NgwListView):
     def get_root_queryset(self):
         return (ContactGroup.objects
                 .filter(date__isnull=False)
+                .filter(perso_unavail=False)
                 # .with_counts() is too slow
                 .with_user_perms(self.request.user.id, perms.SEE_CG)
                 # days is used by sort:
