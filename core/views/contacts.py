@@ -3,7 +3,7 @@ Contact managing views
 '''
 
 import json
-from datetime import date
+from datetime import date, timedelta
 
 from django import forms
 from django.contrib import messages
@@ -699,39 +699,48 @@ class BaseContactListView(NgwListView):
 
     def name_with_relative_link(self, contact):
         current_cg = self.contactgroup
-
         flags = ''
+
         birthday = getattr(contact, 'birthday', None)
         if birthday is not None:
             birthday = date(*[int(c) for c in birthday.split('-')])
             if current_cg is not None and current_cg.date:
-                anniversary = date(  # Next aniversary after event start date
-                    current_cg.date.year,
-                    birthday.month,
-                    birthday.day)
-                if anniversary < current_cg.date:
-                    try:
-                        anniversary = date(
-                            anniversary.year + 1,
-                            anniversary.month,
-                            anniversary.day)
-                    except ValueError:  # Febuary 29th
-                        anniversary = date(
-                            anniversary.year + 1,
-                            anniversary.month,
-                            anniversary.day - 1)
-                age = anniversary.year - birthday.year
-                # Translators: This is the next birthday strftime(3) format,
-                # detailled, but without the year
-                stranniv = anniversary.strftime(_('%A %B %e'))
-                hint = _('{age} years on {date}').format(
-                        date=stranniv,
-                        age=age)
+                event_length = current_cg.end_date - current_cg.date
+                bseml = Config.get_birthday_show_event_max_length()
+                if event_length < timedelta(days=bseml):  # interval means +1
+                    # Next aniversary after event start date:
+                    anniversary = date(
+                        current_cg.date.year,
+                        birthday.month,
+                        birthday.day)
+                    if anniversary < current_cg.date:
+                        try:
+                            anniversary = date(
+                                anniversary.year + 1,
+                                anniversary.month,
+                                anniversary.day)
+                        except ValueError:  # Febuary 29th
+                            anniversary = date(
+                                anniversary.year + 1,
+                                anniversary.month,
+                                anniversary.day - 1)
+                    age = anniversary.year - birthday.year
+                    # Translators: This is the next birthday strftime(3)
+                    # format, detailled, but without the year
+                    stranniv = anniversary.strftime(_('%A %B %e'))
+                    debug = repr(current_cg.end_date - current_cg.date)
+                    hint = _('{age} years on {date}').format(
+                            date=stranniv,
+                            age=age)
+                    hint += debug
+                    flags += (' <span class=iconbirthday title="{}"></span>'
+                              .format(html.escape(hint)))
             else:
                 age = date.today().year - birthday.year
                 hint = _('{age} years today').format(age=age)
-            flags += ' <span class=iconbirthday title="{}"></span>'.format(
-                    html.escape(hint))
+                flags += ' <span class=iconbirthday title="{}"></span>'.format(
+                        html.escape(hint))
+
         busy = getattr(contact, 'busy', None)
         if busy is not None and busy & perms.MEMBER:
             if current_cg is not None and current_cg.date:

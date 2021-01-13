@@ -176,6 +176,15 @@ class Config(NgwModel):
         except (Config.DoesNotExist, ValueError):
             return {}
 
+    @staticmethod
+    def get_birthday_show_event_max_length():
+        try:
+            object_bseml = Config.objects.get(
+                pk='birthday_show_event_max_length')
+            return int(object_bseml.text)
+        except (Config.DoesNotExist, ValueError):
+            return 7
+
 
 class Choice(NgwModel):
     django_id = models.AutoField(primary_key=True)  # not used
