@@ -728,11 +728,9 @@ class BaseContactListView(NgwListView):
                     # Translators: This is the next birthday strftime(3)
                     # format, detailled, but without the year
                     stranniv = anniversary.strftime(_('%A %B %e'))
-                    debug = repr(current_cg.end_date - current_cg.date)
                     hint = _('{age} years on {date}').format(
                             date=stranniv,
                             age=age)
-                    hint += debug
                     flags += (' <span class=iconbirthday title="{}"></span>'
                               .format(html.escape(hint)))
             else:

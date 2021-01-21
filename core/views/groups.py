@@ -24,8 +24,8 @@ from django.utils import formats, html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy, ungettext
-from django.views.generic import (CreateView, FormView, TemplateView,
-                                  UpdateView, View)
+from django.views.generic import (CreateView, DetailView, FormView,
+                                  TemplateView, UpdateView, View)
 from django.views.generic.edit import ModelFormMixin
 
 from ngw.core import perms
@@ -494,6 +494,56 @@ class ContactGroupView(InGroupAcl, View):
         if cg.userperms & perms.VIEW_MSGS:
             return HttpResponseRedirect(cg.get_absolute_url() + 'messages/')
         raise PermissionDenied
+
+
+#######################################################################
+#######################################################################
+
+class GroupDetailView(InGroupAcl, DetailView):
+    pk_url_kwarg = 'gid'
+    model = ContactGroup
+    template_name = 'group_detail.html'
+
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.SEE_CG:
+            raise PermissionDenied
+
+    # def get_object(self, queryset=None):
+    #     msg = super().get_object(queryset)
+    #     # Check the group match the one of the url
+    #     if msg.group_id != self.contactgroup.id:
+    #         raise PermissionDenied
+    #     return msg
+
+    def get_context_data(self, **kwargs):
+        # if self.object.group != self.contactgroup:
+        #     # attempt to read an object from another group
+        #     raise PermissionDenied
+        # if self.object.is_answer and self.object.read_date is None:
+        #     if self.contactgroup.userperms & perms.WRITE_MSGS:
+        #         self.object.read_date = now()
+        #         self.object.read_by = self.request.user
+        #         self.object.save()
+        #     else:
+        #         messages.add_message(
+        #             self.request, messages.WARNING,
+        #             _("You don't have the permission to mark that message as"
+        #               " read."))
+        cg = self.contactgroup
+        context = {}
+        context['title'] = _(
+            'Details of group {groupname}').format(
+            groupname=cg)
+        context['nav'] = cg.get_smart_navbar()
+        context['nav'].add_component(('messages', _('messages')))
+        # context['cig_url'] = (
+        #     self.contactgroup.get_absolute_url()
+        #     + 'members/'
+        #     + str(self.object.contact_id))
+        # context['active_submenu'] = 'messages'
+
+        context.update(kwargs)
+        return super().get_context_data(**context)
 
 
 #######################################################################
