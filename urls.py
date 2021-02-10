@@ -55,7 +55,7 @@ groups_urlpatterns = [
     url(r'^(?P<gid>\d+)/$', ContactGroupView.as_view()),
     url(r'^(?P<gid>\d+)/edit$', GroupEditView.as_view()),
     url(r'^(?P<gid>\d+)/delete$', GroupDeleteView.as_view()),
-    url(r'^(?P<gid>\d+)/detail$',
+    url(r'^(?P<gid>\d+)/summary$',
         GroupDetailView.as_view()),
     url(r'^(?P<gid>\d+)/members/$',
         GroupMemberListView.as_view(), name='group_members'),

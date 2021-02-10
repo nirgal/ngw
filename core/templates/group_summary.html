@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block submenu %}
+{% include "group_submenu.html" %}
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    {% if cg.perso_unavail %}
+        {% blocktrans %}<a href="{{ contactlink }}">{{ contact }}</a> is unavailable.{% endblocktrans %}
+        <span class=iconbusy></span>
+        <br>
+    {% elif cg.busy%}
+        {% trans "Members are <b>unavailable</b> for other events." %} <span class=iconbusy></span>
+        <br>
+    {% else %}
+        {% trans "Members are <b>available</b> for other events." %}
+        <br>
+    {% endif %}
+
+    {% if cg.date %}
+        {% ifequal cg.date cg.end_date %}
+        {% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b>
+        {% else %}
+        {% blocktrans with start_date=cg.date|date:"DATE_FORMAT" end_date=cg.end_date|date:"DATE_FORMAT" %}Dates: From <b>{{ start_date }}</b> to <b>{{ end_date }}</b> included{% endblocktrans %} ({% blocktrans count days=days %}1 day{% plural %}{{ days }} days{% endblocktrans %}).
+        {% endifequal %}
+        <br>
+    {% endif %}
+
+    {% if cg.description %}{% trans "Description"%}: {{ cg.description|linebreaksbr }}<br>{% endif %}
+    {% if cg.budget_code %}{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b><br>{% endif %}
+    {% if cg.mailman_address %}{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b><br>{% endif %}
+<p>
+
+{% block submitbar %}
+<div class="submit-row" id=submitbar>
+    <a class=button href="{{cg.get_absolute_url}}edit">{% trans "Edit" %}</a>
+</div>
+{% endblock %}
+
+</div>
+{% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}

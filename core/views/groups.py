@@ -485,6 +485,8 @@ class ContactGroupView(InGroupAcl, View):
     '''
     def get(self, request, *args, **kwargs):
         cg = self.contactgroup
+        if cg.perso_unavail:
+            return HttpResponseRedirect(cg.get_absolute_url() + 'summary')
         if cg.userperms & perms.SEE_MEMBERS:
             return HttpResponseRedirect(cg.get_absolute_url() + 'members/')
         if cg.userperms & perms.VIEW_NEWS:
@@ -493,7 +495,7 @@ class ContactGroupView(InGroupAcl, View):
             return HttpResponseRedirect(cg.get_absolute_url() + 'files/')
         if cg.userperms & perms.VIEW_MSGS:
             return HttpResponseRedirect(cg.get_absolute_url() + 'messages/')
-        raise PermissionDenied
+        return HttpResponseRedirect(cg.get_absolute_url() + 'summary')
 
 
 #######################################################################
@@ -502,7 +504,7 @@ class ContactGroupView(InGroupAcl, View):
 class GroupDetailView(InGroupAcl, DetailView):
     pk_url_kwarg = 'gid'
     model = ContactGroup
-    template_name = 'group_detail.html'
+    template_name = 'group_summary.html'
 
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.SEE_CG:
@@ -516,31 +518,26 @@ class GroupDetailView(InGroupAcl, DetailView):
     #     return msg
 
     def get_context_data(self, **kwargs):
-        # if self.object.group != self.contactgroup:
-        #     # attempt to read an object from another group
-        #     raise PermissionDenied
-        # if self.object.is_answer and self.object.read_date is None:
-        #     if self.contactgroup.userperms & perms.WRITE_MSGS:
-        #         self.object.read_date = now()
-        #         self.object.read_by = self.request.user
-        #         self.object.save()
-        #     else:
-        #         messages.add_message(
-        #             self.request, messages.WARNING,
-        #             _("You don't have the permission to mark that message as"
-        #               " read."))
         cg = self.contactgroup
+
         context = {}
+
         context['title'] = _(
-            'Details of group {groupname}').format(
-            groupname=cg)
+            'Summary of group {groupname}').format(
+            groupname=cg.name)
+
+        if cg.perso_unavail:
+            membership = ContactInGroup.objects.get(group_id=cg.id)
+            contact = membership.contact
+
+            context['contact'] = contact
+            context['contactlink'] = '/contacts/{}/'.format(contact.id)
+
+        context['days'] = (cg.end_date - cg.date).days + 1
+
         context['nav'] = cg.get_smart_navbar()
-        context['nav'].add_component(('messages', _('messages')))
-        # context['cig_url'] = (
-        #     self.contactgroup.get_absolute_url()
-        #     + 'members/'
-        #     + str(self.object.contact_id))
-        # context['active_submenu'] = 'messages'
+        context['nav'].add_component(('summary', _('summary')))
+        context['active_submenu'] = 'summary'
 
         context.update(kwargs)
         return super().get_context_data(**context)

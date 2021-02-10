@@ -1,34 +1,46 @@
 {% load i18n %}
 <div id=submenucontainer>
 {% spaceless %}
-{% if 'c' in cg_perms %}
-    <a href="{{cg.get_absolute_url}}members/">
-{% endif %}
-    <div class="submenuitem {% if active_submenu == "members" %}activesubmenuitem{% endif %}"{% if not 'c' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
-    {% if 'c' in cg_perms %}
-        {% blocktrans count counter=cg.member_count %}{{counter}} member{% plural %}{{counter}} members{% endblocktrans %}
-    {% else %}
-        {% trans "Members" %}
-    {% endif %}
+    <a href="{{cg.get_absolute_url}}summary">
+    <div class="submenuitem {% if active_submenu == "summary" %}activesubmenuitem{% endif %}">
+    {% trans "summary" %}
     </div>
-{% if 'c' in cg_perms %}
     </a>
+{% endspaceless %}
+
+{% spaceless %}
+{% if not cg.perso_unavail %}
+    {% if 'c' in cg_perms %}
+        <a href="{{cg.get_absolute_url}}members/">
+    {% endif %}
+        <div class="submenuitem {% if active_submenu == "members" %}activesubmenuitem{% endif %}"{% if not 'c' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+        {% if 'c' in cg_perms %}
+            {% blocktrans count counter=cg.member_count %}{{counter}} member{% plural %}{{counter}} members{% endblocktrans %}
+        {% else %}
+            {% trans "Members" %}
+        {% endif %}
+        </div>
+    {% if 'c' in cg_perms %}
+        </a>
+    {% endif %}
 {% endif %}
 {% endspaceless %}
 
 {% spaceless %}
-{% if 'n' in cg_perms %}
-    <a href="{{cg.get_absolute_url}}news/">
-{% endif %}
-    <div class="submenuitem {% if active_submenu == "news" %}activesubmenuitem{% endif %}"{% if not 'n' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+{% if not cg.perso_unavail %}
     {% if 'n' in cg_perms %}
-        {% blocktrans count counter=cg.news_count %}{{counter}} news{% plural %}{{counter}} news{% endblocktrans %}
-    {% else %}
-        {% trans "News" %}
+        <a href="{{cg.get_absolute_url}}news/">
     {% endif %}
-    </div>
-{% if 'n' in cg_perms %}
-    </a>
+        <div class="submenuitem {% if active_submenu == "news" %}activesubmenuitem{% endif %}"{% if not 'n' in cg_perms %} title="{% trans "You don't have permission to browse that item" %}"{% endif %}>
+        {% if 'n' in cg_perms %}
+            {% blocktrans count counter=cg.news_count %}{{counter}} news{% plural %}{{counter}} news{% endblocktrans %}
+        {% else %}
+            {% trans "News" %}
+        {% endif %}
+        </div>
+    {% if 'n' in cg_perms %}
+        </a>
+    {% endif %}
 {% endif %}
 {% endspaceless %}
 
