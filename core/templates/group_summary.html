@@ -23,7 +23,7 @@
         {% ifequal cg.date cg.end_date %}
         {% trans "Date" %}: <b>{{ cg.date|date:"DATE_FORMAT" }}</b>
         {% else %}
-        {% blocktrans with start_date=cg.date|date:"DATE_FORMAT" end_date=cg.end_date|date:"DATE_FORMAT" %}Dates: From <b>{{ start_date }}</b> to <b>{{ end_date }}</b> included{% endblocktrans %} ({% blocktrans count days=days %}1 day{% plural %}{{ days }} days{% endblocktrans %}).
+        {% blocktrans with start_date=cg.date|date:"DATE_FORMAT" end_date=cg.end_date|date:"DATE_FORMAT" %}Dates: From <b>{{ start_date }}</b> to <b>{{ end_date }}</b> included{% endblocktrans %} ({% blocktrans count days=cg.get_duration %}1 day{% plural %}{{ days }} days{% endblocktrans %}).
         {% endifequal %}
         <br>
     {% endif %}

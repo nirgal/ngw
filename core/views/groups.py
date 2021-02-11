@@ -533,8 +533,6 @@ class GroupDetailView(InGroupAcl, DetailView):
             context['contact'] = contact
             context['contactlink'] = '/contacts/{}/'.format(contact.id)
 
-        context['days'] = (cg.end_date - cg.date).days + 1
-
         context['nav'] = cg.get_smart_navbar()
         context['nav'].add_component(('summary', _('summary')))
         context['active_submenu'] = 'summary'

@@ -970,6 +970,16 @@ class ContactGroup(NgwModel):
     description_not_too_long.short_description = ugettext_lazy('Description')
     description_not_too_long.admin_order_field = 'description'
 
+    def get_duration(self):
+        '''
+        returns the number of days of the event.
+        None is this is not an event.
+        '''
+        if self.date:
+            return (self.end_date - self.date).days + 1
+        else:
+            return None
+
     def mailman_request_address(self):
         ''' Adds -request before the @ of the address '''
         if self.mailman_address:
