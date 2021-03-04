@@ -2636,7 +2636,7 @@ class GroupInGroup(NgwModel):
             related_name='direct_gig_subgroups')
     subgroup = models.ForeignKey(
             ContactGroup,
-            on_delete=models.PROTECT,  # TODO
+            on_delete=models.CASCADE,
             related_name='direct_gig_supergroups')
 
     class Meta:
