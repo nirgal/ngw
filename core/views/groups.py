@@ -958,11 +958,142 @@ class ContactGroupForm(forms.ModelForm):
         return cg
 
 
+class PersonalUnavailForm(forms.ModelForm):
+    class Meta:
+        model = ContactGroup
+        fields = [
+            'name',
+            'date', 'end_date',
+            'description',
+            ]
+        widgets = {
+            'date': AdminDateWidget,
+            'end_date': AdminDateWidget,
+        }
+        # Note that fieldsets looks unimplemented for simple FormMixin
+        # They are admin-specific
+        # fieldsets = [
+        #         ('TEST', {
+        #             'fields': [
+        #                 'name',
+        #                 'date', 'end_date',
+        #                 ]}),
+        #         ('Permissions', {
+        #             'fields': [
+        #                 'description',
+        #                 ]}),
+        #         ]
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        self.user = user
+        self.request = kwargs.pop('request')
+        instance = kwargs.get('instance', None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['date'].required = True
+        self.fields['end_date'].required = True
+
+        # Only show visible groups
+        visible_groups_choices = [
+            (g.id, str(g))
+            for g in ContactGroup.objects.with_user_perms(
+                user.id, perms.SEE_CG)]
+
+        # Add fields for kind of permissions
+        event_default_perms = Config.get_event_default_perms()
+
+        for flag in 'oveEcCfFnNuUxX':
+            field_name = 'admin_{}_groups'.format(flag)
+            if instance:
+                intflag = perms.FLAGTOINT[flag]
+                field_initial = instance.get_visible_mananger_groups_ids(
+                    user.id, intflag)
+            else:
+                if flag == 'o':
+                    default_group_id = user.get_fieldvalue_by_id(
+                        FIELD_DEFAULT_GROUP)
+                    assert default_group_id, \
+                        "User doesn't have a default group"
+                    field_initial = int(default_group_id),
+                else:
+                    field_initial = event_default_perms.get(flag, None)
+            self.fields[field_name] = forms.MultipleChoiceField(
+                label=perms.FLAGGROUPLABEL[flag],
+                required=False,
+                help_text=perms.FLAGGROUPHELP[flag],
+                widget=FilteredSelectMultiple(_('groups'), False),
+                choices=visible_groups_choices,
+                initial=field_initial)
+
+    def clean(self):
+        data = super().clean()
+        data['busy'] = True
+        data['perso_unavail'] = True
+        return data
+
+    def save(self, commit=True):
+        is_creation = self.instance.pk is None
+        data = self.cleaned_data
+
+        # Save the base fields
+        cg = super().save(commit)
+
+        # Super group: Only "Contacts"
+        if is_creation:
+            GroupInGroup(father_id=GROUP_EVERYBODY, subgroup_id=cg.id).save()
+
+        # Update the administrative groups
+        for flag in 'oveEcCfFnNuUxX':
+            field_name = 'admin_{}_groups'.format(flag)
+            intflag = perms.FLAGTOINT[flag]
+            old_groups_ids = set(
+                cg.get_visible_mananger_groups_ids(self.user.id, intflag))
+            new_groups_ids = set([int(ogid) for ogid in data[field_name]])
+            # print('flag', flag, 'old_groups_ids', old_groups_ids)
+            # print('flag', flag, 'new_groups_ids', new_groups_ids)
+            groups_added = new_groups_ids - old_groups_ids
+            groups_removed = old_groups_ids - new_groups_ids
+            print('flag', flag, 'groups_added=', groups_added)
+            print('flag', flag, 'groups_removed=', groups_removed)
+            if (not is_creation
+               and (groups_added or groups_removed)
+               and not perms.c_operatorof_cg(self.user.id, cg.id)):
+                # Only operators can change permissions
+                raise PermissionDenied
+            for ogid in groups_added:
+                try:
+                    gmg = GroupManageGroup.objects.get(
+                        father_id=ogid, subgroup_id=cg.id)
+                except GroupManageGroup.DoesNotExist:
+                    gmg = GroupManageGroup(
+                        father_id=ogid, subgroup_id=cg.id, flags=0)
+                gmg.flags |= intflag
+                gmg.save()
+            for ogid in groups_removed:
+                gmg = GroupManageGroup.objects.get(father_id=ogid,
+                                                   subgroup_id=cg.id)
+                gmg.flags &= ~ intflag
+                if gmg.flags:
+                    gmg.save()
+                else:
+                    gmg.delete()
+
+        return cg
+
+
 class GroupEditMixin(ModelFormMixin):
     template_name = 'edit.html'
-    form_class = ContactGroupForm
     model = ContactGroup
     pk_url_kwarg = 'gid'
+
+    def get_form_class(self):
+        if self.object:
+            cg = self.object
+            if cg.perso_unavail:
+                print("cg.perso_unavail")
+                return PersonalUnavailForm
+        return ContactGroupForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
