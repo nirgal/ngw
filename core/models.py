@@ -847,19 +847,29 @@ class ContactGroup(NgwModel):
         return '<ContactGroup {} {}>'.format(self.id, self.name)
 
     def get_smart_navbar(self):
-        nav = Navbar()
-        if self.date:
-            nav.add_component(('events', _('events')))
+        if self.perso_unavail:
+            cig = ContactInGroup.objects.get(group_id=self.id)
+            contact = cig.contact
+            nav = Navbar(Contact.get_class_navcomponent())
+            nav.add_component(contact.get_navcomponent())
+            nav.add_component(('unavail', _('unavailabilities')))
         else:
-            nav.add_component(('contactgroups', _('contact groups')))
+            nav = Navbar()
+            if self.date:
+                nav.add_component(('events', _('events')))
+            else:
+                nav.add_component(('contactgroups', _('contact groups')))
         nav.add_component((str(self.id), self.name))
         return nav
 
     def get_absolute_url(self):
+        if self.perso_unavail:
+            cig = ContactInGroup.objects.get(group_id=self.id)
+            return '/contacts/{}/unavail/{}/'.format(cig.contact_id, self.id)
         if self.date:
-            return '/events/' + str(self.id) + '/'
+            return '/events/{}/'.format(self.id)
         else:
-            return '/contactgroups/' + str(self.id) + '/'
+            return '/contactgroups/{}/'.format(self.id)
 
     def get_direct_supergroups_ids(self):
         """

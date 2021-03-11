@@ -758,7 +758,8 @@ class ContactGroupForm(forms.ModelForm):
         model = ContactGroup
         fields = [
             'name', 'description', 'date', 'end_date', 'busy',
-            'perso_unavail', 'budget_code',
+            # 'perso_unavail',
+            'budget_code',
             # 'sticky',
             # 'virtual',
             'field_group', 'mailman_address']
@@ -783,6 +784,9 @@ class ContactGroupForm(forms.ModelForm):
         self.user = user
         self.request = kwargs.pop('request')
         instance = kwargs.get('instance', None)
+        unavail_cid = kwargs.pop('unavail_cid', None)
+        assert unavail_cid is None, \
+            'unavail_cid is not empty for regular ContactGroupForm'
         super().__init__(*args, **kwargs)
 
         # Only show visible groups
@@ -989,6 +993,8 @@ class PersonalUnavailForm(forms.ModelForm):
         self.user = user
         self.request = kwargs.pop('request')
         instance = kwargs.get('instance', None)
+        unavail_cid = kwargs.pop('unavail_cid', None)
+        self.contact_id = unavail_cid
         super().__init__(*args, **kwargs)
 
         self.fields['date'].required = True
@@ -1039,9 +1045,19 @@ class PersonalUnavailForm(forms.ModelForm):
         # Save the base fields
         cg = super().save(commit)
 
-        # Super group: Only "Contacts"
         if is_creation:
+            cg.busy = True
+            cg.perso_unavail = True
+            cg.save()
+
+            # Super group: Only "Contacts"
             GroupInGroup(father_id=GROUP_EVERYBODY, subgroup_id=cg.id).save()
+            # Add the one member:
+            ContactInGroup(
+                contact_id=self.contact_id,
+                group_id=cg.id,
+                flags=perms.MEMBER
+                ).save()
 
         # Update the administrative groups
         for flag in 'oveEcCfFnNuUxX':
@@ -1091,14 +1107,17 @@ class GroupEditMixin(ModelFormMixin):
         if self.object:
             cg = self.object
             if cg.perso_unavail:
-                print("cg.perso_unavail")
                 return PersonalUnavailForm
+        if getattr(self.request, 'unavail_cid', None):
+            return PersonalUnavailForm
         return ContactGroupForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         kwargs['request'] = self.request
+        # For personnal unavailabilities:
+        kwargs['unavail_cid'] = self.request.unavail_cid
         return kwargs
 
     def form_valid(self, form):
@@ -1160,9 +1179,22 @@ class GroupEditView(InGroupAcl, GroupEditMixin, UpdateView):
         if not group.userperms & perms.CHANGE_CG:
             raise PermissionDenied
 
+    def get(self, request, *args, **kwargs):
+        contact_id = kwargs.get('cid', None)  # personnal unavailabilities
+        request.unavail_cid = contact_id
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        contact_id = kwargs.get('cid', None)  # personnal unavailabilities
+        request.unavail_cid = contact_id
+        return super().post(request, *args, **kwargs)
+
 
 class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
     def get(self, request, *args, **kwargs):
+        contact_id = kwargs.get('cid', None)  # personnal unavailabilities
+        request.unavail_cid = contact_id
+
         default_group_id = request.user.get_fieldvalue_by_id(
             FIELD_DEFAULT_GROUP)
         if not default_group_id:
@@ -1186,6 +1218,12 @@ class GroupCreateView(NgwUserAcl, GroupEditMixin, CreateView):
                 request.user.get_absolute_url()+'default_group')
 
         return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        contact_id = kwargs.get('cid', None)  # personnal unavailabilities
+        request.unavail_cid = contact_id
+
+        return super().post(request, *args, **kwargs)
 
 
 #######################################################################
@@ -1503,7 +1541,7 @@ class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
 
     def get_context_data(self, **kwargs):
         contact = self.object.contact
-        print(self.contactgroup.get_smart_navbar())
+        # print(self.contactgroup.get_smart_navbar())
         context = {}
         context['nav'] = self.contactgroup.get_smart_navbar() \
             .add_component(('members', _('members'))) \

@@ -163,6 +163,10 @@ urlpatterns = [
     url(r'^contacts/(?P<cid>\d+)/calendar/query$',
         CalendarQueryView.as_view()),
 
+    url(r'^contacts/(?P<cid>\d+)/unavail/$',
+        RedirectView.as_view(url='..', permanent=True)),
+    url(r'^contacts/(?P<cid>\d+)/unavail/', include(groups_urlpatterns)),
+
     url(r'^contactgroups/$',
         ContactGroupListView.as_view(), name='group_list'),
     url(r'^contactgroups/', include(groups_urlpatterns)),

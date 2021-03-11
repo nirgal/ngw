@@ -146,7 +146,6 @@ var imagefile_size_big = '500px';
 
     <h2>{% trans "Personnal unavailabilities" %}</h2>
     {% for g in contact.get_directgroups_member|group_is_perso_unavail|group_visible_by:request.user.id %}
-        {% if forloop.first %}{% trans "Member of groups" %}:<br>{% endif %}
         &nbsp;&nbsp;&nbsp;{{ g|group_with_link }}
         {% if not g.date %}
             {% for sg in g.get_supergroups|group_visible_by:request.user.id %}
@@ -165,6 +164,8 @@ var imagefile_size_big = '500px';
   <a class="button default" href="edit">{% trans "Edit" %}</a>
   
   <a class=button href="/contacts/add_to_group?ids={{contact.id}}">{% trans "Add to a group" %}</a>
+  
+  <a class=button href="unavail/add">{% trans "New unavailability" %}</a>
   
   {% if user.is_admin %}
   <a class=button href="vcard">{% trans "VCard" %}</a>
