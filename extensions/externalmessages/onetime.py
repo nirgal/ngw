@@ -307,8 +307,10 @@ def read_answers(msg):
                          '-md', 'md5'],
                         input=response_text)
                     response_text = force_text(response_text)
+                    logger.error("Message decrypted with empty passphrase.")
                 except subprocess.CalledProcessError:
                     logger.error("Message decryption failed.")
+                    response_text = force_text(response_text)
 
         # Hack into headers: Add the "From"
         mailmessage = email.message_from_string(response_text,
