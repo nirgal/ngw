@@ -12,11 +12,11 @@ from ngw.core.views.contacts import (ContactCalendarView,
                                      ContactCheckAvailableView,
                                      ContactCreateView, ContactDeleteView,
                                      ContactDetailView, ContactEditView,
-                                     ContactListView, ContactVcardView,
-                                     DefaultGroupView, FilterAddView,
-                                     FilterDeleteView, FilterEditView,
-                                     FilterListView, GroupAddManyView,
-                                     PasswordView)
+                                     ContactListView, ContactUnavailDetailView,
+                                     ContactVcardView, DefaultGroupView,
+                                     FilterAddView, FilterDeleteView,
+                                     FilterEditView, FilterListView,
+                                     GroupAddManyView, PasswordView)
 from ngw.core.views.contactsearch import (ContactSearchAutocompleteView,
                                           ContactSearchColumnFiltersView,
                                           ContactSearchColumnsView,
@@ -162,6 +162,12 @@ urlpatterns = [
     url(r'^contacts/(?P<cid>\d+)/calendar$', ContactCalendarView.as_view()),
     url(r'^contacts/(?P<cid>\d+)/calendar/query$',
         CalendarQueryView.as_view()),
+
+    url(r'^contacts/(?P<cid>\d+)/unavail_detail$',
+        ContactUnavailDetailView.as_view()),
+    url(r'^contacts/(?P<cid>\d+)/unavail_detail/'
+        r'(?P<dfrom>\d{4}-\d{2}-\d{2})/(?P<dto>\d{4}-\d{2}-\d{2})$',
+        ContactUnavailDetailView.as_view()),
 
     url(r'^contacts/(?P<cid>\d+)/unavail/$',
         RedirectView.as_view(url='..', permanent=True)),

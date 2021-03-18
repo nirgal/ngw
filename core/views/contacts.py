@@ -3,7 +3,7 @@ Contact managing views
 '''
 
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django import forms
 from django.contrib import messages
@@ -12,6 +12,7 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth import password_validation
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import UploadedFile
+from django.db.models import Q
 from django.db.models.query import RawQuerySet, sql
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -997,6 +998,7 @@ class ContactCheckAvailableView(NgwUserAcl, View):
 
     get = post
 
+
 #######################################################################
 #
 # Contact details
@@ -1743,3 +1745,60 @@ class ContactCalendarView(NgwUserAcl, TemplateView):
         context['contactid'] = cid
         context.update(kwargs)
         return super().get_context_data(**context)
+
+
+#######################################################################
+#
+# Contact unavail calendar: json
+#
+#######################################################################
+
+class ContactUnavailDetailView(NgwUserAcl, View):
+    def get(self, request, cid, dfrom=None, dto=None):
+
+        contact = Contact.objects.get(pk=cid)
+        if dfrom is not None:
+            dfrom = datetime.strptime(dfrom, '%Y-%m-%d')
+        else:
+            dfrom = date.today()
+        if dto is not None:
+            dto = datetime.strptime(dto, '%Y-%m-%d')
+        else:
+            dto = date.today()
+
+        # Look for "busy" events that contact is member of
+        # even those that are secrets
+        # Add permissions columns for the requester
+        events = (
+            ContactGroup.objects
+            .with_user_perms(
+                request.user.id,
+                wanted_flags=None,
+                add_column=True)
+            .with_member(contact.id)
+            .filter(busy=True)
+            .filter(
+                # start within boundaries:
+                Q(date__gte=dfrom, date__lte=dto)
+                # or end within boundaries:
+                | Q(end_date__gte=dfrom, end_date__lte=dto)
+                # or start before and end after (this is a long event):
+                | Q(date__lte=dfrom, end_date__gte=dto))
+            )
+
+        visible_events = []
+        invisible_events = []
+        for e in events:
+            if e.userperms & perms.SEE_MEMBERS:
+                visible_events.append(e)
+            else:
+                invisible_events.append(e)
+        result = {
+                'contact': contact.id,
+                'from': dfrom.strftime('%Y-%m-%d'),
+                'to': dto.strftime('%Y-%m-%d'),
+                'events': [str(e) for e in visible_events],
+                'invisible_events': len(invisible_events) > 0,
+                }
+        jsonresponse = json.dumps(result)
+        return HttpResponse(jsonresponse, content_type='application/json')
