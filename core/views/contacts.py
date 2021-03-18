@@ -746,8 +746,10 @@ class BaseContactListView(NgwListView):
                 hint = _('Busy elsewhere')
             else:
                 hint = _('Busy')
-            flags += ' <span class=iconbusy title="{}"></span>'.format(
-                    html.escape(hint))
+            flags += ' <span class=iconbusy title="{}" data-contactid="{}">' \
+                '</span>'.format(
+                    html.escape(hint),
+                    contact.id)
 
         return html.format_html(
                 mark_safe('<a href="{id}/"><b>{name}</a></b> {flags}'),
@@ -1786,19 +1788,24 @@ class ContactUnavailDetailView(NgwUserAcl, View):
                 | Q(date__lte=dfrom, end_date__gte=dto))
             )
 
-        visible_events = []
-        invisible_events = []
+        visible_events = {}
+        invisible_events = False
         for e in events:
             if e.userperms & perms.SEE_MEMBERS:
-                visible_events.append(e)
+                visible_events[e.id] = {
+                    'name': e.name,
+                    'date': e.date.strftime('%Y-%m-%d'),
+                    'end_date': e.end_date.strftime('%Y-%m-%d'),
+                    'description': e.description,
+                }
             else:
-                invisible_events.append(e)
+                invisible_events = True
         result = {
                 'contact': contact.id,
                 'from': dfrom.strftime('%Y-%m-%d'),
                 'to': dto.strftime('%Y-%m-%d'),
-                'events': [str(e) for e in visible_events],
-                'invisible_events': len(invisible_events) > 0,
+                'events': visible_events,
+                'invisible_events': invisible_events,
                 }
         jsonresponse = json.dumps(result)
         return HttpResponse(jsonresponse, content_type='application/json')
