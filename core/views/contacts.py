@@ -1793,10 +1793,11 @@ class ContactUnavailDetailView(NgwUserAcl, View):
         for e in events:
             if e.userperms & perms.SEE_MEMBERS:
                 visible_events[e.id] = {
-                    'name': e.name,
+                    'name': html.escape(e.name),
+                    'url': e.get_absolute_url(),
                     'date': e.date.strftime('%Y-%m-%d'),
                     'end_date': e.end_date.strftime('%Y-%m-%d'),
-                    'description': e.description,
+                    'description': html.escape(e.description),
                 }
             else:
                 invisible_events = True

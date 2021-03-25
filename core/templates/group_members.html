@@ -24,54 +24,16 @@
 
 
 {% block presubmitbar %}
-{% trans "Sorry, personnal calendar can't be loaded. Please try again later." as busy_loading_error %}
-{% trans "Some events you don't have access to" as busy_forbidden_event %}
-{% trans "And dome events you don't have access to" as busy_and_forbidden_event %}
 <script>
-    const busy_gid = "{{ cg.id }}";
-    {% if cg.date %}
-    const busy_start = "{{ cg.date|date:"Y-m-d" }}";
-    const busy_end = "{{ cg.end_date|date:"Y-m-d" }}";
-    const busy_url_extra = '/' + busy_start + '/' + busy_end;
-    {% else %}
-    const busy_url_extra = '';
-    {% endif %}
-
-    for (let e of document.getElementsByClassName('iconbusy')) {
-        if (!('contactid' in e.dataset))
-            continue;
-        let contactid = e.dataset['contactid'];
-        e.addEventListener('click', function() {
-
-            let xhr = new XMLHttpRequest();
-            let url = '/contacts/' + contactid + '/unavail_detail' + busy_url_extra;
-            xhr.open('GET', url);
-            xhr.responseType = 'json';
-            xhr.onload = function() {
-
-                if (xhr.status != 200) {
-                    loading_node.innerHTML = '{{ busy_loading_error|escapejs }}';
-                    return;
-                }
-
-                let text = '';
-                for (let gid in xhr.response.events) {
-                    if (gid == busy_gid)
-                        continue;
-                    let e = xhr.response.events[gid];
-                    text += e.name+' ('+e.description+')\n';
-                }
-                if (xhr.response.invisible_events) {
-                    if (text)
-                        text += '{{ busy_and_forbidden_event|escapejs }}';
-                    else
-                        text += '{{ busy_forbidden_event|escapejs }}';
-                }
-                alert(text);
-            }
-            xhr.send();
-        });
-    }
+    "use strict";
+    icon_busy_detail(
+        "{{ cg.id }}",
+        {% if cg.date %}
+	    '/{{ cg.date|date:"Y-m-d" }}/{{ cg.end_date|date:"Y-m-d" }}',
+        {% else %}
+	    '/',
+        {% endif %}
+	);
 </script>
     {{ block.super }}
     {% ifnotequal cg.id 1 %}{# FIXME #}

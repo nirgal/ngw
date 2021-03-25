@@ -165,7 +165,7 @@ var imagefile_size_big = '500px';
   
   <a class=button href="/contacts/add_to_group?ids={{contact.id}}">{% trans "Add to a group" %}</a>
   
-  <a class=button href="unavail/add">{% trans "New unavailability" %}</a>
+  <a class=button href="/contacts/{{contact.id}}/unavail/add">{% trans "New unavailability" %}</a>
   
   {% if user.is_admin %}
   <a class=button href="vcard">{% trans "VCard" %}</a>

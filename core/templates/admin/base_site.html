@@ -37,6 +37,13 @@
 {% block blockbots %}
 {{ block.super }}
 {% include 'session_security/all.html' %}
+<div id="ngw_modal_container" class="session_security" style="display:none" role="dialog">
+    <div class="ngw_modal_overlay"></div>
+    <div class="ngw_modal" role="document" tabindex="-1" id="ngw_modal_message">
+        <h3>{% trans 'Your session is about to expire' %}</h3>
+        <p>{% trans 'Click or type to extend your session.' %}</p>
+    </div>
+</div>
 {% endblock %}
 
 {% block branding %}

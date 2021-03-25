@@ -105,3 +105,59 @@ function toggle_imagefield_sizes(node) {
 	else
 		style.width = style.height = imagefile_size_big;
 }
+
+//---------------------------
+// Modal messages:
+
+function ngw_modal(html) {
+    document.getElementById('ngw_modal_container').style.display='block';
+    html += "<h3><a onclick='ngw_modal_close();'>"+gettext("Close")+"</a></h3>";
+    document.getElementById('ngw_modal_message').innerHTML = html;
+}
+function ngw_modal_close() {
+    document.getElementById('ngw_modal_container').style.display='none';
+}
+
+function icon_busy_detail(busy_gid, busy_url_extra) {
+    for (let e of document.getElementsByClassName('iconbusy')) {
+        if (!('contactid' in e.dataset))
+            continue;
+        let contactid = e.dataset['contactid'];
+        e.addEventListener('click', function() {
+
+            let xhr = new XMLHttpRequest();
+            let url = '/contacts/' + contactid + '/unavail_detail' + busy_url_extra;
+            xhr.open('GET', url);
+            xhr.responseType = 'json';
+            xhr.onload = function() {
+
+                if (xhr.status != 200) {
+                    ngw_modal(gettext("Sorry, personnal calendar can't be loaded. Please try again later."));
+                    return;
+                }
+
+                let text = '<h3>' + gettext("That contact is unavailable:") + '</h3>';
+                for (let gid in xhr.response.events) {
+                    if (gid == busy_gid)
+                        continue;
+                    let e = xhr.response.events[gid];
+                    text += '<li><a href="' + e.url + '">' + e.name + '</a>';
+                    if (e.description) {
+                        text += ' (';
+                        text += e.description;
+                        text += ')<br>';
+                    }
+                }
+                if (xhr.response.invisible_events) {
+                    if (text)
+                        text += gettext("And some events you don't have access to.");
+                    else
+                        text += gettext("Some events you don't have access to.");
+                }
+                ngw_modal(text);
+            }
+            xhr.send();
+            ngw_modal(gettext("Loading personnal calendar..."));
+        });
+    }
+}
