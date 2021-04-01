@@ -111,7 +111,7 @@ function toggle_imagefield_sizes(node) {
 
 function ngw_modal(html) {
     document.getElementById('ngw_modal_container').style.display='block';
-    html += "<h3><a onclick='ngw_modal_close();'>"+gettext("Close")+"</a></h3>";
+    html += "<h3><a onclick='ngw_modal_close();' class=button>"+gettext("Close")+"</a></h3>";
     document.getElementById('ngw_modal_message').innerHTML = html;
 }
 function ngw_modal_close() {
@@ -136,7 +136,8 @@ function icon_busy_detail(busy_gid, busy_url_extra) {
                     return;
                 }
 
-                let text = '<h3>' + gettext("That contact is unavailable:") + '</h3>';
+                let text = '<h2>' + gettext("That contact is unavailable") + '</h2>';
+                text += '<ul style="text-align:left;">';
                 for (let gid in xhr.response.events) {
                     if (gid == busy_gid)
                         continue;
@@ -154,6 +155,7 @@ function icon_busy_detail(busy_gid, busy_url_extra) {
                     else
                         text += gettext("Some events you don't have access to.");
                 }
+                text += '</ul>';
                 ngw_modal(text);
             }
             xhr.send();

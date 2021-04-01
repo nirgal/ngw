@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-25 19:44+0000\n"
-"PO-Revision-Date: 2021-03-25 20:44+0100\n"
+"POT-Creation-Date: 2021-04-01 08:55+0000\n"
+"PO-Revision-Date: 2021-04-01 10:55+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -32,18 +32,19 @@ msgstr ""
 "ultérieurement."
 
 #: static/ngw/ngw.js:139
-msgid "That contact is unavailable:"
-msgstr "Ce contact est indisponible:"
+#| msgid "That contact is unavailable:"
+msgid "That contact is unavailable"
+msgstr "Ce contact est indisponible"
 
-#: static/ngw/ngw.js:153
+#: static/ngw/ngw.js:154
 msgid "And some events you don't have access to."
 msgstr "Et des événements auxquels vous n'avez pas accès."
 
-#: static/ngw/ngw.js:155
+#: static/ngw/ngw.js:156
 msgid "Some events you don't have access to."
 msgstr "Des événements auxquels vous n'avez pas accès."
 
-#: static/ngw/ngw.js:160
+#: static/ngw/ngw.js:162
 msgid "Loading personnal calendar..."
 msgstr "Chargement du calendrier personnel..."
 

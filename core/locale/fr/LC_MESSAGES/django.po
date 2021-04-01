@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-25 19:44+0000\n"
-"PO-Revision-Date: 2021-03-11 09:53+0100\n"
+"POT-Creation-Date: 2021-04-01 08:55+0000\n"
+"PO-Revision-Date: 2021-04-01 10:57+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -847,11 +847,11 @@ msgstr "Désolé. Une erreur est survenue sur le serveur."
 
 #: templates/admin/base_site.html:43
 msgid "Your session is about to expire"
-msgstr ""
+msgstr "Votre session est sur le point d'expirer"
 
 #: templates/admin/base_site.html:44
 msgid "Click or type to extend your session."
-msgstr ""
+msgstr "Cliquez ou frappez une touche pour prolonger votre session."
 
 #: templates/admin/base_site.html:54
 msgid "Profile"
