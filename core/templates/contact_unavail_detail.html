@@ -1,0 +1,37 @@
+{% load i18n %}
+
+<h2>{% trans "That contact is unavailable" %}</h2>
+{% for group in visible_events.values %}
+    {% if forloop.first %}
+    <ul style="text-align:left;">
+    {% endif %}
+    <li>
+    <a href="{{ group.get_absolute_url }}">{{ group.name }}</a>
+    
+    {% if group.date %}
+        <br>
+        {% ifequal group.date group.end_date %}
+            {% trans "Date" %}: <b>{{ group.date|date:"DATE_FORMAT" }}</b>
+        {% else %}
+        {% blocktrans with start_date=group.date|date:"DATE_FORMAT" end_date=group.end_date|date:"DATE_FORMAT" %}Dates: From <b>{{ start_date }}</b> to <b>{{ end_date }}</b> included{% endblocktrans %} ({% blocktrans count days=group.get_duration %}1 day{% plural %}{{ days }} days{% endblocktrans %}).
+            {% endifequal %}
+    {% endif %}
+    
+    {% if group.description %}
+        <br>
+        {{ group.description }}
+    {% endif %}
+
+    {% if forloop.last %}
+    </ul>
+    {% endif %}
+{% endfor %}
+
+{% if invisible_events %}
+   {% if visible_events %}
+      {% trans "And some events you don't have access to." %}
+   {% else %}
+      {% trans "Events you don't have access to." %}
+   {% endif %}
+{% endif %}
+{# vim: set et ts=4 ft=htmldjango: #}

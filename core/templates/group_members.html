@@ -26,14 +26,7 @@
 {% block presubmitbar %}
 <script>
     "use strict";
-    icon_busy_detail(
-        "{{ cg.id }}",
-        {% if cg.date %}
-	    '/{{ cg.date|date:"Y-m-d" }}/{{ cg.end_date|date:"Y-m-d" }}',
-        {% else %}
-	    '',
-        {% endif %}
-	);
+    icon_busy_detail2();
 </script>
     {{ block.super }}
     {% ifnotequal cg.id 1 %}{# FIXME #}

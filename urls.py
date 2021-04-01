@@ -168,6 +168,9 @@ urlpatterns = [
     url(r'^contacts/(?P<cid>\d+)/unavail_detail/'
         r'(?P<dfrom>\d{4}-\d{2}-\d{2})/(?P<dto>\d{4}-\d{2}-\d{2})$',
         ContactUnavailDetailView.as_view()),
+    url(r'^contacts/(?P<cid>\d+)/unavail_detail/'
+        r'(?P<gid>\d+)$',
+        ContactUnavailDetailView.as_view()),
 
     url(r'^contacts/(?P<cid>\d+)/unavail/$',
         RedirectView.as_view(url='..', permanent=True)),

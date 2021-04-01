@@ -62,6 +62,9 @@ function check_availability(gid, update_checkboxes) {
                     li.classList.add('busy');
                 else
                     li.classList.remove('busy');
+
+                let iconbusy = li.querySelector('.iconbusy');
+                iconbusy.dataset['groupid'] = gid;
             }
             loading_node.innerHTML = '';
         }
@@ -92,11 +95,14 @@ window.addEventListener('load', function() {
     for (let box of document.querySelectorAll('.contactchoices input[type="checkbox"]')) {
         let busyIcon = document.createElement("span");
         busyIcon.className = 'iconbusy';
-        box.parentNode.appendChild(busyIcon);
+        busyIcon.title = gettext("That contact is busy. Click here for details.");
+        busyIcon.dataset['contactid'] = box.value;
+        box.parentNode.parentNode.appendChild(busyIcon);
     }
 
     check_availability(groupSelect.value, false);
     groupSelect.addEventListener('change', group_changed);
+    icon_busy_detail2();
 });
 
 </script>

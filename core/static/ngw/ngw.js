@@ -118,15 +118,18 @@ function ngw_modal_close() {
     document.getElementById('ngw_modal_container').style.display='none';
 }
 
-function icon_busy_detail(busy_gid, busy_url_extra) {
+function icon_busy_detail2() {
     for (let e of document.getElementsByClassName('iconbusy')) {
-        if (!('contactid' in e.dataset))
-            continue;
-        let contactid = e.dataset['contactid'];
-        e.addEventListener('click', function() {
+        e.addEventListener('click', function(evt) {
+	    if (!('contactid' in e.dataset) || !('groupid' in e.dataset)) {
+		console.log('No data in icon_busy_detail2 handler')
+		return;
+            }
 
+            let contactid = e.dataset['contactid'];
+	    let groupid = e.dataset['groupid'];
             let xhr = new XMLHttpRequest();
-            let url = '/contacts/' + contactid + '/unavail_detail' + busy_url_extra;
+            let url = '/contacts/' + contactid + '/unavail_detail/' + groupid;
             xhr.open('GET', url);
             xhr.responseType = 'json';
             xhr.onload = function() {
@@ -136,27 +139,7 @@ function icon_busy_detail(busy_gid, busy_url_extra) {
                     return;
                 }
 
-                let text = '<h2>' + gettext("That contact is unavailable") + '</h2>';
-                text += '<ul style="text-align:left;">';
-                for (let gid in xhr.response.events) {
-                    if (gid == busy_gid)
-                        continue;
-                    let e = xhr.response.events[gid];
-                    text += '<li><a href="' + e.url + '">' + e.name + '</a>';
-                    if (e.description) {
-                        text += ' (';
-                        text += e.description;
-                        text += ')<br>';
-                    }
-                }
-                if (xhr.response.invisible_events) {
-                    if (text)
-                        text += gettext("And some events you don't have access to.");
-                    else
-                        text += gettext("Some events you don't have access to.");
-                }
-                text += '</ul>';
-                ngw_modal(text);
+                ngw_modal(xhr.response.result);
             }
             xhr.send();
             ngw_modal(gettext("Loading personnal calendar..."));

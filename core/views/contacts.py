@@ -742,14 +742,13 @@ class BaseContactListView(NgwListView):
 
         busy = getattr(contact, 'busy', None)
         if busy is not None and busy & perms.MEMBER:
-            if current_cg is not None and current_cg.date:
-                hint = _('Busy elsewhere')
-            else:
-                hint = _('Busy')
-            flags += ' <span class=iconbusy title="{}" data-contactid="{}">' \
+            hint = _('That contact is busy. Click here for details.')
+            flags += ' <span class=iconbusy title="{}" ' \
+                'data-contactid="{}" data-groupid={}>' \
                 '</span>'.format(
                     html.escape(hint),
-                    contact.id)
+                    contact.id,
+                    current_cg.id)
 
         return html.format_html(
                 mark_safe('<a href="{id}/"><b>{name}</a></b> {flags}'),
@@ -1756,17 +1755,28 @@ class ContactCalendarView(NgwUserAcl, TemplateView):
 #######################################################################
 
 class ContactUnavailDetailView(NgwUserAcl, View):
-    def get(self, request, cid, dfrom=None, dto=None):
+    def get(self, request, cid, dfrom=None, dto=None, gid=None):
 
         contact = Contact.objects.get(pk=cid)
-        if dfrom is not None:
-            dfrom = datetime.strptime(dfrom, '%Y-%m-%d')
+        if gid is not None:
+            gid = int(gid)
+            assert dfrom is None and dto is None, \
+                "dfrom+dto and gid parameters are mutualy exclusive"
+            group = ContactGroup.objects.get(pk=gid)
+            user = self.request.user
+            if not perms.c_can_see_cg(user.id, group.id):
+                raise PermissionDenied
+            dfrom = group.date
+            dto = group.end_date
         else:
-            dfrom = date.today()
-        if dto is not None:
-            dto = datetime.strptime(dto, '%Y-%m-%d')
-        else:
-            dto = date.today()
+            if dfrom is not None:
+                dfrom = datetime.strptime(dfrom, '%Y-%m-%d')
+            else:
+                dfrom = date.today()
+            if dto is not None:
+                dto = datetime.strptime(dto, '%Y-%m-%d')
+            else:
+                dto = date.today()
 
         # Look for "busy" events that contact is member of
         # even those that are secrets
@@ -1791,22 +1801,21 @@ class ContactUnavailDetailView(NgwUserAcl, View):
         visible_events = {}
         invisible_events = False
         for e in events:
+            if e.id == gid:
+                continue  # Ignore self
             if e.userperms & perms.SEE_MEMBERS:
-                visible_events[e.id] = {
-                    'name': html.escape(e.name),
-                    'url': e.get_absolute_url(),
-                    'date': e.date.strftime('%Y-%m-%d'),
-                    'end_date': e.end_date.strftime('%Y-%m-%d'),
-                    'description': html.escape(e.description),
-                }
+                visible_events[e.id] = e
             else:
                 invisible_events = True
         result = {
                 'contact': contact.id,
                 'from': dfrom.strftime('%Y-%m-%d'),
                 'to': dto.strftime('%Y-%m-%d'),
-                'events': visible_events,
-                'invisible_events': invisible_events,
+                'result': loader.render_to_string(
+                    'contact_unavail_detail.html', {
+                        'visible_events': visible_events,
+                        'invisible_events': invisible_events,
+                    }),
                 }
         jsonresponse = json.dumps(result)
         return HttpResponse(jsonresponse, content_type='application/json')
