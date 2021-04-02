@@ -1771,12 +1771,12 @@ class ContactUnavailDetailView(NgwUserAcl, View):
         else:
             if dfrom is not None:
                 dfrom = datetime.strptime(dfrom, '%Y-%m-%d')
-            else:
-                dfrom = date.today()
             if dto is not None:
                 dto = datetime.strptime(dto, '%Y-%m-%d')
-            else:
-                dto = date.today()
+        if dfrom is None:
+            dfrom = date.today()
+        if dto is None:
+            dto = date.today()
 
         # Look for "busy" events that contact is member of
         # even those that are secrets
