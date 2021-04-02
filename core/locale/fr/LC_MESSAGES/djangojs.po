@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-01 08:55+0000\n"
+"POT-Creation-Date: 2021-04-02 07:50+0000\n"
 "PO-Revision-Date: 2021-04-01 10:55+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
@@ -25,28 +25,25 @@ msgstr "En-têtes bruts"
 msgid "Close"
 msgstr "Fermer"
 
-#: static/ngw/ngw.js:135
+#: static/ngw/ngw.js:138
 msgid "Sorry, personnal calendar can't be loaded. Please try again later."
 msgstr ""
 "Désolé, le calendrier personnel ne peut pas être chargé. Veuillez réessayer "
 "ultérieurement."
 
-#: static/ngw/ngw.js:139
-#| msgid "That contact is unavailable:"
-msgid "That contact is unavailable"
-msgstr "Ce contact est indisponible"
-
-#: static/ngw/ngw.js:154
-msgid "And some events you don't have access to."
-msgstr "Et des événements auxquels vous n'avez pas accès."
-
-#: static/ngw/ngw.js:156
-msgid "Some events you don't have access to."
-msgstr "Des événements auxquels vous n'avez pas accès."
-
-#: static/ngw/ngw.js:162
+#: static/ngw/ngw.js:145
 msgid "Loading personnal calendar..."
 msgstr "Chargement du calendrier personnel..."
+
+#~| msgid "That contact is unavailable:"
+#~ msgid "That contact is unavailable"
+#~ msgstr "Ce contact est indisponible"
+
+#~ msgid "And some events you don't have access to."
+#~ msgstr "Et des événements auxquels vous n'avez pas accès."
+
+#~ msgid "Some events you don't have access to."
+#~ msgstr "Des événements auxquels vous n'avez pas accès."
 
 #~ msgid "This is a test."
 #~ msgstr "Ceci est un test."
