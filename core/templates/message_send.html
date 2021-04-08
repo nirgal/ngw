@@ -18,7 +18,11 @@
 <div class="module padded">
 
     <div>
-    {% blocktrans %}{{ nbcontacts }} contact(s) selected{% endblocktrans %}
+    {% blocktrans count counter=nbcontacts %}
+    1 contact selected
+    {% plural %}
+    {{ nbcontacts }} contacts selected
+    {% endblocktrans %}
     <br>
     </div>
 

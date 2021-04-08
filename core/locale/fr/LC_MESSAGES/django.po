@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-02 07:50+0000\n"
-"PO-Revision-Date: 2021-04-02 09:51+0200\n"
+"POT-Creation-Date: 2021-04-08 08:20+0000\n"
+"PO-Revision-Date: 2021-04-08 10:21+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -1103,7 +1103,6 @@ msgid "Select displayed columns"
 msgstr "Sélectionner les colonnes affichées"
 
 #: templates/contact_unavail_detail.html:3
-#| msgid "contact field value"
 msgid "That contact is unavailable"
 msgstr "Ce contact est indisponible"
 
@@ -1124,7 +1123,6 @@ msgid "And some events you don't have access to."
 msgstr "Et des événements auxquels tu n'as pas accès."
 
 #: templates/contact_unavail_detail.html:34
-#| msgid "Groups that have some access to"
 msgid "Events you don't have access to."
 msgstr "Des événements auxquels tu n'as pas accès."
 
@@ -1178,7 +1176,7 @@ msgid "There are no files in that group."
 msgstr "Il n'y a aucun fichier dans ce groupe."
 
 #: templates/group_files.html:44 templates/group_mailman.html:19
-#: templates/message_send.html:40
+#: templates/message_send.html:44
 msgid "Send"
 msgstr "Envoyer"
 
@@ -1403,10 +1401,24 @@ msgstr "Marquer comme non lu"
 
 #: templates/message_send.html:21
 #, python-format
-msgid "%(nbcontacts)s contact(s) selected"
-msgstr "%(nbcontacts)s contact(s) sélectionnés"
+msgid ""
+"\n"
+"    1 contact selected\n"
+"    "
+msgid_plural ""
+"\n"
+"    %(nbcontacts)s contacts selected\n"
+"    "
+msgstr[0] ""
+"\n"
+"    1 contact sélectionné\n"
+"    "
+msgstr[1] ""
+"\n"
+"    %(nbcontacts)s contacts sélectionnés\n"
+"    "
 
-#: templates/message_send.html:26
+#: templates/message_send.html:30
 msgid "Warning, the following people does not have any email address"
 msgstr "Attention, les personnes suivantes n'ont pas d'adresse de courriel"
 
@@ -2193,6 +2205,9 @@ msgstr "Vous devez définir la première colonne pour chaque seconde colonne."
 #: widgets.py:296
 msgid "You must choose a column #2 for each column #1."
 msgstr "Vous devez définir la seconde colonne pour chaque première colonne."
+
+#~ msgid "%(nbcontacts)s contact(s) selected"
+#~ msgstr "%(nbcontacts)s contact(s) sélectionnés"
 
 #~ msgid "Busy elsewhere"
 #~ msgstr "Occupé ailleurs"
