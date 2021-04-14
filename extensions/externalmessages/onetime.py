@@ -162,8 +162,9 @@ def send_notification(msg):
     notification_text = _('''Hello
 
 You can read your message at https://onetime.info/{otid}#{passphrase_out}
-or http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out} if you are using
-tor [1].
+or
+http://{onion}/{otid}#{passphrase_out}
+if you are using tor [1].
 
 Warning, that message will be displayed only once, and then deleted. Have a pen
 ready before clicking the link.
@@ -171,7 +172,7 @@ ready before clicking the link.
 Do not reply to that email: Use the link above.
 If the link doesn't work, please try again.
 If you get an error saying the message was already read, but you were not the
-one to read it, please repport that.
+one to read it, please report that.
 
 [1] https://www.torproject.org/''')
 
@@ -180,8 +181,8 @@ one to read it, please repport that.
 <p>You can read your message at
 <a href="https://onetime.info/{otid}#{passphrase_out}">
 https://onetime.info/{otid}#{passphrase_out}</a><br>
-or <a href="http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out}">
-http://7z4nl4ojzggwicx5.onion/{otid}#{passphrase_out}</a> if you are using
+or <a href="http://{onion}/{otid}#{passphrase_out}">
+http://{onion}/{otid}#{passphrase_out}</a> if you are using
 <a href="https://www.torproject.org/">tor</a>.</p>
 
 <p>Warning, that message will be displayed only once, and then deleted. Have a
@@ -192,12 +193,16 @@ If the link doesn't work, please try again.<br>
 If you get an error saying the message was already read, but you were not the
 one to read it, please repport that.</p>''')
 
+    notification_params = sync_info.copy()
+    notification_params['onion'] = (
+            's7tye6uojgute3tadbfp2dn3antq7vqsea2shu464wjygp5f4bqyp4yd.onion')
+
     message = mail.EmailMultiAlternatives(
         subject=msg.subject,
-        body=notification_text.format(**sync_info),
+        body=notification_text.format(**notification_params),
         to=(mail_addr,),
         connection=SMTP_CONNECTION)
-    message.attach_alternative(notification_html.format(**sync_info),
+    message.attach_alternative(notification_html.format(**notification_params),
                                "text/html")
 
     try:
