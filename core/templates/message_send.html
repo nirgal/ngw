@@ -1,8 +1,9 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block extrahead %}{{ block.super }}
 {{form.media|safe}}
+<script src='{% static "ngw/message_send.js" %}'></script>
 {% endblock %}
 
 {% block submenu %}
@@ -27,7 +28,7 @@
     </div>
 
     {% if noemails %}
-        <div>{% trans "Warning, the following people does not have any email address" %}:<br>
+        <div>{% trans "Warning, the following people do not have any email address" %}:<br>
         {% for contact in noemails %}
         <a href="{{ contact.get_absolute_url }}">{{ contact.name }}</a><br>
         {% endfor %}

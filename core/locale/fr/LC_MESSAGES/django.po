@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Git snapshot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-08 08:20+0000\n"
-"PO-Revision-Date: 2021-04-08 10:21+0200\n"
+"POT-Creation-Date: 2021-04-22 13:22+0000\n"
+"PO-Revision-Date: 2021-04-14 20:24+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -198,7 +198,7 @@ msgstr "Identifiants de connexion effacés pour l'utilisateur {name}"
 msgid "Name"
 msgstr "Nom"
 
-#: models.py:342 views/messages.py:93
+#: models.py:342 views/messages.py:94
 msgid "contact"
 msgstr "contact"
 
@@ -513,7 +513,7 @@ msgstr "nouvelles"
 msgid "Contact"
 msgstr "Contact"
 
-#: models.py:2771 templates/message_detail.html:97 views/messages.py:202
+#: models.py:2771 templates/message_detail.html:97 views/messages.py:203
 msgid "Subject"
 msgstr "Sujet"
 
@@ -521,24 +521,24 @@ msgstr "Sujet"
 msgid "message"
 msgstr "message"
 
-#: models.py:2780 views/messages.py:144 views/messages.py:393
-#: views/messages.py:502
+#: models.py:2780 views/messages.py:145 views/messages.py:412
+#: views/messages.py:521
 msgid "messages"
 msgstr "messages"
 
-#: models.py:2804 templates/message_detail.html:96 views/messages.py:44
+#: models.py:2804 templates/message_detail.html:96 views/messages.py:45
 msgid "Received"
 msgstr "Reçu"
 
-#: models.py:2807 views/messages.py:63
+#: models.py:2807 views/messages.py:64
 msgid "Read"
 msgstr "Lu"
 
-#: models.py:2810 views/messages.py:62
+#: models.py:2810 views/messages.py:63
 msgid "Unread"
 msgstr "Non lu"
 
-#: models.py:2812 templates/message_detail.html:96 views/messages.py:45
+#: models.py:2812 templates/message_detail.html:96 views/messages.py:46
 msgid "Sent"
 msgstr "Envoyé"
 
@@ -1176,7 +1176,7 @@ msgid "There are no files in that group."
 msgstr "Il n'y a aucun fichier dans ce groupe."
 
 #: templates/group_files.html:44 templates/group_mailman.html:19
-#: templates/message_send.html:44
+#: templates/message_send.html:46
 msgid "Send"
 msgstr "Envoyer"
 
@@ -1399,7 +1399,7 @@ msgstr "Répondre"
 msgid "Flag as unread"
 msgstr "Marquer comme non lu"
 
-#: templates/message_send.html:21
+#: templates/message_send.html:23
 #, python-format
 msgid ""
 "\n"
@@ -1418,8 +1418,8 @@ msgstr[1] ""
 "    %(nbcontacts)s contacts sélectionnés\n"
 "    "
 
-#: templates/message_send.html:30
-msgid "Warning, the following people does not have any email address"
+#: templates/message_send.html:32
+msgid "Warning, the following people do not have any email address"
 msgstr "Attention, les personnes suivantes n'ont pas d'adresse de courriel"
 
 #: templates/news.html:18
@@ -1614,7 +1614,7 @@ msgstr "Détails de {}"
 
 #: views/contacts.py:1049 views/contacts.py:1298 views/contacts.py:1386
 #: views/contacts.py:1441 views/groups.py:727 views/groups.py:1690
-#: views/groups.py:1759 views/messages.py:331
+#: views/groups.py:1759 views/messages.py:351
 msgid "members"
 msgstr "membres"
 
@@ -1649,7 +1649,7 @@ msgid "password"
 msgstr "mot de passe"
 
 #: views/contacts.py:1442 views/generic.py:581 views/groups.py:1469
-#: views/groups.py:1761 views/messages.py:503 views/news.py:154
+#: views/groups.py:1761 views/messages.py:522 views/news.py:154
 msgid "delete"
 msgstr "supprimer"
 
@@ -2101,83 +2101,83 @@ msgstr "Synchronisation mailman"
 msgid "mailman"
 msgstr "mailman"
 
-#: views/messages.py:39
+#: views/messages.py:40
 msgid "direction"
 msgstr "direction"
 
-#: views/messages.py:57
+#: views/messages.py:58
 msgid "read status"
 msgstr "statut lu"
 
-#: views/messages.py:75
+#: views/messages.py:76
 msgid "has attachment"
 msgstr "pièce jointe"
 
-#: views/messages.py:80
+#: views/messages.py:81
 msgid "With"
 msgstr "Avec"
 
-#: views/messages.py:81
+#: views/messages.py:82
 msgid "Without"
 msgstr "Sans"
 
-#: views/messages.py:142
+#: views/messages.py:143
 msgid "Messages for {}"
 msgstr "Messages pour {}"
 
-#: views/messages.py:198
+#: views/messages.py:199
 msgid "Expiration date"
 msgstr "Date d'expiration"
 
-#: views/messages.py:206
+#: views/messages.py:207
 msgid "Message"
 msgstr "Message"
 
-#: views/messages.py:286
+#: views/messages.py:290
 msgid "Message stored."
 msgstr "Message stocké."
 
-#: views/messages.py:288
+#: views/messages.py:292
 msgid "{} messages stored."
 msgstr "{} messages stockés."
 
-#: views/messages.py:293
+#: views/messages.py:297
 msgid "One contact doesn't have an email address."
 msgstr "Un contact n'a pas d'adresse de courriel."
 
-#: views/messages.py:295
+#: views/messages.py:299
 msgid "{} contacts don't have an email address."
 msgstr "{} contacts n'ont pas d'adresse de courriel."
 
-#: views/messages.py:301
+#: views/messages.py:305
 msgid " The message will be kept here until you define his email address."
 msgstr ""
 " Le message sera conservé jusqu'à ce que vous définissiez son adresse de "
 "courriel"
 
-#: views/messages.py:327
+#: views/messages.py:347
 msgid "Send message in {}"
 msgstr "Envoi de message dans {}"
 
-#: views/messages.py:332
+#: views/messages.py:352
 msgid "send message"
 msgstr "envoyer message"
 
-#: views/messages.py:374
+#: views/messages.py:393
 msgid "You don't have the permission to mark that message as read."
 msgstr "Vous n'avez pas la permission de marquer ce message comme lu."
 
-#: views/messages.py:380
+#: views/messages.py:399
 #, python-brace-format
 msgid "Message from {contactname} in group {groupname}"
 msgstr "Message de {contactname} dans le groupe {groupname}"
 
-#: views/messages.py:385
+#: views/messages.py:404
 #, python-brace-format
 msgid "Message to {contactname} in group {groupname}"
 msgstr "Message à {contactname} dans le groupe {groupname}"
 
-#: views/messages.py:417
+#: views/messages.py:436
 #, python-brace-format
 msgid "{contactname} in group {groupname}"
 msgstr "contact {contactname} dans le groupe {groupname}"

@@ -16,6 +16,7 @@ from django.contrib.admin import filters
 from django.contrib.admin.widgets import AdminDateWidget
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import translation
 from django.utils.timezone import now
@@ -207,7 +208,10 @@ class SendMessageForm(forms.Form):
             widget=forms.Textarea(attrs={'style': 'width:100%', 'rows': '25'}))
         self.fields['files'] = forms.FileField(
             required=False,
-            widget=forms.ClearableFileInput(attrs={'multiple': True}))
+            widget=forms.ClearableFileInput(attrs={
+                'multiple': True,
+                'class': 'inputfile_nicezone',
+                }))
 
     def support_expiration_date(self):
         return getattr(EXTERNAL_MESSAGE_BACKEND, 'SUPPORTS_EXPIRATION', False)
@@ -300,7 +304,22 @@ class SendMessageView(InGroupAcl, FormView):
                     error_msg,
                     _(" The message will be kept here until you define his"
                       " email address.")))
-        return super().form_valid(form)
+        if self.request.is_ajax():
+            return JsonResponse({
+                'has_error': False,
+                'url': self.get_success_url()
+                })
+        else:
+            return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if self.request.is_ajax():
+            return JsonResponse({
+                'has_error': True,
+                'errors': json.loads(form.errors.as_json()),
+                })
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
         return self.contactgroup.get_absolute_url()+'messages/'
@@ -334,7 +353,6 @@ class SendMessageView(InGroupAcl, FormView):
 
         context.update(kwargs)
         return super().get_context_data(**context)
-
 
 #######################################################################
 #

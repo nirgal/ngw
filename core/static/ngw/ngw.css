@@ -297,3 +297,9 @@ select.doublechoicesecond {
     text-align: center;
 }
 
+/* drop zone */
+.drop_zone {
+    border: 2px dotted grey;
+    text-align: center;
+    padding: 25px;
+}
