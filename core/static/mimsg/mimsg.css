@@ -92,6 +92,12 @@
 }
 
 
+/* Make sure images fit in the viewport: */
+.message-container img {
+    max-width: 100vw;
+    max-height: 100vh;
+}
+
 hr.preattachment {
 	margin:10px 0px;
 }
