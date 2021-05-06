@@ -24,6 +24,10 @@ function setupInputDropFiles(fileInput) {
     dropZone.addEventListener('dragover', handleDragOverCopy);
     dropZone.addEventListener('drop', onFileDrop, false);
 
+    // Prevent drop elsewhere:
+    document.body.addEventListener('dragover', handleDragOverAbort);
+    document.body.addEventListener('drop', handleDropAbort);
+
     form.globalFiles = [];
 
     let fileList = document.createElement('div');
@@ -94,6 +98,18 @@ function onFileDrop(evt) {
         form.globalFiles.push(file);
     }
     refreshFileList(form);
+}
+
+// Avoid drop on body:
+function handleDragOverAbort(evt) {
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = 'none';  // nice cursor
+    return false;
+}
+function handleDropAbort(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    return false;
 }
 
 function refreshFileList(form) {
