@@ -1101,7 +1101,7 @@ export class MiMsgPart {
                         alt = ` alt="${ htmlEscape(filename)}"`;
                     }
                 }
-                html += `<img src="${url}"${alt}><br>`;
+                html += `<img src="${url}"${alt} class="mimsg-inline-image"><br>`;
                 displayedInline = true;
             } else if (contentType === 'message/rfc822') {
                 html += this.body.toHtml();  // Encapsulated message
@@ -1134,7 +1134,7 @@ export class MiMsgPart {
             let url = URL.createObjectURL(blob);
 
             filename = htmlEscape(filename, /[&<"]/g);
-            html += `<a href="${url}" download="${filename}" class=attachment>${filename}</a>`;
+            html += `<a href="${url}" download="${filename}" class=attachment target="_blank">${filename}</a>`;
         }
 
         let contentDescription = this.getHeaderValue('content-description', '');
