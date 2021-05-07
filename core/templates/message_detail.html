@@ -7,7 +7,7 @@
 <link rel=preload href="{% static "mimsg/mimsg.mjs" %}" as=script>
 
 <script type=module>
-import { arrayIndexOfArray, parse_message, textEncode, textDecode
+import { arrayIndexOfArray, parse_message, textEncode, textDecode, setupInlineImageZoom
        } from '{% static "mimsg/mimsg.mjs" %}';
 
 /*
@@ -60,6 +60,7 @@ function async_read_message(domElem) {
         let html = msg_to_html(u8arr);
     
         this.domElem.innerHTML = html;
+        setupInlineImageZoom();
     };
 
     xhr.open('GET', domElem.dataset.url);

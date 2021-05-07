@@ -1297,4 +1297,20 @@ export function parse_message(u8arr) {
 }
 
 
+/**
+ * Helper function to reduce the size of visible images and having a zoom on
+ * click behavior.
+ * That function need to be called after displaying the content of toHtml(); */
+export function setupInlineImageZoom() {
+    for (let elem of document.getElementsByClassName('mimsg-inline-image')) {
+        elem.addEventListener('click', function(evt) {
+            let img = evt.target;
+            img.classList.toggle('mimsg-inline-image-zoomed');
+            img.classList.toggle('mimsg-inline-image-unzoomed');
+        });
+        elem.classList.toggle('mimsg-inline-image-unzoomed');
+    }
+}
+
+
 /* vim: set et ts=4 ft=javascript: */

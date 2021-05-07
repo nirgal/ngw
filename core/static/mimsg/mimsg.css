@@ -93,9 +93,15 @@
 
 
 /* Make sure images fit in the viewport: */
-.mimsg-inline-image {
+.mimsg-inline-image-unzoomed {
     max-width: 100vw;
     max-height: 100vh;
+    cursor: zoom-in;
+}
+.mimsg-inline-image-zoomed {
+    max-width: auto;
+    max-height: auto;
+    cursor: zoom-out;
 }
 
 hr.preattachment {
