@@ -49,7 +49,8 @@ from ngw.core.views.news import (NewsCreateView, NewsDeleteView, NewsEditView,
 # from ngw.core.admin import ContactGroupAdmin
 
 
-# These patterns are valid with both /contactgroups and /events prefixes
+# These patterns are valid with /contactgroups /events and
+# /contacts/NNN/unavail/ prefixes
 groups_urlpatterns = [
     url(r'^add$', GroupCreateView.as_view()),
     url(r'^(?P<gid>\d+)/$', ContactGroupView.as_view()),
