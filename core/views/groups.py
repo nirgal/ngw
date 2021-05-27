@@ -962,214 +962,214 @@ class ContactGroupForm(forms.ModelForm):
         return cg
 
 
-# class EventForm(forms.ModelForm):
-#     class Meta:
-#         model = ContactGroup
-#         fields = [
-#             'name', 'description', 'date', 'end_date', 'busy',
-#             # 'perso_unavail',
-#             'budget_code',
-#             # 'sticky',
-#             # 'virtual',
-#             # 'field_group',
-#             'mailman_address']
-#         widgets = {
-#             'date': AdminDateWidget,
-#             # (attrs={'onchange': mark_safe("alert('ok');")}),
-#             'end_date': AdminDateWidget,
-#             'busy': forms.widgets.RadioSelect(
-#                 choices=(
-#                     (
-#                         True,
-#                         _('Yes: Members become unavailable')
-#                     ), (
-#                         False,
-#                         _('No: Allow other events at the same time')
-#                     )),
-#                 ),
-#         }
-#
-#     def __init__(self, *args, **kwargs):
-#         user = kwargs.pop('user')
-#         self.user = user
-#         self.request = kwargs.pop('request')
-#         instance = kwargs.get('instance', None)
-#         unavail_cid = kwargs.pop('unavail_cid', None)
-#         assert unavail_cid is None, \
-#             'unavail_cid is not empty for regular EventForm'
-#         super().__init__(*args, **kwargs)
-#
-#         # Only show visible groups
-#         visible_groups_choices = [
-#             (g.id, str(g))
-#             for g in ContactGroup.objects.with_user_perms(
-#                 user.id, perms.SEE_CG)]
-#
-#         # Super groups
-#         if instance:
-#             field_initial = instance.get_visible_direct_supergroups_ids(
-#                 user.id)
-#         else:
-#             field_initial = None
-#         self.fields['direct_supergroups'] = forms.MultipleChoiceField(
-#             label=_('Direct supergroups'),
-#             required=False,
-#             help_text=_('Members will automatically be granted membership in'
-#                         ' these groups.'),
-#             widget=FilteredSelectMultiple(_('groups'), False),
-#             choices=visible_groups_choices,
-#             initial=field_initial)
-#
-#         # Add fields for kind of permissions
-#         event_default_perms = Config.get_event_default_perms()
-#
-#         for flag in 'oveEcCfFnNuUxX':
-#             field_name = 'admin_{}_groups'.format(flag)
-#             if instance:
-#                 intflag = perms.FLAGTOINT[flag]
-#                 field_initial = instance.get_visible_mananger_groups_ids(
-#                     user.id, intflag)
-#             else:
-#                 if flag == 'o':
-#                     default_group_id = user.get_fieldvalue_by_id(
-#                         FIELD_DEFAULT_GROUP)
-#                     assert default_group_id, \
-#                         "User doesn't have a default group"
-#                     field_initial = int(default_group_id),
-#                 else:
-#                     field_initial = event_default_perms.get(flag, None)
-#             self.fields[field_name] = forms.MultipleChoiceField(
-#                 label=perms.FLAGGROUPLABEL[flag],
-#                 required=False,
-#                 help_text=perms.FLAGGROUPHELP[flag],
-#                 widget=FilteredSelectMultiple(_('groups'), False),
-#                 choices=visible_groups_choices,
-#                 initial=field_initial)
-#
-#     def clean(self):
-#         data = super().clean()
-#         start_date = data.get('date', None)
-#         end_date = data.get('end_date', None)
-#         if end_date:
-#             if not start_date:
-#                 self.add_error(
-#                     'date',
-#                     _('That field is required when you have an end date.'))
-#             elif end_date < start_date:
-#                 self.add_error(
-#                     'end_date',
-#                     _('The end date must be after the start date.'))
-#         else:
-#             # There is no end date
-#             if start_date:
-#                 # use start date is available
-#                 data['end_date'] = data['date']
-#             # else this is a permanent group without any date
-#
-#         # busy check
-#         busy = data.get('busy', None)
-#         if start_date:
-#             if 'busy' not in self.data:  # do use uncleaned data from self
-#                 self.add_error('busy', forms.ValidationError(
-#                     _('This field is required'),
-#                     code='required'))
-#         else:
-#             # Be permissive about choices not made for groups
-#             if busy is None:
-#                 data['busy'] = False
-#             elif busy:
-#                 self.add_error('busy', forms.ValidationError(
-#                     _('Busy flag requires dates.'),
-#                     code='invalid'))
-#
-#         return data
-#
-#     def save(self, commit=True):
-#         is_creation = self.instance.pk is None
-#         data = self.cleaned_data
-#
-#         if is_creation:
-#             was_sticky = False
-#         else:
-#             was_sticky = ContactGroup.objects.get(pk=self.instance.pk).sticky
-#
-#         # Save the base fields
-#         cg = super().save(commit)
-#
-#         # Update the members if it's now sticky
-#         if cg.sticky and not was_sticky:
-#             logging.warning("Group %s has become sticky.", cg)
-#             members = cg.get_all_members()
-#             members = members.extra(where=["""
-#                 NOT EXISTS (
-#                     SELECT *
-#                     FROM contact_in_group
-#                     WHERE contact_in_group.contact_id=contact.id
-#                         AND contact_in_group.group_id={group_id}
-#                         AND flags & {member_flag} <> 0
-#                 )""".format(group_id=cg.id,
-#                             member_flag=perms.MEMBER)])
-#             for m in members:
-#                 cg.set_member_1(self.request, m, '+m')
-#
-#         # Update the super groups
-#         old_direct_supergroups_ids = set(
-#             cg.get_visible_direct_supergroups_ids(self.user.id))
-#         new_direct_supergroups_id = set(
-#             [int(i) for i in data['direct_supergroups']])
-#         if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
-#             new_direct_supergroups_id = {GROUP_EVERYBODY}
-#
-#         supergroup_added = (new_direct_supergroups_id
-#                             - old_direct_supergroups_ids)
-#         supergroup_removed = (old_direct_supergroups_ids
-#                               - new_direct_supergroups_id)
-#
-#         print('supergroup_added=', supergroup_added)
-#         print('supergroup_removed=', supergroup_removed)
-#         for sgid in supergroup_added:
-#             GroupInGroup(father_id=sgid, subgroup_id=cg.id).save()
-#         for sgid in supergroup_removed:
-#             (GroupInGroup.objects
-#              .get(father_id=sgid, subgroup_id=cg.id).delete())
-#
-#         # Update the administrative groups
-#         for flag in 'oveEcCfFnNuUxX':
-#             field_name = 'admin_{}_groups'.format(flag)
-#             intflag = perms.FLAGTOINT[flag]
-#             old_groups_ids = set(
-#                 cg.get_visible_mananger_groups_ids(self.user.id, intflag))
-#             new_groups_ids = set([int(ogid) for ogid in data[field_name]])
-#             # print('flag', flag, 'old_groups_ids', old_groups_ids)
-#             # print('flag', flag, 'new_groups_ids', new_groups_ids)
-#             groups_added = new_groups_ids - old_groups_ids
-#             groups_removed = old_groups_ids - new_groups_ids
-#             print('flag', flag, 'groups_added=', groups_added)
-#             print('flag', flag, 'groups_removed=', groups_removed)
-#             if (not is_creation
-#                and (groups_added or groups_removed)
-#                and not perms.c_operatorof_cg(self.user.id, cg.id)):
-#                 # Only operators can change permissions
-#                 raise PermissionDenied
-#             for ogid in groups_added:
-#                 try:
-#                     gmg = GroupManageGroup.objects.get(
-#                         father_id=ogid, subgroup_id=cg.id)
-#                 except GroupManageGroup.DoesNotExist:
-#                     gmg = GroupManageGroup(
-#                         father_id=ogid, subgroup_id=cg.id, flags=0)
-#                 gmg.flags |= intflag
-#                 gmg.save()
-#             for ogid in groups_removed:
-#                 gmg = GroupManageGroup.objects.get(father_id=ogid,
-#                                                    subgroup_id=cg.id)
-#                 gmg.flags &= ~ intflag
-#                 if gmg.flags:
-#                     gmg.save()
-#                 else:
-#                     gmg.delete()
-#
-#         return cg
+class EventForm(forms.ModelForm):
+    class Meta:
+        model = ContactGroup
+        fields = [
+            'name', 'description', 'date', 'end_date', 'busy',
+            # 'perso_unavail',
+            'budget_code',
+            # 'sticky',
+            # 'virtual',
+            # 'field_group',
+            'mailman_address']
+        widgets = {
+            'date': AdminDateWidget,
+            # (attrs={'onchange': mark_safe("alert('ok');")}),
+            'end_date': AdminDateWidget,
+            'busy': forms.widgets.RadioSelect(
+                choices=(
+                    (
+                        True,
+                        _('Yes: Members become unavailable')
+                    ), (
+                        False,
+                        _('No: Allow other events at the same time')
+                    )),
+                ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        self.user = user
+        self.request = kwargs.pop('request')
+        instance = kwargs.get('instance', None)
+        unavail_cid = kwargs.pop('unavail_cid', None)
+        assert unavail_cid is None, \
+            'unavail_cid is not empty for regular ContactGroupForm'
+        super().__init__(*args, **kwargs)
+
+        # Only show visible groups
+        visible_groups_choices = [
+            (g.id, str(g))
+            for g in ContactGroup.objects.with_user_perms(
+                user.id, perms.SEE_CG)]
+
+        # Super groups
+        if instance:
+            field_initial = instance.get_visible_direct_supergroups_ids(
+                user.id)
+        else:
+            field_initial = None
+        self.fields['direct_supergroups'] = forms.MultipleChoiceField(
+            label=_('Direct supergroups'),
+            required=False,
+            help_text=_('Members will automatically be granted membership in'
+                        ' these groups.'),
+            widget=FilteredSelectMultiple(_('groups'), False),
+            choices=visible_groups_choices,
+            initial=field_initial)
+
+        # Add fields for kind of permissions
+        event_default_perms = Config.get_event_default_perms()
+
+        for flag in 'oveEcCfFnNuUxX':
+            field_name = 'admin_{}_groups'.format(flag)
+            if instance:
+                intflag = perms.FLAGTOINT[flag]
+                field_initial = instance.get_visible_mananger_groups_ids(
+                    user.id, intflag)
+            else:
+                if flag == 'o':
+                    default_group_id = user.get_fieldvalue_by_id(
+                        FIELD_DEFAULT_GROUP)
+                    assert default_group_id, \
+                        "User doesn't have a default group"
+                    field_initial = int(default_group_id),
+                else:
+                    field_initial = event_default_perms.get(flag, None)
+            self.fields[field_name] = forms.MultipleChoiceField(
+                label=perms.FLAGGROUPLABEL[flag],
+                required=False,
+                help_text=perms.FLAGGROUPHELP[flag],
+                widget=FilteredSelectMultiple(_('groups'), False),
+                choices=visible_groups_choices,
+                initial=field_initial)
+
+    def clean(self):
+        data = super().clean()
+        start_date = data.get('date', None)
+        end_date = data.get('end_date', None)
+        if end_date:
+            if not start_date:
+                self.add_error(
+                    'date',
+                    _('That field is required when you have an end date.'))
+            elif end_date < start_date:
+                self.add_error(
+                    'end_date',
+                    _('The end date must be after the start date.'))
+        else:
+            # There is no end date
+            if start_date:
+                # use start date is available
+                data['end_date'] = data['date']
+            # else this is a permanent group without any date
+
+        # busy check
+        busy = data.get('busy', None)
+        if start_date:
+            if 'busy' not in self.data:  # do use uncleaned data from self
+                self.add_error('busy', forms.ValidationError(
+                    _('This field is required'),
+                    code='required'))
+        else:
+            # Be permissive about choices not made for groups
+            if busy is None:
+                data['busy'] = False
+            elif busy:
+                self.add_error('busy', forms.ValidationError(
+                    _('Busy flag requires dates.'),
+                    code='invalid'))
+
+        return data
+
+    def save(self, commit=True):
+        is_creation = self.instance.pk is None
+        data = self.cleaned_data
+
+        if is_creation:
+            was_sticky = False
+        else:
+            was_sticky = ContactGroup.objects.get(pk=self.instance.pk).sticky
+
+        # Save the base fields
+        cg = super().save(commit)
+
+        # Update the members if it's now sticky
+        if cg.sticky and not was_sticky:
+            logging.warning("Group %s has become sticky.", cg)
+            members = cg.get_all_members()
+            members = members.extra(where=["""
+                NOT EXISTS (
+                    SELECT *
+                    FROM contact_in_group
+                    WHERE contact_in_group.contact_id=contact.id
+                        AND contact_in_group.group_id={group_id}
+                        AND flags & {member_flag} <> 0
+                )""".format(group_id=cg.id,
+                            member_flag=perms.MEMBER)])
+            for m in members:
+                cg.set_member_1(self.request, m, '+m')
+
+        # Update the super groups
+        old_direct_supergroups_ids = set(
+            cg.get_visible_direct_supergroups_ids(self.user.id))
+        new_direct_supergroups_id = set(
+            [int(i) for i in data['direct_supergroups']])
+        if cg.id != GROUP_EVERYBODY and not new_direct_supergroups_id:
+            new_direct_supergroups_id = {GROUP_EVERYBODY}
+
+        supergroup_added = (new_direct_supergroups_id
+                            - old_direct_supergroups_ids)
+        supergroup_removed = (old_direct_supergroups_ids
+                              - new_direct_supergroups_id)
+
+        print('supergroup_added=', supergroup_added)
+        print('supergroup_removed=', supergroup_removed)
+        for sgid in supergroup_added:
+            GroupInGroup(father_id=sgid, subgroup_id=cg.id).save()
+        for sgid in supergroup_removed:
+            (GroupInGroup.objects
+             .get(father_id=sgid, subgroup_id=cg.id).delete())
+
+        # Update the administrative groups
+        for flag in 'oveEcCfFnNuUxX':
+            field_name = 'admin_{}_groups'.format(flag)
+            intflag = perms.FLAGTOINT[flag]
+            old_groups_ids = set(
+                cg.get_visible_mananger_groups_ids(self.user.id, intflag))
+            new_groups_ids = set([int(ogid) for ogid in data[field_name]])
+            # print('flag', flag, 'old_groups_ids', old_groups_ids)
+            # print('flag', flag, 'new_groups_ids', new_groups_ids)
+            groups_added = new_groups_ids - old_groups_ids
+            groups_removed = old_groups_ids - new_groups_ids
+            print('flag', flag, 'groups_added=', groups_added)
+            print('flag', flag, 'groups_removed=', groups_removed)
+            if (not is_creation
+               and (groups_added or groups_removed)
+               and not perms.c_operatorof_cg(self.user.id, cg.id)):
+                # Only operators can change permissions
+                raise PermissionDenied
+            for ogid in groups_added:
+                try:
+                    gmg = GroupManageGroup.objects.get(
+                        father_id=ogid, subgroup_id=cg.id)
+                except GroupManageGroup.DoesNotExist:
+                    gmg = GroupManageGroup(
+                        father_id=ogid, subgroup_id=cg.id, flags=0)
+                gmg.flags |= intflag
+                gmg.save()
+            for ogid in groups_removed:
+                gmg = GroupManageGroup.objects.get(father_id=ogid,
+                                                   subgroup_id=cg.id)
+                gmg.flags &= ~ intflag
+                if gmg.flags:
+                    gmg.save()
+                else:
+                    gmg.delete()
+
+        return cg
 
 
 class PersonalUnavailForm(forms.ModelForm):
@@ -1318,8 +1318,8 @@ class GroupEditMixin(ModelFormMixin):
             cg = self.object
             if cg.perso_unavail:
                 return PersonalUnavailForm
-            # if cg.date:
-            #     return EventForm
+            if cg.date:
+                return EventForm
         if getattr(self.request, 'unavail_cid', None):
             return PersonalUnavailForm
         return ContactGroupForm
