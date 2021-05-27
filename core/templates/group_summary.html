@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n ngwtags %}
 
 {% block submenu %}
 {% include "group_submenu.html" %}
@@ -32,6 +32,46 @@
     {% if cg.budget_code %}{% trans "Budget code" %}: <b>{{ cg.budget_code }}</b><br>{% endif %}
     {% if cg.mailman_address %}{% trans "Mailing list" %}: <b>{{ cg.mailman_address }}</b><br>{% endif %}
 <p>
+
+{% block presubmitbar %}
+    {{ block.super }}
+    {% ifnotequal cg.id 1 %}{# FIXME #}
+    {% for sg in cg.get_direct_subgroups|group_visible_by:user.id %}
+        {% if forloop.first %}
+            <div class=module>
+                <h2>{% trans "Sub groups" %}</h2>
+                <div class=padded>
+                    {% trans "People in sub-groups automatically are members / invited." %}
+                    <br>
+        {% endif %}
+                    ‣ {{ sg|group_with_link }}
+                    {% for ssg in sg.get_subgroups|group_visible_by:user.id %}
+                    {% if forloop.first %}( {% trans "including" %} {% else %}, {% endif %}
+                    {{ ssg|group_with_link }}
+                    {% if forloop.last %}){% endif %}
+                    {% endfor %}
+                    <br>
+        {% if forloop.last %}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+    {% endifnotequal %}
+
+    {% for sg in cg.get_manager_groups|group_visible_by:user.id %}
+        {% if forloop.first %}
+            <div class=module>
+                <h2>{% trans "Groups that have some access to" %} {{ cg }}</h2>
+                <div class=padded>
+        {% endif %}
+        ‣ {{ sg|group_with_link }}<br>
+        {% if forloop.last %}
+                </div>
+             </div>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+
 
 {% block submitbar %}
 <div class="submit-row" id=submitbar>
