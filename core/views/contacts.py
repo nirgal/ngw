@@ -888,17 +888,18 @@ class GroupAddManyForm(forms.Form):
                 group = get_object_or_404(
                     ContactGroup, pk=self.cleaned_data['group'])
                 if group.virtual:
-                    raise forms.ValidationError(_(
-                        "This is a virtual group. It cannot have members."))
+                    self.add_error('group', _(
+                        'This is a virtual group. It cannot have members.'))
             if (flags & perms.ADMIN_ALL
                and not perms.c_operatorof_cg(self.user.id,
                                              self.cleaned_data['group'])):
-                raise forms.ValidationError(_(
+                self.add_error('group', _(
                     'You need to be operator of the target group to add this'
                     ' kind of membership.'))
 
         if data['flags'] == 0:
             self.add_error('flags', _('You must select at least one mode'))
+        return data
 
     def add_them(self, request):
         group_id = self.cleaned_data['group']
@@ -921,6 +922,8 @@ class GroupAddManyForm(forms.Form):
                 modes += '+' + flag
 
         target_group.set_member_n(request, contacts, modes)
+
+        # FIXME: handle sticky groups
 
 
 class GroupAddManyView(NgwUserAcl, FormView):
@@ -955,11 +958,15 @@ class GroupAddManyView(NgwUserAcl, FormView):
 
     def form_valid(self, form):
         form.add_them(self.request)
-        self.form = form
+        self.gid = form.cleaned_data['group']
+        self.success_form = form  # Used by get_success_url
         return super().form_valid(form)
 
+    def form_invalid(self, form):
+        return super().form_invalid(form)
+
     def get_success_url(self):
-        group_id = self.form.cleaned_data['group']
+        group_id = self.gid  # from form_valid()
         target_group = get_object_or_404(ContactGroup, pk=group_id)
         return target_group.get_absolute_url() + 'members/'
 

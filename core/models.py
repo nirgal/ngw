@@ -1144,6 +1144,7 @@ class ContactGroup(NgwModel):
         if newflags == 0:
             if result == LOG_ACTION_ADD:
                 # We were about to add the contact in the group: nothing to do
+                # Note that we did not call cig.save() at that point
                 return 0
 
             cig.delete()
@@ -1157,7 +1158,7 @@ class ContactGroup(NgwModel):
 
             hooks.membership_changed(request, contact, self)
 
-            return LOG_ACTION_CHANGE  # FIXME
+            return LOG_ACTION_DEL
 
         if result == LOG_ACTION_ADD:
             log = Log(contact_id=user.id)
@@ -1167,6 +1168,9 @@ class ContactGroup(NgwModel):
             log.target_repr = 'Membership contact {} in group {}'.format(
                 contact, self)
         else:
+            if cig.flags == newflags:
+                # There is no change after all!
+                return 0
             result = LOG_ACTION_CHANGE
 
         for flag, intflag in perms.FLAGTOINT.items():
@@ -1200,18 +1204,24 @@ class ContactGroup(NgwModel):
             hooks.membership_changed(request, contact, self)
         return result
 
-    def set_member_n(self, request, contacts, group_member_mode):
+    def set_member_n(
+            self, request, contacts, group_member_mode,
+            handle_sticky=True):
         """
-        Like set_member_1 but for several contacts
+        Loop calls set_member_1 for each contacts
+        This also add log messages to be displayed to the user
         """
         added_contacts = []
         changed_contacts = []
+        removed_contacts = []
         for contact in contacts:
             res = self.set_member_1(request, contact, group_member_mode)
             if res == LOG_ACTION_ADD:
                 added_contacts.append(contact)
             elif res == LOG_ACTION_CHANGE:
                 changed_contacts.append(contact)
+            elif res == LOG_ACTION_DEL:
+                removed_contacts.append(contact)
 
         if added_contacts:
             msgpart_contacts = ', '.join([c.name for c in added_contacts])
@@ -1228,15 +1238,36 @@ class ContactGroup(NgwModel):
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
             if len(changed_contacts) == 1:
-                msg = _('Contact {contacts} already was in {group}.'
-                        ' Status has been changed to {status}.')
+                msg = _('Status of {contacts} in {group} was changed'
+                        ' to {status}.')
             else:
-                msg = _('Contacts {contacts} already were in {group}.'
-                        ' Status has been changed to {status}.')
+                msg = _('Status of {contacts} in {group} were changed'
+                        ' to {status}.')
             messages.add_message(request, messages.SUCCESS, msg.format(
                 contacts=msgpart_contacts,
                 group=self,
                 status=group_member_mode))
+        if removed_contacts:
+            msgpart_contacts = ', '.join([c.name for c in removed_contacts])
+            if len(removed_contacts) == 1:
+                msg = _('Contact {contacts} was removed from {group}.')
+            else:
+                msg = _('Contacts {contacts} were removed from {group}.')
+            messages.add_message(request, messages.SUCCESS, msg.format(
+                contacts=msgpart_contacts,
+                group=self))
+
+        if handle_sticky:
+            contact_ids = [contact.id for contact in contacts]
+            members = self.get_all_members().filter(pk__in=contact_ids)
+            supergroups = self.get_supergroups().filter(sticky=True)
+            print("STICKY HANDLING:", supergroups)
+            for sgroup in supergroups:
+                sgroup.set_member_n(
+                        request,
+                        members,
+                        '+m',
+                        handle_sticky=False)
 
     def count_messages(self):
         return ContactMsg.objects.filter(group_id=self.id).count()

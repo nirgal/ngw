@@ -188,9 +188,13 @@ class FlagsWidget(forms.CheckboxSelectMultiple):
     def get_context(self, name, value, attrs):
         if not value:
             value = 0
-        # Here value is an integer (bit aray of permissions)
-        value = perms.int_to_flags(value)  # Change into a string
-        value = [char for char in value]  # Then into an array of letters
+        if isinstance(value, list):
+            print('WARNING: FlagsWidget value is already a list')
+            pass  # FIXME: never occurs but on add_many failures
+        else:
+            # Here value is an integer (bit aray of permissions)
+            value = perms.int_to_flags(value)  # Change into a string
+            value = [char for char in value]  # Then into an array of letters
         context = super().get_context(name, value, attrs)
         return context
 

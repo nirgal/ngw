@@ -760,8 +760,8 @@ class ContactGroupForm(forms.ModelForm):
             'name', 'description', 'date', 'end_date', 'busy',
             # 'perso_unavail',
             'budget_code',
-            # 'sticky',
-            # 'virtual',
+            'sticky',
+            'virtual',
             'field_group', 'mailman_address']
         widgets = {
             'date': AdminDateWidget,
@@ -899,8 +899,7 @@ class ContactGroupForm(forms.ModelForm):
                         AND flags & {member_flag} <> 0
                 )""".format(group_id=cg.id,
                             member_flag=perms.MEMBER)])
-            for m in members:
-                cg.set_member_1(self.request, m, '+m')
+            cg.set_member_n(self.request, members, '+m')
 
         # Update the super groups
         old_direct_supergroups_ids = set(
@@ -1109,8 +1108,7 @@ class EventForm(forms.ModelForm):
                         AND flags & {member_flag} <> 0
                 )""".format(group_id=cg.id,
                             member_flag=perms.MEMBER)])
-            for m in members:
-                cg.set_member_1(self.request, m, '+m')
+            cg.set_member_n(self.request, members, '+m')
 
         # Update the super groups
         old_direct_supergroups_ids = set(
@@ -1719,7 +1717,7 @@ class ContactInGroupInlineView(InGroupAcl, View):
             flags = '+D'
         else:
             flags = '-midD'
-        cg.set_member_1(request, contact, flags)
+        cg.set_member_n(request, [contact], flags)
         note = request.POST.get('note', '')
         try:
             cig = ContactInGroup.objects.get(contact_id=cid, group_id=gid)
