@@ -743,12 +743,16 @@ class BaseContactListView(NgwListView):
         busy = getattr(contact, 'busy', None)
         if busy is not None and busy & perms.MEMBER:
             hint = _('That contact is busy. Click here for details.')
+            if current_cg:
+                excluded_gid = current_cg.id
+            else:
+                excluded_gid = GROUP_EVERYBODY
             flags += ' <span class=iconbusy title="{}" ' \
                 'data-contactid="{}" data-groupid={}>' \
                 '</span>'.format(
                     html.escape(hint),
                     contact.id,
-                    current_cg.id)
+                    excluded_gid)
 
         return html.format_html(
                 mark_safe('<a href="{id}/"><b>{name}</a></b> {flags}'),
