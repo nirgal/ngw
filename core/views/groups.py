@@ -1753,3 +1753,13 @@ class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
             return HttpResponse(_('Error, that contact is not a direct member.'
                                   ' Please check subgroups'))
         return super().get(self, request, gid, cid)
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.object = self.get_object()
+        success_url = self.get_success_url()
+
+        obj.group.set_member_n(
+                request,
+                [obj.contact],
+                '-' + perms.int_to_flags(obj.flags))
+        return HttpResponseRedirect(success_url)
