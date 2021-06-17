@@ -303,3 +303,12 @@ select.doublechoicesecond {
     text-align: center;
     padding: 25px;
 }
+
+#inline_cig_note_warning {
+    text-align: left;
+    font-size: .8em;
+    color: red;
+}
+#inline_cig_note_warning img {
+    vertical-align: middle;
+}

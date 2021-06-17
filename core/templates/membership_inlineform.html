@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n static %}
 <div id=membership_edit style="display:none">
     <div class="membership_edit_overlay"></div>
     <div class="membership_edit_modal">
@@ -7,14 +7,15 @@
     {% csrf_token %}
     <input type=hidden name="next_url" value="{{request.get_full_path}}">
     <span style="white-space: nowrap">
-    <input type=checkbox name="membership_i" id="membership_edit_invited" onchange="if (this.checked) { this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
-    <input type=checkbox name="membership_m" id="membership_edit_member" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_d.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_member"> {% trans "Member" %}</label>
-    <input type=checkbox name="membership_d" id="membership_edit_declined" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
-    <input type=checkbox name="membership_D" id="membership_edit_canceled" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.note.disabled=false; } else { this.form.note.disabled=true;}"><label for="membership_edit_canceled"> {% trans "Canceled member" %}</label>
+    <input type=checkbox name="membership_i" id="membership_edit_invited" onchange="if (this.checked) { this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false;document.getElementById('inline_cig_note_warning').style.display='none'; } else { this.form.note.disabled=true;document.getElementById('inline_cig_note_warning').style.display='block';}"><label for="membership_edit_invited"> {% trans "Invited" %}</label>
+    <input type=checkbox name="membership_m" id="membership_edit_member" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_d.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false;document.getElementById('inline_cig_note_warning').style.display='none'; } else { this.form.note.disabled=true;document.getElementById('inline_cig_note_warning').style.display='block';}"><label for="membership_edit_member"> {% trans "Member" %}</label>
+    <input type=checkbox name="membership_d" id="membership_edit_declined" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.membership_D.checked=false;this.form.note.disabled=false;document.getElementById('inline_cig_note_warning').style.display='none'; } else { this.form.note.disabled=true;document.getElementById('inline_cig_note_warning').style.display='block';}"><label for="membership_edit_declined"> {% trans "Declined invitation" %}</label>
+    <input type=checkbox name="membership_D" id="membership_edit_canceled" onchange="if (this.checked) { this.form.membership_i.checked=false;this.form.membership_m.checked=false;this.form.membership_d.checked=false;this.form.note.disabled=false;document.getElementById('inline_cig_note_warning').style.display='none'; } else { this.form.note.disabled=true;document.getElementById('inline_cig_note_warning').style.display='block';}"><label for="membership_edit_canceled"> {% trans "Canceled member" %}</label>
     </span>
     <br>
     Note: <input name='note' style='width:90%'>
     <br>
+    <div id="inline_cig_note_warning" style="display:none;"><img src="{% static "admin/img/icon-alert.svg" %}"> {% trans "Warning the note will be lost if there is no membership left, so the contact is actually removed for the group." %}<br></div>
     <input type=submit value="{% trans "Save" %}"> | <a id='membership_edit_more' href="{{cig_url}}/membership">{% trans "More..." %}</a> | <a href="javascript:inline_edit_membership_close();">{% trans "Cancel" %}</a>
     </form>
     </div>
