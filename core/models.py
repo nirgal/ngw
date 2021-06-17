@@ -1158,6 +1158,7 @@ class ContactGroup(NgwModel):
                           + ' ' + str(self.id))
             log.target_repr = 'Membership contact {} in group {}'.format(
                 contact, self)
+            log.save()
 
             hooks.membership_changed(request, contact, self)
 
@@ -1264,7 +1265,7 @@ class ContactGroup(NgwModel):
             contact_ids = [contact.id for contact in contacts]
             members = self.get_all_members().filter(pk__in=contact_ids)
             supergroups = self.get_supergroups().filter(sticky=True)
-            print("STICKY HANDLING:", supergroups)
+            # print("STICKY HANDLING:", supergroups)
             for sgroup in supergroups:
                 sgroup.set_member_n(
                         request,
