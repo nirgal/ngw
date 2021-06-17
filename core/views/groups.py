@@ -1505,6 +1505,7 @@ class ContactInGroupForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         # instance = kwargs.get('instance', None)
+        self.request = kwargs.pop('request')
         self.user = kwargs.pop('user')
         self.contact = kwargs.pop('contact')
         self.group = kwargs.pop('group')
@@ -1512,7 +1513,6 @@ class ContactInGroupForm(forms.ModelForm):
 
     def clean(self):
         # TODO: improve conflicts/dependencies checking
-        # Currently gets best resolution in set_member_1
         data = super().clean()
         flags = data['flags']
         membership_count = 0
@@ -1533,27 +1533,25 @@ class ContactInGroupForm(forms.ModelForm):
         return data
 
     def save(self):
-        oldflags = self.instance.flags or 0
-        is_creation = self.instance.pk is None
-        cig = super().save(commit=False)
-        if is_creation:
-            cig.contact = self.contact
-            cig.group = self.group
-
         newflags = self.cleaned_data['flags']
-        if ((oldflags ^ newflags) & perms.ADMIN_ALL
-           and not perms.c_operatorof_cg(self.user.id, self.group.id)):
-            # If you change any permission flags of that group, you must be a
-            # group operator
-            raise PermissionDenied
-        if not newflags:
-            cig.delete()
+
+        # cig = super().save(commit=False)  # Not called!
+        self.group.set_member_1(
+            self.request,
+            self.contact,
+            '-' + 'idmD' + perms.int_to_flags(perms.ADMIN_ALL)
+            + '+' + perms.int_to_flags(newflags)
+            )
+
+        if newflags:
+            cig = ContactInGroup.objects.get(
+                    contact_id=self.contact.id,
+                    group_id=self.group.id)
+            cig.note = self.cleaned_data['note']
+            cig.save()
+            return cig
+        else:
             return None
-        cig.flags = newflags
-        cig.save()
-        # TODO: use set_member_1 for logs:
-        # cg.set_member_1(request, contact, flags)
-        return cig
 
 
 class ContactInGroupView(InGroupAcl, FormView):
@@ -1569,6 +1567,7 @@ class ContactInGroupView(InGroupAcl, FormView):
         kwargs['group'] = self.contactgroup
         kwargs['contact'] = get_object_or_404(Contact,
                                               pk=int(self.kwargs['cid']))
+        kwargs['request'] = self.request
         kwargs['user'] = self.request.user
         try:
             instance = ContactInGroup.objects.get(
@@ -1595,8 +1594,7 @@ class ContactInGroupView(InGroupAcl, FormView):
                 _('{contact} has been removed from group {group}.')
                 .format(contact=contact.name,
                         group=cg.name))
-        Contact.objects.check_login_created(self.request)
-        hooks.membership_changed(self.request, contact, cg)
+        Contact.objects.check_login_created(self.request)  # TODO
         return HttpResponseRedirect(cg.get_absolute_url())
 
     def get_context_data(self, **kwargs):

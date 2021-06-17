@@ -1103,6 +1103,7 @@ class ContactGroup(NgwModel):
             result = LOG_ACTION_ADD
         newflags = cig.flags
 
+        # TODO: support group_member_mode not starting with '+' nor '-'
         assert group_member_mode and group_member_mode[0] in '+-', \
             'Invalid membership mode'
         for letter in group_member_mode:
