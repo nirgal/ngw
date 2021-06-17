@@ -31,7 +31,7 @@ from django.views.generic.edit import ModelFormMixin
 from ngw.core import perms
 from ngw.core.models import (FIELD_DEFAULT_GROUP, GROUP_EVERYBODY, Config,
                              Contact, ContactGroup, ContactInGroup,
-                             GroupInGroup, GroupManageGroup, hooks)
+                             GroupInGroup, GroupManageGroup)
 from ngw.core.nav import Navbar
 from ngw.core.views.contacts import BaseContactListView
 from ngw.core.views.generic import (InGroupAcl, NgwDeleteView, NgwListView,
@@ -1536,9 +1536,9 @@ class ContactInGroupForm(forms.ModelForm):
         newflags = self.cleaned_data['flags']
 
         # cig = super().save(commit=False)  # Not called!
-        self.group.set_member_1(
+        self.group.set_member_n(
             self.request,
-            self.contact,
+            [self.contact],
             '-' + 'idmD' + perms.int_to_flags(perms.ADMIN_ALL)
             + '+' + perms.int_to_flags(newflags)
             )
@@ -1579,22 +1579,8 @@ class ContactInGroupView(InGroupAcl, FormView):
         return kwargs
 
     def form_valid(self, form):
-        cig = form.save()
+        form.save()
         cg = self.contactgroup
-        contact = form.contact
-        if cig:
-            messages.add_message(
-                self.request, messages.SUCCESS,
-                _('Member {contact} of group {group} has been changed.')
-                .format(contact=contact.name,
-                        group=cg.name))
-        else:
-            messages.add_message(
-                self.request, messages.SUCCESS,
-                _('{contact} has been removed from group {group}.')
-                .format(contact=contact.name,
-                        group=cg.name))
-        Contact.objects.check_login_created(self.request)  # TODO
         return HttpResponseRedirect(cg.get_absolute_url())
 
     def get_context_data(self, **kwargs):
@@ -1724,7 +1710,6 @@ class ContactInGroupInlineView(InGroupAcl, View):
         else:
             cig.note = note
             cig.save()
-        hooks.membership_changed(request, contact, cg)
         return HttpResponseRedirect(request.POST['next_url'])
 
 

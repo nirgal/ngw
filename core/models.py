@@ -1074,7 +1074,7 @@ class ContactGroup(NgwModel):
         else:
             return 'mg'
 
-    def set_member_1(self, request, contact, group_member_mode):
+    def _set_member_1(self, request, contact, group_member_mode):
         """
         group_member_mode is a combinaison of letters 'mido'
         if it starts with '+', the mode will be added (dropping incompatible
@@ -1209,14 +1209,14 @@ class ContactGroup(NgwModel):
             self, request, contacts, group_member_mode,
             handle_sticky=True):
         """
-        Loop calls set_member_1 for each contacts
+        Loop calls _set_member_1 for each contacts
         This also add log messages to be displayed to the user
         """
         added_contacts = []
         changed_contacts = []
         removed_contacts = []
         for contact in contacts:
-            res = self.set_member_1(request, contact, group_member_mode)
+            res = self._set_member_1(request, contact, group_member_mode)
             if res == LOG_ACTION_ADD:
                 added_contacts.append(contact)
             elif res == LOG_ACTION_CHANGE:
