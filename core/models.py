@@ -1101,11 +1101,13 @@ class ContactGroup(NgwModel):
             cig = ContactInGroup(contact_id=contact.id,
                                  group_id=self.id, flags=0)
             result = LOG_ACTION_ADD
-        newflags = cig.flags
 
-        # TODO: support group_member_mode not starting with '+' nor '-'
-        assert group_member_mode and group_member_mode[0] in '+-', \
-            'Invalid membership mode'
+        operation = '+'
+        if group_member_mode and group_member_mode[0] not in '+-':
+            newflags = 0
+        else:
+            newflags = cig.flags
+
         for letter in group_member_mode:
             if letter in '+-':
                 operation = letter
@@ -1239,11 +1241,11 @@ class ContactGroup(NgwModel):
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
             if len(changed_contacts) == 1:
-                msg = _('Status of {contacts} in {group} was changed'
-                        ' to {status}.')
+                msg = _('Status of {contacts} in {group} was changed:'
+                        ' {status}.')
             else:
-                msg = _('Status of {contacts} in {group} were changed'
-                        ' to {status}.')
+                msg = _('Status of {contacts} in {group} were changed:'
+                        ' {status}.')
             messages.add_message(request, messages.SUCCESS, msg.format(
                 contacts=msgpart_contacts,
                 group=self,

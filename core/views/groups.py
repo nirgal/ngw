@@ -1535,13 +1535,13 @@ class ContactInGroupForm(forms.ModelForm):
     def save(self):
         newflags = self.cleaned_data['flags']
 
+        flags_change_request = perms.int_to_flags(newflags)
+
         # cig = super().save(commit=False)  # Not called!
         self.group.set_member_n(
             self.request,
             [self.contact],
-            '-' + 'idmD' + perms.int_to_flags(perms.ADMIN_ALL)
-            + '+' + perms.int_to_flags(newflags)
-            )
+            flags_change_request)
 
         if newflags:
             cig = ContactInGroup.objects.get(
@@ -1684,6 +1684,9 @@ class ContactInGroupView(InGroupAcl, FormView):
 
 
 class ContactInGroupInlineView(InGroupAcl, View):
+    # This is a small version that does NOT enable changes of administrative
+    # permissions.
+
     def check_perm_groupuser(self, group, user):
         if not group.userperms & perms.CHANGE_MEMBERS:
             raise PermissionDenied
