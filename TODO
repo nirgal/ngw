@@ -60,9 +60,6 @@ Favorite groups (not for events?):
 - Add a filter on group page on the right to show only favorite fields or all of them
 - Add actions on group list to remove or add a group from/to the list of favorites.
 
-Sticky groups:
-- When you join a 'sticky' group though inheritance, group membership should be permanent.
-
 Invite groups (?):
 - Disable invitation buttons when a group doesn't support the feature.
 
@@ -71,8 +68,6 @@ Improve EditGroup form:
 - Change permission setup: We need a way to add groups and for each of them to select the permissions
 - Make a full wizard?
 - Shouln't mailman extension be setup in its own table/extension?
-
-Add support for attachements in externals messages (?)
 
 When adding someone in a group, check supergroups permission to add members.
 Or just allow supergroup inherited...
