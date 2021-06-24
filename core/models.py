@@ -1215,6 +1215,35 @@ class ContactGroup(NgwModel):
         Loop calls _set_member_1 for each contacts
         This also add log messages to be displayed to the user
         """
+
+        contacts = [contact for contact in contacts]  # clone as list
+        if handle_sticky and self.sticky:
+            membership_changing = False
+            for invalid_perm in 'midD':
+                if invalid_perm in group_member_mode:
+                    membership_changing = True
+            if membership_changing:
+                subgroups = self.get_subgroups()
+                for contact in contacts:
+                    for subgroup in subgroups:
+                        if perms.cig_flags_direct_int(
+                                contact.id,
+                                subgroup.id) & perms.MEMBERSHIPS_ALL:
+                            msg = _(
+                                    '"{group}" is sticky and {contact} is in '
+                                    'subgroup "{subgroup}". This is '
+                                    'forbidden. Please remove "{contact} '
+                                    'from "{subgroup}" first.')
+                            messages.add_message(
+                                request,
+                                messages.ERROR,
+                                msg.format(
+                                    group=self,
+                                    contact=contact,
+                                    subgroup=subgroup))
+                            contacts.remove(contact)
+                            break
+
         added_contacts = []
         changed_contacts = []
         removed_contacts = []

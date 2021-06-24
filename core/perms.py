@@ -147,6 +147,8 @@ _register_flag(
     ugettext_lazy('Members of these groups will automatically be granted'
                   ' permission to send messages.'))
 
+MEMBERSHIPS_ALL = MEMBER | INVITED | DECLINED | CANCELED
+
 ADMIN_ALL = (
     OPERATOR | VIEWER
     | SEE_CG | CHANGE_CG
