@@ -1232,7 +1232,7 @@ class ContactGroup(NgwModel):
                             msg = _(
                                     '"{group}" is sticky and {contact} is in '
                                     'subgroup "{subgroup}". This is '
-                                    'forbidden. Please remove "{contact} '
+                                    'forbidden. Please remove {contact} '
                                     'from "{subgroup}" first.')
                             messages.add_message(
                                 request,

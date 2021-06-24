@@ -927,8 +927,6 @@ class GroupAddManyForm(forms.Form):
 
         target_group.set_member_n(request, contacts, modes)
 
-        # FIXME: handle sticky groups
-
 
 class GroupAddManyView(NgwUserAcl, FormView):
     form_class = GroupAddManyForm

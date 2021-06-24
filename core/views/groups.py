@@ -738,6 +738,8 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         actions = super().get_actions(request)
         send_message = self.get_action('action_send_message')
         actions[send_message[1]] = send_message
+        remove_from_group = self.get_action('action_remove_from_group')
+        actions[remove_from_group[1]] = remove_from_group
         return actions
 
     def action_send_message(self, request, queryset):
@@ -745,6 +747,11 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         return HttpResponseRedirect('send_message?ids=' + ','.join(ids))
     action_send_message.short_description = ugettext_lazy(
         "Send a message (external storage)")
+
+    def action_remove_from_group(self, request, queryset):
+        self.contactgroup.set_member_n(request, queryset, '-midD')
+    action_remove_from_group.short_description = ugettext_lazy(
+            "Remove from this group")
 
 
 #######################################################################
