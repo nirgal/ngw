@@ -36,7 +36,7 @@ from ngw.core.views.groups import (CalendarQueryView, CalendarView,
                                    ContactInGroupView, EventListView,
                                    GroupCreateView, GroupDeleteView,
                                    GroupDetailView, GroupEditView,
-                                   GroupMemberListView)
+                                   GroupMemberListView, GroupRemoveMany)
 from ngw.core.views.logs import LogListView
 from ngw.core.views.mailman import MailmanSyncView
 from ngw.core.views.messages import (MessageBlobView, MessageDeleteView,
@@ -62,6 +62,7 @@ groups_urlpatterns = [
         GroupMemberListView.as_view(), name='group_members'),
     url(r'^(?P<gid>\d+)/members/send_message$', SendMessageView.as_view()),
     url(r'^(?P<gid>\d+)/members/add$', ContactCreateView.as_view()),
+    url(r'^(?P<gid>\d+)/members/remove_many$', GroupRemoveMany.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/$', ContactDetailView.as_view()),
     url(r'^(?P<gid>\d+)/members/(?P<cid>\d+)/vcard$',
         ContactVcardView.as_view()),

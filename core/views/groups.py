@@ -749,7 +749,8 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         "Send a message (external storage)")
 
     def action_remove_from_group(self, request, queryset):
-        self.contactgroup.set_member_n(request, queryset, '-midD')
+        ids = request.POST.getlist('_selected_action')
+        return HttpResponseRedirect('remove_many?ids=' + ','.join(ids))
     action_remove_from_group.short_description = ugettext_lazy(
             "Remove from this group")
 
@@ -1770,3 +1771,81 @@ class ContactInGroupDelete(InGroupAcl, NgwDeleteView):
                 [obj.contact],
                 '-' + perms.int_to_flags(obj.flags))
         return HttpResponseRedirect(success_url)
+
+
+#######################################################################
+#
+# Group mass remove
+#
+#######################################################################
+
+class GroupRemoveManyForm(forms.Form):
+    ids = forms.CharField(widget=forms.widgets.HiddenInput)
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+        contact_ids = kwargs['initial']['ids'].split(',')
+        contacts = Contact.objects.filter(pk__in=contact_ids)
+        contacts = contacts.extra(
+            tables=('v_c_can_see_c',),
+            where=(
+                'v_c_can_see_c.contact_id_1={}'.format(self.user.id),
+                'v_c_can_see_c.contact_id_2=contact.id'))
+        self.fields['contacts'] = forms.MultipleChoiceField(
+                label='',
+                choices=[(contact.id, contact.name) for contact in contacts],
+                initial=contact_ids,
+                widget=forms.widgets.CheckboxSelectMultiple(
+                    attrs={'class': 'no_bullet_list'}))
+        self.contacts = contacts
+
+    def remove_them(self, request, group):
+        group.set_member_n(request, self.contacts, '-midD')
+
+
+class GroupRemoveMany(InGroupAcl, FormView):
+
+    form_class = GroupRemoveManyForm
+    template_name = 'group_remove_many.html'
+    success_url = '.'
+
+    def get(self, request, gid):
+        self.group = ContactGroup.objects.get(pk=gid)
+        return super().get(request)
+
+    def post(self, request, gid):
+        self.group = ContactGroup.objects.get(pk=gid)
+        return super().post(request)
+
+    def check_perm_groupuser(self, group, user):
+        if not group.userperms & perms.CHANGE_MEMBERS:
+            raise PermissionDenied
+
+    def get_initial(self):
+        if self.request.method == 'POST':
+            querydict = self.request.POST
+        else:
+            querydict = self.request.GET
+        return {'ids': querydict['ids']}
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['title'] = _('Please confirm removal')
+        context['group'] = self.group
+        context['contacts'] = []
+        context['nav'] = self.group.get_smart_navbar() \
+            .add_component(('members', _('members'))) \
+            .add_component(('remove_many', _('remove many')))
+        context.update(kwargs)
+        return super().get_context_data(**context)
+
+    def form_valid(self, form):
+        form.remove_them(self.request, self.group)
+        return super().form_valid(form)

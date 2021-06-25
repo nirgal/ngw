@@ -312,3 +312,7 @@ select.doublechoicesecond {
 #inline_cig_note_warning img {
     vertical-align: middle;
 }
+
+ul.no_bullet_list li {
+	list-style-type: none;
+}
