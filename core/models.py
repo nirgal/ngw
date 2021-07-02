@@ -1302,6 +1302,16 @@ class ContactGroup(NgwModel):
                         '+m',
                         handle_sticky=False)
 
+    def check_remove_members(request, contacts, handle_sticky=False):
+        '''
+        To be called before using set_member_n with membership removal.
+        Returns a dictionnary:
+        { contact_id: { 'warning': ['blah', 'blah'], 'error': ['ops']}
+        '''
+        result = {}
+        # result[617] = { 'warning': ['blah', 'blah'], 'error': ['ops']}
+        return result
+
     def count_messages(self):
         return ContactMsg.objects.filter(group_id=self.id).count()
 

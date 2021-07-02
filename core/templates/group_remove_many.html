@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block bodyclass %}change-form{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<form method="post">
+<div class="module padded">
+    {% blocktrans %}You are about to remove the following people from {{ group }}:{% endblocktrans %}
+    {% csrf_token %}
+    <table>
+    {{ form.as_table }}
+    </table>
+    <ul class=no_bullet_list>
+    {% for contact in contacts %}
+    <li>{{ contact }}</li>
+            {% for msg in contact.remove_warning %}
+            &nbsp; &nbsp; /!\ {{ msg }}<br>
+            {% endfor %}
+            {% for msg in contact.remove_error %}
+            &nbsp; &nbsp; /!!\ {{ msg }}<br>
+            {% endfor %}
+    {% endfor %}
+    </ul>
+    {% blocktrans %}Are you sure ?{% endblocktrans %}
+</div>
+
+{% block submitbar %}
+<div class=submit-row>
+    {% csrf_token %}
+    <input type=submit value="{% trans "Yes I'm Sure" %}">
+    <a href="javascript:history.back()" class="button">{% trans "Cancel" %}</a>
+</div>
+{% endblock %}
+
+</form>
+</div>
+{% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}

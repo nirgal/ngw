@@ -1786,23 +1786,15 @@ class GroupRemoveManyForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.user = user
 
-        contact_ids = kwargs['initial']['ids'].split(',')
+    def get_contacts(self, user, group):
+        contact_ids = self.initial['ids'].split(',')
         contacts = Contact.objects.filter(pk__in=contact_ids)
         contacts = contacts.extra(
             tables=('v_c_can_see_c',),
             where=(
-                'v_c_can_see_c.contact_id_1={}'.format(self.user.id),
+                'v_c_can_see_c.contact_id_1={}'.format(user.id),
                 'v_c_can_see_c.contact_id_2=contact.id'))
-        self.fields['contacts'] = forms.MultipleChoiceField(
-                label='',
-                choices=[(contact.id, contact.name) for contact in contacts],
-                initial=contact_ids,
-                widget=forms.widgets.CheckboxSelectMultiple(
-                    attrs={'class': 'no_bullet_list'}))
-        self.contacts = contacts
-
-    def remove_them(self, request, group):
-        group.set_member_n(request, self.contacts, '-midD')
+        return contacts
 
 
 class GroupRemoveMany(InGroupAcl, FormView):
@@ -1839,13 +1831,29 @@ class GroupRemoveMany(InGroupAcl, FormView):
         context = {}
         context['title'] = _('Please confirm removal')
         context['group'] = self.group
-        context['contacts'] = []
         context['nav'] = self.group.get_smart_navbar() \
             .add_component(('members', _('members'))) \
             .add_component(('remove_many', _('remove many')))
         context.update(kwargs)
-        return super().get_context_data(**context)
+        context = super().get_context_data(**context)  # adds the form
+
+        form = context['form']
+        contacts = form.get_contacts(self.request.user, self.group)
+        context['contacts'] = list(contacts)
+
+        msg_remove = self.group.check_remove_members(self.request, contacts)
+        for cid, contact_info_msg in msg_remove.items():
+            for contact in contacts:
+                if contact.id == cid:
+                    contact.remove_warning = contact_info_msg.get(
+                            'warning', ())
+                    contact.remove_error = contact_info_msg.get(
+                            'error', ())
+
+        return context
 
     def form_valid(self, form):
-        form.remove_them(self.request, self.group)
+        print('contacts:', form.initial['ids'])
+        contacts = form.get_contacts(self.request.user, self.group)
+        self.group.set_member_n(self.request, contacts, '-midD')
         return super().form_valid(form)
