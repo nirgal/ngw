@@ -1102,36 +1102,20 @@ class ContactGroup(NgwModel):
                                  group_id=self.id, flags=0)
             result = LOG_ACTION_ADD
 
-        operation = '+'
-        if group_member_mode and group_member_mode[0] not in '+-':
-            newflags = 0
-        else:
-            newflags = cig.flags
+        (flags_to_add, flags_to_remove) = perms.strchange_to_ints(
+                group_member_mode)
 
-        for letter in group_member_mode:
-            if letter in '+-':
-                operation = letter
-                continue
+        changing_flags = flags_to_add | flags_to_remove
+        newflags = (cig.flags & ~flags_to_remove) | flags_to_add
 
-            if operation == '+':
-                newflags |= perms.FLAGTOINT[letter]
-                for dependency in perms.FLAGDEPENDS[letter]:
-                    newflags |= perms.FLAGTOINT[dependency]
-                for conflict in perms.FLAGCONFLICTS[letter]:
-                    newflags &= ~perms.FLAGTOINT[conflict]
-            else:  # operation == '-'
-                newflags &= ~perms.FLAGTOINT[letter]
-                for flag1, depflag1 in perms.FLAGDEPENDS.items():
-                    if letter in depflag1:
-                        newflags &= ~perms.FLAGTOINT[flag1]
-
-        if cig.flags ^ newflags & perms.ADMIN_ALL:
+        if changing_flags & perms.ADMIN_ALL:
             if not perms.c_operatorof_cg(user.id, self.id):
                 # You need to be operator to be able to change permissions
                 logging.error('User {} is not operator of {}'.format(
                     user, self))
                 raise PermissionDenied
-        if cig.flags ^ newflags & ~perms.ADMIN_ALL:  # m/i/d
+
+        if changing_flags & perms.MEMBERSHIPS_ALL:
             # user needs to be able to add contacts
             # in all subgroups it's not a member yet, including
             # hidden ones
@@ -1317,6 +1301,7 @@ class ContactGroup(NgwModel):
         Returns a dictionnary:
         { contact_id: { 'warning': ['blah', 'blah'], 'error': ['ops']}
         '''
+
         contact_ids = [contact.id for contact in contacts]
         result = {}
         for contact_id in contact_ids:

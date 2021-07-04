@@ -402,3 +402,60 @@ def c_can_see_c(cid1, cid2):
     if row is None:
         return False
     return row[0]
+
+
+def strchange_to_ints(str_change):
+    '''
+    str_change is a combinaison of letters 'midDov... (see above)
+    - If it starts with '+', the modes will be added (dropping incompatible
+    ones).
+    - If it starts with '-', the modes will be removed (along with
+    dependencies)
+    - Otherwise, it sets the mode, clearing all flags but the listed ones.
+
+    Example:
+    '+d' actually means '+d-m-i-D'
+    '+U' actually means '+U+e+u'
+    'mv' actually means '+m-i-M-D-o+e-E+c-C+f-F+n-N+u-U+x-X'
+    returns a tupple of intergers (added_flags, removed_flags)
+    '''
+
+    flags_to_add = 0
+    flags_to_remove = 0
+
+    if str_change:
+        first_letter = str_change[0]
+        if first_letter in '+-':
+            operation = first_letter
+        else:
+            operation = '+'
+            flags_to_remove = MEMBERSHIPS_ALL | ADMIN_ALL
+
+    for letter in str_change:
+        if letter in '+-':
+            operation = letter
+            continue
+
+        if operation == '+':
+            flags_to_add |= FLAGTOINT[letter]
+            flags_to_remove &= ~FLAGTOINT[letter]
+            for dependency in FLAGDEPENDS[letter]:
+                flags_to_add |= FLAGTOINT[dependency]
+                flags_to_remove &= ~FLAGTOINT[dependency]
+            for conflict in FLAGCONFLICTS[letter]:
+                flags_to_add &= ~FLAGTOINT[conflict]
+                flags_to_remove |= FLAGTOINT[conflict]
+        else:  # operation == '-'
+            flags_to_add &= ~FLAGTOINT[letter]
+            flags_to_remove |= FLAGTOINT[letter]
+            for flag1, depflag1 in FLAGDEPENDS.items():
+                if letter in depflag1:
+                    flags_to_add &= ~FLAGTOINT[flag1]
+                    flags_to_remove |= FLAGTOINT[flag1]
+
+    return (flags_to_add, flags_to_remove)
+    # tests
+    # for change in ('+m', '+i', '+U', 'm', '+m+i+d', '+v-u'):
+    #     madd, mremove = perms.mode_change_to_flags_change(change)
+    #     print(change, '->', '+', perms.int_to_flags(madd), '-',
+    #             perms.int_to_flags(mremove))
