@@ -14,13 +14,17 @@
     </table>
     <ul class=no_bullet_list>
     {% for contact in contacts %}
-    <li>{{ contact }}</li>
+    <li><h4>{{ contact }}</h4>
+            <ul class=messagelist>
             {% for msg in contact.remove_warning %}
-            &nbsp; &nbsp; /!\ {{ msg }}<br>
+            <li class="warning">{{ msg }}
             {% endfor %}
+            </ul>
+            <ul class=messagelist>
             {% for msg in contact.remove_error %}
-            &nbsp; &nbsp; /!!\ {{ msg }}<br>
+            <li class="error">{{ msg }}<br>
             {% endfor %}
+            </ul>
     {% endfor %}
     </ul>
     {% blocktrans %}Are you sure ?{% endblocktrans %}
