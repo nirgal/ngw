@@ -1074,7 +1074,9 @@ class ContactGroup(NgwModel):
         else:
             return 'mg'
 
-    def _set_member_1(self, request, contact, flags_to_add, flags_to_remove):
+    def _set_member_1(
+            self, request, contact, flags_to_add, flags_to_remove,
+            dry_run_errors=None):
         """
         returns:
         LOG_ACTION_ADD if added
@@ -1084,6 +1086,12 @@ class ContactGroup(NgwModel):
         If the contact was not in the group, it will be added.
         If new mode is empty, the contact will be removed from the group.
         """
+
+        # List of warnings / errors:
+        # no_change_member_permission(group)
+        # change_member_virtual(group)
+        # member_added_in_sticky_supergroup(contact,group)
+        # member_removed_from_subgroup(contact,group)
 
         user = request.user
         result = 0
@@ -1098,28 +1106,32 @@ class ContactGroup(NgwModel):
                                  group_id=self.id, flags=0)
             result = LOG_ACTION_ADD
 
-        changing_flags = flags_to_add | flags_to_remove
         newflags = (cig.flags & ~flags_to_remove) | flags_to_add
 
-        if changing_flags & perms.ADMIN_ALL:
+        if (cig.flags ^ newflags) & perms.ADMIN_ALL:
+            # Some priviledge are changing
             if not perms.c_operatorof_cg(user.id, self.id):
-                # You need to be operator to be able to change permissions
-                logging.error('User {} is not operator of {}'.format(
-                    user, self))
-                raise PermissionDenied
-
-        if changing_flags & perms.MEMBERSHIPS_ALL:
-            # user needs to be able to add contacts
-            # in all subgroups it's not a member yet, including
-            # hidden ones
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    'User {} needs to be operator of {} to change'
+                    ' privileges.'.format(user, self))
+                return 0
+        if (cig.flags ^ newflags) & perms.MEMBERSHIPS_ALL:
+            # Some membership m/i/d/D is changing
             if self.virtual:
-                raise PermissionDenied
-            for sg in self.get_supergroups():
-                if (not contact.is_directmember_of(sg.id)
-                        and not perms.c_can_change_members_cg(user.id, sg.id)):
-                    logging.error("User {} can't change members of {}".format(
-                        user, sg))
-                    raise PermissionDenied
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    _('{} is virtual and cannot have members').format(self))
+                return 0
+            if not perms.c_can_change_members_cg(user.id, self.id):
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    _("User {} doesn't have the permission to change members"
+                      " of {}.").format(user, self))
+                return 0
 
         if newflags == 0:
             cig.delete()
@@ -1202,10 +1214,6 @@ class ContactGroup(NgwModel):
         { contact_id: { 'warning': ['blah', 'blah'], 'error': ['ops']}
         """
 
-        # List of warnings / errors:
-        # member_added_in_sticky_supergroup(contact,group)
-        # member_removed_from_subgroup(contact,group)
-
         (flags_to_add, flags_to_remove) = perms.strchange_to_ints(
                 group_member_mode)
 
@@ -1269,10 +1277,8 @@ class ContactGroup(NgwModel):
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
             msg = ungettext(
-                    'Status of {contacts} in {group} was changed:'
-                    ' {status}.',
-                    'Status of {contacts} in {group} were changed:'
-                    ' {status}.',
+                    'Status of {contacts} in {group} was changed: {status}.',
+                    'Status of {contacts} in {group} were changed: {status}.',
                     len(changed_contacts)).format(
                             contacts=msgpart_contacts,
                             group=self,
