@@ -738,8 +738,9 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         actions = super().get_actions(request)
         send_message = self.get_action('action_send_message')
         actions[send_message[1]] = send_message
-        remove_from_group = self.get_action('action_remove_from_group')
-        actions[remove_from_group[1]] = remove_from_group
+        if self.contactgroup.id != GROUP_EVERYBODY:
+            remove_from_group = self.get_action('action_remove_from_group')
+            actions[remove_from_group[1]] = remove_from_group
         return actions
 
     def action_send_message(self, request, queryset):
