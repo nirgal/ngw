@@ -752,7 +752,7 @@ class GroupMemberListView(InGroupAcl, BaseContactListView):
         ids = request.POST.getlist('_selected_action')
         return HttpResponseRedirect('remove_many?ids=' + ','.join(ids))
     action_remove_from_group.short_description = ugettext_lazy(
-            "Remove from this group")
+            "Force remove members from this group")
 
 
 #######################################################################
@@ -1856,5 +1856,6 @@ class GroupRemoveMany(InGroupAcl, FormView):
 
     def form_valid(self, form):
         contacts = form.get_contacts(self.request.user, self.group)
-        self.group.set_member_n(self.request, contacts, '-midD')
+        self.group.set_member_n(self.request, contacts, '-midD',
+                                force_removal=True)
         return super().form_valid(form)

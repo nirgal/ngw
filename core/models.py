@@ -1123,7 +1123,7 @@ class ContactGroup(NgwModel):
                 if dry_run_messages is None:
                     messages.add_message(request, messages.ERROR, msg)
                 else:
-                    dry_run_messages.append((contact.id, 'ERROR', msg))
+                    dry_run_messages.append((contact, 'ERROR', msg))
                 return 0
         if (oldflags ^ newflags) & perms.MEMBERSHIPS_ALL:
             # Some membership m/i/d/D is changing
@@ -1132,7 +1132,7 @@ class ContactGroup(NgwModel):
                 if dry_run_messages is None:
                     messages.add_message(request, messages.ERROR, msg)
                 else:
-                    dry_run_messages.append((contact.id, 'ERROR', msg))
+                    dry_run_messages.append((contact, 'ERROR', msg))
                 return 0
             if not perms.c_can_change_members_cg(user.id, self.id):
                 msg = _("User {} doesn't have the permission to change members"
@@ -1140,7 +1140,7 @@ class ContactGroup(NgwModel):
                 if dry_run_messages is None:
                     messages.add_message(request, messages.ERROR, msg)
                 else:
-                    dry_run_messages.append((contact.id, 'ERROR', msg))
+                    dry_run_messages.append((contact, 'ERROR', msg))
                 return 0
 
         if newflags == 0:
@@ -1216,7 +1216,7 @@ class ContactGroup(NgwModel):
             self, request, contacts, group_member_mode,
             force_removal=False,
             dry_run_messages=None,
-            handle_sticky=True
+            handle_tree=True
             ):
         """
         Loop calls _set_member_1 for each contacts
@@ -1238,12 +1238,29 @@ class ContactGroup(NgwModel):
                 group_member_mode)
 
         contacts = [contact for contact in contacts]  # clone as list
-        if handle_sticky and self.sticky:
-            membership_changing = False
-            for invalid_perm in 'midD':
-                if invalid_perm in group_member_mode:
-                    membership_changing = True
-            if membership_changing:
+
+        if force_removal:
+            # Remove from all subgroups
+            if handle_tree:  # don't recurse that
+                assert flags_to_remove & perms.MEMBER
+                subgroups = self.get_subgroups()
+                for subgroup in subgroups:
+                    if dry_run_messages is None:
+                        sub_dry_run_messages = None
+                    else:
+                        sub_dry_run_messages = []
+                    subgroup.set_member_n(
+                            request, contacts, '-m',
+                            dry_run_messages=sub_dry_run_messages,
+                            handle_tree=False)
+                    if sub_dry_run_messages:
+                        for contact, msglevel, msg in sub_dry_run_messages:
+                            if msglevel == 'ERROR':
+                                contacts.remove(contact)
+                        dry_run_messages += sub_dry_run_messages
+
+        elif handle_tree and self.sticky:
+            if (flags_to_add | flags_to_remove) & perms.MEMBER:
                 subgroups = self.get_subgroups()
                 for contact in contacts:
                     for subgroup in subgroups:
@@ -1303,7 +1320,7 @@ class ContactGroup(NgwModel):
                             contact=contact,
                             group=self,
                             status=group_member_mode)
-                    dry_run_messages.append((contact.id, msg_level, msg))
+                    dry_run_messages.append((contact, msg_level, msg))
 
         if added_contacts:
             msgpart_contacts = ', '.join([c.name for c in added_contacts])
@@ -1338,7 +1355,9 @@ class ContactGroup(NgwModel):
                             group=self)
             messages.add_message(request, messages.SUCCESS, msg)
 
-        if handle_sticky:
+        # Propagate membership (m) to sticky supergroups:
+
+        if handle_tree:
             contact_ids = [contact.id for contact in contacts]
             members = self.get_all_members().filter(pk__in=contact_ids)
             supergroups = self.get_supergroups().filter(sticky=True)
@@ -1349,7 +1368,7 @@ class ContactGroup(NgwModel):
                         members,
                         '+m',
                         dry_run_messages=dry_run_messages,
-                        handle_sticky=False)
+                        handle_tree=False)
 
     def check_remove_members(self, request, contacts, handle_sticky=False):
         '''
@@ -1373,24 +1392,24 @@ class ContactGroup(NgwModel):
                     'warning': [],
                     'error': []}
 
-        for contactid, level, msg in dry_run_messages:
+        for contact, level, msg in dry_run_messages:
             if level == 'ERROR':
-                result[contactid]['error'].append(msg)
+                result[contact.id]['error'].append(msg)
             elif level == 'WARN':
-                result[contactid]['warning'].append(msg)
+                result[contact.id]['warning'].append(msg)
             else:
-                result[contactid]['info'].append(msg)
+                result[contact.id]['info'].append(msg)
 
-        subgroups = self.get_subgroups()
-        for subgroup in subgroups:
-            cigs = ContactInGroup.objects.filter(
-                    contact_id__in=contact_ids,
-                    group_id=subgroup.id)
-            for cig in cigs:
-                warnings = result[cig.contact_id]['warning']
-                warnings.append(
-                        'Will automatically be removed from subgroup "{}"'
-                        .format(cig.group))
+        # subgroups = self.get_subgroups()
+        # for subgroup in subgroups:
+        #     cigs = ContactInGroup.objects.filter(
+        #             contact_id__in=contact_ids,
+        #             group_id=subgroup.id)
+        #     for cig in cigs:
+        #         warnings = result[cig.contact_id]['warning']
+        #         warnings.append(
+        #                 'Will automatically be removed from subgroup "{}"'
+        #                 .format(cig.group))
 
         supergroups = self.get_supergroups()
         for supergroup in supergroups:
