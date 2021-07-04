@@ -1145,7 +1145,7 @@ class ContactGroup(NgwModel):
 
         if newflags == 0:
             # There is no flag left: group removal
-            if dry_run_messages is not None:
+            if dry_run_messages is None:  # not a dry-run
                 cig.delete()
 
                 log = Log(contact_id=user.id)
@@ -1162,7 +1162,7 @@ class ContactGroup(NgwModel):
 
         elif oldflags == 0:
             # Contact will be added to group
-            if dry_run_messages is not None:
+            if dry_run_messages is None:  # not a dry-run
                 log = Log(contact_id=user.id)
                 log.action = LOG_ACTION_ADD
                 log.target = ('ContactInGroup ' + str(contact.id)
@@ -1177,7 +1177,7 @@ class ContactGroup(NgwModel):
                 return 0
             result = LOG_ACTION_CHANGE
 
-        if dry_run_messages is not None:
+        if dry_run_messages is not None:  # dry-run
             return result
             # Stop processing here
 
@@ -1290,7 +1290,8 @@ class ContactGroup(NgwModel):
                     request,
                     contact,
                     flags_to_add,
-                    flags_to_remove)
+                    flags_to_remove,
+                    dry_run_messages)
             if dry_run_messages is None:
                 if res == LOG_ACTION_ADD:
                     added_contacts.append(contact)
@@ -1299,6 +1300,7 @@ class ContactGroup(NgwModel):
                 elif res == LOG_ACTION_DEL:
                     removed_contacts.append(contact)
             else:
+                # dry run
                 msg_level = 'INFO'
                 if res == LOG_ACTION_ADD:
                     msg = _('Contact {contact} will been added in {group} '
