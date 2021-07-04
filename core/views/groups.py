@@ -1845,6 +1845,8 @@ class GroupRemoveMany(InGroupAcl, FormView):
         for cid, contact_info_msg in msg_remove.items():
             for contact in contacts:
                 if contact.id == cid:
+                    contact.remove_info = contact_info_msg.get(
+                            'info', ())
                     contact.remove_warning = contact_info_msg.get(
                             'warning', ())
                     contact.remove_error = contact_info_msg.get(
@@ -1853,7 +1855,6 @@ class GroupRemoveMany(InGroupAcl, FormView):
         return context
 
     def form_valid(self, form):
-        print('contacts:', form.initial['ids'])
         contacts = form.get_contacts(self.request.user, self.group)
         self.group.set_member_n(self.request, contacts, '-midD')
         return super().form_valid(form)

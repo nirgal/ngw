@@ -16,6 +16,11 @@
     {% for contact in contacts %}
     <li><h4>{{ contact }}</h4>
             <ul class=messagelist>
+            {% for msg in contact.remove_info %}
+            <li class="">{{ msg }}
+            {% endfor %}
+            </ul>
+            <ul class=messagelist>
             {% for msg in contact.remove_warning %}
             <li class="warning">{{ msg }}
             {% endfor %}

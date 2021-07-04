@@ -1076,7 +1076,7 @@ class ContactGroup(NgwModel):
 
     def _set_member_1(
             self, request, contact, flags_to_add, flags_to_remove,
-            dry_run_errors=None):
+            dry_run_messages=None):
         """
         returns:
         LOG_ACTION_ADD if added
@@ -1085,13 +1085,16 @@ class ContactGroup(NgwModel):
         0 other wise
         If the contact was not in the group, it will be added.
         If new mode is empty, the contact will be removed from the group.
+
+        if dry_run_messages is a list, error messages will be appended as
+        tupples (contactid, LEVEL, message)
         """
 
         # List of warnings / errors:
-        # no_change_member_permission(group)
-        # change_member_virtual(group)
-        # member_added_in_sticky_supergroup(contact,group)
-        # member_removed_from_subgroup(contact,group)
+        # ERROR no_change_member_permission(group)
+        # ERROR change_member_virtual(group)
+        # ERROR member_added_in_sticky_supergroup(contact,group)
+        # WARN member_removed_from_subgroup(contact,group)
 
         user = request.user
         result = 0
@@ -1099,67 +1102,84 @@ class ContactGroup(NgwModel):
         try:
             cig = ContactInGroup.objects.get(contact_id=contact.id,
                                              group_id=self.id)
+            oldflags = cig.flags
         except ContactInGroup.DoesNotExist:
             if flags_to_add == 0:
                 return 0  # Nothing to
-            cig = ContactInGroup(contact_id=contact.id,
-                                 group_id=self.id, flags=0)
+            if dry_run_messages is None:
+                cig = ContactInGroup(contact_id=contact.id,
+                                     group_id=self.id,
+                                     flags=0)
+            oldflags = 0
             result = LOG_ACTION_ADD
 
-        newflags = (cig.flags & ~flags_to_remove) | flags_to_add
+        newflags = (oldflags & ~flags_to_remove) | flags_to_add
 
-        if (cig.flags ^ newflags) & perms.ADMIN_ALL:
+        if (oldflags ^ newflags) & perms.ADMIN_ALL:
             # Some priviledge are changing
             if not perms.c_operatorof_cg(user.id, self.id):
-                messages.add_message(
-                    request,
-                    messages.ERROR,
-                    'User {} needs to be operator of {} to change'
-                    ' privileges.'.format(user, self))
+                msg = _('User {} needs to be operator of {} to change'
+                        ' privileges.'.format(user, self))
+                if dry_run_messages is None:
+                    messages.add_message(request, messages.ERROR, msg)
+                else:
+                    dry_run_messages.append((contact.id, 'ERROR', msg))
                 return 0
-        if (cig.flags ^ newflags) & perms.MEMBERSHIPS_ALL:
+        if (oldflags ^ newflags) & perms.MEMBERSHIPS_ALL:
             # Some membership m/i/d/D is changing
             if self.virtual:
-                messages.add_message(
-                    request,
-                    messages.ERROR,
-                    _('{} is virtual and cannot have members').format(self))
+                msg = _('{} is virtual and cannot have members').format(self)
+                if dry_run_messages is None:
+                    messages.add_message(request, messages.ERROR, msg)
+                else:
+                    dry_run_messages.append((contact.id, 'ERROR', msg))
                 return 0
             if not perms.c_can_change_members_cg(user.id, self.id):
-                messages.add_message(
-                    request,
-                    messages.ERROR,
-                    _("User {} doesn't have the permission to change members"
-                      " of {}.").format(user, self))
+                msg = _("User {} doesn't have the permission to change members"
+                        " of {}.").format(user, self)
+                if dry_run_messages is None:
+                    messages.add_message(request, messages.ERROR, msg)
+                else:
+                    dry_run_messages.append((contact.id, 'ERROR', msg))
                 return 0
 
         if newflags == 0:
-            cig.delete()
+            # There is no flag left: group removal
+            if dry_run_messages is not None:
+                cig.delete()
 
-            log = Log(contact_id=user.id)
-            log.action = LOG_ACTION_DEL
-            log.target = ('ContactInGroup ' + str(contact.id)
-                          + ' ' + str(self.id))
-            log.target_repr = 'Membership contact {} in group {}'.format(
-                contact, self)
-            log.save()
+                log = Log(contact_id=user.id)
+                log.action = LOG_ACTION_DEL
+                log.target = ('ContactInGroup ' + str(contact.id)
+                              + ' ' + str(self.id))
+                log.target_repr = 'Membership contact {} in group {}'.format(
+                    contact, self)
+                log.save()
 
-            hooks.membership_changed(request, contact, self)
+                hooks.membership_changed(request, contact, self)
 
             return LOG_ACTION_DEL
 
-        if result == LOG_ACTION_ADD:
-            log = Log(contact_id=user.id)
-            log.action = LOG_ACTION_ADD
-            log.target = ('ContactInGroup ' + str(contact.id)
-                          + ' ' + str(self.id))
-            log.target_repr = 'Membership contact {} in group {}'.format(
-                contact, self)
-        else:
+        elif oldflags == 0:
+            # Contact will be added to group
+            if dry_run_messages is not None:
+                log = Log(contact_id=user.id)
+                log.action = LOG_ACTION_ADD
+                log.target = ('ContactInGroup ' + str(contact.id)
+                              + ' ' + str(self.id))
+                log.target_repr = 'Membership contact {} in group {}'.format(
+                    contact, self)
+            result = LOG_ACTION_ADD
+
+        else:  # oldflags != 0 and newflags != 0
             if cig.flags == newflags:
                 # There is no change after all!
                 return 0
             result = LOG_ACTION_CHANGE
+
+        if dry_run_messages is not None:
+            return result
+            # Stop processing here
 
         for flag, intflag in perms.FLAGTOINT.items():
             if cig.flags & intflag and not newflags & intflag:
@@ -1194,8 +1214,10 @@ class ContactGroup(NgwModel):
 
     def set_member_n(
             self, request, contacts, group_member_mode,
-            force=False,
-            handle_sticky=True):
+            force_removal=False,
+            dry_run_messages=None,
+            handle_sticky=True
+            ):
         """
         Loop calls _set_member_1 for each contacts
         This also add log messages to be displayed to the user
@@ -1208,10 +1230,8 @@ class ContactGroup(NgwModel):
         m/i/d are mutually exclusive
         See perms.strchange_to_ints
 
-        TODO: ", dry_run=None)"
-        If dry_run is not None, it should be a dictionnary that will be
-        updated with a list of messages about what would occur:
-        { contact_id: { 'warning': ['blah', 'blah'], 'error': ['ops']}
+        if dry_run_messages is a list, error messages will be appended as
+        tupples (contactid, LEVEL, message)
         """
 
         (flags_to_add, flags_to_remove) = perms.strchange_to_ints(
@@ -1254,12 +1274,36 @@ class ContactGroup(NgwModel):
                     contact,
                     flags_to_add,
                     flags_to_remove)
-            if res == LOG_ACTION_ADD:
-                added_contacts.append(contact)
-            elif res == LOG_ACTION_CHANGE:
-                changed_contacts.append(contact)
-            elif res == LOG_ACTION_DEL:
-                removed_contacts.append(contact)
+            if dry_run_messages is None:
+                if res == LOG_ACTION_ADD:
+                    added_contacts.append(contact)
+                elif res == LOG_ACTION_CHANGE:
+                    changed_contacts.append(contact)
+                elif res == LOG_ACTION_DEL:
+                    removed_contacts.append(contact)
+            else:
+                msg_level = 'INFO'
+                if res == LOG_ACTION_ADD:
+                    msg = _('Contact {contact} will been added in {group} '
+                            'with status {status}.')
+                elif res == LOG_ACTION_CHANGE:
+                    msg = _('Status of {contact} in {group} will change: '
+                            ' {status}.')
+                elif res == LOG_ACTION_DEL:
+                    msg = _('Contact {contact} will be removed from {group}.')
+                else:
+                    if force_removal:
+                        msg_level = 'ERROR'
+                        msg = _("Contact {contact} is not a member of "
+                                " {group}.")
+                    else:
+                        msg = None
+                if msg is not None:
+                    msg = msg.format(
+                            contact=contact,
+                            group=self,
+                            status=group_member_mode)
+                    dry_run_messages.append((contact.id, msg_level, msg))
 
         if added_contacts:
             msgpart_contacts = ', '.join([c.name for c in added_contacts])
@@ -1304,6 +1348,7 @@ class ContactGroup(NgwModel):
                         request,
                         members,
                         '+m',
+                        dry_run_messages=dry_run_messages,
                         handle_sticky=False)
 
     def check_remove_members(self, request, contacts, handle_sticky=False):
@@ -1313,10 +1358,28 @@ class ContactGroup(NgwModel):
         { contact_id: { 'warning': ['blah', 'blah'], 'error': ['ops']}
         '''
 
+        dry_run_messages = []
+        self.set_member_n(
+            request, contacts, '-m',
+            force_removal=True,
+            dry_run_messages=dry_run_messages,
+            )
+
         contact_ids = [contact.id for contact in contacts]
         result = {}
         for contact_id in contact_ids:
-            result[contact_id] = {'warning': [], 'error': []}
+            result[contact_id] = {
+                    'info': [],
+                    'warning': [],
+                    'error': []}
+
+        for contactid, level, msg in dry_run_messages:
+            if level == 'ERROR':
+                result[contactid]['error'].append(msg)
+            elif level == 'WARN':
+                result[contactid]['warning'].append(msg)
+            else:
+                result[contactid]['info'].append(msg)
 
         subgroups = self.get_subgroups()
         for subgroup in subgroups:
@@ -1335,7 +1398,7 @@ class ContactGroup(NgwModel):
                     contact_id__in=contact_ids,
                     group_id=supergroup.id)
             for cig in cigs:
-                warnings = result[cig.contact_id]['warning']
+                warnings = result[cig.contact_id]['info']
                 warnings.append(
                         'Will stay in parent group "{}" and its parent\'s'
                         ' groups'
