@@ -945,7 +945,7 @@ class ContactGroup(NgwModel):
         return ContactGroup.objects \
             .filter(direct_gmg_subgroups__subgroup_id=self.id)
 
-    def get_all_members(self):
+    def get_all_members(self, perm=perms.MEMBER):
         return Contact.objects.extra(where=[
             'EXISTS ('
             '   SELECT *'
@@ -953,7 +953,7 @@ class ContactGroup(NgwModel):
             '   WHERE contact_id=contact.id'
             '   AND group_id IN (SELECT self_and_subgroups({}))'
             '   AND flags & {} <> 0'
-            ')'.format(self.id, perms.MEMBER)])
+            ')'.format(self.id, perm)])
 
     def get_members_count(self):
         return self.get_all_members().count()
@@ -1210,11 +1210,20 @@ class ContactGroup(NgwModel):
 
     def set_member_n(
             self, request, contacts, group_member_mode,
+            force=False,
             handle_sticky=True):
         """
         Loop calls _set_member_1 for each contacts
         This also add log messages to be displayed to the user
+        TODO: ", dry_run=None)"
+        If dry_run is not None, it should be a dictionnary that will be
+        updated with a list of messages about what would occur:
+        { contact_id: { 'warning': ['blah', 'blah'], 'error': ['ops']}
         """
+
+        # List of warnings / errors:
+        # member_added_in_sticky_supergroup(contact,group)
+        # member_removed_from_subgroup(contact,group)
 
         contacts = [contact for contact in contacts]  # clone as list
         if handle_sticky and self.sticky:
@@ -1228,7 +1237,7 @@ class ContactGroup(NgwModel):
                     for subgroup in subgroups:
                         if perms.cig_flags_direct_int(
                                 contact.id,
-                                subgroup.id) & perms.MEMBERSHIPS_ALL:
+                                subgroup.id) & perms.MEMBER:
                             msg = _(
                                     '"{group}" is sticky and {contact} is in '
                                     'subgroup "{subgroup}". This is '
@@ -1302,14 +1311,40 @@ class ContactGroup(NgwModel):
                         '+m',
                         handle_sticky=False)
 
-    def check_remove_members(request, contacts, handle_sticky=False):
+    def check_remove_members(self, request, contacts, handle_sticky=False):
         '''
         To be called before using set_member_n with membership removal.
         Returns a dictionnary:
         { contact_id: { 'warning': ['blah', 'blah'], 'error': ['ops']}
         '''
+        contact_ids = [contact.id for contact in contacts]
         result = {}
-        # result[617] = { 'warning': ['blah', 'blah'], 'error': ['ops']}
+        for contact_id in contact_ids:
+            result[contact_id] = {'warning': [], 'error': []}
+
+        subgroups = self.get_subgroups()
+        for subgroup in subgroups:
+            cigs = ContactInGroup.objects.filter(
+                    contact_id__in=contact_ids,
+                    group_id=subgroup.id)
+            for cig in cigs:
+                warnings = result[cig.contact_id]['warning']
+                warnings.append(
+                        'Will automatically be removed from subgroup "{}"'
+                        .format(cig.group))
+
+        supergroups = self.get_supergroups()
+        for supergroup in supergroups:
+            cigs = ContactInGroup.objects.filter(
+                    contact_id__in=contact_ids,
+                    group_id=supergroup.id)
+            for cig in cigs:
+                warnings = result[cig.contact_id]['warning']
+                warnings.append(
+                        'Will stay in parent group "{}" and its parent\'s'
+                        ' groups'
+                        .format(cig.group))
+
         return result
 
     def count_messages(self):
