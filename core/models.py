@@ -18,7 +18,7 @@ from django.utils import formats, html
 from django.utils.safestring import mark_safe
 from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext as _
-from django.utils.translation import ugettext_lazy
+from django.utils.translation import ugettext_lazy, ungettext
 
 from ngw.core import perms
 from ngw.core.nav import Navbar
@@ -1074,14 +1074,8 @@ class ContactGroup(NgwModel):
         else:
             return 'mg'
 
-    def _set_member_1(self, request, contact, group_member_mode):
+    def _set_member_1(self, request, contact, flags_to_add, flags_to_remove):
         """
-        group_member_mode is a combinaison of letters 'mido'
-        if it starts with '+', the mode will be added (dropping incompatible
-        ones).
-        Example '+d' actually means '-mi+d'
-        if it starst with '-', the mode will be deleted
-        m/i/d are mutually exclusive
         returns:
         LOG_ACTION_ADD if added
         LOG_ACTION_CHANGE if changed
@@ -1098,12 +1092,11 @@ class ContactGroup(NgwModel):
             cig = ContactInGroup.objects.get(contact_id=contact.id,
                                              group_id=self.id)
         except ContactInGroup.DoesNotExist:
+            if flags_to_add == 0:
+                return 0  # Nothing to
             cig = ContactInGroup(contact_id=contact.id,
                                  group_id=self.id, flags=0)
             result = LOG_ACTION_ADD
-
-        (flags_to_add, flags_to_remove) = perms.strchange_to_ints(
-                group_member_mode)
 
         changing_flags = flags_to_add | flags_to_remove
         newflags = (cig.flags & ~flags_to_remove) | flags_to_add
@@ -1129,11 +1122,6 @@ class ContactGroup(NgwModel):
                     raise PermissionDenied
 
         if newflags == 0:
-            if result == LOG_ACTION_ADD:
-                # We were about to add the contact in the group: nothing to do
-                # Note that we did not call cig.save() at that point
-                return 0
-
             cig.delete()
 
             log = Log(contact_id=user.id)
@@ -1199,6 +1187,15 @@ class ContactGroup(NgwModel):
         """
         Loop calls _set_member_1 for each contacts
         This also add log messages to be displayed to the user
+
+        group_member_mode is a combinaison of letters 'mido'
+        if it starts with '+', the mode will be added (dropping incompatible
+        ones).
+        Example '+d' actually means '-m-i+d-D'
+        if it starst with '-', the mode will be deleted
+        m/i/d are mutually exclusive
+        See perms.strchange_to_ints
+
         TODO: ", dry_run=None)"
         If dry_run is not None, it should be a dictionnary that will be
         updated with a list of messages about what would occur:
@@ -1208,6 +1205,9 @@ class ContactGroup(NgwModel):
         # List of warnings / errors:
         # member_added_in_sticky_supergroup(contact,group)
         # member_removed_from_subgroup(contact,group)
+
+        (flags_to_add, flags_to_remove) = perms.strchange_to_ints(
+                group_member_mode)
 
         contacts = [contact for contact in contacts]  # clone as list
         if handle_sticky and self.sticky:
@@ -1241,7 +1241,11 @@ class ContactGroup(NgwModel):
         changed_contacts = []
         removed_contacts = []
         for contact in contacts:
-            res = self._set_member_1(request, contact, group_member_mode)
+            res = self._set_member_1(
+                    request,
+                    contact,
+                    flags_to_add,
+                    flags_to_remove)
             if res == LOG_ACTION_ADD:
                 added_contacts.append(contact)
             elif res == LOG_ACTION_CHANGE:
@@ -1251,37 +1255,38 @@ class ContactGroup(NgwModel):
 
         if added_contacts:
             msgpart_contacts = ', '.join([c.name for c in added_contacts])
-            if len(added_contacts) == 1:
-                msg = _('Contact {contacts} has been added in {group} with'
-                        ' status {status}.')
-            else:
-                msg = _('Contact {contacts} have been added in {group} with'
-                        ' status {status}.')
-            messages.add_message(request, messages.SUCCESS, msg.format(
-                contacts=msgpart_contacts,
-                group=self,
-                status=group_member_mode))
+            msg = ungettext(
+                    'Contact {contacts} has been added in {group} with'
+                    ' status {status}.',
+                    'Contact {contacts} have been added in {group} with'
+                    ' status {status}.',
+                    len(added_contacts)).format(
+                            contacts=msgpart_contacts,
+                            group=self,
+                            status=group_member_mode)
+
+            messages.add_message(request, messages.SUCCESS, msg)
         if changed_contacts:
             msgpart_contacts = ', '.join([c.name for c in changed_contacts])
-            if len(changed_contacts) == 1:
-                msg = _('Status of {contacts} in {group} was changed:'
-                        ' {status}.')
-            else:
-                msg = _('Status of {contacts} in {group} were changed:'
-                        ' {status}.')
-            messages.add_message(request, messages.SUCCESS, msg.format(
-                contacts=msgpart_contacts,
-                group=self,
-                status=group_member_mode))
+            msg = ungettext(
+                    'Status of {contacts} in {group} was changed:'
+                    ' {status}.',
+                    'Status of {contacts} in {group} were changed:'
+                    ' {status}.',
+                    len(changed_contacts)).format(
+                            contacts=msgpart_contacts,
+                            group=self,
+                            status=group_member_mode)
+            messages.add_message(request, messages.SUCCESS, msg)
         if removed_contacts:
             msgpart_contacts = ', '.join([c.name for c in removed_contacts])
-            if len(removed_contacts) == 1:
-                msg = _('Contact {contacts} was removed from {group}.')
-            else:
-                msg = _('Contacts {contacts} were removed from {group}.')
-            messages.add_message(request, messages.SUCCESS, msg.format(
-                contacts=msgpart_contacts,
-                group=self))
+            msg = ungettext(
+                    'Contact {contacts} was removed from {group}.',
+                    'Contacts {contacts} were removed from {group}.',
+                    len(removed_contacts)).format(
+                            contacts=msgpart_contacts,
+                            group=self)
+            messages.add_message(request, messages.SUCCESS, msg)
 
         if handle_sticky:
             contact_ids = [contact.id for contact in contacts]
