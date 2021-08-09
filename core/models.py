@@ -549,6 +549,19 @@ class Contact(NgwModel):
         # See templates/contact_detail.htm
         return self.get_fieldvalue_by_id(FIELD_LOGIN)
 
+    def get_name_anon(self):
+        '''
+        Returns the first name (first word) plus the first letter of the
+        lastname (second word).
+        "John Doe" returns "John D"
+        '''
+        tokens = self.name.strip().split(' ')
+        shortname = tokens[0]
+        reminder = ''.join(tokens[1:])
+        if reminder:
+            shortname += ' ' + reminder[0]
+        return shortname
+
     def vcard(self):
         # http://www.ietf.org/rfc/rfc2426.txt
         vcf = ''
