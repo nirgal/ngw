@@ -44,6 +44,8 @@ INSTALLED_APPS = (
     # 'django.contrib.admin',
     'django.contrib.admin.apps.SimpleAdminConfig',  # We use admin templates
     # 'ngw.extensions.vpn',
+    # 'django_cracklib',
+    # 'ngw.extensions.matrix',
 )
 
 MIDDLEWARE = [
@@ -207,6 +209,10 @@ EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
 # VPN_FIELD_PASSWORD = 2  # Field containing the VPN password
 # VPN_BASEIP = '10.7.0.0'  # Base IP address
 # VPN_MAXIP = '10.7.255.255'  # Maximum IP address
+
+MATRIX_DOMAIN = 'nirgal.com'
+MATRIX_URL = 'https://matrix.nirgal.com/'
+MATRIX_ADMIN_TOKEN = 'syt_LsA6dY3N8SacYZWiTL_JZqHqKRDpMSQq7Evq5idDjKQz33'
 
 EXTRA_BANNER_LINKS = (
     ('wiki', '/wiki'),
