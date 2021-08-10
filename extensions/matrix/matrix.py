@@ -136,12 +136,15 @@ def set_user_displayname(login, displayname, create=False):
 def set_user_emails(login, emails, create=False):
     logger = logging.getLogger('matrix')
 
+    data = {}
+
     user = get_user_info(login)
     if not user:
         if not create:
             logger.error(f"User {login} doesn't exists and create=False")
             return
         user = {}
+        data['deactivated'] = False
 
     old_emails = [
         threepid['address']
@@ -159,10 +162,67 @@ def set_user_emails(login, emails, create=False):
     else:
         logger.info(f'{login}: {old_emails} => {emails}')
 
-    data = {
-        'threepids': [
-            {'medium': 'email', 'address': email}
-            for email in emails
-            ]
-        }
+    data['threepids'] = [
+        {'medium': 'email', 'address': email}
+        for email in emails
+        ]
     return set_user_info(login, data, create)
+
+
+def deactivate_account(login, erase=False):
+    url = f'{URL}_synapse/admin/v1/deactivate/@{login}:{DOMAIN}'
+    data = {'erase': erase}
+    req = Request(
+        url,
+        headers=_auth_header(),
+        data=json.dumps(data).encode('utf-8'),
+        )
+
+    try:
+        response = urlopen(req)
+    except HTTPError as e:
+        logging.error(
+            'The server couldn\'t fulfill the request. Error code: %s',
+            e.code)
+        return
+    except URLError as e:
+        logging.error(
+            'We failed to reach a server. Reason: %s',
+            e.reason)
+        return
+
+    result_bytes = response.read()
+    result_str = str(result_bytes, encoding='utf-8')
+    result_json = json.loads(result_str)
+    return result_json
+
+
+def reset_password(login, password):
+    url = f'{URL}_synapse/admin/v1/reset_password/@{login}:{DOMAIN}'
+    data = {
+        'new_password': password,
+        'logout_devices': True,
+        }
+    req = Request(
+        url,
+        headers=_auth_header(),
+        data=json.dumps(data).encode('utf-8'),
+        )
+
+    try:
+        response = urlopen(req)
+    except HTTPError as e:
+        logging.error(
+            'The server couldn\'t fulfill the request. Error code: %s',
+            e.code)
+        return
+    except URLError as e:
+        logging.error(
+            'We failed to reach a server. Reason: %s',
+            e.reason)
+        return
+
+    result_bytes = response.read()
+    result_str = str(result_bytes, encoding='utf-8')
+    result_json = json.loads(result_str)
+    return result_json
