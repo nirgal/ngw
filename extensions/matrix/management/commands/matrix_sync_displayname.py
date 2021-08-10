@@ -61,4 +61,8 @@ class Command(BaseCommand):
                 pk=settings.MATRIX_SYNC_GROUP)
         print(matrix_group)
         for contact in matrix_group.get_all_members():
-            print(contact.name, '=>', contact.get_name_anon())
+            login = contact.get_username()
+            print(contact.name, '(', login, ') =>', contact.get_name_anon())
+            result = set_user_displayname(login, contact.get_name_anon())
+            if result:
+                print(json.dumps(result, indent=4))
