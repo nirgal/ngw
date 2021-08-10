@@ -29,19 +29,17 @@ class Command(BaseCommand):
             help="Matrix display name")
 
     def handle(self, *args, **options):
-        verbosity = options.get('verbosity', 1)
+        logger = logging.getLogger('command')
+        verbosity = options.get('verbosity', None)
         if verbosity == 3:
-            loglevel = logging.DEBUG
+            logger.setLevel(logging.DEBUG)
         elif verbosity == 2:
-            loglevel = logging.INFO
+            logger.setLevel(logging.INFO)
         elif verbosity == 1:
-            loglevel = logging.WARNING
-        else:
-            loglevel = logging.ERROR
-
-        logging.basicConfig(level=loglevel,
-                            format='{asctime} {levelname} {message}',
-                            style='{')
+            logger.setLevel(logging.WARNING)
+        elif verbosity == 0:
+            logger.setLevel(logging.ERROR)
+        # else value settings['LOGGING']['command']['level'] is used
 
         login = options['login']
         displayname = options['name']

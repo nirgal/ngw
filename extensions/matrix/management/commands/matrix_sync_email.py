@@ -58,7 +58,6 @@ class Command(BaseCommand):
             help="Force emails")
 
     def handle(self, *args, **options):
-
         logger = logging.getLogger('command')
         verbosity = options.get('verbosity', None)
         if verbosity == 3:

@@ -10,18 +10,17 @@ class Command(BaseCommand):
     help = 'list matrix users'
 
     def handle(self, **options):
-        verbosity = options.get('verbosity', 1)
+        logger = logging.getLogger('command')
+        verbosity = options.get('verbosity', None)
         if verbosity == 3:
-            loglevel = logging.DEBUG
+            logger.setLevel(logging.DEBUG)
         elif verbosity == 2:
-            loglevel = logging.INFO
+            logger.setLevel(logging.INFO)
         elif verbosity == 1:
-            loglevel = logging.WARNING
-        else:
-            loglevel = logging.ERROR
+            logger.setLevel(logging.WARNING)
+        elif verbosity == 0:
+            logger.setLevel(logging.ERROR)
+        # else value settings['LOGGING']['command']['level'] is used
 
-        logging.basicConfig(level=loglevel,
-                            format='{asctime} {levelname} {message}',
-                            style='{')
         for user in get_users():
             print(json.dumps(user, indent=4))
