@@ -10,12 +10,12 @@ class Command(BaseCommand):
     help = 'list matrix users'
 
     def handle(self, **options):
-        verbosity = options.get('verbosity', '1')
-        if verbosity == '3':
+        verbosity = options.get('verbosity', 1)
+        if verbosity == 3:
             loglevel = logging.DEBUG
-        elif verbosity == '2':
+        elif verbosity == 2:
             loglevel = logging.INFO
-        elif verbosity == '1':
+        elif verbosity == 1:
             loglevel = logging.WARNING
         else:
             loglevel = logging.ERROR

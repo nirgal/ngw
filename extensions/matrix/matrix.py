@@ -127,3 +127,36 @@ def set_user_displayname(login, displayname, create=False):
     result_str = str(result_bytes, encoding='utf-8')
     result_json = json.loads(result_str)
     return result_json
+
+
+def set_user_info(login, data, create=False):
+    info = get_user_info(login)
+    if not info and not create:
+        logging.error("User %s doesn't exist.", login)
+        return
+
+    url = f'{URL}_synapse/admin/v2/users/@{login}:{DOMAIN}'
+    req = Request(
+        url,
+        headers=_auth_header(),
+        data=json.dumps(data).encode('utf-8'),
+        method='PUT',
+        )
+
+    try:
+        response = urlopen(req)
+    except HTTPError as e:
+        logging.error(
+            'The server couldn\'t fulfill the request. Error code: %s',
+            e.code)
+        return
+    except URLError as e:
+        logging.error(
+            'We failed to reach a server. Reason: %s',
+            e.reason)
+        return
+
+    result_bytes = response.read()
+    result_str = str(result_bytes, encoding='utf-8')
+    result_json = json.loads(result_str)
+    return result_json
