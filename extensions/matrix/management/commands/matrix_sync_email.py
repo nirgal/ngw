@@ -5,21 +5,11 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from ngw.core.models import Contact, ContactGroup
-from ngw.extensions.matrix.matrix import get_user_info, set_user_info
+from ngw.extensions.matrix.matrix import set_user_emails
 
 
-def sync_login_emails(login, emails=None):
+def sync_login_emails(login, emails=None, create=False):
     logger = logging.getLogger('command')
-
-    matuser = get_user_info(login)
-    if not matuser:
-        raise CommandError(f'User "{login}" does not exist in matrix')
-    mat_emails = [
-        threepid['address']
-        for threepid in matuser.get('threepids', [])
-        if threepid['medium'] == 'email'
-        ]
-
     if emails is None:
         try:
             contact = Contact.objects.get_by_natural_key(login)
@@ -27,22 +17,9 @@ def sync_login_emails(login, emails=None):
             raise CommandError(f'User "{login}" does not exist in ngw')
         emails = contact.get_fieldvalues_by_type('EMAIL')
 
-    mat_emails = set(mat_emails)
-    emails = set(emails)
-    if mat_emails == emails:
-        logger.info(f'{login}: No change')
-    else:
-        emails = mat_emails | emails
-        logger.info(f'{login}: {mat_emails} => {emails}')
-        data = {
-            'threepids': [
-                {'medium': 'email', 'address': email}
-                for email in emails
-                ]
-            }
-        result = set_user_info(login, data)
-        if result:
-            logger.debug(json.dumps(result, indent=4))
+    result = set_user_emails(login, emails, create)
+    if result:
+        logger.debug(json.dumps(result, indent=4))
 
 
 class Command(BaseCommand):
@@ -56,6 +33,10 @@ class Command(BaseCommand):
             '--email',
             nargs='+',
             help="Force emails")
+        parser.add_argument(
+            '--create',
+            action='store_true',
+            help="Create missing accounts")
 
     def handle(self, *args, **options):
         logger = logging.getLogger('command')
@@ -72,8 +53,10 @@ class Command(BaseCommand):
 
         login = options['login']
         email = options['email']
+        create = options['create']
+
         if login:
-            sync_login_emails(login, email)
+            sync_login_emails(login, email, create)
             return
 
         if email:
@@ -85,8 +68,4 @@ class Command(BaseCommand):
                 pk=settings.MATRIX_SYNC_GROUP)
         for contact in matrix_group.get_all_members():
             login = contact.get_username()
-            matuser = get_user_info(login)
-            if not matuser:
-                logger.error(f'User "{login}" does not exist in matrix')
-                continue
-            sync_login_emails(login)
+            sync_login_emails(login, None, create)
