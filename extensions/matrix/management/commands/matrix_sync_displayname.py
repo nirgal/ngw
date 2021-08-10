@@ -7,6 +7,15 @@ from django.core.management.base import BaseCommand, CommandError
 from ngw.core.models import Contact, ContactGroup
 from ngw.extensions.matrix.matrix import set_user_displayname
 
+FIELD_MATRIX_DISPLAYNAME = 99
+
+
+def get_contact_displayname(contact):
+    displayname = contact.get_fieldvalue_by_id(FIELD_MATRIX_DISPLAYNAME)
+    if not displayname:
+        displayname = contact.get_name_anon()
+    return displayname
+
 
 class Command(BaseCommand):
     help = 'update matrix displayname'
@@ -61,8 +70,10 @@ class Command(BaseCommand):
                 pk=settings.MATRIX_SYNC_GROUP)
         print(matrix_group)
         for contact in matrix_group.get_all_members():
+            name = contact.name
             login = contact.get_username()
-            print(contact.name, '(', login, ') =>', contact.get_name_anon())
-            result = set_user_displayname(login, contact.get_name_anon())
+            displayname = get_contact_displayname(contact)
+            print(f'{name} ( {login} ) => {displayname}')
+            result = set_user_displayname(login, displayname)
             if result:
                 print(json.dumps(result, indent=4))
