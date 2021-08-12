@@ -17,7 +17,7 @@ def get_contact_displayname(contact):
 
 
 class Command(BaseCommand):
-    help = 'update matrix displayname'
+    help = 'update matrix user'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -25,7 +25,15 @@ class Command(BaseCommand):
             help="Login name")
         parser.add_argument(
             '--name',
-            help="Matrix display name")
+            help="Force Matrix display name, skipping NGW sync.")
+        parser.add_argument(
+            '--email',
+            nargs='+',
+            help="Force Matrix display emails, skipping NGW sync.")
+        parser.add_argument(
+            '--create',
+            action='store_true',
+            help="Create missing accounts")
 
     def handle(self, *args, **options):
         logger = logging.getLogger('command')
@@ -42,26 +50,45 @@ class Command(BaseCommand):
 
         login = options['login']
         name = options['name']
-        if login:
-            if not name:
+        email = options['email']
+        create = options['create']
+
+        if login:  # process a single account
+            if name or email:  # name or email is overridden
+                matrix.set_user_info(
+                        login,
+                        name=name,
+                        emails=email,
+                        create=create)
+            else:  # synchronise a single account
                 try:
                     contact = Contact.objects.get_by_natural_key(login)
                 except Contact.DoesNotExist:
                     raise CommandError(f'User "{login}" does not exist')
                 name = get_contact_displayname(contact)
-
-            matrix.set_user_info(login, name=name)
+                emails = contact.get_fieldvalues_by_type('EMAIL')
+                matrix.set_user_info(
+                        login,
+                        name=name,
+                        emails=email,
+                        create=create)
             return
 
         if name:
             raise CommandError('--name is only allowed if --login is defined')
+        if email:
+            raise CommandError('--email is only allowed if --login is defined')
 
         # So here login is undefined: Process all the group
 
         matrix_group = ContactGroup.objects.get(
                 pk=settings.MATRIX_SYNC_GROUP)
         for contact in matrix_group.get_all_members():
+            login = contact.get_username()
+            name = get_contact_displayname(contact)
+            emails = contact.get_fieldvalues_by_type('EMAIL')
             matrix.set_user_info(
-                login,
-                name=get_contact_displayname(contact),
-                )
+                    login,
+                    name=name,
+                    emails=emails,
+                    create=create)

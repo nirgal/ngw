@@ -116,7 +116,7 @@ def set_user_info(login, name=None, emails=None, create=False):
     data = {}
 
     if name is not None:
-        if name != olddata['displayname']:
+        if name != olddata.get('displayname', None):
             data['displayname'] = name
 
     if emails is not None:
