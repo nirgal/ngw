@@ -1,4 +1,3 @@
-import json
 import logging
 
 from django.core.management.base import BaseCommand
@@ -30,7 +29,6 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        login = options['login']
-        password = options['password']
-        info = reset_password(login, password)
-        print(json.dumps(info, indent=4))
+        reset_password(
+                options['login'],
+                options['password'])

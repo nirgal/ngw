@@ -1,4 +1,3 @@
-import json
 import logging
 
 from django.core.management.base import BaseCommand
@@ -11,11 +10,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'login',
-            help="Login name")
+            'login')
         parser.add_argument(
-            '--erase',
-            action='store_true',
+            '--no-erase',
+            action='store_false',
             help="Erase the account")
 
     def handle(self, *args, **options):
@@ -31,7 +29,6 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        login = options['login']
-        info = deactivate_account(login, options['erase'])
-
-        print(json.dumps(info, indent=4))
+        deactivate_account(
+                login=options['login'],
+                erase=not options['no_erase'])

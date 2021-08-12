@@ -1,11 +1,10 @@
-import json
 import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from ngw.core.models import Contact, ContactGroup
-from ngw.extensions.matrix.matrix import set_user_displayname
+from ngw.extensions.matrix.matrix import set_user_name
 
 FIELD_MATRIX_DISPLAYNAME = 99
 
@@ -42,21 +41,20 @@ class Command(BaseCommand):
         # else value settings['LOGGING']['command']['level'] is used
 
         login = options['login']
-        displayname = options['name']
+        name = options['name']
         if login:
-            if not displayname:
+            if not name:
                 try:
                     contact = Contact.objects.get_by_natural_key(login)
                 except Contact.DoesNotExist:
                     raise CommandError(f'User "{login}" does not exist')
-                displayname = contact.get_name_anon()
 
-            result = set_user_displayname(login, displayname)
-            if result:
-                print(json.dumps(result, indent=4))
+            set_user_name(
+                    login=login,
+                    name=get_contact_displayname(contact))
             return
 
-        if displayname:
+        if name:
             raise CommandError('--name is only allowed if --login is defined')
 
         # So here login is undefined: Process all the group
@@ -64,10 +62,7 @@ class Command(BaseCommand):
         matrix_group = ContactGroup.objects.get(
                 pk=settings.MATRIX_SYNC_GROUP)
         for contact in matrix_group.get_all_members():
-            name = contact.name
-            login = contact.get_username()
-            displayname = get_contact_displayname(contact)
-            print(f'{name} ( {login} ) => {displayname}')
-            result = set_user_displayname(login, displayname)
-            if result:
-                print(json.dumps(result, indent=4))
+            set_user_name(
+                login=contact.get_username(),
+                name=get_contact_displayname(contact),
+                )

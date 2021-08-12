@@ -7,7 +7,6 @@ from django.conf import settings
 
 DOMAIN = settings.MATRIX_DOMAIN
 URL = settings.MATRIX_URL
-ADMIN_TOKEN = settings.MATRIX_ADMIN_TOKEN
 
 
 class NoSuchUser(Exception):
@@ -15,12 +14,19 @@ class NoSuchUser(Exception):
 
 
 def _auth_header():
-    return {'Authorization': f'Bearer {ADMIN_TOKEN}'}
+    return {'Authorization': f'Bearer {settings.MATRIX_ADMIN_TOKEN}'}
 
 
 def _matrix_request(url, *args, **kargs):
+    logger = logging.getLogger('matrix')
+
+    logger.debug(url)
 
     # convert data from dict to json
+    if len(args) > 0:
+        data = args[0]
+        data = json.dumps(data).encode('utf-8')
+        args[0] = data
     if 'data' in kargs:
         data = kargs['data']
         data = json.dumps(data).encode('utf-8')
@@ -31,12 +37,12 @@ def _matrix_request(url, *args, **kargs):
     try:
         response = urlopen(req)
     except HTTPError as e:
-        logging.error(
+        logger.error(
             'The server couldn\'t fulfill the request. Error code: %s',
             e.code)
         raise e
     except URLError as e:
-        logging.error(
+        logger.error(
             'We failed to reach a server. Reason: %s',
             e.reason)
         raise e
@@ -44,6 +50,7 @@ def _matrix_request(url, *args, **kargs):
     result_bytes = response.read()
     result_str = str(result_bytes, encoding='utf-8')
     result_json = json.loads(result_str)
+    logger.debug(json.dumps(result_json, indent=4))
     return result_json
 
 
@@ -80,12 +87,7 @@ def get_user_info(login):
             raise e
 
 
-def set_user_info(login, data, create=False):
-    info = get_user_info(login)
-    if not info and not create:
-        logging.error(f"User {login} doesn't exist.")
-        return
-
+def set_user_info(login, data):
     return _matrix_request(
         f'{URL}_synapse/admin/v2/users/@{login}:{DOMAIN}',
         headers=_auth_header(),
@@ -94,19 +96,21 @@ def set_user_info(login, data, create=False):
         )
 
 
-def set_user_displayname(login, displayname, create=False):
+def set_user_name(login, name, create=False):
     logger = logging.getLogger('matrix')
 
-    try:
-        get_user_info(login)
-    except NoSuchUser as e:
-        if not create:
+    if not create:
+        try:
+            get_user_info(login)
+        except NoSuchUser as e:
             logger.error(f"User {login} doesn't exists and create=False")
             raise e
+
     data = {
-        "displayname": displayname,
+        "displayname": name,
         }
-    return set_user_info(login, data, create)
+    logger.info(f'{login}: set name {name}')
+    return set_user_info(login, data)
 
 
 def set_user_emails(login, emails, create=False):
@@ -140,16 +144,22 @@ def set_user_emails(login, emails, create=False):
         'threepids':
             [{'medium': 'email', 'address': email} for email in emails],
         }
-    return set_user_info(login, data, create)
+    return set_user_info(login, data)
 
 
-def deactivate_account(login, erase=False):
-    data = {'erase': erase}
-    return _matrix_request(
-        url=f'{URL}_synapse/admin/v1/deactivate/@{login}:{DOMAIN}',
-        headers=_auth_header(),
-        data=data,
-        )
+def deactivate_account(login, erase=True):
+    try:
+        data = {'erase': erase}
+        return _matrix_request(
+            url=f'{URL}_synapse/admin/v1/deactivate/@{login}:{DOMAIN}',
+            headers=_auth_header(),
+            data=data,
+            )
+    except HTTPError as e:
+        if e.code == 404:
+            raise NoSuchUser
+        else:
+            raise e
 
 
 def reset_password(login, password):
