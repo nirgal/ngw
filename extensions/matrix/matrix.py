@@ -87,7 +87,10 @@ def get_user_info(login):
             raise e
 
 
-def set_user_info(login, data):
+def put_user(login, data):
+    '''
+    Low level interface to /_synapse/admin/v2/users/<USER>.
+    '''
     return _matrix_request(
         f'{URL}_synapse/admin/v2/users/@{login}:{DOMAIN}',
         headers=_auth_header(),
@@ -96,55 +99,46 @@ def set_user_info(login, data):
         )
 
 
-def set_user_name(login, name, create=False):
-    logger = logging.getLogger('matrix')
-
-    if not create:
-        try:
-            get_user_info(login)
-        except NoSuchUser as e:
-            logger.error(f"User {login} doesn't exists and create=False")
-            raise e
-
-    data = {
-        "displayname": name,
-        }
-    logger.info(f'{login}: set name {name}')
-    return set_user_info(login, data)
-
-
-def set_user_emails(login, emails, create=False):
+def set_user_info(login, name=None, emails=None, create=False):
+    '''
+    High level interface to create/modify account.
+    '''
     logger = logging.getLogger('matrix')
 
     try:
-        user = get_user_info(login)
-        old_emails = [
-            threepid['address']
-            for threepid in user.get('threepids', [])
-            if threepid['medium'] == 'email'
-            ]
+        olddata = get_user_info(login)
     except NoSuchUser as e:
         if not create:
             logger.error(f"User {login} doesn't exists and create=False")
             raise e
-        old_emails = []
+        olddata = {}
 
-    old_emails = set(old_emails)
-    emails = set(emails)
+    data = {}
 
-    emails = old_emails | emails
+    if name is not None:
+        if name != olddata['displayname']:
+            data['displayname'] = name
 
-    if old_emails == emails:
-        logger.info(f'{login}: No change')
-        return  # no change
+    if emails is not None:
+        old_emails = [
+            threepid['address']
+            for threepid in olddata.get('threepids', [])
+            if threepid['medium'] == 'email'
+            ]
+        old_emails = set(old_emails)
+        emails = set(emails)
+
+        # preserve the emails added by the user:
+        emails = old_emails | emails
+
+        if old_emails != emails:
+            data['threepids'] = [
+                {'medium': 'email', 'address': email} for email in emails
+                ]
+    if data:
+        put_user(login, data)
     else:
-        logger.info(f'{login}: {old_emails} => {emails}')
-
-    data = {
-        'threepids':
-            [{'medium': 'email', 'address': email} for email in emails],
-        }
-    return set_user_info(login, data)
+        logger.info(f'{login}: No change.')
 
 
 def deactivate_account(login, erase=True):

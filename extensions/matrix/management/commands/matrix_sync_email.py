@@ -1,15 +1,13 @@
-import json
 import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from ngw.core.models import Contact, ContactGroup
-from ngw.extensions.matrix.matrix import set_user_emails
+from ngw.extensions.matrix import matrix
 
 
 def sync_login_emails(login, emails=None, create=False):
-    logger = logging.getLogger('command')
     if emails is None:
         try:
             contact = Contact.objects.get_by_natural_key(login)
@@ -17,9 +15,10 @@ def sync_login_emails(login, emails=None, create=False):
             raise CommandError(f'User "{login}" does not exist in ngw')
         emails = contact.get_fieldvalues_by_type('EMAIL')
 
-    result = set_user_emails(login, emails, create)
-    if result:
-        logger.debug(json.dumps(result, indent=4))
+    matrix.set_user_info(
+            login,
+            emails=emails,
+            create=create)
 
 
 class Command(BaseCommand):

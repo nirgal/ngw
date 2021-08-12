@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from ngw.core.models import Contact, ContactGroup
-from ngw.extensions.matrix.matrix import set_user_name
+from ngw.extensions.matrix import matrix
 
 FIELD_MATRIX_DISPLAYNAME = 99
 
@@ -48,10 +48,9 @@ class Command(BaseCommand):
                     contact = Contact.objects.get_by_natural_key(login)
                 except Contact.DoesNotExist:
                     raise CommandError(f'User "{login}" does not exist')
+                name = get_contact_displayname(contact)
 
-            set_user_name(
-                    login=login,
-                    name=get_contact_displayname(contact))
+            matrix.set_user_info(login, name=name)
             return
 
         if name:
@@ -62,7 +61,7 @@ class Command(BaseCommand):
         matrix_group = ContactGroup.objects.get(
                 pk=settings.MATRIX_SYNC_GROUP)
         for contact in matrix_group.get_all_members():
-            set_user_name(
-                login=contact.get_username(),
+            matrix.set_user_info(
+                login,
                 name=get_contact_displayname(contact),
                 )
