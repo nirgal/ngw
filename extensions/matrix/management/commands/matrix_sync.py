@@ -31,9 +31,9 @@ class Command(BaseCommand):
             nargs='+',
             help="Force Matrix display emails, skipping NGW sync.")
         parser.add_argument(
-            '--create',
+            '--no-create',
             action='store_true',
-            help="Create missing accounts")
+            help="Don't create missing accounts")
 
     def handle(self, *args, **options):
         logger = logging.getLogger('command')
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         login = options['login']
         name = options['name']
         email = options['email']
-        create = options['create']
+        create = not options['no_create']
 
         if login:  # process a single account
             if name or email:  # name or email is overridden
