@@ -99,7 +99,7 @@ def put_user(login, data):
         )
 
 
-def set_user_info(login, name=None, emails=None, create=False):
+def set_user_info(login, name=None, emails=None, admin=None, create=False):
     '''
     High level interface to create/modify account.
     '''
@@ -135,6 +135,10 @@ def set_user_info(login, name=None, emails=None, create=False):
             data['threepids'] = [
                 {'medium': 'email', 'address': email} for email in emails
                 ]
+
+    if admin is not None:
+        data['admin'] = admin
+
     if data:
         put_user(login, data)
     else:

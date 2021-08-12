@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -31,6 +32,10 @@ class Command(BaseCommand):
             nargs='+',
             help="Force Matrix display emails, skipping NGW sync.")
         parser.add_argument(
+            '--admin',
+            action='store_true',
+            help="Make admin, skipping NGW sync.")
+        parser.add_argument(
             '--no-create',
             action='store_true',
             help="Don't create missing accounts")
@@ -51,14 +56,16 @@ class Command(BaseCommand):
         login = options['login']
         name = options['name']
         email = options['email']
+        admin = options['admin']
         create = not options['no_create']
 
         if login:  # process a single account
-            if name or email:  # name or email is overridden
+            if name or email or admin:  # ngw info is overriden
                 matrix.set_user_info(
                         login,
                         name=name,
                         emails=email,
+                        admin=admin,
                         create=create)
             else:  # synchronise a single account
                 try:
@@ -71,6 +78,7 @@ class Command(BaseCommand):
                         login,
                         name=name,
                         emails=email,
+                        admin=admin,
                         create=create)
             return
 
@@ -78,6 +86,8 @@ class Command(BaseCommand):
             raise CommandError('--name is only allowed if --login is defined')
         if email:
             raise CommandError('--email is only allowed if --login is defined')
+        if admin:
+            raise CommandError('--admin is only allowed if --login is defined')
 
         # So here login is undefined: Process all the group
 
@@ -92,3 +102,23 @@ class Command(BaseCommand):
                     name=name,
                     emails=emails,
                     create=create)
+
+        re_search = re.compile(f'@(.*):{matrix.DOMAIN}')
+        for user in matrix.get_users():
+            name = user['name']
+            login = re_search.search(name).groups()[0]
+            delete = False
+            try:
+                contact = Contact.objects.get_by_natural_key(login)
+            except Contact.DoesNotExist:
+                logger.warning(f'{login} is defined by matrix but not in ngw')
+                delete = True
+            else:
+                if not contact.is_member_of(settings.MATRIX_SYNC_GROUP):
+                    logger.warning(
+                        f'{login} is not member of group {matrix_group}')
+                    delete = True
+
+            if delete:
+                logger.info(f'Deactivating matrix account {login}')
+                matrix.deactivate_account(login)
