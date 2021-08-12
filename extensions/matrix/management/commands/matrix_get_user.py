@@ -1,9 +1,9 @@
 import json
 import logging
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
-from ngw.extensions.matrix.matrix import get_user_info
+from ngw.extensions.matrix.matrix import NoSuchUser, get_user_info
 
 
 class Command(BaseCommand):
@@ -28,6 +28,9 @@ class Command(BaseCommand):
         # else value settings['LOGGING']['command']['level'] is used
 
         login = options['login']
-        info = get_user_info(login)
 
-        print(json.dumps(info, indent=4))
+        try:
+            info = get_user_info(login)
+            print(json.dumps(info, indent=4))
+        except NoSuchUser:
+            raise CommandError(f'User {login} does not exist')

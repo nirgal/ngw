@@ -44,17 +44,14 @@ class Command(BaseCommand):
         login = options['login']
         displayname = options['name']
         if login:
-            if displayname:
-                result = set_user_displayname(login, displayname)
-                if result:
-                    print(json.dumps(result, indent=4))
+            if not displayname:
+                try:
+                    contact = Contact.objects.get_by_natural_key(login)
+                except Contact.DoesNotExist:
+                    raise CommandError(f'User "{login}" does not exist')
+                displayname = contact.get_name_anon()
 
-            try:
-                contact = Contact.objects.get_by_natural_key(login)
-            except Contact.DoesNotExist:
-                raise CommandError(f'User "{login}" does not exist')
-
-            result = set_user_displayname(login, contact.get_name_anon())
+            result = set_user_displayname(login, displayname)
             if result:
                 print(json.dumps(result, indent=4))
             return
@@ -66,7 +63,6 @@ class Command(BaseCommand):
 
         matrix_group = ContactGroup.objects.get(
                 pk=settings.MATRIX_SYNC_GROUP)
-        print(matrix_group)
         for contact in matrix_group.get_all_members():
             name = contact.name
             login = contact.get_username()
