@@ -102,6 +102,7 @@ def put_user(login, data):
 def set_user_info(login, name=None, emails=None, admin=None, create=False):
     '''
     High level interface to create/modify account.
+    @returns server new information if changed, None otherwise
     '''
     logger = logging.getLogger('matrix')
 
@@ -140,9 +141,10 @@ def set_user_info(login, name=None, emails=None, admin=None, create=False):
         data['admin'] = admin
 
     if data:
-        put_user(login, data)
+        return put_user(login, data)
     else:
-        logger.info(f'{login}: No change.')
+        logger.debug(f'{login}: No change.')
+        return None
 
 
 def deactivate_account(login, erase=True):

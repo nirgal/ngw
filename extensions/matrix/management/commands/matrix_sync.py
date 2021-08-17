@@ -38,7 +38,11 @@ class Command(BaseCommand):
         parser.add_argument(
             '--no-create',
             action='store_true',
-            help="Don't create missing accounts")
+            help="Don't create missing matrix accounts")
+        parser.add_argument(
+            '--no-delete',
+            action='store_true',
+            help="Don't delete missing matrix accounts")
 
     def handle(self, *args, **options):
         logger = logging.getLogger('command')
@@ -57,16 +61,19 @@ class Command(BaseCommand):
         name = options['name']
         email = options['email']
         admin = options['admin']
-        create = not options['no_create']
+        ocreate = not options['no_create']
+        odelete = not options['no_delete']
 
         if login:  # process a single account
+            if odelete:
+                raise CommandError('--delete and --login are incompatible')
             if name or email or admin:  # ngw info is overriden
                 matrix.set_user_info(
                         login,
                         name=name,
                         emails=email,
                         admin=admin,
-                        create=create)
+                        create=ocreate)
             else:  # synchronise a single account
                 try:
                     contact = Contact.objects.get_by_natural_key(login)
@@ -74,12 +81,15 @@ class Command(BaseCommand):
                     raise CommandError(f'User "{login}" does not exist')
                 name = get_contact_displayname(contact)
                 emails = contact.get_fieldvalues_by_type('EMAIL')
-                matrix.set_user_info(
+                if matrix.set_user_info(
                         login,
                         name=name,
                         emails=email,
                         admin=admin,
-                        create=create)
+                        create=ocreate):
+                    logger.debug(f'Updated {login}')
+                else:
+                    logger.debug(f'No change for {login}')
             return
 
         if name:
@@ -91,34 +101,51 @@ class Command(BaseCommand):
 
         # So here login is undefined: Process all the group
 
+        logger.debug('Checking ngw users against matrix users')
+
         matrix_group = ContactGroup.objects.get(
                 pk=settings.MATRIX_SYNC_GROUP)
         for contact in matrix_group.get_all_members():
             login = contact.get_username()
             name = get_contact_displayname(contact)
             emails = contact.get_fieldvalues_by_type('EMAIL')
-            matrix.set_user_info(
+            if matrix.set_user_info(
                     login,
                     name=name,
                     emails=emails,
-                    create=create)
-
-        re_search = re.compile(f'@(.*):{matrix.DOMAIN}')
-        for user in matrix.get_users():
-            name = user['name']
-            login = re_search.search(name).groups()[0]
-            delete = False
-            try:
-                contact = Contact.objects.get_by_natural_key(login)
-            except Contact.DoesNotExist:
-                logger.warning(f'{login} is defined by matrix but not in ngw')
-                delete = True
+                    create=ocreate):
+                logger.debug(f'Updated {login}')
             else:
-                if not contact.is_member_of(settings.MATRIX_SYNC_GROUP):
-                    logger.warning(
-                        f'{login} is not member of group {matrix_group}')
-                    delete = True
+                logger.debug(f'No change for {login}')
 
-            if delete:
-                logger.info(f'Deactivating matrix account {login}')
-                matrix.deactivate_account(login)
+        if odelete:
+            logger.debug('Checking matrix users against ngw users')
+
+            re_search = re.compile(f'@(.*):{matrix.DOMAIN}')
+            for user in matrix.get_users():
+                name = user['name']
+                login = re_search.search(name).groups()[0]
+
+                user = matrix.get_user_info(login)  # get details
+                if not user['password_hash'] and not user['threepids']:
+                    logger.debug(f'{login} is already disabled')
+                    continue
+
+                delete = False
+                try:
+                    contact = Contact.objects.get_by_natural_key(login)
+                except Contact.DoesNotExist:
+                    logger.warning(
+                            f'{login} is defined by matrix but not in ngw')
+                    delete = True
+                else:
+                    if not contact.is_member_of(settings.MATRIX_SYNC_GROUP):
+                        logger.warning(
+                            f'{login} is not member of group {matrix_group}')
+                        delete = True
+
+                if delete:
+                    logger.info(f'Deactivating matrix account {login}')
+                    matrix.deactivate_account(login)
+                else:
+                    logger.debug(f'Account {login} is ok')
