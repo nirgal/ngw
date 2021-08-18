@@ -1,5 +1,6 @@
 import json
 import logging
+import urllib.parse
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -169,6 +170,23 @@ def reset_password(login, password):
         }
     return _matrix_request(
         f'{URL}_synapse/admin/v1/reset_password/@{login}:{DOMAIN}',
+        headers=_auth_header(),
+        data=data,
+        )
+
+
+def room_join(login, room):
+    '''
+    room is either a id (starting with '!') or an alis (starting with '#')
+    adminmust be in the room...
+    '''
+    data = {
+        'user_id': f'@{login}:{DOMAIN}'
+    }
+    room = urllib.parse.quote(f'{room}:{DOMAIN}')
+    return _matrix_request(
+        f'{URL}_synapse/admin/v1/join/{room}',
+        # Example: !636q39766251:server.com, #niceroom:server.com
         headers=_auth_header(),
         data=data,
         )
