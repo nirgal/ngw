@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import urllib.parse
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -61,7 +62,10 @@ def get_version():
         )
 
 
-def get_users():
+def get_users_quick():
+    '''
+    Yields all users
+    '''
     next_token = '0'
     limit = '10'
     while next_token:
@@ -72,6 +76,36 @@ def get_users():
             )
         for user in result['users']:
             yield user
+        next_token = result.get('next_token', None)
+
+
+def localpart(login_domain):
+    re_search = re.compile(f'@(.*):{DOMAIN}')
+    login = re_search.search(login_domain).groups()[0]
+    return login
+
+
+def get_users(include_deleted=False):
+    '''
+    Yields all users, detailed version
+    '''
+    next_token = '0'
+    limit = '10'
+    while next_token:
+        result = _matrix_request(
+            f'{URL}_synapse/admin/v2/users'
+            f'?deactivated=true&limit={limit}&from={next_token}',
+            headers=_auth_header(),
+            )
+        for user in result['users']:
+            login = localpart(user['name'])
+            user = get_user_info(login)
+            if not include_deleted:
+                if not user['password_hash'] and not user['threepids']:
+                    # logger.debug(f'{login} is disabled')
+                    continue
+            yield user
+
         next_token = result.get('next_token', None)
 
 

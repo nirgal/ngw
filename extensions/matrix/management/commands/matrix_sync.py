@@ -1,5 +1,4 @@
 import logging
-import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -121,15 +120,9 @@ class Command(BaseCommand):
         if odelete:
             logger.debug('Checking matrix users against ngw users')
 
-            re_search = re.compile(f'@(.*):{matrix.DOMAIN}')
             for user in matrix.get_users():
-                name = user['name']
-                login = re_search.search(name).groups()[0]
-
-                user = matrix.get_user_info(login)  # get details
-                if not user['password_hash'] and not user['threepids']:
-                    logger.debug(f'{login} is already disabled')
-                    continue
+                name = user['name']  # localpart + domain
+                login = matrix.localpart(name)
 
                 delete = False
                 try:
