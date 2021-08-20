@@ -608,10 +608,16 @@ class Contact(NgwModel):
             + ';' + self.get_fieldvalue_by_id(FIELD_COUNTRY))
 
     def generate_login(self):
-        words = self.name.split(" ")
-        login = [w[0].lower() for w in words[:-1]] + [words[-1].lower()]
-        login = "".join(login)
-        login = decoratedstr.remove_decoration(login)
+        clean_name = decoratedstr.remove_decoration(self.name).lower()
+        login = ''
+        for word in clean_name.split(' '):
+            if not word:
+                continue  # ignore double spaces
+            if not login:
+                login = word  # first word
+            else:
+                login += word[0]
+                break
 
         def get_logincfv_by_login(ref_uid, login):
             """
