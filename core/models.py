@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from importlib import import_module
@@ -608,7 +609,14 @@ class Contact(NgwModel):
             + ';' + self.get_fieldvalue_by_id(FIELD_COUNTRY))
 
     def generate_login(self):
+        '''
+        Generate a unique login name
+        Take the first name (first word of the name)
+        + first letter of the second word
+        + a number so that login is unique
+        '''
         clean_name = decoratedstr.remove_decoration(self.name).lower()
+        clean_name = re.sub('[^a-z ]', '', clean_name)  # a-z and spaces only
         login = ''
         for word in clean_name.split(' '):
             if not word:
