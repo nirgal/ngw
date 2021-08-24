@@ -266,8 +266,7 @@ def get_rooms():
             room_localid = _room_localpart(room['room_id'])
             room = get_room_info(room_localid)
             state = get_room_state(room_localid)['state']
-            if state:
-                room['state'] = state
+            room['state'] = _room_state_clean(state)
             yield room
 
         next_batch = result.get('next_batch', None)
@@ -281,7 +280,70 @@ def get_room_info(roomid):
 
 
 def get_room_state(roomid):
+    '''
+    consider using _room_state_clean on the return value
+    '''
     return _matrix_request(
         f'{URL}_synapse/admin/v1/rooms/!{roomid}:{DOMAIN}/state',
         headers=_auth_header(),
         )
+
+
+def _room_state_clean(states):
+    result = {}
+    for state in states:
+        statetype = state['type']
+        content = state['content']
+        content_length = len(content)
+        if content_length == 0:
+            # occurs for redacted events and
+            # some im.vector.modular.widgets events
+            continue
+
+        if statetype == 'm.room.create':
+            for key in content:
+                assert key in ('room_version', 'creator', 'm.federate')
+            result.update(content)
+        elif statetype == 'm.room.member':
+            if 'members' not in result:
+                result['members'] = []
+            member = {
+                'user_id': state['user_id']
+            }
+            member.update(content)
+            result['members'].append(member)
+        else:
+            result[statetype] = content
+
+        # elif statetype == 'm.room.power_levels':
+        #     result['m.room.power_levels'] = content
+        # elif statetype in ('m.room.topic', 'm.room.name',
+        #                    'm.room.history_visibility',
+        #                    'm.room.guest_access'):
+        #     assert content_length == 1, \
+        #          f"Unexpected keys {content.keys()} in content"
+        #          f" for event type {statetype}"
+        #     key = statetype.split('.')[-1]
+        #     result[statetype] = content[key]
+        # elif statetype == 'm.room.join_rules':
+        #     content_length = len(content)
+        #     assert content_length == 1, f"Unexpected keys {content.keys()}
+        #                 in content for event type {statetype}"
+        #     result[statetype] = content['join_rule']  # not join_rules
+        # elif statetype == 'm.room.canonical_alias':
+        #     for key in content.keys():
+        #         if key not in ('alias', 'alt_aliases'):
+        #             logger.warning(
+        #                   f"Unexpected keys {content.keys()} in content"
+        #                   f"for event type {statetype}")
+        #     result.update(content)
+        # elif statetype == 'm.room.encryption':
+        #     assert content_length == 1, f"Unexpected keys
+        #        {content.keys()} in content for event type {statetype}"
+        #     result[statetype] = content['algorithm']  # not encryption
+        # elif statetype == 'im.vector.modular.widgets':
+        #     logger.warning(f'event type {statetype}: {content}')
+        # else:
+        #     logger.warning(
+        #        f'Unsupported state type {statetype} in room states.')
+    return result

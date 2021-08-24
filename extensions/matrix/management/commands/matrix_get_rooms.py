@@ -13,7 +13,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--detail',
             action='store_true',
-            help="don't include")
+            help="include details")
 
     def handle(self, **options):
         logger = logging.getLogger('command')
