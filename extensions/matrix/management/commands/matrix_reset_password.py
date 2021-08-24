@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from ngw.extensions.matrix.matrix import reset_password
+from ngw.extensions.matrix import matrix
 
 
 class Command(BaseCommand):
@@ -29,6 +29,6 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        reset_password(
+        matrix.reset_password(
                 options['login'],
                 options['password'])

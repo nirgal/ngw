@@ -3,7 +3,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from ngw.extensions.matrix.matrix import get_users
+from ngw.extensions.matrix import matrix
 
 
 class Command(BaseCommand):
@@ -22,5 +22,5 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        for user in get_users():
+        for user in matrix.get_users():
             print(json.dumps(user, indent=4))

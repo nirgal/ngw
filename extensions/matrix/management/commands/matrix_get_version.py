@@ -3,7 +3,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from ngw.extensions.matrix.matrix import get_version
+from ngw.extensions.matrix import matrix
 
 
 class Command(BaseCommand):
@@ -22,4 +22,4 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        print(json.dumps(get_version(), indent=4))
+        print(json.dumps(matrix.get_version(), indent=4))

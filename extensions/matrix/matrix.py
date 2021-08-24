@@ -224,3 +224,64 @@ def room_join(login, room):
         headers=_auth_header(),
         data=data,
         )
+
+
+def _room_localpart(roomid_domain):
+    re_search = re.compile(f'!(.*):{DOMAIN}')
+    roomid = re_search.search(roomid_domain).groups()[0]
+    return roomid
+
+
+def get_rooms_quick():
+    '''
+    Yields all rooms
+    '''
+    next_batch = '0'
+    limit = '10'
+    while next_batch:
+        result = _matrix_request(
+            f'{URL}_synapse/admin/v1/rooms'
+            f'?limit={limit}&from={next_batch}',
+            headers=_auth_header(),
+            )
+        for room in result['rooms']:
+            yield room
+
+        next_batch = result.get('next_batch', None)
+
+
+def get_rooms():
+    '''
+    Yields all rooms
+    '''
+    next_batch = '0'
+    limit = '10'
+    while next_batch:
+        result = _matrix_request(
+            f'{URL}_synapse/admin/v1/rooms'
+            f'?limit={limit}&from={next_batch}',
+            headers=_auth_header(),
+            )
+        for room in result['rooms']:
+            room_localid = _room_localpart(room['room_id'])
+            room = get_room_info(room_localid)
+            state = get_room_state(room_localid)['state']
+            if state:
+                room['state'] = state
+            yield room
+
+        next_batch = result.get('next_batch', None)
+
+
+def get_room_info(roomid):
+    return _matrix_request(
+        f'{URL}_synapse/admin/v1/rooms/!{roomid}:{DOMAIN}',
+        headers=_auth_header(),
+        )
+
+
+def get_room_state(roomid):
+    return _matrix_request(
+        f'{URL}_synapse/admin/v1/rooms/!{roomid}:{DOMAIN}/state',
+        headers=_auth_header(),
+        )

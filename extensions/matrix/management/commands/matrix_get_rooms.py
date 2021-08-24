@@ -1,20 +1,21 @@
 import json
 import logging
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from ngw.extensions.matrix import matrix
 
 
 class Command(BaseCommand):
-    help = 'update matrix user information'
+    help = 'list matrix users'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'login',
-            help="Login name")
+            '--detail',
+            action='store_true',
+            help="don't include")
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         logger = logging.getLogger('command')
         verbosity = options.get('verbosity', None)
         if verbosity == 3:
@@ -27,10 +28,11 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        login = options['login']
+        detail = options['detail']
 
-        try:
-            info = matrix.get_user_info(login)
-            print(json.dumps(info, indent=4))
-        except matrix.NoSuchUser:
-            raise CommandError(f'User {login} does not exist')
+        if detail:
+            for room in matrix.get_rooms():
+                print(json.dumps(room, indent=4))
+        else:
+            for room in matrix.get_rooms_quick():
+                print(json.dumps(room, indent=4))
