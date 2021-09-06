@@ -22,7 +22,8 @@ def _auth_header():
 def _matrix_request(url, *args, **kargs):
     logger = logging.getLogger('matrix')
 
-    logger.debug(url)
+    method = kargs.get('method', 'GET')
+    logger.debug('%s %s', method, url)
 
     # convert data from dict to json
     if len(args) > 0:
@@ -55,6 +56,60 @@ def _matrix_request(url, *args, **kargs):
     logger.debug(json.dumps(result_json, indent=4))
     return result_json
 
+
+# ##########
+# Non-Admin commands
+# ##########
+
+def generate_eventid():
+    import random
+    letters = '_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+    eventid = '$'
+    for _ in range(42):
+        eventid += letters[random.randint(0, len(letters)-1)]
+    return eventid
+
+
+def get_event(eventid):
+    '''
+    Warning: you need to be in the room, or 403
+    '''
+    eventid = urllib.parse.quote(eventid)
+    return _matrix_request(
+        f'{URL}_matrix/client/r0/events/{eventid}',
+        headers=_auth_header(),
+        )
+
+
+def get_room_event(roomid, eventid):
+    roomid = urllib.parse.quote(roomid)
+    eventid = urllib.parse.quote(eventid)
+    return _matrix_request(
+        f'{URL}_matrix/client/r0/rooms/{roomid}/event/{eventid}',
+        headers=_auth_header(),
+        )
+
+
+def redact_event(roomid, eventid, txnid=None):
+    if txnid is None:
+        txnid = generate_eventid()
+    roomid = urllib.parse.quote(roomid)
+    eventid = urllib.parse.quote(eventid)
+    txnid = urllib.parse.quote(txnid)
+
+    data = {'reason': 'test'}
+
+    return _matrix_request(
+        f'{URL}_matrix/client/r0/rooms/{roomid}/redact/{eventid}/{txnid}',
+        method='PUT',
+        headers=_auth_header(),
+        data=data,
+        )
+
+
+# ##########
+# Admin commands
+# ##########
 
 def get_version():
     return _matrix_request(
@@ -212,12 +267,12 @@ def reset_password(login, password):
 def room_join(login, room):
     '''
     room is either a id (starting with '!') or an alis (starting with '#')
-    adminmust be in the room...
+    admin must be in the room...
     '''
     data = {
-        'user_id': f'@{login}:{DOMAIN}'
+        'user_id': login,
     }
-    room = urllib.parse.quote(f'{room}:{DOMAIN}')
+    room = urllib.parse.quote(room)
     return _matrix_request(
         f'{URL}_synapse/admin/v1/join/{room}',
         # Example: !636q39766251:server.com, #niceroom:server.com
@@ -347,3 +402,20 @@ def _room_state_clean(states):
         #     logger.warning(
         #        f'Unsupported state type {statetype} in room states.')
     return result
+
+
+def room_delete(room):
+    '''
+    room is either a id (starting with '!') or an alis (starting with '#')
+    adminmust be in the room...
+    '''
+    data = {
+    }
+    room = urllib.parse.quote(room)
+    return _matrix_request(
+        f'{URL}_synapse/admin/v1/rooms/{room}',
+        # Example: !636q39766251:server.com, #niceroom:server.com
+        method='DELETE',
+        headers=_auth_header(),
+        data=data,
+        )
