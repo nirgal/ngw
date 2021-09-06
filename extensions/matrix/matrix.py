@@ -407,7 +407,6 @@ def _room_state_clean(states):
 def room_delete(room):
     '''
     room is either a id (starting with '!') or an alis (starting with '#')
-    adminmust be in the room...
     '''
     data = {
     }
@@ -416,6 +415,23 @@ def room_delete(room):
         f'{URL}_synapse/admin/v1/rooms/{room}',
         # Example: !636q39766251:server.com, #niceroom:server.com
         method='DELETE',
+        headers=_auth_header(),
+        data=data,
+        )
+
+
+def room_makeadmin(room, login=None):
+    '''
+    room is either a id (starting with '!') or an alis (starting with '#')
+    '''
+    data = {}
+    if login:
+            data['user_id'] = login
+    room = urllib.parse.quote(room)
+    return _matrix_request(
+        f'{URL}_synapse/admin/v1/rooms/{room}/make_room_admin',
+        # Example: !636q39766251:server.com, #niceroom:server.com
+        method='POST',
         headers=_auth_header(),
         data=data,
         )
