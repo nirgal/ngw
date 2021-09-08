@@ -305,7 +305,7 @@ def get_rooms_quick():
         next_batch = result.get('next_batch', None)
 
 
-def get_rooms(show_empty=False):
+def get_rooms(show_empty=False, show_private=False):
     '''
     Yields all rooms
     '''
@@ -319,6 +319,8 @@ def get_rooms(show_empty=False):
             )
         for room in result['rooms']:
             if not show_empty and not room['joined_members']:
+                continue
+            if not show_private and room.get('joined_members', 0) <= 2:
                 continue
             room_localid = _room_localpart(room['room_id'])
             room = get_room_info(room_localid)
