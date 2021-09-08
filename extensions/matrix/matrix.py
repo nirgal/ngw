@@ -305,7 +305,7 @@ def get_rooms_quick():
         next_batch = result.get('next_batch', None)
 
 
-def get_rooms():
+def get_rooms(show_empty=False):
     '''
     Yields all rooms
     '''
@@ -318,6 +318,8 @@ def get_rooms():
             headers=_auth_header(),
             )
         for room in result['rooms']:
+            if not show_empty and not room['joined_members']:
+                continue
             room_localid = _room_localpart(room['room_id'])
             room = get_room_info(room_localid)
             state = get_room_state(room_localid)['state']

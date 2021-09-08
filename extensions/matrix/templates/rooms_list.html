@@ -7,9 +7,10 @@
 <table>
 <tr>
 	<th>id</th>
-	<th>name</th>
-	<th>alias</th>
 	<th>members</th>
+	<th>name</th>
+	<th>topic</th>
+	<th>alias</th>
 	<th>version</th>
 	<th>creator</th>
 	<th>encryption</th>
@@ -18,7 +19,6 @@
 	<th>join_rules</th>
 	<th>guest_access</th>
 	<th>history_visibility</th>
-	<th>topic</th>
 </tr>
 {% for room in rooms %}
 <tr>
@@ -26,13 +26,16 @@
 {{ room.room_id }}
 </td>
 <td>
-{{ room.name }}
-</td>
-<td>
-{{ room.canonical_alias }}
-</td>
-<td>
 {{ room.joined_members }}
+</td>
+<td>
+{{ room.name|default_if_none:'' }}
+</td>
+<td>
+{{ room.topic|default_if_none:'' }}
+</td>
+<td>
+{{ room.canonical_alias|default_if_none:'' }}
 </td>
 <td>
 {{ room.version }}
@@ -53,17 +56,16 @@
 {{ room.join_rules }}
 </td>
 <td>
-{{ room.guest_access }}
+{{ room.guest_access|default_if_none:'' }}
 </td>
 <td>
 {{ room.history_visibility }}
 </td>
-<td>
-{{ room.topic }}
-</td>
 {% comment %}
 <td>
-{{ room }}
+<pre>
+{{ room.pretty }}
+<pre>
 </td>
 {% endcomment %}
 </tr>

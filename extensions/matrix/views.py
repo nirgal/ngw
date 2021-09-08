@@ -1,3 +1,5 @@
+import pprint
+
 from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView
 
@@ -16,6 +18,9 @@ class MatrixRoomsView(NgwUserAcl, TemplateView):
         context = {}
         context['title'] = _('Matrix rooms')
         rooms = matrix.get_rooms()
-        context['rooms'] = rooms
+        rooms2 = [room for room in rooms]
+        for room in rooms2:
+            room['pretty'] = pprint.pformat(room)
+        context['rooms'] = rooms2
         context.update(kwargs)
         return super().get_context_data(**context)
