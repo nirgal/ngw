@@ -206,4 +206,9 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
 ]
 
+if True:
+    import extensions.matrix.urls
+    urlpatterns.append(
+        url(r'^matrix/', include(extensions.matrix.urls.urls)))
+
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,0 +1,75 @@
+{% extends "admin/base_site.html" %}
+{% load i18n staticfiles ngwtags %}
+
+{% block content %}
+<div id="content-main">
+
+<table>
+<tr>
+	<th>id</th>
+	<th>name</th>
+	<th>alias</th>
+	<th>members</th>
+	<th>version</th>
+	<th>creator</th>
+	<th>encryption</th>
+	<th>federatable</th>
+	<th>public</th>
+	<th>join_rules</th>
+	<th>guest_access</th>
+	<th>history_visibility</th>
+	<th>topic</th>
+</tr>
+{% for room in rooms %}
+<tr>
+<td>
+{{ room.room_id }}
+</td>
+<td>
+{{ room.name }}
+</td>
+<td>
+{{ room.canonical_alias }}
+</td>
+<td>
+{{ room.joined_members }}
+</td>
+<td>
+{{ room.version }}
+</td>
+<td>
+{{ room.creator }}
+</td>
+<td>
+{{ room.encryption }}
+</td>
+<td>
+{{ room.federatable }}
+</td>
+<td>
+{{ room.public }}
+</td>
+<td>
+{{ room.join_rules }}
+</td>
+<td>
+{{ room.guest_access }}
+</td>
+<td>
+{{ room.history_visibility }}
+</td>
+<td>
+{{ room.topic }}
+</td>
+{% comment %}
+<td>
+{{ room }}
+</td>
+{% endcomment %}
+</tr>
+{% endfor %}
+<table>
+
+</div>
+{% endblock %}
+
