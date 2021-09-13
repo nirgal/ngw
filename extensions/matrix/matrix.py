@@ -318,10 +318,15 @@ def get_rooms(show_empty=False, show_private=False):
             headers=_auth_header(),
             )
         for room in result['rooms']:
-            if not show_empty and not room['joined_members']:
+            nb_members = room.get('joined_members', 0)
+            if not show_empty and nb_members == 0:
                 continue
-            if not show_private and room.get('joined_members', 0) <= 2:
-                continue
+            if show_private:  # private only
+                if nb_members > 2:
+                    continue
+            else:  # not private
+                if nb_members <= 2:
+                    continue
             room_localid = _room_localpart(room['room_id'])
             room = get_room_info(room_localid)
             state = get_room_state(room_localid)['state']

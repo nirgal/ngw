@@ -23,49 +23,51 @@
 {% for room in rooms %}
 <tr>
 <td>
-{{ room.room_id }}
+	{{ room.room_id }}
 </td>
 <td>
-{{ room.joined_members }}
+	{{ room.joined_members }}
 </td>
 <td>
-{{ room.name|default_if_none:'' }}
+	{{ room.name|default_if_none:'' }}
 </td>
 <td>
-{{ room.topic|default_if_none:'' }}
+	{{ room.topic|default_if_none:'' }}
 </td>
 <td>
-{{ room.canonical_alias|default_if_none:'' }}
+	{{ room.canonical_alias|default_if_none:'' }}
 </td>
 <td>
-{{ room.version }}
+	{{ room.version }}
 </td>
 <td>
-{{ room.creator }}
+	{{ room.creator }}
 </td>
 <td>
-{{ room.encryption }}
+	{%if room.encryption %}
+	Yes
+	{% endif %}
 </td>
 <td>
-{{ room.federatable }}
+	{{ room.federatable }}
 </td>
 <td>
-{{ room.public }}
+	{{ room.public }}
 </td>
 <td>
-{{ room.join_rules }}
+	{{ room.join_rules }}
 </td>
 <td>
-{{ room.guest_access|default_if_none:'' }}
+	{{ room.guest_access|default_if_none:'' }}
 </td>
 <td>
-{{ room.history_visibility }}
+	{{ room.history_visibility|default_if_none:'' }}
 </td>
 {% comment %}
 <td>
-<pre>
-{{ room.pretty }}
-<pre>
+	<pre>
+	{{ room.pretty }}
+	<pre>
 </td>
 {% endcomment %}
 </tr>
