@@ -281,12 +281,6 @@ def room_join(login, room):
         )
 
 
-def _room_localpart(roomid_domain):
-    re_search = re.compile(f'!(.*):{DOMAIN}')
-    roomid = re_search.search(roomid_domain).groups()[0]
-    return roomid
-
-
 def get_rooms_quick():
     '''
     Yields all rooms
@@ -327,9 +321,9 @@ def get_rooms(show_empty=False, show_private=False):
             else:  # not private
                 if nb_members <= 2:
                     continue
-            room_localid = _room_localpart(room['room_id'])
-            room = get_room_info(room_localid)
-            state = get_room_state(room_localid)['state']
+            room_id = room['room_id']
+            room = get_room_info(room_id)
+            state = get_room_state(room_id)['state']
             room['state'] = _room_state_clean(state)
             yield room
 
@@ -338,7 +332,7 @@ def get_rooms(show_empty=False, show_private=False):
 
 def get_room_info(roomid):
     return _matrix_request(
-        f'{URL}_synapse/admin/v1/rooms/!{roomid}:{DOMAIN}',
+        f'{URL}_synapse/admin/v1/rooms/{roomid}',
         headers=_auth_header(),
         )
 
@@ -348,7 +342,7 @@ def get_room_state(roomid):
     consider using _room_state_clean on the return value
     '''
     return _matrix_request(
-        f'{URL}_synapse/admin/v1/rooms/!{roomid}:{DOMAIN}/state',
+        f'{URL}_synapse/admin/v1/rooms/{roomid}/state',
         headers=_auth_header(),
         )
 
