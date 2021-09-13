@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'login',
+            'user',
             help="Login name")
 
     def handle(self, *args, **options):
@@ -27,10 +27,14 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        login = options['login']
+        user_id = options['user']
+        if not user_id.startswith('@'):
+            raise CommandError(f'user_id should start with "@".')
+        if not user_id.endswith(f':{matrix.DOMAIN}'):
+            raise CommandError(f'user_id should ends with ":{matrix.DOMAIN}".')
 
         try:
-            info = matrix.get_user_info(login)
+            info = matrix.get_user_info(user_id)
             print(json.dumps(info, indent=4))
         except matrix.NoSuchUser:
-            raise CommandError(f'User {login} does not exist')
+            raise CommandError(f'User {user_id} does not exist')

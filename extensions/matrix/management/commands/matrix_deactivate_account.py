@@ -29,6 +29,8 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
+        login = options['login']
+
         matrix.deactivate_account(
-                login=options['login'],
+                login=f'@{login}:{matrix.DOMAIN}',
                 erase=not options['no_erase'])

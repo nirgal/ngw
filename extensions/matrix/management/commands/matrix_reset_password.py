@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'login',
+            'user',
             )
         parser.add_argument(
             'password',
@@ -29,6 +29,9 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
+        user_id = options['user']
+        password = options['password']
+
         matrix.reset_password(
-                options['login'],
-                options['password'])
+                user_id,
+                password)

@@ -134,9 +134,9 @@ def get_users_quick():
         next_token = result.get('next_token', None)
 
 
-def localpart(login_domain):
+def localpart(user_id):
     re_search = re.compile(f'@(.*):{DOMAIN}')
-    login = re_search.search(login_domain).groups()[0]
+    login = re_search.search(user_id).groups()[0]
     return login
 
 
@@ -153,8 +153,8 @@ def get_users(include_deleted=False):
             headers=_auth_header(),
             )
         for user in result['users']:
-            login = localpart(user['name'])
-            user = get_user_info(login)
+            user_id = user['name']
+            user = get_user_info(user_id)
             if not include_deleted:
                 if not user['password_hash'] and not user['threepids']:
                     # logger.debug(f'{login} is disabled')
@@ -164,10 +164,11 @@ def get_users(include_deleted=False):
         next_token = result.get('next_token', None)
 
 
-def get_user_info(login):
+def get_user_info(user_id):
+    assert user_id.endswith(f':{DOMAIN}')
     try:
         return _matrix_request(
-            f'{URL}_synapse/admin/v2/users/@{login}:{DOMAIN}',
+            f'{URL}_synapse/admin/v2/users/{user_id}',
             headers=_auth_header(),
             )
     except HTTPError as e:
@@ -177,30 +178,32 @@ def get_user_info(login):
             raise e
 
 
-def put_user(login, data):
+def put_user(user_id, data):
     '''
     Low level interface to /_synapse/admin/v2/users/<USER>.
     '''
+    assert user_id.endswith(f':{DOMAIN}')
     return _matrix_request(
-        f'{URL}_synapse/admin/v2/users/@{login}:{DOMAIN}',
+        f'{URL}_synapse/admin/v2/users/{user_id}',
         headers=_auth_header(),
         data=data,
         method='PUT',
         )
 
 
-def set_user_info(login, name=None, emails=None, admin=None, create=False):
+def set_user_info(user_id, name=None, emails=None, admin=None, create=False):
     '''
     High level interface to create/modify account.
     @returns server new information if changed, None otherwise
     '''
     logger = logging.getLogger('matrix')
+    assert user_id.endswith(f':{DOMAIN}')
 
     try:
-        olddata = get_user_info(login)
+        olddata = get_user_info(user_id)
     except NoSuchUser as e:
         if not create:
-            logger.error(f"User {login} doesn't exists and create=False")
+            logger.error(f"User {user_id} doesn't exists and create=False")
             raise e
         olddata = {}
 
@@ -231,17 +234,18 @@ def set_user_info(login, name=None, emails=None, admin=None, create=False):
         data['admin'] = admin
 
     if data:
-        return put_user(login, data)
+        return put_user(user_id, data)
     else:
-        logger.debug(f'{login}: No change.')
+        logger.debug(f'{user_id}: No change.')
         return None
 
 
-def deactivate_account(login, erase=True):
+def deactivate_account(user_id, erase=True):
+    assert user_id.endswith(f':{DOMAIN}')
     try:
         data = {'erase': erase}
         return _matrix_request(
-            url=f'{URL}_synapse/admin/v1/deactivate/@{login}:{DOMAIN}',
+            url=f'{URL}_synapse/admin/v1/deactivate/{user_id}',
             headers=_auth_header(),
             data=data,
             )
@@ -252,25 +256,27 @@ def deactivate_account(login, erase=True):
             raise e
 
 
-def reset_password(login, password):
+def reset_password(user_id, password):
+    assert user_id.endswith(f':{DOMAIN}')
     data = {
         'new_password': password,
         'logout_devices': True,
         }
     return _matrix_request(
-        f'{URL}_synapse/admin/v1/reset_password/@{login}:{DOMAIN}',
+        f'{URL}_synapse/admin/v1/reset_password/{user_id}',
         headers=_auth_header(),
         data=data,
         )
 
 
-def room_join(login, room):
+def room_join(user_id, room):
     '''
     room is either a id (starting with '!') or an alis (starting with '#')
     admin must be in the room...
     '''
+    assert user_id.endswith(f':{DOMAIN}')
     data = {
-        'user_id': login,
+        'user_id': user_id,
     }
     room = urllib.parse.quote(room)
     return _matrix_request(
@@ -423,13 +429,14 @@ def room_delete(room):
         )
 
 
-def room_makeadmin(room, login=None):
+def room_makeadmin(room, user_id=None):
     '''
     room is either a id (starting with '!') or an alis (starting with '#')
     '''
     data = {}
-    if login:
-            data['user_id'] = login
+    if user_id:
+        assert user_id.endswith(f':{DOMAIN}')
+        data['user_id'] = user_id
     room = urllib.parse.quote(room)
     return _matrix_request(
         f'{URL}_synapse/admin/v1/rooms/{room}/make_room_admin',

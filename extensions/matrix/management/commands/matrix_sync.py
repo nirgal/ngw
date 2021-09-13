@@ -20,6 +20,7 @@ class Command(BaseCommand):
     help = 'update matrix user'
 
     def add_arguments(self, parser):
+        # TODO: change login by user
         parser.add_argument(
             '--login',
             help="Login name")
@@ -64,11 +65,12 @@ class Command(BaseCommand):
         odelete = not options['no_delete']
 
         if login:  # process a single account
+            user_id = f'@{login}:{matrix.DOMAIN}'
             if odelete:
                 raise CommandError('--delete and --login are incompatible')
             if name or email or admin:  # ngw info is overriden
                 matrix.set_user_info(
-                        login,
+                        user_id,
                         name=name,
                         emails=email,
                         admin=admin,
@@ -81,7 +83,7 @@ class Command(BaseCommand):
                 name = get_contact_displayname(contact)
                 emails = contact.get_fieldvalues_by_type('EMAIL')
                 if matrix.set_user_info(
-                        login,
+                        user_id,
                         name=name,
                         emails=email,
                         admin=admin,
@@ -98,7 +100,7 @@ class Command(BaseCommand):
         if admin:
             raise CommandError('--admin is only allowed if --login is defined')
 
-        # So here login is undefined: Process all the group
+        # So here login/name/email/admin are undefined: Process all the group
 
         logger.debug('Checking ngw users against matrix users')
 
@@ -108,21 +110,22 @@ class Command(BaseCommand):
             login = contact.get_username()
             name = get_contact_displayname(contact)
             emails = contact.get_fieldvalues_by_type('EMAIL')
+            user_id = f'@{login}:{matrix.DOMAIN}'
             if matrix.set_user_info(
-                    login,
+                    user_id,
                     name=name,
                     emails=emails,
                     create=ocreate):
-                logger.debug(f'Updated {login}')
+                logger.debug(f'Updated {user_id}')
             else:
-                logger.debug(f'No change for {login}')
+                logger.debug(f'No change for {user_id}')
 
         if odelete:
             logger.debug('Checking matrix users against ngw users')
 
             for user in matrix.get_users():
-                name = user['name']  # localpart + domain
-                login = matrix.localpart(name)
+                user_id = user['name']  # localpart + domain
+                login = matrix.localpart(user_id)
 
                 delete = False
                 try:
@@ -138,7 +141,7 @@ class Command(BaseCommand):
                         delete = True
 
                 if delete:
-                    logger.info(f'Deactivating matrix account {login}')
-                    matrix.deactivate_account(login)
+                    logger.info(f'Deactivating matrix account {user_id}')
+                    matrix.deactivate_account(user_id)
                 else:
                     logger.debug(f'Account {login} is ok')

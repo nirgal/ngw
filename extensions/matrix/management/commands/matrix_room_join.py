@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'login',
+            'user',
             )
         parser.add_argument(
             'room',
@@ -30,17 +30,17 @@ class Command(BaseCommand):
             logger.setLevel(logging.ERROR)
         # else value settings['LOGGING']['command']['level'] is used
 
-        login = options['login']
-        if not login.startswith('@'):
-            raise CommandError(f'login should start with "@".')
-        if not login.endswith(f':{matrix.DOMAIN}'):
-            raise CommandError(f'login should ends with ":{matrix.DOMAIN}".')
+        user_id = options['user']
+        if not user_id.startswith('@'):
+            raise CommandError(f'user_id should start with "@".')
+        if not user_id.endswith(f':{matrix.DOMAIN}'):
+            raise CommandError(f'user_id should ends with ":{matrix.DOMAIN}".')
 
-        room = options['room']
-        if not room.startswith('#') and not room.startswith('!'):
-            raise CommandError('room should be and id (starting with !) or an'
-                               ' alias (starting with #).')
-        if not room.endswith(f':{matrix.DOMAIN}'):
-            raise CommandError(f'room should ends with ":{matrix.DOMAIN}".')
+        room_id = options['room']
+        if not room_id.startswith('#') and not room_id.startswith('!'):
+            raise CommandError('room_id should be and id (starting with !) or'
+                               'an alias (starting with #).')
+        if not room_id.endswith(f':{matrix.DOMAIN}'):
+            raise CommandError(f'room_id should ends with ":{matrix.DOMAIN}".')
 
-        matrix.room_join(login, room)
+        matrix.room_join(user_id, room_id)
