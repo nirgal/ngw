@@ -8,6 +8,7 @@
 <tr>
 	<th>id</th>
 	<th>members</th>
+	<th>local members</th>
 	<th>name</th>
 	<th>topic</th>
 	<th>alias</th>
@@ -27,6 +28,9 @@
 </td>
 <td>
 	{{ room.joined_members }}
+</td>
+<td>
+	{{ room.joined_local_members }}
 </td>
 <td>
 	{{ room.name|default_if_none:'' }}
@@ -76,4 +80,3 @@
 
 </div>
 {% endblock %}
-
