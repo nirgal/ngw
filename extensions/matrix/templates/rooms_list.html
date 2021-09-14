@@ -28,7 +28,7 @@
 	{{ room.room_id }}
 </td>
 <td>	{% if room.contact_group %}
-	<a href="{{ room.contact_group }}">{{ room.contact_group }}</a>
+	<a href="{{ room.contact_group.get_absolute_url }}">{{ room.contact_group }}</a>
 	{% endif %}
 </td>
 <td>
