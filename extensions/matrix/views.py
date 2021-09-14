@@ -3,6 +3,7 @@ import pprint
 from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView
 
+from ngw.core.models import MatrixRoom
 from ngw.core.views.generic import NgwUserAcl
 
 from . import matrix
@@ -21,6 +22,12 @@ class MatrixRoomsView(NgwUserAcl, TemplateView):
         rooms2 = [room for room in rooms]
         for room in rooms2:
             room['pretty'] = pprint.pformat(room)
+            try:
+                ngwroom = MatrixRoom.objects.get(pk=room['room_id'])
+                cg = ngwroom.contact_group
+            except MatrixRoom.DoesNotExist:
+                cg = None
+            room['contact_group'] = cg
         context['rooms'] = rooms2
         context.update(kwargs)
         return super().get_context_data(**context)
@@ -39,6 +46,12 @@ class MatrixAllRoomsView(NgwUserAcl, TemplateView):
         rooms2 = [room for room in rooms]
         for room in rooms2:
             room['pretty'] = pprint.pformat(room)
+            try:
+                ngwroom = MatrixRoom.objects.get(pk=room['room_id'])
+                cg = ngwroom.contact_group
+            except MatrixRoom.DoesNotExist:
+                cg = None
+            room['contact_group'] = cg
         context['rooms'] = rooms2
         context.update(kwargs)
         return super().get_context_data(**context)

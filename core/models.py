@@ -3083,3 +3083,15 @@ class ContactMsg(NgwModel):
         except AttributeError:
             return ()
         return func(self)
+
+
+class MatrixRoom(NgwModel):
+    id = models.TextField(primary_key=True)
+    contact_group = models.ForeignKey(
+            ContactGroup, on_delete=models.CASCADE,
+            )
+
+    class Meta:
+        db_table = 'matrix_room'
+        verbose_name = ugettext_lazy('room')
+        verbose_name_plural = ugettext_lazy('rooms')

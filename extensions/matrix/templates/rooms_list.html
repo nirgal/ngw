@@ -7,6 +7,7 @@
 <table>
 <tr>
 	<th>id</th>
+	<th>group</th>
 	<th>members</th>
 	<th>local members</th>
 	<th>name</th>
@@ -25,6 +26,10 @@
 <tr>
 <td>
 	{{ room.room_id }}
+</td>
+<td>	{% if room.contact_group %}
+	<a href="{{ room.contact_group }}">{{ room.contact_group }}</a>
+	{% endif %}
 </td>
 <td>
 	{{ room.joined_members }}
