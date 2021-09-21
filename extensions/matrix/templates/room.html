@@ -1,0 +1,114 @@
+{% extends "admin/base_site.html" %}
+{% load i18n staticfiles ngwtags %}
+
+{% block content %}
+<div id="content-main">
+
+<p>{% trans "Database group" %}:
+	<b>
+	{% if room.contact_group %}
+	<a href="{{ room.contact_group.get_absolute_url }}">{{ room.contact_group }}</a>
+	{% else %}
+	{% trans "None" %}
+	{% endif %}
+	</b>
+
+<p>{% trans "Name" %}:
+	<b>
+	{{ room.name|default_if_none:'' }}
+	</b>
+
+<p>{% trans "Topic" %}:
+	<b>
+	{{ room.topic|default_if_none:'' }}
+	</b>
+
+<p>{% trans "Main address" %}:
+	<b>
+	{{ room.canonical_alias|default_if_none:'' }}
+	</b>
+
+<p>{% trans "Version" %}:
+	<b>
+	{{ room.version }}
+	</b>
+
+<p>{% trans "Creator" %}:
+	<b>
+	{{ room.creator }}
+	</b>
+
+<p>{% trans "Encryption" %}:
+	<b>
+	{{ room.encryption }}
+	</b>
+
+<p>{% trans "Federatable" %}:
+	<b>
+	{% if room.federatable %}
+	{% trans "Yes" %}
+	{% else %}
+	{% trans "No" %}
+	{% endif %}
+	</b>
+
+<p>{% trans "Public" %}:
+	<b>
+	{% if room.public %}
+	{% trans "Yes" %}
+	{% else %}
+	{% trans "No" %}
+	{% endif %}
+	</b>
+
+<p>{% trans "Join rules" %}:
+	<b>
+	{{ room.join_rules }}
+	</b>
+
+<p>{% trans "Guest access" %}:
+	<b>
+	{% if room.guest_access == "can_join" %}
+	{% trans "Yes" %}
+	{% elif room.guest_access is None or room.guest_access == "forbidden" %}
+	{% trans "No" %}
+	{% else %}
+	ERRROR: {{ room.guest_access }}
+	{% endif %}
+	</b>
+
+<p>{% trans "History visibility" %}:
+	<b>
+	{{ room.history_visibility|default_if_none:'' }}
+	</b>
+
+<p>{% trans "Message expiry" %}:
+	<b>
+	{% if room.autoredact %}
+	{{ room.autoredact }} {% trans "seconds" %}
+	{% else %}
+	{% trans "No" %}
+	{% endif %}
+	</b>
+
+<p>{% trans "Members" %}:
+	<table>
+	<tr>
+		<th>{% trans "Display name" %}
+		<th>{% trans "Membership" %}
+		<th>{% trans "User ID" %}
+	{% for member in room.state.members %}
+	<tr>
+		<td>{{ member.displayname }}
+		<td>{{ member.membership }}
+		<td>{{ member.user_id }}
+	{% endfor %}
+	</table>
+
+{% comment %}
+<p>
+<pre>{{ room.pretty }}</pre>
+{% endcomment %}
+
+</div>
+{% endblock %}

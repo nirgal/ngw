@@ -1,0 +1,122 @@
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Jean-Michel Vourgère <nirgal@debian.org>, 2021.
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-09-21 09:37+0000\n"
+"PO-Revision-Date: 2021-09-21 11:41+0200\n"
+"Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
+"Language-Team: French <>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Lokalize 20.12.0\n"
+
+#: templates/room.html:7
+msgid "Database group"
+msgstr "Groupe de base de données"
+
+#: templates/room.html:12
+msgid "None"
+msgstr "Aucun"
+
+#: templates/room.html:16 templates/rooms_list.html:13
+msgid "Name"
+msgstr "Nom"
+
+#: templates/room.html:21 templates/rooms_list.html:14
+msgid "Topic"
+msgstr "Sujet"
+
+#: templates/room.html:26 templates/rooms_list.html:15
+msgid "Main address"
+msgstr "Adresse principale"
+
+#: templates/room.html:31 templates/rooms_list.html:16
+msgid "Version"
+msgstr "Version"
+
+#: templates/room.html:36 templates/rooms_list.html:17
+msgid "Creator"
+msgstr "Créateur"
+
+#: templates/room.html:41
+msgid "Encryption"
+msgstr "Chiffrement"
+
+#: templates/room.html:46 templates/rooms_list.html:19
+msgid "Federatable"
+msgstr "Fédérable"
+
+#: templates/room.html:49 templates/room.html:58 templates/room.html:72
+#: templates/rooms_list.html:57 templates/rooms_list.html:62
+#: templates/rooms_list.html:69 templates/rooms_list.html:79
+msgid "Yes"
+msgstr "Oui"
+
+#: templates/room.html:51 templates/room.html:60 templates/room.html:74
+#: templates/rooms_list.html:64 templates/rooms_list.html:71
+#: templates/rooms_list.html:81
+msgid "No"
+msgstr "Non"
+
+#: templates/room.html:55 templates/rooms_list.html:20
+msgid "Public"
+msgstr "Public"
+
+#: templates/room.html:64 templates/rooms_list.html:21
+msgid "Join rules"
+msgstr "Règles pour rejoindre"
+
+#: templates/room.html:69 templates/rooms_list.html:22
+msgid "Guest access"
+msgstr "Accès invité"
+
+#: templates/room.html:80 templates/rooms_list.html:23
+msgid "History visibility"
+msgstr "Visibilité de l'historique"
+
+#: templates/room.html:85 templates/rooms_list.html:11
+msgid "Members"
+msgstr "Membres"
+
+#: templates/room.html:88
+msgid "Display name"
+msgstr "Nom d'affichage"
+
+#: templates/room.html:89
+msgid "Membership"
+msgstr "Appartenance"
+
+#: templates/room.html:90
+msgid "User ID"
+msgstr "ID utilisateur"
+
+#: templates/rooms_list.html:9
+msgid "Room Id"
+msgstr "Id de salon"
+
+#: templates/rooms_list.html:10
+msgid "Group"
+msgstr "Groupe"
+
+#: templates/rooms_list.html:12
+msgid "Local members"
+msgstr "Membres locaux"
+
+#: templates/rooms_list.html:18
+msgid "Encrypted"
+msgstr "Chiffré"
+
+#: views.py:20 views.py:44
+msgid "Matrix rooms"
+msgstr "Salons Matrix"
+
+#: views.py:70
+msgid "Matrix room"
+msgstr "Salon Matrix"

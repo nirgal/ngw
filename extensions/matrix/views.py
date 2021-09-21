@@ -11,7 +11,7 @@ from . import matrix
 
 class MatrixRoomsView(NgwUserAcl, TemplateView):
     '''
-    Home page view
+    Room list view
     '''
     template_name = 'rooms_list.html'
 
@@ -35,7 +35,7 @@ class MatrixRoomsView(NgwUserAcl, TemplateView):
 
 class MatrixAllRoomsView(NgwUserAcl, TemplateView):
     '''
-    Home page view
+    Room list view
     '''
     template_name = 'rooms_list.html'
 
@@ -55,3 +55,40 @@ class MatrixAllRoomsView(NgwUserAcl, TemplateView):
         context['rooms'] = rooms2
         context.update(kwargs)
         return super().get_context_data(**context)
+
+
+class MatrixRoomView(NgwUserAcl, TemplateView):
+    '''
+    Room details view
+    '''
+    template_name = 'room.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        room_id = context['room_id']
+        context['title'] = _('Matrix room') + ' ' + room_id
+
+        room = matrix.get_room_info(room_id)
+
+        try:
+            ngwroom = MatrixRoom.objects.get(pk=room['room_id'])
+            cg = ngwroom.contact_group
+        except MatrixRoom.DoesNotExist:
+            cg = None
+        room['contact_group'] = cg
+
+        state = matrix.get_room_state(room_id)['state']
+        room['state'] = matrix._room_state_clean(state)
+
+        try:
+            room['autoredact'] = (
+                    room['state']['m.room.autoredact']['autoredact'])
+        except KeyError:
+            pass
+
+        room['pretty'] = pprint.pformat(room)
+
+        context['room'] = room
+
+        return context

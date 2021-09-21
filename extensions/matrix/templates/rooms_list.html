@@ -6,26 +6,26 @@
 
 <table>
 <tr>
-	<th>id</th>
-	<th>group</th>
-	<th>members</th>
-	<th>local members</th>
-	<th>name</th>
-	<th>topic</th>
-	<th>alias</th>
-	<th>version</th>
-	<th>creator</th>
-	<th>encryption</th>
-	<th>federatable</th>
-	<th>public</th>
-	<th>join_rules</th>
-	<th>guest_access</th>
-	<th>history_visibility</th>
+	<th>{% trans "Room Id" %}id</th>
+	<th>{% trans "Group" %}</th>
+	<th>{% trans "Members" %}</th>
+	<th>{% trans "Local members" %}</th>
+	<th>{% trans "Name" %}</th>
+	<th>{% trans "Topic" %}</th>
+	<th>{% trans "Main address" %}</th>
+	<th>{% trans "Version" %}</th>
+	<th>{% trans "Creator" %}</th>
+	<th>{% trans "Encrypted" %}</th>
+	<th>{% trans "Federatable" %}</th>
+	<th>{% trans "Public" %}</th>
+	<th>{% trans "Join rules" %}</th>
+	<th>{% trans "Guest access" %}</th>
+	<th>{% trans "History visibility" %}</th>
 </tr>
 {% for room in rooms %}
 <tr>
 <td>
-	{{ room.room_id }}
+	<a href="/matrix/room/{{ room.room_id }}">{{ room.room_id }}</a>
 </td>
 <td>	{% if room.contact_group %}
 	<a href="{{ room.contact_group.get_absolute_url }}">{{ room.contact_group }}</a>
@@ -53,21 +53,35 @@
 	{{ room.creator }}
 </td>
 <td>
-	{%if room.encryption %}
-	Yes
+	{% if room.encryption %}
+	<abbr title="{{ room.encryption }}">{% trans "Yes" %}</abbr>
 	{% endif %}
 </td>
 <td>
-	{{ room.federatable }}
+	{% if room.federatable %}
+	{% trans "Yes" %}
+	{% else %}
+	{% trans "No" %}
+	{% endif %}
 </td>
 <td>
-	{{ room.public }}
+	{% if room.public %}
+	{% trans "Yes" %}
+	{% else %}
+	{% trans "No" %}
+	{% endif %}
 </td>
 <td>
 	{{ room.join_rules }}
 </td>
 <td>
-	{{ room.guest_access|default_if_none:'' }}
+	{% if room.guest_access == "can_join" %}
+	{% trans "Yes" %}
+	{% elif room.guest_access is None or room.guest_access == "forbidden" %}
+	{% trans "No" %}
+	{% else %}
+	ERRROR: {{ room.guest_access }}
+	{% endif %}
 </td>
 <td>
 	{{ room.history_visibility|default_if_none:'' }}
