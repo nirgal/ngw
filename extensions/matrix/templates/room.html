@@ -97,18 +97,29 @@
 		<th>{% trans "Display name" %}
 		<th>{% trans "Membership" %}
 		<th>{% trans "User ID" %}
+		<th>{% trans "Power level" %}
 	{% for member in room.state.members %}
 	<tr>
 		<td>{{ member.displayname }}
 		<td>{{ member.membership }}
 		<td>{{ member.user_id }}
+		<td>
+			{% if member.power_level == 100 %}
+			100 ({% trans "Administrator" %})
+			{% elif member.power_level == 50 %}
+			50 ({% trans "Modérator" %})
+			{% elif member.power_level == 0 %}
+			0 ({% trans "Default" %})
+			{% else %}
+			{{ member.power_level }}
+			{% endif %}
 	{% endfor %}
 	</table>
 
+{% if room.pretty %}
 <p>
 <pre>{{ room.pretty }}</pre>
-{% comment %}
-{% endcomment %}
+{% endif %}
 
 </div>
 {% endblock %}

@@ -99,16 +99,21 @@ class MatrixRoomView(NgwUserAcl, TemplateView):
 
         _check_state_filled(room)
 
-        # try:
-        #     power_levels = room['state']['m.room.power_levels']
-        # except KeyError:
-        #     power_levels = {}
+        try:
+            power_levels = room['state']['m.room.power_levels']
+            default_pl = power_levels.get('users_default', 0)
+            for member in room['state']['members']:
+                member['power_level'] = (
+                    power_levels['users'].get(member['user_id'], default_pl))
+        except KeyError:
+            pass
 
         autoredact_maxage = _get_autoredact_maxage(room)
         if autoredact_maxage:
             room['autoredact'] = autoredact_maxage
 
-        room['pretty'] = pprint.pformat(room)
+        if self.request.GET.get('debug', False):
+            room['pretty'] = pprint.pformat(room)
 
         context['room'] = room
 
