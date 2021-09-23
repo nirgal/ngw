@@ -85,7 +85,7 @@
 <p>{% trans "Message expiry" %}:
 	<b>
 	{% if room.autoredact %}
-	{{ room.autoredact }} {% trans "seconds" %}
+	{{ room.autoredact }}
 	{% else %}
 	{% trans "No" %}
 	{% endif %}
@@ -105,9 +105,9 @@
 	{% endfor %}
 	</table>
 
-{% comment %}
 <p>
 <pre>{{ room.pretty }}</pre>
+{% comment %}
 {% endcomment %}
 
 </div>

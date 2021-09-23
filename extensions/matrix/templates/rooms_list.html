@@ -21,6 +21,7 @@
 	<th>{% trans "Join rules" %}</th>
 	<th>{% trans "Guest access" %}</th>
 	<th>{% trans "History visibility" %}</th>
+	<th>{% trans "Messages expiration" %}</th>
 </tr>
 {% for room in rooms %}
 <tr>
@@ -85,6 +86,13 @@
 </td>
 <td>
 	{{ room.history_visibility|default_if_none:'' }}
+</td>
+<td>
+	{% if room.autoredact %}
+	{{ room.autoredact }}
+	{% else %}
+	{% trans "No" %}
+	{% endif %}
 </td>
 {% comment %}
 <td>
