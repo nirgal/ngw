@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n staticfiles ngwtags %}
+{% load i18n staticfiles ngwtags matrix %}
 
 {% block content %}
 <div id="content-main">
@@ -35,7 +35,7 @@
 
 <p>{% trans "Creator" %}:
 	<b>
-	{{ room.creator }}
+	{{ room.creator|matrixuser }}
 	</b>
 
 <p>{% trans "Encryption" %}:
@@ -102,7 +102,7 @@
 	<tr>
 		<td>{{ member.displayname }}
 		<td>{{ member.membership }}
-		<td>{{ member.user_id }}
+		<td>{{ member.user_id|matrixuser }}
 		<td>
 			{% if member.power_level == 100 %}
 			100 ({% trans "Administrator" %})

@@ -46,37 +46,21 @@ class MatrixRoomsView(NgwUserAcl, TemplateView):
     def get_context_data(self, **kwargs):
         context = {}
         context['title'] = _('Matrix rooms')
-        rooms = matrix.get_rooms()
-        rooms2 = [room for room in rooms]
-        for room in rooms2:
+
+        request_params = self.request.GET
+        rooms = matrix.get_rooms(
+                show_empty=request_params.get('empty', False),
+                show_private=request_params.get('private', False),
+                )
+
+        rooms = [room for room in rooms]
+        for room in rooms:
             room['pretty'] = pprint.pformat(room)
             room['contact_group'] = _get_contact_group(room['room_id'])
             autoredact_maxage = _get_autoredact_maxage(room)
             if autoredact_maxage:
                 room['autoredact'] = autoredact_maxage
-        context['rooms'] = rooms2
-        context.update(kwargs)
-        return super().get_context_data(**context)
-
-
-class MatrixAllRoomsView(NgwUserAcl, TemplateView):
-    '''
-    Room list view
-    '''
-    template_name = 'rooms_list.html'
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context['title'] = _('Matrix rooms')
-        rooms = matrix.get_rooms(show_empty=True, show_private=True)
-        rooms2 = [room for room in rooms]
-        for room in rooms2:
-            room['pretty'] = pprint.pformat(room)
-            room['contact_group'] = _get_contact_group(room['room_id'])
-            autoredact_maxage = _get_autoredact_maxage(room)
-            if autoredact_maxage:
-                room['autoredact'] = autoredact_maxage
-        context['rooms'] = rooms2
+        context['rooms'] = rooms
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -116,5 +100,49 @@ class MatrixRoomView(NgwUserAcl, TemplateView):
             room['pretty'] = pprint.pformat(room)
 
         context['room'] = room
+
+        return context
+
+
+class MatrixUserView(NgwUserAcl, TemplateView):
+    '''
+    User details view
+    '''
+    template_name = 'user.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        user_id = context['user_id']
+        context['title'] = _('Matrix user') + ' ' + user_id
+
+        user = matrix.get_user_info(user_id)
+
+        # room['contact_group'] = _get_contact_group(room_id)
+
+        # _check_state_filled(room)
+
+        # try:
+        #     power_levels = room['state']['m.room.power_levels']
+        #     default_pl = power_levels.get('users_default', 0)
+        #     for member in room['state']['members']:
+        #         member['power_level'] = (
+        #             power_levels['users'].get(member['user_id'], default_pl))
+        # except KeyError:
+        #     pass
+
+        # autoredact_maxage = _get_autoredact_maxage(room)
+        # if autoredact_maxage:
+        #     room['autoredact'] = autoredact_maxage
+
+        # if self.request.GET.get('debug', False):
+        #     room['pretty'] = pprint.pformat(room)
+
+        # context['room'] = room
+
+        if self.request.GET.get('debug', False):
+            if user['password_hash']:
+                user['password_hash'] = '********'
+            context['pretty'] = pprint.pformat(user)
 
         return context

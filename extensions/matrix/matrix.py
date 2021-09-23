@@ -319,13 +319,11 @@ def get_rooms(show_empty=False, show_private=False):
             )
         for room in result['rooms']:
             nb_members = room.get('joined_members', 0)
-            if not show_empty and nb_members == 0:
-                continue
-            if show_private:  # private only
-                if nb_members > 2:
+            if nb_members == 0:
+                if not show_empty:
                     continue
-            else:  # not private
-                if nb_members <= 2:
+            elif nb_members <= 2:
+                if not show_private:
                     continue
             room_id = room['room_id']
             room = get_room_info(room_id)

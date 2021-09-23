@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+{% load i18n staticfiles ngwtags matrix %}
+
+{% block content %}
+<div id="content-main">
+
+<p>{% trans "Name" %}:
+	<b>
+	{{ user.display_name|default_if_none:'' }}
+	</b>
+
+{% if pretty %}
+<p>
+<pre>{{ pretty }}</pre>
+{% endif %}
+
+</div>
+{% endblock %}
