@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n staticfiles ngwtags %}
+{% load i18n staticfiles ngwtags matrix %}
 
 {% block content %}
 <div id="content-main">
@@ -51,7 +51,7 @@
 	{{ room.version }}
 </td>
 <td>
-	{{ room.creator }}
+	{{ room.creator|matrixuser }}
 </td>
 <td>
 	{% if room.encryption %}
