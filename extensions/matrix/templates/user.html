@@ -4,10 +4,45 @@
 {% block content %}
 <div id="content-main">
 
-<p>{% trans "Name" %}:
+<p>{% trans "Display name" %}:
 	<b>
-	{{ user.display_name|default_if_none:'' }}
+	{{ mat_user.displayname|default_if_none:'' }}
 	</b>
+
+{% if mat_user.admin  %}
+<p>{% trans "Admin" %}: <b>{% trans "Yes" %}</b>
+{% endif %}
+
+<p>{% trans "Database user" %}:
+	<b>
+		{% if ngw_user %}
+		<a href="{{ ngw_user_url }}">{{ ngw_user }}</a>
+		{% else %}
+		{% trans "None" %}
+		{% endif %}
+	</b>
+
+<p>{% trans "Creation" %}:
+	<b>
+	{{ creation_dt }}
+	</b>
+
+{% if not mat_user.password_hash and not mat_user.threepids %}
+<p><b>{% trans "Account disabled" %}</b>
+{% endif %}
+
+<p>{% trans "Third party ids" %}:
+	{% for threepid in mat_user.threepids %}
+		<b>
+		{% if threepid.medium == 'email' %}
+		<a href="mailto:{{ threepid.address }}">{{ threepid.address }}</a>
+		{% elif threepid.medium == 'msisdn' %}
+		<a href="tel:+{{ threepid.address }}">{{ threepid.address }}</a>
+		{% else %}
+		{{ threepid.medium }} : {{ threepid.address }}
+		{% endif %}
+		</b>
+	{% endfor %}
 
 {% if pretty %}
 <p>

@@ -1,10 +1,11 @@
 import pprint
-from datetime import timedelta
+from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView
 
-from ngw.core.models import MatrixRoom
+from ngw.core.models import Contact, MatrixRoom
 from ngw.core.views.generic import NgwUserAcl
 
 from . import matrix
@@ -117,28 +118,23 @@ class MatrixUserView(NgwUserAcl, TemplateView):
         context['title'] = _('Matrix user') + ' ' + user_id
 
         user = matrix.get_user_info(user_id)
+        context['mat_user'] = user
 
-        # room['contact_group'] = _get_contact_group(room_id)
+        if 'creation_ts' in user:
+            context['creation_dt'] = (
+                datetime.fromtimestamp(user['creation_ts'])
+                )
 
-        # _check_state_filled(room)
-
-        # try:
-        #     power_levels = room['state']['m.room.power_levels']
-        #     default_pl = power_levels.get('users_default', 0)
-        #     for member in room['state']['members']:
-        #         member['power_level'] = (
-        #             power_levels['users'].get(member['user_id'], default_pl))
-        # except KeyError:
-        #     pass
-
-        # autoredact_maxage = _get_autoredact_maxage(room)
-        # if autoredact_maxage:
-        #     room['autoredact'] = autoredact_maxage
-
-        # if self.request.GET.get('debug', False):
-        #     room['pretty'] = pprint.pformat(room)
-
-        # context['room'] = room
+        login = matrix.localpart(user_id)
+        try:
+            ngw_user = Contact.objects.get_by_natural_key(login)
+            context['ngw_user'] = ngw_user
+            context['ngw_user_url'] = (
+                    f'/contactgroups/{settings.MATRIX_SYNC_GROUP}'
+                    f'/members/{ngw_user.id}/'
+                    )
+        except Contact.DoesNotExist:
+            pass
 
         if self.request.GET.get('debug', False):
             if user['password_hash']:
