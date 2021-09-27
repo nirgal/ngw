@@ -178,6 +178,23 @@ def get_user_info(user_id):
             raise e
 
 
+def get_user_rooms(user_id):
+    '''
+    List the rooms that user is in
+    '''
+    assert user_id.endswith(f':{DOMAIN}')
+    try:
+        return _matrix_request(
+            f'{URL}_synapse/admin/v1/users/{user_id}/joined_rooms',
+            headers=_auth_header(),
+            )
+    except HTTPError as e:
+        if e.code == 404:
+            raise NoSuchUser
+        else:
+            raise e
+
+
 def put_user(user_id, data):
     '''
     Low level interface to /_synapse/admin/v2/users/<USER>.

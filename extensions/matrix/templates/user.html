@@ -44,6 +44,12 @@
 		</b>
 	{% endfor %}
 
+
+<p>{% trans "Rooms" %}:
+{% for room_id in rooms.joined_rooms %}
+<br><a href="/matrix/room/{{ room_id}}/">{{ room_id }}</a>
+{% endfor %}
+
 {% if pretty %}
 <p>
 <pre>{{ pretty }}</pre>

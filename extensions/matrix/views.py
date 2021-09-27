@@ -137,6 +137,8 @@ class MatrixUserView(NgwUserAcl, TemplateView):
         except Contact.DoesNotExist:
             pass
 
+        context['rooms'] = matrix.get_user_rooms(user_id)
+
         if self.request.GET.get('debug', False):
             if user['password_hash']:
                 user['password_hash'] = '********'
