@@ -1,0 +1,25 @@
+{% extends "edit.html" %}
+{% load i18n staticfiles ngwtags matrix %}
+
+{% block content %}
+<div id="content-main">
+
+<form method="post">
+
+{% blocktrans %} Delete room {{ room_id }}?{% endblocktrans %}
+
+<p>
+{{ form }}
+
+</div>
+
+{% block submitbar %}
+<div class=submit-row>
+    {% csrf_token %}
+    <input type=submit value="{% trans "Yes I'm Sure" %}">
+    <a href="javascript:history.back()" class="button">{% trans "Cancel" %}</a>
+    </form>
+</div>
+{% endblock %}
+{% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}

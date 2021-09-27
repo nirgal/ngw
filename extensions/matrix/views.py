@@ -1,9 +1,10 @@
 import pprint
 from datetime import datetime, timedelta
 
+from django import forms
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from django.views.generic import TemplateView
+from django.views.generic import FormView, TemplateView
 
 from ngw.core.models import Contact, MatrixRoom
 from ngw.core.views.generic import NgwUserAcl
@@ -142,3 +143,43 @@ class MatrixUserView(NgwUserAcl, TemplateView):
             context['pretty'] = pprint.pformat(user)
 
         return context
+
+
+class ConfirmForm(forms.Form):
+    def __init__(self, room_id, *args, **kargs):
+        self.room_id = room_id
+        super().__init__(*args, **kargs)
+
+    def close_room(self):
+        matrix.room_delete(self.room_id)
+
+
+class MatrixRoomCloseView(NgwUserAcl, FormView):
+    '''
+    '''
+    template_name = 'room_close.html'
+    form_class = ConfirmForm
+    success_url = '/matrix/room/'
+
+    def get(self, request, room_id):
+        self.room_id = room_id
+        return super().get(request)
+
+    def post(self, request, room_id):
+        self.room_id = room_id
+        return super().post(request)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['room_id'] = self.room_id
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Please confirm matrix room shutdown')
+        context['room_id'] = self.room_id
+        return context
+
+    def form_valid(self, form):
+        form.close_room()
+        return super().form_valid(form)

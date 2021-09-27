@@ -26,7 +26,7 @@
 {% for room in rooms %}
 <tr>
 <td>
-	<a href="/matrix/room/{{ room.room_id }}">{{ room.room_id }}</a>
+	<a href="/matrix/room/{{ room.room_id }}/">{{ room.room_id }}</a>
 </td>
 <td>	{% if room.contact_group %}
 	<a href="{{ room.contact_group.get_absolute_url }}">{{ room.contact_group }}</a>
@@ -107,3 +107,4 @@
 
 </div>
 {% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}
