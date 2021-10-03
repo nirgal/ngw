@@ -1,0 +1,22 @@
+{% extends "edit.html" %}
+{% load i18n staticfiles ngwtags matrix %}
+
+{% block content %}
+<div id="content-main">
+
+<form method="post">
+
+<p>
+{{ form }}
+
+</div>
+
+{% block submitbar %}
+<div class=submit-row>
+    {% csrf_token %}
+    <input type=submit value="{% trans "Add" %}">
+    </form>
+</div>
+{% endblock %}
+{% endblock %}
+{# vim: set et ts=4 ft=htmldjango: #}

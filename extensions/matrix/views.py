@@ -6,7 +6,7 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.views.generic import FormView, TemplateView
 
-from ngw.core.models import Contact, MatrixRoom
+from ngw.core.models import Contact, ContactGroup, MatrixRoom
 from ngw.core.views.generic import NgwUserAcl
 
 from . import matrix
@@ -147,12 +147,18 @@ class MatrixUserView(NgwUserAcl, TemplateView):
         return context
 
 
-class ConfirmForm(forms.Form):
+class RoomDeleteForm(forms.Form):
     def __init__(self, room_id, *args, **kargs):
         self.room_id = room_id
         super().__init__(*args, **kargs)
 
     def close_room(self):
+        try:
+            ngwroom = MatrixRoom.objects.get(pk=self.room_id)
+        except MatrixRoom.DoesNotExist:
+            pass
+        else:
+            ngwroom.delete()
         matrix.room_delete(self.room_id)
 
 
@@ -160,7 +166,7 @@ class MatrixRoomCloseView(NgwUserAcl, FormView):
     '''
     '''
     template_name = 'room_close.html'
-    form_class = ConfirmForm
+    form_class = RoomDeleteForm
     success_url = '/matrix/room/'
 
     def get(self, request, room_id):
@@ -184,4 +190,56 @@ class MatrixRoomCloseView(NgwUserAcl, FormView):
 
     def form_valid(self, form):
         form.close_room()
+        return super().form_valid(form)
+
+
+class RoomAddAdminForm(forms.Form):
+    admin = forms.ChoiceField(
+            choices=[
+                (contact.id, contact.name)
+                for contact in ContactGroup.objects.get(
+                    pk=settings.MATRIX_MOD_GROUP).get_all_members()
+                ])
+
+    def __init__(self, room_id, *args, **kargs):
+        self.room_id = room_id
+        super().__init__(*args, **kargs)
+
+    def make_admin(self):
+        contact_id = self.cleaned_data['admin']
+        contact = Contact.objects.get(pk=contact_id)
+        login = contact.get_username()
+        assert login
+        user_id = f'@{login}:{matrix.DOMAIN}'
+        matrix.room_makeadmin(self.room_id, user_id)
+
+
+class MatrixRoomAddAdminView(NgwUserAcl, FormView):
+    '''
+    '''
+    template_name = 'add_admin.html'
+    form_class = RoomAddAdminForm
+    success_url = '/matrix/room/'
+
+    def get(self, request, room_id):
+        self.room_id = room_id
+        return super().get(request)
+
+    def post(self, request, room_id):
+        self.room_id = room_id
+        return super().post(request)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['room_id'] = self.room_id
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Please select contact to make admin')
+        context['room_id'] = self.room_id
+        return context
+
+    def form_valid(self, form):
+        form.make_admin()
         return super().form_valid(form)

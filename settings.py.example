@@ -214,6 +214,7 @@ MATRIX_DOMAIN = 'nirgal.com'
 MATRIX_URL = 'https://matrix.nirgal.com/'
 MATRIX_ADMIN_TOKEN = 'syt_LsA6dY3N8SacYZWiTL_JZqHqKRDpMSQq7Evq5idDjKQz33'
 MATRIX_SYNC_GROUP = 299
+MATRIX_MOD_GROUP = 1141  # Moderator team
 
 EXTRA_BANNER_LINKS = (
     ('wiki', '/wiki'),
