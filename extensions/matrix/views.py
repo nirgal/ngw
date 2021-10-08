@@ -137,7 +137,9 @@ class MatrixUserView(NgwUserAcl, TemplateView):
         except Contact.DoesNotExist:
             pass
 
-        context['rooms'] = matrix.get_user_rooms(user_id)
+        context['rooms'] = []
+        for room_id in matrix.get_user_rooms(user_id)['joined_rooms']:
+            context['rooms'].append(matrix.get_room_info(room_id))
 
         if self.request.GET.get('debug', False):
             if user['password_hash']:

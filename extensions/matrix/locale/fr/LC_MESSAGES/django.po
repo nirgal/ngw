@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-21 09:37+0000\n"
-"PO-Revision-Date: 2021-09-21 11:41+0200\n"
+"POT-Creation-Date: 2021-10-08 14:46+0000\n"
+"PO-Revision-Date: 2021-10-08 16:53+0200\n"
 "Last-Translator: Jean-Michel Vourgère <nirgal@debian.org>\n"
 "Language-Team: French <>\n"
 "Language: fr\n"
@@ -17,31 +17,35 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Lokalize 20.12.0\n"
 
+#: templates/add_admin.html:17
+msgid "Add"
+msgstr "Ajouter"
+
 #: templates/room.html:7
 msgid "Database group"
 msgstr "Groupe de base de données"
 
-#: templates/room.html:12
+#: templates/room.html:12 templates/user.html:21
 msgid "None"
 msgstr "Aucun"
 
-#: templates/room.html:16 templates/rooms_list.html:13
+#: templates/room.html:16 templates/snippet_rooms_list.html:9
 msgid "Name"
 msgstr "Nom"
 
-#: templates/room.html:21 templates/rooms_list.html:14
+#: templates/room.html:21 templates/snippet_rooms_list.html:10
 msgid "Topic"
 msgstr "Sujet"
 
-#: templates/room.html:26 templates/rooms_list.html:15
+#: templates/room.html:26 templates/snippet_rooms_list.html:11
 msgid "Main address"
 msgstr "Adresse principale"
 
-#: templates/room.html:31 templates/rooms_list.html:16
+#: templates/room.html:31 templates/snippet_rooms_list.html:12
 msgid "Version"
 msgstr "Version"
 
-#: templates/room.html:36 templates/rooms_list.html:17
+#: templates/room.html:36 templates/snippet_rooms_list.html:13
 msgid "Creator"
 msgstr "Créateur"
 
@@ -49,74 +53,165 @@ msgstr "Créateur"
 msgid "Encryption"
 msgstr "Chiffrement"
 
-#: templates/room.html:46 templates/rooms_list.html:19
+#: templates/room.html:46 templates/snippet_rooms_list.html:15
 msgid "Federatable"
 msgstr "Fédérable"
 
 #: templates/room.html:49 templates/room.html:58 templates/room.html:72
-#: templates/rooms_list.html:57 templates/rooms_list.html:62
-#: templates/rooms_list.html:69 templates/rooms_list.html:79
+#: templates/snippet_rooms_list.html:54 templates/snippet_rooms_list.html:61
+#: templates/snippet_rooms_list.html:68 templates/snippet_rooms_list.html:78
+#: templates/user.html:13
 msgid "Yes"
 msgstr "Oui"
 
 #: templates/room.html:51 templates/room.html:60 templates/room.html:74
-#: templates/rooms_list.html:64 templates/rooms_list.html:71
-#: templates/rooms_list.html:81
+#: templates/room.html:90 templates/snippet_rooms_list.html:56
+#: templates/snippet_rooms_list.html:63 templates/snippet_rooms_list.html:70
+#: templates/snippet_rooms_list.html:80 templates/snippet_rooms_list.html:92
 msgid "No"
 msgstr "Non"
 
-#: templates/room.html:55 templates/rooms_list.html:20
+#: templates/room.html:55 templates/snippet_rooms_list.html:16
 msgid "Public"
 msgstr "Public"
 
-#: templates/room.html:64 templates/rooms_list.html:21
+#: templates/room.html:64 templates/snippet_rooms_list.html:17
 msgid "Join rules"
 msgstr "Règles pour rejoindre"
 
-#: templates/room.html:69 templates/rooms_list.html:22
+#: templates/room.html:69 templates/snippet_rooms_list.html:18
 msgid "Guest access"
 msgstr "Accès invité"
 
-#: templates/room.html:80 templates/rooms_list.html:23
+#: templates/room.html:80 templates/snippet_rooms_list.html:19
 msgid "History visibility"
 msgstr "Visibilité de l'historique"
 
-#: templates/room.html:85 templates/rooms_list.html:11
+#: templates/room.html:85
+msgid "Message expiry"
+msgstr "Expiration des messages"
+
+#: templates/room.html:94 templates/snippet_rooms_list.html:7
 msgid "Members"
 msgstr "Membres"
 
-#: templates/room.html:88
+#: templates/room.html:97 templates/user.html:7
 msgid "Display name"
 msgstr "Nom d'affichage"
 
-#: templates/room.html:89
+#: templates/room.html:98
 msgid "Membership"
 msgstr "Appartenance"
 
-#: templates/room.html:90
+#: templates/room.html:99
 msgid "User ID"
 msgstr "ID utilisateur"
 
-#: templates/rooms_list.html:9
+#: templates/room.html:100
+msgid "Power level"
+msgstr "Rôle"
+
+#: templates/room.html:108
+msgid "Administrator"
+msgstr "Administrateur"
+
+#: templates/room.html:110
+msgid "Modérator"
+msgstr "Modérateur"
+
+#: templates/room.html:112
+msgid "Default"
+msgstr "Défaut"
+
+#: templates/room.html:127
+msgid "Close room"
+msgstr "Fermer le salon"
+
+#: templates/room.html:128
+msgid "Add admin"
+msgstr "Ajouter un admin"
+
+#: templates/room_close.html:9
+#, python-format
+msgid " Delete room %(room_id)s?"
+msgstr "Effacer le salon %(room_id)s?"
+
+#: templates/room_close.html:19
+msgid "Yes I'm Sure"
+msgstr "Oui je suis sûr"
+
+#: templates/room_close.html:20
+msgid "Cancel"
+msgstr "Annuler"
+
+#: templates/snippet_rooms_list.html:5
 msgid "Room Id"
 msgstr "Id de salon"
 
-#: templates/rooms_list.html:10
+#: templates/snippet_rooms_list.html:6
 msgid "Group"
 msgstr "Groupe"
 
-#: templates/rooms_list.html:12
+#: templates/snippet_rooms_list.html:8
 msgid "Local members"
 msgstr "Membres locaux"
 
-#: templates/rooms_list.html:18
+#: templates/snippet_rooms_list.html:14
 msgid "Encrypted"
 msgstr "Chiffré"
 
-#: views.py:20 views.py:44
+#: templates/snippet_rooms_list.html:20
+msgid "Messages expiration"
+msgstr "Expiration des messages"
+
+#: templates/snippet_rooms_list.html:54
+msgid "Algorithm"
+msgstr "Algorithme"
+
+#: templates/user.html:13
+msgid "Admin"
+msgstr "Admin"
+
+#: templates/user.html:16
+#| msgid "Database group"
+msgid "Database user"
+msgstr "Utilisateur de la base de données"
+
+#: templates/user.html:25
+#| msgid "Creator"
+msgid "Creation"
+msgstr "Création"
+
+#: templates/user.html:31
+msgid "Account disabled"
+msgstr "Compte désactivé"
+
+#: templates/user.html:34
+msgid "Third party ids"
+msgstr "Identifiants externe"
+
+#: templates/user.html:48
+#| msgid "Room Id"
+msgid "Rooms"
+msgstr "Salons"
+
+#: views.py:50
 msgid "Matrix rooms"
 msgstr "Salons Matrix"
 
-#: views.py:70
+#: views.py:80
 msgid "Matrix room"
 msgstr "Salon Matrix"
+
+#: views.py:119
+#| msgid "Matrix room"
+msgid "Matrix user"
+msgstr "Utilisateur matrix"
+
+#: views.py:189
+msgid "Please confirm matrix room shutdown"
+msgstr "Veuiller confirmer la fermeture du salon matrix"
+
+#: views.py:241
+msgid "Please select contact to make admin"
+msgstr "Veuillez sélectionner le contact à rendre administrateur"

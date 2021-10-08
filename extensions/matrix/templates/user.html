@@ -46,9 +46,7 @@
 
 
 <p>{% trans "Rooms" %}:
-{% for room_id in rooms.joined_rooms %}
-<br><a href="/matrix/room/{{ room_id}}/">{{ room_id }}</a>
-{% endfor %}
+{% include "snippet_rooms_list.html" %}
 
 {% if pretty %}
 <p>
