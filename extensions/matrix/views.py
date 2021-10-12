@@ -139,7 +139,13 @@ class MatrixUserView(NgwUserAcl, TemplateView):
 
         context['rooms'] = []
         for room_id in matrix.get_user_rooms(user_id)['joined_rooms']:
-            context['rooms'].append(matrix.get_room_info(room_id))
+            room_info = matrix.get_room_info(room_id)
+
+            autoredact_maxage = _get_autoredact_maxage(room_info)
+            if autoredact_maxage:
+                room_info['autoredact'] = autoredact_maxage
+
+            context['rooms'].append(room_info)
 
         if self.request.GET.get('debug', False):
             if user['password_hash']:
