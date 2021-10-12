@@ -7,6 +7,7 @@ from ngw.core.models import Contact, ContactGroup
 from ngw.extensions.matrix import matrix
 
 FIELD_MATRIX_DISPLAYNAME = 99
+FIELD_MATRIX_DISABLED = 100    # matrix users
 
 
 def get_contact_displayname(contact):
@@ -111,6 +112,10 @@ class Command(BaseCommand):
             name = get_contact_displayname(contact)
             emails = contact.get_fieldvalues_by_type('EMAIL')
             user_id = f'@{login}:{matrix.DOMAIN}'
+            disabled = contact.get_fieldvalue_by_id(FIELD_MATRIX_DISABLED)
+            if disabled:
+                continue
+
             if matrix.set_user_info(
                     user_id,
                     name=name,
@@ -138,6 +143,13 @@ class Command(BaseCommand):
                     if not contact.is_member_of(settings.MATRIX_SYNC_GROUP):
                         logger.warning(
                             f'{login} is not member of group {matrix_group}')
+                        delete = True
+                    disabled = contact.get_fieldvalue_by_id(
+                            FIELD_MATRIX_DISABLED)
+                    if disabled:
+                        logger.warning(
+                            f'{login} emergency disabled is set.'
+                            ' Deleting account.')
                         delete = True
 
                 if delete:
