@@ -3,11 +3,12 @@ import logging
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ngw.core.models import Contact, ContactGroup
+from ngw.core.models import Contact, ContactGroup, MatrixRoom
 from ngw.extensions.matrix import matrix
 
 FIELD_MATRIX_DISPLAYNAME = 99
 FIELD_MATRIX_DISABLED = 100    # matrix users
+MATRIX_ADMIN_ID = f'@adminatrix:{matrix.DOMAIN}'  # admin user, never kick out
 
 
 def get_contact_displayname(contact):
@@ -157,3 +158,64 @@ class Command(BaseCommand):
                     matrix.deactivate_account(user_id)
                 else:
                     logger.debug(f'Account {login} is ok')
+
+        # Synchronize the rooms
+
+        logger.debug('Checking room members')
+
+        for ngw_room in MatrixRoom.objects.all():
+            room_id = ngw_room.id
+            logger.debug(f'Checking room {room_id} against'
+                         f' {ngw_room.contact_group}')
+            # room_info = matrix.get_room_info(room_id)
+            # print(room_info)
+            room_state = matrix._room_state_clean(
+                    matrix.get_room_state(room_id)['state'])
+            mat_members = room_state['members']
+            # print(mat_members)
+
+            ngw_members = ngw_room.contact_group.get_all_members()
+            # print(ngw_members)
+
+            # Check for room members who shouln't be there
+            for mat_member in mat_members:
+                user_id = mat_member['user_id']
+                login = matrix.localpart(user_id)
+                membership = mat_member['membership']
+                if membership != 'leave' and user_id != MATRIX_ADMIN_ID:
+                    kick_request = False
+                    try:
+                        contact = Contact.objects.get_by_natural_key(login)
+                    except Contact.DoesNotExist:
+                        logger.error(
+                                f'{login} is defined by matrix but not in ngw')
+                        kick_request = True
+                    else:
+                        if not contact.is_member_of(ngw_room.contact_group_id):
+                            logger.info(f'{login} is not a member of'
+                                        f' {ngw_room.contact_group}: kicking'
+                                        ' out!')
+                            kick_request = True
+
+                    if kick_request:
+                        pass  # TODO: not implemented
+
+            # Check for missing room members
+            for contact in ngw_members:
+                login = contact.get_username()
+                user_id = f'@{login}:{matrix.DOMAIN}'
+                membership = None
+                for mat_member in mat_members:
+                    if mat_member['user_id'] == user_id:
+                        membership = mat_member['membership']
+                        break  # no use scaning the other entries
+
+                if not contact.is_member_of(settings.MATRIX_SYNC_GROUP):
+                    continue  # no matrix account, this is ok
+
+                if contact.get_fieldvalue_by_id(FIELD_MATRIX_DISABLED):
+                    continue  # Matrix account disabled: this is ok
+
+                if not membership:
+                    logger.info(f'{login} is missing.')
+                    # TODO: not implemented
