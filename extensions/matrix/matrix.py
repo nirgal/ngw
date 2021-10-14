@@ -288,7 +288,7 @@ def reset_password(user_id, password):
 
 def room_join(user_id, room):
     '''
-    room is either a id (starting with '!') or an alis (starting with '#')
+    room is either a id (starting with '!') or an alias (starting with '#')
     admin must be in the room...
     '''
     assert user_id.endswith(f':{DOMAIN}')
@@ -387,7 +387,7 @@ def _room_state_clean(states):
             if 'members' not in result:
                 result['members'] = []
             member = {
-                'user_id': state['user_id']
+                'user_id': state['state_key']
             }
             member.update(content)
             result['members'].append(member)
@@ -426,6 +426,16 @@ def _room_state_clean(states):
         #     logger.warning(
         #        f'Unsupported state type {statetype} in room states.')
     return result
+
+
+def room_get_members(roomid):
+    '''
+    Return members (invited are NOT included)
+    '''
+    return _matrix_request(
+        f'{URL}_synapse/admin/v1/rooms/{roomid}/members',
+        headers=_auth_header(),
+        )
 
 
 def room_delete(room):
