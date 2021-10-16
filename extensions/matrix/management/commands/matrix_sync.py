@@ -198,7 +198,7 @@ class Command(BaseCommand):
                             kick_request = True
 
                     if kick_request:
-                        pass  # TODO: not implemented
+                        matrix.room_kick(room_id, user_id)
 
             # Check for missing room members
             for contact in ngw_members:
@@ -217,5 +217,5 @@ class Command(BaseCommand):
                     continue  # Matrix account disabled: this is ok
 
                 if not membership:
-                    logger.info(f'{login} is missing.')
-                    # TODO: not implemented
+                    logger.info(f'{login} is missing in {room_id}: inviting.')
+                    matrix.room_invite(room_id, user_id)

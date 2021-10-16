@@ -440,7 +440,7 @@ def room_get_members(roomid):
 
 def room_delete(room):
     '''
-    room is either a id (starting with '!') or an alis (starting with '#')
+    room is either a id (starting with '!') or an alias (starting with '#')
     '''
     data = {
     }
@@ -456,7 +456,7 @@ def room_delete(room):
 
 def room_makeadmin(room, user_id=None):
     '''
-    room is either a id (starting with '!') or an alis (starting with '#')
+    room is either a id (starting with '!') or an alias (starting with '#')
     '''
     data = {}
     if user_id:
@@ -469,4 +469,28 @@ def room_makeadmin(room, user_id=None):
         method='POST',
         headers=_auth_header(),
         data=data,
+        )
+
+# #####################
+# Regular user commands
+# #####################
+
+
+def room_invite(room, user_id):
+    room = urllib.parse.quote(room)
+    return _matrix_request(
+        f'{URL}_matrix/client/r0/rooms/{room}/invite',
+        method='POST',
+        headers=_auth_header(),
+        data={"user_id": user_id},
+        )
+
+
+def room_kick(room, user_id):
+    room = urllib.parse.quote(room)
+    return _matrix_request(
+        f'{URL}_matrix/client/r0/rooms/{room}/kick',
+        method='POST',
+        headers=_auth_header(),
+        data={"user_id": user_id},
         )
