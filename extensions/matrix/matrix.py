@@ -381,7 +381,10 @@ def _room_state_clean(states):
 
         if statetype == 'm.room.create':
             for key in content:
-                assert key in ('room_version', 'creator', 'm.federate')
+                assert key in ('room_version', 'creator', 'm.federate',
+                               'type'), (
+                    f'Unsupported key {key} in "m.room.create" event state:'
+                    f' {content}')
             result.update(content)
         elif statetype == 'm.room.member':
             if 'members' not in result:
