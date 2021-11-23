@@ -9,6 +9,7 @@ from ngw.extensions.matrix import matrix
 FIELD_MATRIX_DISPLAYNAME = 99
 FIELD_MATRIX_DISABLED = 100    # matrix users
 MATRIX_ADMIN_ID = f'@adminatrix:{matrix.DOMAIN}'  # admin user, never kick out
+MATRIX_MOD_GROUP = settings.MATRIX_MOD_GROUP
 
 
 def get_contact_displayname(contact):
@@ -191,7 +192,11 @@ class Command(BaseCommand):
                                 f'{login} is defined by matrix but not in ngw')
                         kick_request = True
                     else:
-                        if not contact.is_member_of(ngw_room.contact_group_id):
+                        if (
+                           not contact.is_member_of(ngw_room.contact_group_id)
+                           # moderator are never kicked out:
+                           and not contact.is_member_of(MATRIX_MOD_GROUP)
+                           ):
                             logger.info(f'{login} is not a member of'
                                         f' {ngw_room.contact_group}: kicking'
                                         ' out!')
