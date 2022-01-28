@@ -156,7 +156,8 @@ def get_users(include_deleted=False):
             user_id = user['name']
             user = get_user_info(user_id)
             if not include_deleted:
-                if not user['password_hash'] and not user['threepids']:
+                if (( not 'password_hash' in user or not user['password_hash'] )
+                        and not user['threepids']):
                     # logger.debug(f'{login} is disabled')
                     continue
             yield user
