@@ -63,7 +63,8 @@ def send_to_onetime(msg):
     if 'otid' in sync_info:
         return  # Already sent
 
-    ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
+    ot_conn = http.client.HTTPSConnection(settings.EXTERNAL_MESSAGE_URL,
+            timeout=TIMEOUT)
 
     logger.info('Storing message for %s.', msg.contact)
 
@@ -249,7 +250,8 @@ def read_answers(msg):
         return
     # We have to open a new connection each time
     # since we can't handle keep-alive yet
-    ot_conn = http.client.HTTPSConnection('onetime.info', timeout=TIMEOUT)
+    ot_conn = http.client.HTTPSConnection(settings.EXTERNAL_MESSAGE_URL,
+            timeout=TIMEOUT)
 
     ot_conn.request(
         'POST',

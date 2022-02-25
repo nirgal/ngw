@@ -203,6 +203,7 @@ EMAIL_PORT = 465
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024**3
 
 EXTERNAL_MESSAGE_BACKEND = 'ngw.extensions.externalmessages.onetime'
+EXTERNAL_MESSAGE_URL = 'onetime.info:443'
 
 # If you enable the vpn extension, you'll need to define these values:
 # VPN_GROUP = 52  # Group of people allowed to connect to the VPN
