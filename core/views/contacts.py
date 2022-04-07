@@ -791,7 +791,7 @@ class BaseContactListView(NgwListView):
             messages.add_message(
                 request, messages.SUCCESS,
                 mark_safe('<a href="{}">{}</a>'.format(
-                          'mailto:?bcc=' + ', '.join(emails),
+                          'mailto:?bcc=' + ','.join(emails),
                           _('List generated. Click here.'))))
 
         if noemails:
